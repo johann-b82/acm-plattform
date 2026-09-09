@@ -9,6 +9,7 @@ import {
   LEVEL_LABEL,
   verwaltungApi,
   verwaltungKeys,
+  type AngelegterNutzer,
   type App,
   type Gruppe,
   type Mitgliedschaft,
@@ -41,6 +42,8 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
   const [umbenennen, setUmbenennen] = useState<{ gruppe: Gruppe; name: string } | null>(null);
   const [mitglieder, setMitglieder] = useState<Gruppe | null>(null);
   const [neuesMitglied, setNeuesMitglied] = useState("");
+  const [neueEmail, setNeueEmail] = useState("");
+  const [angelegt, setAngelegt] = useState<AngelegterNutzer | null>(null);
 
   const [apps, gruppen, rechte, mitgliedschaften, nutzer] = useQueries({
     queries: [
@@ -100,6 +103,16 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
           ? "Diesen Gruppennamen gibt es schon."
           : `Anlegen fehlgeschlagen: ${err.message}`,
       ),
+  });
+
+  const nutzerAnlegen = useMutation({
+    mutationFn: () => verwaltungApi.nutzerAnlegen(neueEmail.trim()),
+    onSuccess: (nutzer) => {
+      setNeueEmail("");
+      setAngelegt(nutzer);
+      neuLaden(verwaltungKeys.nutzer());
+    },
+    onError: (err: Error) => toast.error(`Anlegen fehlgeschlagen: ${err.message}`),
   });
 
   const umbenennenMutation = useMutation({
@@ -180,23 +193,47 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
         </Card>
       )}
 
-      <Card className="flex flex-wrap items-end gap-3 p-4">
-        <div className="flex flex-1 flex-col gap-1">
-          <Label htmlFor="neue-gruppe">Neue Gruppe</Label>
-          <Input
-            id="neue-gruppe"
-            value={neueGruppe}
-            onChange={(e) => setNeueGruppe(e.target.value)}
-            placeholder="z. B. Vertrieb Innendienst"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && neueGruppe.trim()) anlegen.mutate();
-            }}
-          />
-        </div>
-        <Button disabled={!neueGruppe.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
-          Anlegen
-        </Button>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="flex flex-wrap items-end gap-3 p-4">
+          <div className="flex flex-1 flex-col gap-1">
+            <Label htmlFor="neue-gruppe">Neue Gruppe</Label>
+            <Input
+              id="neue-gruppe"
+              value={neueGruppe}
+              onChange={(e) => setNeueGruppe(e.target.value)}
+              placeholder="z. B. Vertrieb Innendienst"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && neueGruppe.trim()) anlegen.mutate();
+              }}
+            />
+          </div>
+          <Button disabled={!neueGruppe.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
+            Anlegen
+          </Button>
+        </Card>
+
+        <Card className="flex flex-wrap items-end gap-3 p-4">
+          <div className="flex flex-1 flex-col gap-1">
+            <Label htmlFor="neue-person">Neue Person</Label>
+            <Input
+              id="neue-person"
+              type="email"
+              value={neueEmail}
+              onChange={(e) => setNeueEmail(e.target.value)}
+              placeholder="vorname.nachname@acm.local"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && neueEmail.trim()) nutzerAnlegen.mutate();
+              }}
+            />
+          </div>
+          <Button
+            disabled={!neueEmail.trim() || nutzerAnlegen.isPending}
+            onClick={() => nutzerAnlegen.mutate()}
+          >
+            Anlegen
+          </Button>
+        </Card>
+      </div>
 
       {laedt ? (
         <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
@@ -279,6 +316,34 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
       <p className="text-xs text-[var(--fg-muted)]">
         „Verwalten“ auf der Plattform-Kachel schließt jedes andere Recht ein.
       </p>
+
+      <Dialog
+        open={angelegt !== null}
+        onOpenChange={(o) => !o && setAngelegt(null)}
+        title="Person angelegt"
+        description="Das Passwort steht nur jetzt hier. Danach lässt es sich nur zurücksetzen, nicht anzeigen."
+        footer={
+          <Button onClick={() => setAngelegt(null)}>Fertig</Button>
+        }
+      >
+        <div className="flex flex-col gap-3 text-sm">
+          <div className="flex flex-col gap-1">
+            <Label>Anmeldung</Label>
+            <code className="rounded-md border border-[var(--border)] px-3 py-2">
+              {angelegt?.email}
+            </code>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label>Passwort</Label>
+            <code className="rounded-md border border-[var(--border)] px-3 py-2 tracking-wider">
+              {angelegt?.passwort}
+            </code>
+          </div>
+          <p className="text-[var(--fg-muted)]">
+            Die Person hat noch keine Rechte. Rechte bekommt sie über eine Gruppe.
+          </p>
+        </div>
+      </Dialog>
 
       <Dialog
         open={umbenennen !== null}

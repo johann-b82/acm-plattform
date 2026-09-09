@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     API_EXTERNAL_URL: str  # Issuer der GoTrue-JWTs
     JWT_AUDIENCE: str = "authenticated"
+    # Nur fuer die Admin-API von GoTrue (Personen anlegen). Bleibt serverseitig;
+    # der Guard scripts/ci/check_service_role.sh haelt ihn aus dem Web-Bundle.
+    SERVICE_ROLE_KEY: str
+    GOTRUE_URL: str = "http://auth:9999"
 
     # Postgres (Superuser für Alembic; App-Zugriff folgt mit eigener Rolle in Phase 4)
     POSTGRES_HOST: str = "db"

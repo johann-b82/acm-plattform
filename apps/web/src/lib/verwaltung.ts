@@ -1,4 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { computeJson } from "@/lib/compute";
 import type { Level } from "@/lib/rechte";
 
 /**
@@ -34,6 +35,12 @@ export interface Recht {
 export interface Mitgliedschaft {
   user_id: string;
   group_id: string;
+}
+
+export interface AngelegterNutzer {
+  id: string;
+  email: string;
+  passwort: string;
 }
 
 export interface Nutzer {
@@ -87,6 +94,18 @@ export const verwaltungApi = {
       sb().from("app_grants").upsert({ group_id, app_id, level }, { onConflict: "group_id,app_id" }),
     );
   },
+
+  /**
+   * Person anlegen. Geht über compute, nicht über PostgREST: dafür braucht es
+   * die Admin-Schnittstelle der Anmeldung und damit einen Schlüssel, der den
+   * Browser nie erreichen darf.
+   */
+  nutzerAnlegen: (email: string) =>
+    computeJson<AngelegterNutzer>("/api/verwaltung/nutzer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }),
 
   mitgliedHinzufuegen: (group_id: string, user_id: string) =>
     auswerten<unknown>(sb().from("user_groups").insert({ group_id, user_id })),

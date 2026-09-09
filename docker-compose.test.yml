@@ -31,6 +31,7 @@ services:
       POSTGRES_HOST: test-db
       JWT_SECRET: test-secret-with-at-least-32-characters!!
       API_EXTERNAL_URL: http://localhost/supabase/auth/v1
+      SERVICE_ROLE_KEY: test-service-role-key
       DB_DISABLE_POOL: "1"
     command: sh -c "alembic upgrade head && pytest"
     depends_on:

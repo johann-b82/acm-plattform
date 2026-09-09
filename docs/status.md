@@ -8,7 +8,7 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 |---|---|
 | Supabase self-hosted | Upstream `v1.26.08` gepinnt, per `include:` eingebunden, Overrides in `infra/supabase/`. Analytics und Vector aus, Ports nur auf 127.0.0.1. |
 | Rechtemodell | `apps`, `groups`, `user_groups`, `app_grants`. `custom_access_token_hook` schreibt den Claim `apps` in jedes Token. RLS auf jeder Tabelle. |
-| Rechteverwaltung | `/platform`: Gruppen, Mitglieder, App-Rechte pflegbar. Schreibt über PostgREST, geprüft von den Policies. |
+| Rechteverwaltung | `/platform`: Personen anlegen, Gruppen, Mitglieder, App-Rechte pflegbar. Schreibt über PostgREST, geprüft von den Policies; nur das Anlegen einer Person läuft über `compute`. |
 | Next.js-Shell | Login, Launcher, Proxy (`src/proxy.ts`), Server Components lesen über die Nutzer-Session. |
 | Compute-Dienst | FastAPI, prüft das Supabase-JWT, zwei Upload-Routen. Zustandslos, kein Scheduler, kein SSE. |
 | Erstes Fachmodul | Vertrieb: zwei ERP-Uploads, vier KPI-Funktionen als SQL, Dashboard mit Recharts. |
