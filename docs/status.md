@@ -23,6 +23,7 @@ Tests: 55 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Deployments treffen keine Screens.** Nachgestellt mit offener Geräteverbindung: ein Player-Stream (`/api/signage/player/stream`) lief, währenddessen ging die Plattform komplett herunter (`docker compose down`, inklusive ihres Netzes) und wieder hoch. Die Verbindung blieb bestehen, die Heartbeat-Pings laufen über den Neustart hinweg durch, und eine danach geänderte Playlist erreichte denselben Stream. Die Signage-Container wurden nicht angefasst.
 - **Rechte greifen in der Datenbank, nicht in der Oberfläche.** Wer kein Plattformrecht hat, sieht in `plattform_nutzer` null Zeilen und scheitert beim Schreiben auf `groups` und `app_grants` an der Policy. Wer `kpi: viewer` hat, sieht Kennzahlen, aber keine Upload-Historie, und bekommt beim Upload 403.
 - **Der Claim folgt der Gruppe.** Nach Aufnahme in eine Gruppe liefert `custom_access_token_hook` das Recht der Gruppe. Es wirkt ab der nächsten Anmeldung.
+- **Die Platte wächst nicht mehr im Leerlauf.** Alle zwölf Container tragen den Rotationsanker (`json-file`, 3×10 MB). Nach einem vollständigen Durchgang durch Launcher, Kennzahlen, Uploads, Signage und Verwaltung stehen im Caddy-Log 14 Zeilen, alle vom Start, keine einzige pro Anfrage. Der Compute-Dienst schrieb null Zeilen. Zum Vergleich: im Altprojekt kamen allein von einem Pi rund 13.000 Zeilen pro Tag.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.
 
 ## Was bewusst fehlt
