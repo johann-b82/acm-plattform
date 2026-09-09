@@ -1,0 +1,170 @@
+"""Datei-Uploads der ERP-Exporte.
+
+Das ist der Teil, der in Python bleiben muss: die Exporte haben deutsche
+Zahlen, Latin-1-Kodierung und Eigenheiten je Datei, die pandas abfängt.
+Alles danach (Auswertung) passiert in SQL.
+
+Zwei Dinge, die im Altprojekt fehlten und hier von Anfang an drin sind:
+  - Die Größe wird beim Lesen geprüft, nicht danach. Eine zu große Datei wird
+    abgebrochen, bevor sie im Speicher liegt.
+  - Das Parsen läuft in einem Thread. pandas ist blockierend; im Altprojekt
+    stand deshalb bei jedem großen Upload der ganze Prozess.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Callable
+
+import sqlalchemy as sa
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth import Claims, require_app
+from app.config import settings
+from app.db import SessionLocal, auftraege, revenues, upload_batches
+from app.parsing.vertrieb import parse_auftraege, parse_umsatz
+
+router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depends(require_app("uploads", "admin"))])
+
+# asyncpg erlaubt 32767 Parameter je Anweisung; danach wird gestückelt.
+_MAX_PARAMS = 32767
+
+
+class Fehlerdetail(BaseModel):
+    row: int
+    field: str
+    message: str
+
+
+class UploadErgebnis(BaseModel):
+    batch_id: int
+    filename: str
+    kind: str
+    rows_total: int
+    rows_inserted: int
+    rows_updated: int
+    status: str
+    errors: list[Fehlerdetail]
+
+
+async def _read_limited(file: UploadFile) -> bytes:
+    """Liest den Upload und bricht ab, sobald das Limit überschritten ist."""
+    stücke: list[bytes] = []
+    gesamt = 0
+    while chunk := await file.read(64 * 1024):
+        gesamt += len(chunk)
+        if gesamt > settings.MAX_UPLOAD_BYTES:
+            raise HTTPException(413, f"Datei überschreitet {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB")
+        stücke.append(chunk)
+    return b"".join(stücke)
+
+
+async def _upsert(
+    session: AsyncSession,
+    tabelle: sa.Table,
+    rows: list[dict[str, Any]],
+) -> None:
+    """Zeilen einfügen oder aktualisieren, in Blöcken unterhalb des Parameterlimits."""
+    if not rows:
+        return
+    spalten = [c.name for c in tabelle.columns if c.name != "vorgang_nr"]
+    pro_zeile = max(1, len(rows[0]))
+    block = max(1, _MAX_PARAMS // pro_zeile)
+    for start in range(0, len(rows), block):
+        teil = rows[start : start + block]
+        stmt = pg_insert(tabelle).values(teil)
+        await session.execute(
+            stmt.on_conflict_do_update(
+                index_elements=["vorgang_nr"],
+                set_={c: stmt.excluded[c] for c in spalten},
+            )
+        )
+
+
+async def _import(
+    *,
+    file: UploadFile,
+    kind: str,
+    tabelle: sa.Table,
+    parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
+    claims: Claims,
+) -> UploadErgebnis:
+    filename = file.filename or ""
+    if not filename.lower().endswith((".txt", ".csv")):
+        raise HTTPException(422, "Nur .txt- und .csv-Dateien werden angenommen.")
+
+    contents = await _read_limited(file)
+    rows, fehler = await run_in_threadpool(parser, contents)
+
+    now = datetime.now(timezone.utc)
+    status = "failed" if (fehler and not rows) else ("partial" if fehler else "success")
+
+    async with SessionLocal() as session:
+        async with session.begin():
+            vorhanden = 0
+            if rows:
+                nummern = [r["vorgang_nr"] for r in rows]
+                vorhanden = (
+                    await session.execute(
+                        sa.select(sa.func.count())
+                        .select_from(tabelle)
+                        .where(tabelle.c.vorgang_nr.in_(nummern))
+                    )
+                ).scalar_one()
+
+            batch_id = (
+                await session.execute(
+                    sa.insert(upload_batches)
+                    .values(
+                        filename=filename,
+                        uploaded_at=now,
+                        kind=kind,
+                        row_count=len(rows),
+                        error_count=len(fehler),
+                        status=status,
+                        uploaded_by=claims.sub,
+                    )
+                    .returning(upload_batches.c.id)
+                )
+            ).scalar_one()
+
+            for r in rows:
+                r["upload_batch_id"] = batch_id
+                r["imported_at"] = now
+            await _upsert(session, tabelle, rows)
+
+    return UploadErgebnis(
+        batch_id=batch_id,
+        filename=filename,
+        kind=kind,
+        rows_total=len(rows),
+        rows_inserted=len(rows) - vorhanden,
+        rows_updated=vorhanden,
+        status=status,
+        errors=[
+            Fehlerdetail(row=f.get("row", 0), field=f.get("field", ""), message=f.get("message", ""))
+            for f in fehler
+        ],
+    )
+
+
+@router.post("/umsatz", response_model=UploadErgebnis)
+async def upload_umsatz(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_RG.txt — Rechnungen und Gutschriften. Erneutes Hochladen derselben
+    Datei ändert nichts an den Daten (Upsert auf die Vorgangsnummer)."""
+    return await _import(file=file, kind="umsatz", tabelle=revenues, parser=parse_umsatz, claims=claims)
+
+
+@router.post("/auftraege", response_model=UploadErgebnis)
+async def upload_auftraege(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_AUF.txt — Auftragseingang."""
+    return await _import(file=file, kind="auftraege", tabelle=auftraege, parser=parse_auftraege, claims=claims)

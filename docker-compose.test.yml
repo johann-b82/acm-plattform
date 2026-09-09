@@ -1,0 +1,38 @@
+# Testlauf für compute: Wegwerf-Postgres mit Supabase-Grundlagen als Fixture,
+# darauf die Migrationen und pytest.
+#   docker compose -f docker-compose.test.yml run --rm --build compute-test
+name: acm-test
+
+services:
+  test-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: compute_test_pw
+      POSTGRES_DB: acm_test
+    volumes:
+      - ./services/compute/tests/fixtures/supabase-stub.sql:/docker-entrypoint-initdb.d/00-supabase-stub.sql:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d acm_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  compute-test:
+    build:
+      context: ./services/compute
+      target: test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: compute_test_pw
+      POSTGRES_DB: acm_test
+      POSTGRES_HOST: test-db
+      JWT_SECRET: test-secret-with-at-least-32-characters!!
+      API_EXTERNAL_URL: http://localhost/supabase/auth/v1
+      DB_DISABLE_POOL: "1"
+    command: sh -c "alembic upgrade head && pytest"
+    depends_on:
+      test-db:
+        condition: service_healthy

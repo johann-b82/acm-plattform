@@ -22,12 +22,12 @@ export default async function LauncherPage({
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Apps</h1>
       {denied && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p role="alert" className="mt-2 text-sm text-[var(--danger)]">
           Für „{denied}“ hast du keine Berechtigung.
         </p>
       )}
       {visible.length === 0 ? (
-        <p className="mt-6 text-zinc-500">
+        <p className="mt-6 text-[var(--fg-muted)]">
           Deinem Konto ist noch keine App zugewiesen. Bitte an die Plattform-Verwaltung wenden.
         </p>
       ) : (
@@ -36,10 +36,10 @@ export default async function LauncherPage({
             <li key={a.id}>
               <Link
                 href={a.path}
-                className="block rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
+                className="block rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
               >
                 <div className="font-medium">{a.name}</div>
-                <div className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+                <div className="mt-1 text-xs uppercase tracking-wide text-[var(--fg-muted)]">
                   {levelFor(session.apps, a.id)}
                 </div>
               </Link>

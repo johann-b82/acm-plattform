@@ -26,4 +26,12 @@
 | 20 | Niedrig | Dev-Deps und Test-Suite im Prod-Image | `backend/Dockerfile:5-6` | Multi-Stage-Build | dito |
 | 21 | Niedrig | QS-Rolle sieht KPI-Review-Kommentare (Gate ist nur `get_current_user`) | `kpi_review.py:54`, `feedback.py:50` | entfällt mit App-Rechten | `require_dashboard_read` |
 
+## Bewusst offene Punkte im neuen Stack
+
+| Punkt | Stand | Warum vorerst so |
+|---|---|---|
+| `compute` verbindet sich als `postgres` | offen | Der Dienst ist der einzige Schreiber der Ingestionstabellen und umgeht damit RLS — das ist gewollt, der Importpfad ist kein Leser. Eine eigene Rolle mit engeren Rechten scheitert bislang daran, dass ihr Passwort sonst in einer Migration stünde. In der Härtung (Phase 5) mit einem eigenen Secret nachholen. |
+| Kein TLS im lokalen Betrieb | offen | Phase 5. Caddy setzt bereits Security-Header und ein Body-Limit. |
+| Studio nur über Kong auf 127.0.0.1 | akzeptiert | Kein Host-Port, Zugriff über SSH-Tunnel. |
+
 Geprüft und unauffällig: keine SQL-String-Interpolation (beide `text()`-Blöcke parametrisiert), keine nutzergesteuerten `ORDER BY`, keine `os.system`/`shell=True`/`eval`/`pickle`, Pfad-Traversal in `main.py:130-140` und `signage_player.py:241-247` korrekt geblockt, Secrets Fernet-verschlüsselt und nie geloggt, `pyjwt` mit festem `algorithms=["HS256"]`, Pairing-Codes aus `secrets.choice` (31⁶ Kombinationen) mit atomarem Claim, Postgres und Directus nur auf `127.0.0.1`, kein `dangerouslySetInnerHTML`/`rehype-raw` im Frontend, Sidecar-Token `0600`.

@@ -3,10 +3,11 @@ import sys
 
 from fastapi import Depends, FastAPI, Response
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.auth import Claims, get_claims
 from app.config import settings
+from app.db import engine
+from app.routers.uploads import router as uploads_router
 
 # Ein echter Handler (docs/logging.md Regel 4): WARNING nach stdout, sonst Stille.
 logging.basicConfig(
@@ -16,7 +17,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
-engine = create_async_engine(settings.async_database_url, pool_pre_ping=True)
+app.include_router(uploads_router)
 
 
 @app.get("/api/health")
