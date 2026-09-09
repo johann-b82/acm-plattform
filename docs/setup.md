@@ -42,12 +42,16 @@ Migrationen sind SQL-first (`op.execute`), damit RLS-Policies, Funktionen und Gr
 
 ## Tests und Guards
 
+Genau die Befehle, die auch CI fährt:
+
 ```bash
-docker build --target test services/compute       # Unit-Tests compute
-cd apps/web && npm run lint && npm run build       # Web
+docker compose -f docker-compose.test.yml run --rm --build compute-test   # compute, gegen eine echte Test-Datenbank
+cd apps/web && npm run lint && npm test && npm run build                   # web
 bash scripts/ci/check_log_hygiene.sh
 bash scripts/ci/check_service_role.sh
 ```
+
+`docker build --target test services/compute` baut nur das Test-Abbild, es führt nichts aus. Und ohne Datenbank überspringt pytest die Hälfte der Prüfungen stillschweigend — deshalb immer über `docker-compose.test.yml`, das die Test-Datenbank mitbringt. Der Riegel in `tests/conftest.py` bricht ab, wenn `POSTGRES_DB` nicht nach einer Test-Datenbank aussieht.
 
 ## Rechte prüfen
 
