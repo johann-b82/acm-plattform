@@ -3,13 +3,12 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Pencil, UserPlus, X } from "lucide-react";
+import { Check, KeyRound, Pencil, UserPlus, X } from "lucide-react";
 
 import {
   LEVEL_LABEL,
   verwaltungApi,
   verwaltungKeys,
-  type AngelegterNutzer,
   type App,
   type Gruppe,
   type Mitgliedschaft,
@@ -43,7 +42,9 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
   const [mitglieder, setMitglieder] = useState<Gruppe | null>(null);
   const [neuesMitglied, setNeuesMitglied] = useState("");
   const [neueEmail, setNeueEmail] = useState("");
-  const [angelegt, setAngelegt] = useState<AngelegterNutzer | null>(null);
+  const [zugang, setZugang] = useState<{ titel: string; email: string; passwort: string } | null>(
+    null,
+  );
 
   const [apps, gruppen, rechte, mitgliedschaften, nutzer] = useQueries({
     queries: [
@@ -109,7 +110,7 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
     mutationFn: () => verwaltungApi.nutzerAnlegen(neueEmail.trim()),
     onSuccess: (nutzer) => {
       setNeueEmail("");
-      setAngelegt(nutzer);
+      setZugang({ titel: "Person angelegt", email: nutzer.email, passwort: nutzer.passwort });
       neuLaden(verwaltungKeys.nutzer());
     },
     onError: (err: Error) => toast.error(`Anlegen fehlgeschlagen: ${err.message}`),
@@ -159,6 +160,17 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
           ? "Diese Person ist schon in der Gruppe."
           : `Hinzufügen fehlgeschlagen: ${err.message}`,
       ),
+  });
+
+  const passwortNeu = useMutation({
+    mutationFn: (user_id: string) => verwaltungApi.passwortZuruecksetzen(user_id),
+    onSuccess: (antwort, user_id) =>
+      setZugang({
+        titel: "Neues Passwort",
+        email: nutzerNach.get(user_id)?.email ?? user_id,
+        passwort: antwort.passwort,
+      }),
+    onError: (err: Error) => toast.error(`Zurücksetzen fehlgeschlagen: ${err.message}`),
   });
 
   const mitgliedWeg = useMutation({
@@ -318,29 +330,29 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
       </p>
 
       <Dialog
-        open={angelegt !== null}
-        onOpenChange={(o) => !o && setAngelegt(null)}
-        title="Person angelegt"
+        open={zugang !== null}
+        onOpenChange={(o) => !o && setZugang(null)}
+        title={zugang?.titel ?? ""}
         description="Das Passwort steht nur jetzt hier. Danach lässt es sich nur zurücksetzen, nicht anzeigen."
         footer={
-          <Button onClick={() => setAngelegt(null)}>Fertig</Button>
+          <Button onClick={() => setZugang(null)}>Fertig</Button>
         }
       >
         <div className="flex flex-col gap-3 text-sm">
           <div className="flex flex-col gap-1">
             <Label>Anmeldung</Label>
             <code className="rounded-md border border-[var(--border)] px-3 py-2">
-              {angelegt?.email}
+              {zugang?.email}
             </code>
           </div>
           <div className="flex flex-col gap-1">
             <Label>Passwort</Label>
             <code className="rounded-md border border-[var(--border)] px-3 py-2 tracking-wider">
-              {angelegt?.passwort}
+              {zugang?.passwort}
             </code>
           </div>
           <p className="text-[var(--fg-muted)]">
-            Die Person hat noch keine Rechte. Rechte bekommt sie über eine Gruppe.
+            Rechte hängen an der Gruppe, nicht an der Person.
           </p>
         </div>
       </Dialog>
@@ -434,18 +446,30 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
                       <span className="ml-2 text-xs text-[var(--fg-muted)]">(du)</span>
                     )}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Mitglied entfernen"
-                    title="Entfernen"
-                    disabled={mitgliedWeg.isPending}
-                    onClick={() =>
-                      mitglieder && mitgliedWeg.mutate({ group_id: mitglieder.id, user_id: id })
-                    }
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <span className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Passwort zurücksetzen"
+                      title="Passwort zurücksetzen"
+                      disabled={passwortNeu.isPending}
+                      onClick={() => passwortNeu.mutate(id)}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Mitglied entfernen"
+                      title="Entfernen"
+                      disabled={mitgliedWeg.isPending}
+                      onClick={() =>
+                        mitglieder && mitgliedWeg.mutate({ group_id: mitglieder.id, user_id: id })
+                      }
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>

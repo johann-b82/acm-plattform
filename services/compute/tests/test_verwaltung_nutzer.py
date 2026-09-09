@@ -34,6 +34,15 @@ def _gotrue(monkeypatch, status_code: int, koerper: dict | None = None, gesehen:
     monkeypatch.setattr(verwaltung, "gotrue_nutzer_anlegen", _ruf)
 
 
+def _gotrue_setzen(monkeypatch, status_code: int, gesehen: dict | None = None):
+    async def _ruf(nutzer_id: str, passwort: str) -> tuple[int, dict]:
+        if gesehen is not None:
+            gesehen.update({"id": nutzer_id, "passwort": passwort})
+        return status_code, {}
+
+    monkeypatch.setattr(verwaltung, "gotrue_passwort_setzen", _ruf)
+
+
 class TestPasswort:
     def test_laenge_und_zeichenvorrat(self):
         pw = erzeuge_passwort()
@@ -105,3 +114,47 @@ class TestAnlegen:
             headers={"Authorization": f"Bearer {mint_admin()}"},
         )
         assert antwort.status_code == 422
+
+
+_ID = "9c1f5f8e-0d2a-4a3a-9c3e-1f2b3c4d5e6f"
+
+
+class TestPasswortZuruecksetzen:
+    async def test_ohne_plattformrecht_403(self, client, monkeypatch):
+        _gotrue_setzen(monkeypatch, 200)
+        antwort = await client.post(
+            f"/api/verwaltung/nutzer/{_ID}/passwort",
+            headers={"Authorization": f"Bearer {mint({'kpi': 'admin'})}"},
+        )
+        assert antwort.status_code == 403
+
+    async def test_admin_setzt_zurueck(self, client, monkeypatch):
+        gesehen: dict = {}
+        _gotrue_setzen(monkeypatch, 200, gesehen)
+        antwort = await client.post(
+            f"/api/verwaltung/nutzer/{_ID}/passwort",
+            headers={"Authorization": f"Bearer {mint_admin()}"},
+        )
+        assert antwort.status_code == 200
+        koerper = antwort.json()
+        assert len(koerper["passwort"]) == 20
+        assert gesehen["id"] == _ID
+        # Genau das zurueckgegebene Passwort wurde gesetzt.
+        assert gesehen["passwort"] == koerper["passwort"]
+
+    async def test_unbekannte_person_404(self, client, monkeypatch):
+        _gotrue_setzen(monkeypatch, 404)
+        antwort = await client.post(
+            f"/api/verwaltung/nutzer/{_ID}/passwort",
+            headers={"Authorization": f"Bearer {mint_admin()}"},
+        )
+        assert antwort.status_code == 404
+
+    async def test_keine_uuid_422(self, client, monkeypatch):
+        """Ohne Formpruefung landete ein beliebiger Pfad in der Fremd-URL."""
+        _gotrue_setzen(monkeypatch, 200)
+        antwort = await client.post(
+            "/api/verwaltung/nutzer/..%2Fadmin/passwort",
+            headers={"Authorization": f"Bearer {mint_admin()}"},
+        )
+        assert antwort.status_code in (404, 422)

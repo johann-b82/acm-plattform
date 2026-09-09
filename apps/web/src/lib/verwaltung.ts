@@ -107,6 +107,13 @@ export const verwaltungApi = {
       body: JSON.stringify({ email }),
     }),
 
+  /** Neues Passwort setzen; die Antwort zeigt es genau einmal. */
+  passwortZuruecksetzen: (user_id: string) =>
+    computeJson<{ id: string; passwort: string }>(
+      `/api/verwaltung/nutzer/${user_id}/passwort`,
+      { method: "POST" },
+    ),
+
   mitgliedHinzufuegen: (group_id: string, user_id: string) =>
     auswerten<unknown>(sb().from("user_groups").insert({ group_id, user_id })),
   mitgliedEntfernen: (group_id: string, user_id: string) =>

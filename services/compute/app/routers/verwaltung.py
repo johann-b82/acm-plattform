@@ -1,4 +1,4 @@
-"""Personen anlegen.
+"""Personen anlegen und ihr Passwort zuruecksetzen.
 
 Gruppen, Mitgliedschaften und Rechte pflegt die Oberflaeche direkt ueber
 PostgREST — dort entscheiden die Policies. Eine Person anzulegen geht so
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import secrets
 import string
+import uuid as _uuid
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -64,7 +65,7 @@ class NutzerAngelegt(BaseModel):
     passwort: str
 
 
-async def gotrue_nutzer_anlegen(email: str, passwort: str) -> tuple[int, dict]:
+async def _gotrue(methode: str, pfad: str, koerper: dict) -> tuple[int, dict]:
     """Ruft die Admin-API von GoTrue auf und gibt Status und Koerper zurueck.
 
     Eigene Funktion, damit Tests genau diese Naht ersetzen koennen, ohne den
@@ -75,16 +76,28 @@ async def gotrue_nutzer_anlegen(email: str, passwort: str) -> tuple[int, dict]:
         "Authorization": f"Bearer {settings.SERVICE_ROLE_KEY}",
     }
     async with httpx.AsyncClient(timeout=10) as client:
-        antwort = await client.post(
-            f"{settings.GOTRUE_URL.rstrip('/')}/admin/users",
+        antwort = await client.request(
+            methode,
+            f"{settings.GOTRUE_URL.rstrip('/')}{pfad}",
             headers=kopf,
-            json={"email": email, "password": passwort, "email_confirm": True},
+            json=koerper,
         )
     try:
-        koerper = antwort.json()
+        return antwort.status_code, antwort.json()
     except ValueError:
-        koerper = {}
-    return antwort.status_code, koerper
+        return antwort.status_code, {}
+
+
+async def gotrue_nutzer_anlegen(email: str, passwort: str) -> tuple[int, dict]:
+    return await _gotrue(
+        "POST",
+        "/admin/users",
+        {"email": email, "password": passwort, "email_confirm": True},
+    )
+
+
+async def gotrue_passwort_setzen(nutzer_id: str, passwort: str) -> tuple[int, dict]:
+    return await _gotrue("PUT", f"/admin/users/{nutzer_id}", {"password": passwort})
 
 
 @router.post("/nutzer", response_model=NutzerAngelegt, status_code=201)
@@ -109,3 +122,33 @@ async def nutzer_anlegen(daten: NutzerAnlegen) -> NutzerAngelegt:
     return NutzerAngelegt(
         id=str(koerper["id"]), email=str(koerper["email"]), passwort=passwort
     )
+
+
+class PasswortNeu(BaseModel):
+    id: str
+    passwort: str
+
+
+@router.post("/nutzer/{nutzer_id}/passwort", response_model=PasswortNeu)
+async def passwort_zuruecksetzen(nutzer_id: str) -> PasswortNeu:
+    """Setzt ein neues Passwort und gibt es genau einmal zurueck.
+
+    Ohne Mailserver gibt es keinen Selbstbedienungsweg fuer vergessene
+    Passwoerter. Ohne diesen Endpunkt bliebe nur die Kommandozeile auf dem
+    Host — genau das soll die Verwaltung ersetzen.
+    """
+    try:
+        _uuid.UUID(nutzer_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "keine gültige Id")
+
+    passwort = erzeuge_passwort()
+    status_code, _ = await gotrue_passwort_setzen(nutzer_id, passwort)
+
+    if status_code == 404:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diese Person gibt es nicht.")
+    if status_code >= 400:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, "Zurücksetzen bei der Anmeldung fehlgeschlagen."
+        )
+    return PasswortNeu(id=nutzer_id, passwort=passwort)
