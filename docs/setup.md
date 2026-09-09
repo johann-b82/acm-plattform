@@ -87,6 +87,65 @@ docker compose restart rest                              # PostgREST-Schema-Cach
 
 Sieben Meldungen sind dabei normal und ohne Folgen: „schema public already exists“ und einige „permission denied to change default privileges“ zu Supabase-eigenen Rollen. Geprüft wurde der Weg gegen eine leere Datenbank: alle Tabellen, alle Zeilen und alle zehn Policies kamen zurück.
 
+## Datenübernahme aus lumeapps
+
+Zwei Läufe, beide wiederholbar und beide zuerst trocken machbar. Sie lesen aus der alten Datenbank und schreiben in die neue; die alte wird nicht verändert.
+
+### Vorbereitung: die beiden Stacks sehen einander nicht
+
+Alt und neu liegen in getrennten Docker-Netzen. Für die Dauer der Übernahme den Compute-Dienst ins alte Netz hängen:
+
+```bash
+docker network connect lumeapps_default acm-compute-1
+# … Läufe …
+docker network disconnect lumeapps_default acm-compute-1
+```
+
+Der Verbindungsstring zeigt dann auf den Containernamen der alten Datenbank, nicht auf einen Host-Port:
+
+```
+postgresql://<user>:<passwort>@lumeapps-db-1:5432/<datenbank>
+```
+
+### Lauf 1: Vertriebsdaten
+
+```bash
+docker compose exec compute python -m app.cli uebernahme-vertrieb --quelle "$QUELLE" --trocken
+docker compose exec compute python -m app.cli uebernahme-vertrieb --quelle "$QUELLE"
+```
+
+Übernommen werden Upload-Protokolle der Sorten `revenues` und `auftraege` sowie die Tabellen `revenues` und `auftraege`. Alle anderen Protokollsorten meldet der Lauf und lässt sie liegen — sie kommen mit ihrem jeweiligen Modul.
+
+Die alten Protokoll-Ids werden **nicht** übernommen; die neue Tabelle vergibt sie selbst, und die Fremdschlüssel werden dabei umgeschrieben. `uploaded_by` bleibt leer, weil die alte Tabelle nicht weiß, wer hochgeladen hat.
+
+### Lauf 2: Personen
+
+```bash
+docker compose exec compute python -m app.cli uebernahme-nutzer --quelle "$QUELLE" --trocken
+docker compose exec compute python -m app.cli uebernahme-nutzer --quelle "$QUELLE" > zugaenge.csv
+```
+
+Passwörter sind nicht portierbar: Directus und GoTrue speichern sie mit verschiedenen Verfahren. Jede Person bekommt deshalb ein neues, zufälliges Passwort, und der Lauf gibt die Liste **genau einmal** als CSV aus. Wegschreiben, verteilen, Datei löschen.
+
+Gesperrte Konten (`status != active`) kommen nicht mit: wer nicht aktiv war, soll nicht durch die Übernahme wieder Zugang bekommen.
+
+Von den Rechten kommt nur die Zugehörigkeit zur Gruppe `Plattform-Admins` mit, und zwar für die alte Rolle `Administrator`. Alles andere wird nicht geraten, sondern unter `/platform` gesetzt: die alte Welt kannte drei Rollen für die ganze Anwendung, die neue vergibt Rechte je App.
+
+### Danach prüfen
+
+```bash
+docker compose exec db psql -U postgres -d postgres -c \
+  "select kind, count(*) from upload_batches group by kind;"
+docker compose exec db psql -U postgres -d postgres -c \
+  "select count(*) as personen from auth.users;"
+```
+
+Verifiziert am 2026-09-09 gegen eine echte Alt-Datenbank (Schema aus 125 Alembic-Revisionen, Directus 11.17.2 mit `directus_users` und `directus_roles`): Sorten- und Statusabbildung, Umschreiben der Fremdschlüssel, übersprungene Protokollsorten, gesperrte Konten, Gruppenzuordnung, Anmeldung einer übernommenen Person mit dem ausgegebenen Passwort. Beide Läufe zweimal hintereinander ausgeführt, ohne Dubletten.
+
+### Was hier noch nicht drin ist
+
+Alles, was zu einem Modul gehört, das noch nicht portiert ist — HR, Qualität, Produktion, ATR, FAIR, Newsletter. Und die Signage-Daten: die liegen im eigenen Repo, Checkliste in `acm-signage/docs/setup.md`.
+
 ## Zurücksetzen (nur lokal)
 
 ```bash
