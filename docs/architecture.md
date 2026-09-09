@@ -42,6 +42,17 @@ Host (Linux, 192.9.201.9)
 - **Logging nach `docs/logging.md`.** Anker auf jedem Dienst, keine Access-Logs auf Erfolg.
 - **Tests laufen nie gegen eine Datenbank ohne `test` im Namen.**
 
+## Rechteverwaltung
+
+Unter `/platform` pflegen Plattform-Admins Gruppen, Mitglieder und App-Rechte. Die Seite schreibt direkt über PostgREST — es gibt keinen eigenen Verwaltungs-Endpunkt in `compute`. Was erlaubt ist, entscheiden die Policies auf `groups`, `user_groups` und `app_grants`; die Oberfläche blendet nur aus, was die Datenbank ohnehin abweist.
+
+Zwei Besonderheiten:
+
+- `auth.users` gehört Supabase und ist für `authenticated` nicht lesbar. Die Sicht `public.plattform_nutzer` öffnet genau die vier benötigten Spalten und filtert selbst auf `is_platform_admin()`. Sie läuft bewusst ohne `security_invoker`.
+- Eine Rechteänderung wirkt erst bei der nächsten Anmeldung der betroffenen Person, weil `custom_access_token_hook` den Claim `apps` beim Ausstellen des Tokens schreibt. Die Oberfläche sagt das an jeder Stelle, an der es zählt.
+
+Die Aufbewahrung der Upload-Protokolle (365 Tage) hängt an `pg_cron`, nicht an einem Dienst: `aufraeumen-upload-batches` ruft täglich um 3:30 Uhr `public.aufraeumen_upload_batches()`.
+
 ## Datenfluss Beispiel: Sales-Dashboard
 
 1. Server Component liest `kpi_sales_weekly` (View) über supabase-js mit der Nutzer-Session. RLS filtert nach `apps ->> 'sales'`.

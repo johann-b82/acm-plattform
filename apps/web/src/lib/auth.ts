@@ -1,26 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { hasLevel, type Apps, type Level } from "@/lib/rechte";
 
-export const LEVELS = ["viewer", "editor", "admin"] as const;
-export type Level = (typeof LEVELS)[number];
-export type Apps = Record<string, Level>;
+export { hasLevel, levelFor, LEVELS } from "@/lib/rechte";
+export type { Apps, Level } from "@/lib/rechte";
 
 export type Session = {
   userId: string;
   email: string | null;
   apps: Apps;
 };
-
-/** Level des Nutzers für eine App; Plattform-Admins haben überall `admin`. */
-export function levelFor(apps: Apps, app: string): Level | null {
-  if (apps.platform === "admin") return "admin";
-  return apps[app] ?? null;
-}
-
-export function hasLevel(apps: Apps, app: string, level: Level = "viewer"): boolean {
-  const mine = levelFor(apps, app);
-  return mine !== null && LEVELS.indexOf(mine) >= LEVELS.indexOf(level);
-}
 
 /**
  * Data-Access-Layer-Einstieg: liest die geprüften Claims (getClaims validiert

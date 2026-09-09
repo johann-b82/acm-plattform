@@ -13,9 +13,13 @@ create role supabase_auth_admin nologin noinherit;
 create schema if not exists auth authorization supabase_auth_admin;
 grant usage on schema auth to anon, authenticated;
 
+-- Nur die Spalten, auf die die Plattform zugreift. Weicht die echte Tabelle
+-- ab, fällt es hier auf, statt erst in Produktion.
 create table auth.users (
-    id    uuid primary key default gen_random_uuid(),
-    email text
+    id              uuid primary key default gen_random_uuid(),
+    email           text,
+    created_at      timestamptz default now(),
+    last_sign_in_at timestamptz
 );
 
 create or replace function auth.jwt()
