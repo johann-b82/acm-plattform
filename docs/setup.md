@@ -63,6 +63,30 @@ curl -s http://localhost/api/me -H "Authorization: Bearer $TOKEN"
 # → {"sub": "...", "email": "...", "apps": {"platform": "admin"}}
 ```
 
+## Sicherung
+
+```bash
+scripts/backup.sh [zielverzeichnis]     # Standard: ./backups, 14 Tage Aufbewahrung
+```
+
+Gesichert werden `public`, `auth` und `storage`: die Fachdaten, die Anmeldedaten und die Dateien. Alles andere legt das Supabase-Abbild beim Start selbst an. `pg_dump` läuft im Datenbank-Container, damit Werkzeug und Server dieselbe Version haben; der Abzug wird mit `pg_restore --list` geprüft, bevor er seinen endgültigen Namen bekommt.
+
+Der Job ist **nicht eingeplant** (Entscheidung F: vorbereiten, nicht anwenden). Auf dem Host zum Beispiel so:
+
+```
+30 2 * * * cd /srv/acm && ./scripts/backup.sh /srv/acm/backups >> /var/log/acm-backup.log 2>&1
+```
+
+### Zurückspielen
+
+```bash
+docker compose up -d db                                  # frischer Stack: Rollen und Schemata entstehen beim Start
+docker compose exec -T db pg_restore -U postgres -d postgres --clean --if-exists < backups/acm-<datum>.dump
+docker compose restart rest                              # PostgREST-Schema-Cache
+```
+
+Sieben Meldungen sind dabei normal und ohne Folgen: „schema public already exists“ und einige „permission denied to change default privileges“ zu Supabase-eigenen Rollen. Geprüft wurde der Weg gegen eine leere Datenbank: alle Tabellen, alle Zeilen und alle zehn Policies kamen zurück.
+
 ## Zurücksetzen (nur lokal)
 
 ```bash

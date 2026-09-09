@@ -24,6 +24,7 @@ Tests: 55 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Rechte greifen in der Datenbank, nicht in der Oberfläche.** Wer kein Plattformrecht hat, sieht in `plattform_nutzer` null Zeilen und scheitert beim Schreiben auf `groups` und `app_grants` an der Policy. Wer `kpi: viewer` hat, sieht Kennzahlen, aber keine Upload-Historie, und bekommt beim Upload 403.
 - **Der Claim folgt der Gruppe.** Nach Aufnahme in eine Gruppe liefert `custom_access_token_hook` das Recht der Gruppe. Es wirkt ab der nächsten Anmeldung.
 - **Die Platte wächst nicht mehr im Leerlauf.** Alle zwölf Container tragen den Rotationsanker (`json-file`, 3×10 MB). Nach einem vollständigen Durchgang durch Launcher, Kennzahlen, Uploads, Signage und Verwaltung stehen im Caddy-Log 14 Zeilen, alle vom Start, keine einzige pro Anfrage. Der Compute-Dienst schrieb null Zeilen. Zum Vergleich: im Altprojekt kamen allein von einem Pi rund 13.000 Zeilen pro Tag.
+- **Der Weg zurück ist gegangen worden, nicht nur beschrieben.** `scripts/backup.sh` erzeugt einen Abzug und prüft ihn mit `pg_restore --list`. Zurückgespielt in eine leere Datenbank kamen alle Tabellen, alle Zeilen und alle zehn Policies wieder, bei sieben harmlosen Meldungen.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.
 
 ## Was bewusst fehlt
