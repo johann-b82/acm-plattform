@@ -8,6 +8,7 @@ from app.auth import Claims, get_claims
 from app.config import settings
 from app.db import engine
 from app.routers.uploads import router as uploads_router
+from app.routers.verwaltung import router as verwaltung_router
 
 # Ein echter Handler (docs/logging.md Regel 4): WARNING nach stdout, sonst Stille.
 logging.basicConfig(
@@ -18,6 +19,7 @@ logging.basicConfig(
 
 app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
 app.include_router(uploads_router)
+app.include_router(verwaltung_router)
 
 
 @app.get("/api/health")

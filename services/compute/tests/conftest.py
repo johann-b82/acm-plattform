@@ -6,6 +6,7 @@ os.environ.setdefault("API_EXTERNAL_URL", "http://localhost/supabase/auth/v1")
 os.environ.setdefault("POSTGRES_PASSWORD", "unused")
 os.environ.setdefault("POSTGRES_DB", "acm_test")
 os.environ.setdefault("POSTGRES_HOST", "db")
+os.environ.setdefault("SERVICE_ROLE_KEY", "test-service-role-key")
 
 # ---------------------------------------------------------------------------
 # Riegel: Tests löschen ganze Tabellen. Nie gegen eine Nicht-Test-Datenbank.
