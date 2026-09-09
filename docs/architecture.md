@@ -10,6 +10,7 @@ Host (Linux, 192.9.201.9)
 ├── Compose-Projekt "acm"  (/srv/acm)
 │   ├── caddy       :443  TLS, Security-Header, Body-Limit, Access-Log nur Fehler
 │   │     /           → web
+│   │     /api/signage/* → web        (Proxy zum Signage-Stack, hängt das Token an)
 │   │     /api/*      → compute        (SSE-frei; keine Langlebigkeit nötig)
 │   │     /supabase/* → kong           (Prefix gestrippt)
 │   │     /studio     → studio         (nur 127.0.0.1 oder Basic-Auth)

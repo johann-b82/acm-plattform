@@ -24,6 +24,14 @@
 		-Server
 	}
 
+	# --- /api/signage/* → web. Der Route Handler dort hängt das Access-Token an
+	# und reicht an den Signage-Stack weiter (eigenes Compose-Projekt, eigener
+	# Port). Muss VOR der allgemeinen /api/*-Regel stehen: Caddy wertet
+	# handle-Blöcke in Reihenfolge aus.
+	handle /api/signage/* {
+		reverse_proxy web:3000
+	}
+
 	# --- /api/* → compute (FastAPI). Prefix bleibt erhalten.
 	handle /api/* {
 		reverse_proxy compute:8000

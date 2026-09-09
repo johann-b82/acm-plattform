@@ -1,5 +1,57 @@
 @import "tailwindcss";
 
+/* Farbtokens der Plattform. Alle Bedienelemente lesen ausschließlich diese
+   Variablen, damit der Dunkelmodus an einer Stelle definiert ist. */
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --muted: #f1f3f5;
+  --border: #e0e3e7;
+  --fg: #18181b;
+  --fg-muted: #6b7280;
+  --ring: #0f6e8c;
+  --danger: #b3261e;
+  --ok: #2e7d4f;
+  --warn: #b8730f;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101418;
+    --surface: #171c21;
+    --muted: #1f262d;
+    --border: #2b333b;
+    --fg: #e8ebee;
+    --fg-muted: #9aa4ae;
+    --ring: #5cb4d2;
+    --danger: #ef7a72;
+    --ok: #6cc08f;
+    --warn: #e0a24a;
+    color-scheme: dark;
+  }
+}
+
 body {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* Statusfarben sind semantisch und in beiden Themes gleich lesbar. */
+.status-ok {
+  background: color-mix(in oklab, var(--ok) 18%, transparent);
+  color: var(--ok);
+}
+.status-warn {
+  background: color-mix(in oklab, var(--warn) 18%, transparent);
+  color: var(--warn);
+}
+.status-bad {
+  background: color-mix(in oklab, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+.status-none {
+  background: var(--muted);
+  color: var(--fg-muted);
 }

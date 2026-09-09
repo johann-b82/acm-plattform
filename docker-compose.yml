@@ -48,6 +48,12 @@ services:
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_INTERNAL_URL: http://kong:8000
+      # Signage läuft als eigenes Compose-Projekt mit eigenem Netz; erreicht
+      # wird es über den Host-Port. Nur der Server ruft dort an (Proxy in
+      # app/api/signage) — der Browser bleibt same-origin.
+      SIGNAGE_API_URL: ${SIGNAGE_API_URL:-http://host.docker.internal:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       kong:
         condition: service_started

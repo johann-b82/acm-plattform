@@ -65,3 +65,18 @@ curl -s http://localhost/api/me -H "Authorization: Bearer $TOKEN"
 docker compose down -v
 rm -rf infra/supabase/upstream/volumes/db/data
 ```
+
+## Signage-Verwaltung
+
+Die Oberfläche für Digital Signage liegt unter `/signage` (App-Kachel `signage`, verlangt `signage: admin`). Sie spricht **nicht** direkt mit dem Signage-Stack, sondern über einen Route Handler der Web-App:
+
+```
+Browser  ──/api/signage/*──►  Caddy  ──►  web (Route Handler)  ──►  SIGNAGE_API_URL/api/signage/*
+                                              hängt das Access-Token an
+```
+
+Damit bleibt der Browser same-origin (kein CORS, kein Token an einen fremden Origin), die Netze der beiden Compose-Projekte bleiben getrennt, und der Signage-Stack prüft das Token weiterhin selbst. `SIGNAGE_API_URL` zeigt vom Container aus auf den Host-Port des Signage-Caddy (Standard `http://host.docker.internal:8080`).
+
+Player und Raspberry Pis nutzen diesen Weg nicht — sie sprechen direkt mit dem Signage-Stack. Eine ausgefallene Plattform lässt die Bildschirme unberührt.
+
+Nicht übernommen aus dem Altprojekt: die Live-Vorschau im Playlist-Editor (rotierender Player) und der Admin-SSE-Kanal für Änderungen aus anderen Sitzungen. Der Editor zeigt stattdessen die Reihenfolge mit Vorschaubildern; Listen aktualisieren sich über TanStack Query (30 s bei Geräten, nach jeder Änderung sofort).

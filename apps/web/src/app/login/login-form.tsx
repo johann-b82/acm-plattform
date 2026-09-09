@@ -14,7 +14,7 @@ export function LoginForm() {
           type="email"
           autoComplete="username"
           required
-          className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
+          className="h-9 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -24,18 +24,18 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
+          className="h-9 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3"
         />
       </label>
       {state.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-[var(--danger)]">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="h-9 rounded-md bg-[var(--fg)] px-3 text-sm font-medium text-[var(--bg)] disabled:opacity-60"
       >
         {pending ? "Anmelden …" : "Anmelden"}
       </button>

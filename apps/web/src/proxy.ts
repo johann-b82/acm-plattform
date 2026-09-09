@@ -42,6 +42,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Alles außer statischen Assets und den (später) öffentlichen Embed-Routen.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|embed/).*)"],
+  // Alles außer statischen Assets, den (später) öffentlichen Embed-Routen und
+  // den Route Handlern: eine API darf 401 als JSON antworten, nicht auf die
+  // Login-Seite umleiten — ein fetch könnte damit nichts anfangen.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/|embed/).*)"],
 };
