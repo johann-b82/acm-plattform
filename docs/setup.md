@@ -80,3 +80,29 @@ Damit bleibt der Browser same-origin (kein CORS, kein Token an einen fremden Ori
 Player und Raspberry Pis nutzen diesen Weg nicht — sie sprechen direkt mit dem Signage-Stack. Eine ausgefallene Plattform lässt die Bildschirme unberührt.
 
 Nicht übernommen aus dem Altprojekt: die Live-Vorschau im Playlist-Editor (rotierender Player) und der Admin-SSE-Kanal für Änderungen aus anderen Sitzungen. Der Editor zeigt stattdessen die Reihenfolge mit Vorschaubildern; Listen aktualisieren sich über TanStack Query (30 s bei Geräten, nach jeder Änderung sofort).
+
+## Fachmodule
+
+### Vertrieb (Referenz für alle weiteren Module)
+
+Der Vertriebs-Strang ist vollständig umgesetzt und zeigt, wie die übrigen Module gebaut werden:
+
+| Schritt | Ort | Warum dort |
+|---|---|---|
+| ERP-Datei einlesen | `services/compute/app/parsing/vertrieb.py` | Deutsche Zahlen, Latin-1, Eigenheiten je Export — das bleibt Python |
+| Import | `POST /api/uploads/{umsatz,auftraege}` | Upsert auf die Vorgangsnummer, Größenprüfung beim Lesen, Parsen im Thread |
+| Tabellen und Rechte | Alembic `0002_vertrieb` | Alembic ist alleiniger DDL-Eigentümer, Policies stehen in derselben Revision |
+| Kennzahlen | SQL-Funktionen `kpi_vertrieb_*` | Eine Abfrage statt einer Schleife über Zeitfenster |
+| Anzeige | `apps/web/src/app/(app)/kpi/vertrieb` | Ruft die Funktionen über PostgREST auf, RLS entscheidet über die Sichtbarkeit |
+
+Rechte: `kpi` zum Ansehen der Kennzahlen, `uploads: admin` zum Einlesen der Dateien. Ein Nutzer ohne `kpi` sieht keine Zeilen und damit Nullwerte, kein Fehler.
+
+Ein neues Modul folgt demselben Weg: Parser und Upload-Route in compute, Tabelle mit Policy in einer Alembic-Revision, Rechenweg als SQL-Funktion, Seite unter `apps/web`.
+
+### Zugriff vom Browser aus
+
+- **Lesen** geht direkt über PostgREST (`supabaseBrowser()`), die Zeilen-Policies filtern.
+- **Schreiben und Rechnen in Python** geht über `computeFetch` an `/api/*`; das Access-Token wird aus der Sitzung angehängt.
+- **Signage** geht über den Route Handler `/api/signage/*`, weil dieser Stack auf einem eigenen Port läuft.
+
+Die öffentlichen Supabase-Werte werden zur Laufzeit vom App-Layout an die Provider gereicht, nicht über `NEXT_PUBLIC_*` ins Bundle gebacken. So läuft dasselbe Image auf jedem Host.

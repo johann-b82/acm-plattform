@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
 
     COMPUTE_LOG_LEVEL: str = "warning"
+    # Größte angenommene Upload-Datei. Wird beim Lesen geprüft, nicht danach.
+    MAX_UPLOAD_BYTES: int = 60 * 1024 * 1024
 
     @property
     def sync_database_url(self) -> str:

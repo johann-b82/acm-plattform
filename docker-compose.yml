@@ -61,7 +61,9 @@ services:
   migrate:
     build: ./services/compute
     logging: *default-logging
-    command: alembic upgrade head
+    # Nach der Migration den Schema-Cache von PostgREST neu anfordern; sonst
+    # sind neue Tabellen und RPC-Funktionen erst nach einem Neustart sichtbar.
+    command: sh -c "alembic upgrade head && python -m app.cli reload-postgrest"
     env_file: .env
     depends_on:
       db:

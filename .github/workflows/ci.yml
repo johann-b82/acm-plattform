@@ -26,8 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unit-Tests (Docker test-Stage)
-        run: docker build --target test services/compute
+      - name: Tests (Migrationen, RLS und KPI-Funktionen gegen Wegwerf-Postgres)
+        run: docker compose -f docker-compose.test.yml run --rm --build compute-test
 
   web:
     runs-on: ubuntu-latest
