@@ -16,8 +16,9 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
 | Logging | `x-logging`-Anker auf jedem Dienst, Caddy `level ERROR`, uvicorn ohne Access-Log, Guard im CI. |
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
+| Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 67 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 75 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -30,7 +31,7 @@ Tests: 67 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewusst fehlt
 
-- **Datenübernahme aus `lumeapps`.** Auf Wunsch ans Ende gelegt. Betrifft die Fachtabellen und die Dateien aus `directus_uploads`.
+- **Datenübernahme aus `lumeapps` — vorbereitet, nicht ausgeführt.** Die Läufe stehen und sind gegen eine echte Alt-Datenbank geprüft: `uebernahme-vertrieb` und `uebernahme-nutzer` hier (siehe `docs/setup.md`), `python -m app.uebernahme` im Signage-Repo. Alle drei sind wiederholbar und zuerst trocken fahrbar. Ausgeführt wird auf dem Host, mit den echten Daten.
 - **Supabase Storage.** Kein Verbraucher im aktuellen Stack: Uploads landen in Tabellen, Signage hat einen eigenen Medienspeicher. Kommt mit Phase 3.
 - **AD-Anbindung.** Vorbereitet über `groups.source` und `groups.external_id`, bewertet in ADR-0004, nicht gebaut.
 - **TLS.** Lokal läuft alles über HTTP. Der Header-Block und `request_body max_size` stehen bereits im Caddyfile.
