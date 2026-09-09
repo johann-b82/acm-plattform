@@ -2,7 +2,7 @@
 
 Interne Plattform für KPI-Dashboards (Vertrieb, HR, Qualität, Finanzen, Einkauf, Produktion), ERP-Datei-Uploads, HR-Prozesse (Schulungen, Onboarding, Kompetenzen, Einarbeitung, Zeugnisse), Wartung, Audits, ATR, FAIR und Newsletter. Nachfolger von `lumeapps`, aufgebaut auf Next.js, Supabase (self-hosted) und einem schlanken Python-Compute-Dienst.
 
-Stand: **Grundgerüst, Rechteverwaltung und erstes Fachmodul laufen.** Supabase-Stack (gepinnt), Rechtemodell mit Token-Hook und RLS, pflegbare Gruppen und App-Rechte unter `/platform`, Next.js-Shell mit Login und Launcher, Compute-Dienst mit JWT-Prüfung, Vertriebs-Uploads und -Dashboard, Signage-Verwaltung als App-Kachel. Details in `docs/status.md`, Setup in `docs/setup.md`, Plan in `docs/plan.md`.
+Stand: **Grundgerüst, Rechteverwaltung und erstes Fachmodul laufen.** Supabase-Stack (gepinnt), Rechtemodell mit Token-Hook und RLS, pflegbare Gruppen und App-Rechte unter `/platform`, Next.js-Shell mit Login und Launcher, Compute-Dienst mit JWT-Prüfung, Vertriebs-Uploads und -Dashboard, Signage-Verwaltung als App-Kachel. Details in `docs/status.md`, Setup in `docs/setup.md`, Plan in `docs/plan.md`, Ablauf des Umzugs in `docs/cutover.md`.
 
 ## Struktur
 
