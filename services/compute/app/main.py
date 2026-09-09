@@ -1,0 +1,38 @@
+import logging
+import sys
+
+from fastapi import Depends, FastAPI, Response
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from app.auth import Claims, get_claims
+from app.config import settings
+
+# Ein echter Handler (docs/logging.md Regel 4): WARNING nach stdout, sonst Stille.
+logging.basicConfig(
+    stream=sys.stdout,
+    level=settings.COMPUTE_LOG_LEVEL.upper(),
+    format='{"level":"%(levelname)s","logger":"%(name)s","msg":"%(message)s"}',
+)
+
+app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
+engine = create_async_engine(settings.async_database_url, pool_pre_ping=True)
+
+
+@app.get("/api/health")
+async def health(response: Response) -> dict[str, str]:
+    """Nacktes 503 bei DB-Ausfall — keine Exception-Texte nach außen."""
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("select 1"))
+    except Exception:
+        logging.getLogger(__name__).warning("health: database unreachable")
+        response.status_code = 503
+        return {"status": "unavailable"}
+    return {"status": "ok"}
+
+
+@app.get("/api/me")
+async def me(claims: Claims = Depends(get_claims)) -> dict:
+    """Zeigt, was compute aus dem Token liest — Prüfpunkt für Web und RLS."""
+    return {"sub": claims.sub, "email": claims.email, "apps": claims.apps}

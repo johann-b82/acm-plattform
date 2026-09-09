@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Supabase-Upstream holen (gepinnt)
+        run: bash infra/supabase/fetch-upstream.sh "$(cat infra/supabase/UPSTREAM_TAG)"
+      - name: Log-Hygiene
+        run: bash scripts/ci/check_log_hygiene.sh
+      - name: service_role-Guard (Quellcode)
+        run: bash scripts/ci/check_service_role.sh
+      - name: Compose-Modell validieren
+        run: |
+          cp .env.example .env
+          sh infra/supabase/upstream/utils/generate-keys.sh --update-env >/dev/null
+          docker compose config --quiet
+
+  compute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit-Tests (Docker test-Stage)
+        run: docker build --target test services/compute
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: service_role-Guard (Bundle)
+        working-directory: .
+        run: bash scripts/ci/check_service_role.sh
