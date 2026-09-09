@@ -36,7 +36,7 @@ Zwei voneinander unabhängige Stacks auf demselben Host, die sich nur über HTTP
 PLATTFORM-STACK (Compose-Projekt "acm")                 SIGNAGE-STACK (Compose-Projekt "signage")
 ────────────────────────────────────────                ─────────────────────────────────────────
 Caddy :443 (TLS, Security-Header, Body-Limit)           Caddy :8443 (eigene Instanz)
-  ├─ /            → web (Next.js 15)                      ├─ /player/*         → signage-api (Bundle im Image)
+  ├─ /            → web (Next.js 16)                      ├─ /player/*         → signage-api (Bundle im Image)
   ├─ /api/*       → compute (FastAPI, schlank)            ├─ /api/signage/*    → signage-api (SSE, Pairing, Assets)
   └─ /supabase/*  → kong (Supabase-Gateway)               └─ /admin/*          → Signage-Admin (React, oder Payload im Spike)
 web  ──► supabase-js (PostgREST, Auth, Storage)          signage-api ──► Postgres (signage), eigenes Alembic

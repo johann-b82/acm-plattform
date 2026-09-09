@@ -13,7 +13,7 @@ Host (Linux, 192.9.201.9)
 │   │     /api/*      → compute        (SSE-frei; keine Langlebigkeit nötig)
 │   │     /supabase/* → kong           (Prefix gestrippt)
 │   │     /studio     → studio         (nur 127.0.0.1 oder Basic-Auth)
-│   ├── web         Next.js 15 App Router, @supabase/ssr, Server Components + Client-Inseln
+│   ├── web         Next.js 16 App Router, @supabase/ssr, Server Components + Client-Inseln
 │   ├── compute     FastAPI, non-root, kein --reload; pandas-Parser, Dokumente, SNMP, Personio, SMB, Graph-Mail
 │   ├── db          Postgres 17 (Supabase-Image mit Extensions: pg_cron, pgjwt, pgsodium …)
 │   ├── auth        GoTrue (E-Mail/Passwort, Custom Access Token Hook → Claim `apps`)

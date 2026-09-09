@@ -8,7 +8,7 @@ Stand: **Phase 2, Grundgerüst läuft.** Supabase-Stack (gepinnt), Rechtemodell 
 
 ```
 docs/           Plan, Architektur, ADRs, Inventur, Security, Logging
-apps/web/       Next.js 15 (ab Phase 2)
+apps/web/       Next.js 16 (ab Phase 2)
 services/compute/  FastAPI Compute-Dienst (ab Phase 2, Fachlogik aus lumeapps)
 infra/supabase/ gepinnter Supabase-Upstream + Overrides (ab Phase 2)
 infra/host/     Host-Vorlagen (journald, daemon.json) — nicht angewendet
