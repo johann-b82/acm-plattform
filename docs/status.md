@@ -10,13 +10,14 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 | Rechtemodell | `apps`, `groups`, `user_groups`, `app_grants`. `custom_access_token_hook` schreibt den Claim `apps` in jedes Token. RLS auf jeder Tabelle. |
 | Rechteverwaltung | `/platform`: Personen anlegen, Gruppen, Mitglieder, App-Rechte pflegbar. Schreibt über PostgREST, geprüft von den Policies; nur das Anlegen einer Person läuft über `compute`. |
 | Next.js-Shell | Login, Launcher, Proxy (`src/proxy.ts`), Server Components lesen über die Nutzer-Session. |
-| Compute-Dienst | FastAPI, prüft das Supabase-JWT, zwei Upload-Routen. Zustandslos, kein Scheduler, kein SSE. |
+| Compute-Dienst | FastAPI, prüft das Supabase-JWT. Zwei Upload-Routen, zwei Routen für Personen. Zustandslos, kein Scheduler, kein SSE. |
 | Erstes Fachmodul | Vertrieb: zwei ERP-Uploads, vier KPI-Funktionen als SQL, Dashboard mit Recharts. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
 | Logging | `x-logging`-Anker auf jedem Dienst, Caddy `level ERROR`, uvicorn ohne Access-Log, Guard im CI. |
+| Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 
-Tests: 55 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 67 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
