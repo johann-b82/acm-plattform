@@ -1,0 +1,87 @@
+# ACM-Plattform — ein Compose-Projekt: Caddy + web + compute + Supabase-Upstream.
+# Supabase kommt gepinnt aus infra/supabase/upstream (fetch-upstream.sh), unsere
+# Abweichungen liegen in infra/supabase/docker-compose.override.yml.
+#
+# Erststart:  scripts/init-env.sh && docker compose up -d --build
+#             scripts/bootstrap-admin.sh <email> <passwort>
+name: acm
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+include:
+  - path:
+      - infra/supabase/upstream/docker-compose.yml
+      - infra/supabase/docker-compose.override.yml
+    project_directory: infra/supabase/upstream
+    env_file: .env
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    logging: *default-logging
+    restart: unless-stopped
+    ports:
+      - "${CADDY_HTTP_PORT:-80}:80"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_started
+      compute:
+        condition: service_healthy
+      kong:
+        condition: service_started
+
+  web:
+    build: ./apps/web
+    logging: *default-logging
+    restart: unless-stopped
+    environment:
+      # Browser spricht Supabase über den Plattform-Caddy (same-origin);
+      # der Server im Container direkt mit Kong.
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_INTERNAL_URL: http://kong:8000
+      # Signage läuft als eigenes Compose-Projekt mit eigenem Netz; erreicht
+      # wird es über den Host-Port. Nur der Server ruft dort an (Proxy in
+      # app/api/signage) — der Browser bleibt same-origin.
+      SIGNAGE_API_URL: ${SIGNAGE_API_URL:-http://host.docker.internal:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      kong:
+        condition: service_started
+
+  migrate:
+    build: ./services/compute
+    logging: *default-logging
+    command: alembic upgrade head
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  compute:
+    build: ./services/compute
+    logging: *default-logging
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  caddy-data:
+  caddy-config:

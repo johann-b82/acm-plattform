@@ -1,6 +1,6 @@
 ## Projekt
 
-**ACM-Plattform** — Nachfolger von `lumeapps`. Next.js 15 (App Router) + Supabase self-hosted (Auth, PostgREST, Storage) + FastAPI-Dienst `compute` (Parsing, Dokumente, SNMP, Personio, SMB). Digital Signage ist ein eigener Stack im Repo `acm-signage`.
+**ACM-Plattform** — Nachfolger von `lumeapps`. Next.js 16 (App Router) + Supabase self-hosted (Auth, PostgREST, Storage) + FastAPI-Dienst `compute` (Parsing, Dokumente, SNMP, Personio, SMB). Digital Signage ist ein eigener Stack im Repo `acm-signage`.
 
 Status: Vorbereitung. Plan in `docs/plan.md`, Entscheidungen in `docs/adr/`. Vor Architekturarbeit beides lesen.
 
@@ -30,4 +30,4 @@ Bias zu Vorsicht vor Tempo. Annahmen benennen, bei Mehrdeutigkeit nachfragen. Mi
 
 ## Stack (Zielversionen, bei Projektstart Phase 2 verifizieren)
 
-Next.js 15, React 19, TypeScript 5, Tailwind 4, shadcn/ui, TanStack Query 5, Recharts 3, `@supabase/ssr`; Python 3.12, FastAPI, SQLAlchemy 2 async, asyncpg, Alembic, pandas 3, openpyxl; Postgres 17 (Supabase-Image), Caddy 2, Docker Compose v2.
+Next.js 16, React 19, TypeScript 5, Tailwind 4, shadcn/ui, TanStack Query 5, Recharts 3, `@supabase/ssr`; Python 3.12, FastAPI, SQLAlchemy 2 async, asyncpg, Alembic, pandas 3, openpyxl; Postgres 17 (Supabase-Image), Caddy 2, Docker Compose v2.

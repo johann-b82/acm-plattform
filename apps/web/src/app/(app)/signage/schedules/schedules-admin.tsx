@@ -1,0 +1,349 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Pencil } from "lucide-react";
+
+import { signageApi, signageKeys } from "@/lib/signage/api";
+import type { SignageSchedule } from "@/lib/signage/types";
+import {
+  WEEKDAY_LABELS,
+  hhmmFromString,
+  hhmmToString,
+  weekdayMaskFromArray,
+  weekdayMaskToArray,
+  weekdaysLabel,
+} from "@/lib/signage/schedule";
+import {
+  Button,
+  EmptyState,
+  Input,
+  Label,
+  Select,
+  Switch,
+  Table,
+  TableWrap,
+  Td,
+  Th,
+} from "@/components/ui/primitives";
+import { Dialog } from "@/components/ui/dialog";
+import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+
+interface DraftState {
+  playlist_id: string;
+  days: boolean[];
+  start: string;
+  end: string;
+  priority: number;
+  enabled: boolean;
+}
+
+const EMPTY_DRAFT: DraftState = {
+  playlist_id: "",
+  days: [true, true, true, true, true, false, false],
+  start: "08:00",
+  end: "17:00",
+  priority: 0,
+  enabled: true,
+};
+
+export function SchedulesAdmin() {
+  const queryClient = useQueryClient();
+  // undefined = Dialog zu, null = neu, Objekt = bearbeiten
+  const [editing, setEditing] = useState<SignageSchedule | null | undefined>(undefined);
+  const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
+  const [error, setError] = useState<string | null>(null);
+
+  const { data: schedules = [], isLoading, isError } = useQuery({
+    queryKey: signageKeys.schedules(),
+    queryFn: signageApi.listSchedules,
+  });
+  const { data: playlists = [] } = useQuery({
+    queryKey: signageKeys.playlists(),
+    queryFn: signageApi.listPlaylists,
+  });
+  const playlistName = useMemo(() => new Map(playlists.map((p) => [p.id, p.name])), [playlists]);
+
+  /** Dialog öffnen und den Entwurf im selben Schritt füllen — kein Effekt,
+   *  der auf eine Zustandsänderung reagiert. */
+  function openDialog(schedule: SignageSchedule | null) {
+    setError(null);
+    setDraft(
+      schedule === null
+        ? { ...EMPTY_DRAFT, playlist_id: playlists[0]?.id ?? "" }
+        : {
+            playlist_id: schedule.playlist_id,
+            days: weekdayMaskToArray(schedule.weekday_mask),
+            start: hhmmToString(schedule.start_hhmm),
+            end: hhmmToString(schedule.end_hhmm),
+            priority: schedule.priority,
+            enabled: schedule.enabled,
+          },
+    );
+    setEditing(schedule);
+  }
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: signageKeys.schedules() });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const start = hhmmFromString(draft.start);
+      const end = hhmmFromString(draft.end);
+      if (start === null || end === null) throw new Error("Zeit im Format HH:MM angeben.");
+      if (start >= end) throw new Error("Ende muss nach dem Start liegen. Über Mitternacht bitte zwei Zeitpläne anlegen.");
+      if (!draft.playlist_id) throw new Error("Playlist auswählen.");
+      const mask = weekdayMaskFromArray(draft.days);
+      if (mask === 0) throw new Error("Mindestens einen Wochentag wählen.");
+      const body = {
+        playlist_id: draft.playlist_id,
+        weekday_mask: mask,
+        start_hhmm: start,
+        end_hhmm: end,
+        priority: draft.priority,
+        enabled: draft.enabled,
+      };
+      return editing
+        ? signageApi.updateSchedule(editing.id, body)
+        : signageApi.createSchedule(body);
+    },
+    onSuccess: () => {
+      invalidate();
+      setEditing(undefined);
+      toast.success("Zeitplan gespeichert.");
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      signageApi.updateSchedule(id, { enabled }),
+    onMutate: async ({ id, enabled }) => {
+      // Optimistisch umschalten und bei Fehler zurückrollen.
+      const key = signageKeys.schedules();
+      const previous = queryClient.getQueryData<SignageSchedule[]>(key);
+      queryClient.setQueryData<SignageSchedule[]>(key, (list) =>
+        (list ?? []).map((s) => (s.id === id ? { ...s, enabled } : s)),
+      );
+      return { previous };
+    },
+    onError: (err: Error, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(signageKeys.schedules(), context.previous);
+      toast.error(`Umschalten fehlgeschlagen: ${err.message}`);
+    },
+    onSettled: () => invalidate(),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => signageApi.deleteSchedule(id),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Zeitplan gelöscht.");
+    },
+    onError: (err: Error) => toast.error(`Löschen fehlgeschlagen: ${err.message}`),
+  });
+
+  const sorted = useMemo(
+    () =>
+      [...schedules].sort(
+        (a, b) => b.priority - a.priority || b.updated_at.localeCompare(a.updated_at),
+      ),
+    [schedules],
+  );
+
+  const dialog = (
+    <Dialog
+      open={editing !== undefined}
+      onOpenChange={(o) => !o && setEditing(undefined)}
+      title={editing ? "Zeitplan bearbeiten" : "Neuer Zeitplan"}
+      description="Ein Zeitplan hat Vorrang vor der reinen Tag-Zuordnung. Fenster über Mitternacht in zwei Zeitpläne aufteilen."
+      footer={
+        <>
+          <Button variant="outline" onClick={() => setEditing(undefined)}>
+            Abbrechen
+          </Button>
+          <Button disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+            Speichern
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="sched-playlist">Playlist</Label>
+          <Select
+            id="sched-playlist"
+            value={draft.playlist_id}
+            onChange={(e) => setDraft({ ...draft, playlist_id: e.target.value })}
+          >
+            <option value="">— auswählen —</option>
+            {playlists.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <fieldset className="flex flex-col gap-1">
+          <legend className="text-sm font-medium">Wochentage</legend>
+          <div className="flex gap-1">
+            {WEEKDAY_LABELS.map((label, index) => (
+              <label
+                key={label}
+                className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-xs"
+              >
+                <span>{label}</span>
+                <input
+                  type="checkbox"
+                  checked={draft.days[index]}
+                  aria-label={label}
+                  onChange={(e) => {
+                    const days = [...draft.days];
+                    days[index] = e.target.checked;
+                    setDraft({ ...draft, days });
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="sched-start">Von</Label>
+            <Input
+              id="sched-start"
+              type="time"
+              value={draft.start}
+              onChange={(e) => setDraft({ ...draft, start: e.target.value })}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="sched-end">Bis</Label>
+            <Input
+              id="sched-end"
+              type="time"
+              value={draft.end}
+              onChange={(e) => setDraft({ ...draft, end: e.target.value })}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="sched-priority">Priorität</Label>
+            <Input
+              id="sched-priority"
+              type="number"
+              value={draft.priority}
+              onChange={(e) => setDraft({ ...draft, priority: Number(e.target.value) || 0 })}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={draft.enabled}
+            label="Zeitplan aktiv"
+            onCheckedChange={(enabled) => setDraft({ ...draft, enabled })}
+          />
+          <span className="text-sm">aktiv</span>
+        </div>
+
+        {error && (
+          <p role="alert" className="text-sm text-[var(--danger)]">
+            {error}
+          </p>
+        )}
+      </div>
+    </Dialog>
+  );
+
+  if (isLoading) {
+    return <TableWrap className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</TableWrap>;
+  }
+  if (isError) {
+    return (
+      <TableWrap className="p-5 text-sm text-[var(--danger)]">
+        Zeitpläne konnten nicht geladen werden.
+      </TableWrap>
+    );
+  }
+  if (sorted.length === 0) {
+    return (
+      <>
+        <EmptyState
+          title="Keine Zeitpläne"
+          body="Ohne Zeitplan entscheidet allein die Tag-Zuordnung, welche Playlist ein Gerät zeigt. Ein Zeitplan schaltet eine Playlist an bestimmten Tagen und Uhrzeiten davor."
+          action={
+            <Button onClick={() => openDialog(null)} disabled={playlists.length === 0}>
+              {playlists.length === 0 ? "Zuerst Playlist anlegen" : "Zeitplan anlegen"}
+            </Button>
+          }
+        />
+        {dialog}
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <TableWrap>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Playlist</Th>
+              <Th>Tage</Th>
+              <Th>Zeitfenster</Th>
+              <Th className="text-right">Priorität</Th>
+              <Th>Aktiv</Th>
+              <Th className="text-right">Aktionen</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((s) => (
+              <tr key={s.id}>
+                <Td className="font-medium">
+                  {playlistName.get(s.playlist_id) ?? `${s.playlist_id.slice(0, 8)}…`}
+                </Td>
+                <Td>{weekdaysLabel(s.weekday_mask)}</Td>
+                <Td className="font-mono tabular-nums">
+                  {hhmmToString(s.start_hhmm)} – {hhmmToString(s.end_hhmm)}
+                </Td>
+                <Td className="text-right font-mono tabular-nums">{s.priority}</Td>
+                <Td>
+                  <Switch
+                    checked={s.enabled}
+                    label="Zeitplan aktiv"
+                    onCheckedChange={(enabled) => toggleMutation.mutate({ id: s.id, enabled })}
+                  />
+                </Td>
+                <Td>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openDialog(s)}
+                      aria-label="Zeitplan bearbeiten"
+                      title="Bearbeiten"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <ConfirmDeleteButton
+                      itemLabel={`Zeitplan ${hhmmToString(s.start_hhmm)}–${hhmmToString(s.end_hhmm)}`}
+                      onConfirm={async () => {
+                        await deleteMutation.mutateAsync(s.id);
+                      }}
+                    />
+                  </div>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </TableWrap>
+      <div className="flex justify-end">
+        <Button onClick={() => openDialog(null)}>Neuer Zeitplan</Button>
+      </div>
+      {dialog}
+    </div>
+  );
+}

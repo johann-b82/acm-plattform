@@ -36,7 +36,7 @@ Zwei voneinander unabhängige Stacks auf demselben Host, die sich nur über HTTP
 PLATTFORM-STACK (Compose-Projekt "acm")                 SIGNAGE-STACK (Compose-Projekt "signage")
 ────────────────────────────────────────                ─────────────────────────────────────────
 Caddy :443 (TLS, Security-Header, Body-Limit)           Caddy :8443 (eigene Instanz)
-  ├─ /            → web (Next.js 15)                      ├─ /player/*         → signage-api (Bundle im Image)
+  ├─ /            → web (Next.js 16)                      ├─ /player/*         → signage-api (Bundle im Image)
   ├─ /api/*       → compute (FastAPI, schlank)            ├─ /api/signage/*    → signage-api (SSE, Pairing, Assets)
   └─ /supabase/*  → kong (Supabase-Gateway)               └─ /admin/*          → Signage-Admin (React, oder Payload im Spike)
 web  ──► supabase-js (PostgREST, Auth, Storage)          signage-api ──► Postgres (signage), eigenes Alembic
@@ -182,7 +182,8 @@ Aufwände in Kalenderwochen für eine Person mit KI-Unterstützung bei parallel 
 |---|---|---|---|
 | 0 Betrieb absichern (Altprojekt) | Logging (PR #142, offen), CI grün (PR #143, offen), Security-Hochbefunde als Prod-Override, JWT-Hotfix, Sidecar-Cache-Bug | 1 bis 2 W | Platte wächst < 50 MB/Woche, Ports 5173/8000 nicht im LAN, CI grün |
 | 1 Signage herauslösen | Repo `acm-signage`, eigener Stack nach 6.2, Datenmigration, Admin-UI auf REST, Embeds signiert, Pis umziehen | 3 bis 4 W | `docker compose restart` der Plattform beeinflusst keinen Screen |
-| 1b Payload-Spike | Kriterien aus 6.3 | 1 W | Entscheidung dokumentiert in ADR |
+| 1b Signage-Admin-UI | Oberfläche als App-Kachel in der Plattform gegen die REST-API (erledigt 2026-09-09) | 1 W | Medien, Playlists, Zeitpläne, Geräte, Kopplung laufen ohne Directus |
+| 1c Payload-Spike | Kriterien aus 6.3 | 1 W | Entscheidung dokumentiert in ADR |
 | 2 Supabase + Next.js-Shell | Supabase-Stack, Auth, Rechtemodell, Login, Launcher, Middleware, `compute` prüft Supabase-JWT, Nutzer-Migration | 4 bis 6 W | Nutzer sehen genau ihre App-Kacheln, Directus-Login aus |
 | 3 Directus entfernen | Dateien nach Storage (6 UUID-Spalten remappen), 11 Collections nach PostgREST/RLS, 4 Compose-Dienste und 3 CI-Guards weg | 2 bis 3 W | kein `DIRECTUS_*` mehr |
 | 4 Module portieren, Backend verschlanken | Reihenfolge: KPI-Views → Settings → Quality/Audit → Produktion/Wartung → HR-Module → Newsletter/Feedback → ATR/FAIR. Je Modul: CRUD nach PostgREST, Berechnung nach SQL, Seite als Client Component, alte Route abschalten | 10 bis 16 W | `compute` unter 150 Routen |
