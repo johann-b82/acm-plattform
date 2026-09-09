@@ -1,8 +1,8 @@
-"""Kleine Wartungsbefehle. Aufruf: `python -m app.cli <befehl>`."""
+"""Kleine Wartungsbefehle. Aufruf: `python -m app.cli <befehl> [optionen]`."""
 from __future__ import annotations
 
+import argparse
 import asyncio
-import sys
 
 import sqlalchemy as sa
 
@@ -22,14 +22,65 @@ async def _reload_postgrest() -> None:
     print("PostgREST: Schema-Cache neu angefordert")
 
 
-BEFEHLE = {"reload-postgrest": _reload_postgrest}
+def _alte_datenbank(dsn: str) -> sa.engine.Engine:
+    """Verbindung zur Datenbank des Altprojekts, nur lesend genutzt."""
+    if dsn.startswith("postgresql+"):
+        dsn = "postgresql://" + dsn.split("://", 1)[1]
+    return sa.create_engine(dsn.replace("postgresql://", "postgresql+psycopg://", 1))
+
+
+async def _uebernahme_vertrieb(args) -> None:
+    from app.uebernahme import vertrieb
+
+    bericht = await vertrieb.uebernehmen(_alte_datenbank(args.quelle), trocken=args.trocken)
+    print("Übernahme Vertrieb" + (" (trocken, nichts geschrieben)" if args.trocken else ""))
+    for zeile in bericht.zeilen():
+        print("  " + zeile)
+
+
+async def _uebernahme_nutzer(args) -> None:
+    from app.uebernahme import nutzer
+
+    bericht = await nutzer.uebernehmen(_alte_datenbank(args.quelle), trocken=args.trocken)
+    print("Übernahme Nutzer" + (" (trocken, nichts geschrieben)" if args.trocken else ""))
+    for zeile in bericht.zeilen():
+        print("  " + zeile)
+    if bericht.angelegt and not args.trocken:
+        print()
+        print("Zugangsdaten — nur jetzt sichtbar, bitte wegschreiben:")
+        print(bericht.csv(), end="")
 
 
 def main() -> int:
-    if len(sys.argv) != 2 or sys.argv[1] not in BEFEHLE:
-        print(f"Aufruf: python -m app.cli {{{'|'.join(BEFEHLE)}}}", file=sys.stderr)
-        return 2
-    asyncio.run(BEFEHLE[sys.argv[1]]())
+    zerleger = argparse.ArgumentParser(prog="python -m app.cli")
+    unter = zerleger.add_subparsers(dest="befehl", required=True)
+
+    unter.add_parser("reload-postgrest", help="PostgREST-Schema-Cache neu anfordern")
+
+    for name, hilfe in (
+        ("uebernahme-vertrieb", "Upload-Protokolle, Rechnungen und Aufträge aus lumeapps holen"),
+        ("uebernahme-nutzer", "Personen aus directus_users anlegen (neues Passwort je Person)"),
+    ):
+        p = unter.add_parser(name, help=hilfe)
+        p.add_argument(
+            "--quelle",
+            required=True,
+            metavar="DSN",
+            help="Verbindung zur alten Datenbank, z. B. postgresql://kpi_user:pw@alter-host:5432/kpi_db",
+        )
+        p.add_argument(
+            "--trocken",
+            action="store_true",
+            help="nur zählen, nichts schreiben",
+        )
+
+    args = zerleger.parse_args()
+    lauf = {
+        "reload-postgrest": lambda a: _reload_postgrest(),
+        "uebernahme-vertrieb": _uebernahme_vertrieb,
+        "uebernahme-nutzer": _uebernahme_nutzer,
+    }[args.befehl]
+    asyncio.run(lauf(args))
     return 0
 
 
