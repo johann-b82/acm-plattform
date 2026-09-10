@@ -187,7 +187,7 @@ Aufwände in Kalenderwochen für eine Person mit KI-Unterstützung bei parallel 
 | 2 Supabase + Next.js-Shell | Supabase-Stack, Auth, Rechtemodell, Login, Launcher, Middleware, `compute` prüft Supabase-JWT, Nutzer-Migration | 4 bis 6 W | Nutzer sehen genau ihre App-Kacheln, Directus-Login aus |
 | 3 Directus entfernen | Dateien nach Storage (6 UUID-Spalten remappen), 11 Collections nach PostgREST/RLS, 4 Compose-Dienste und 3 CI-Guards weg | 2 bis 3 W | kein `DIRECTUS_*` mehr |
 | 4 Module portieren, Backend verschlanken | Reihenfolge: KPI-Views → Settings → Quality/Audit → Produktion/Wartung → HR-Module → Newsletter/Feedback → ATR/FAIR. Je Modul: CRUD nach PostgREST, Berechnung nach SQL, Seite als Client Component, alte Route abschalten | 10 bis 16 W | `compute` unter 150 Routen |
-| 5 Härtung | CSRF, Rate-Limits hinter Proxy, Upload-Limits, defusedxml, Content-Disposition, Prod-Images ohne Dev-Deps, Monitoring Plattenfüllstand | 2 W | alle 21 Befunde geschlossen oder dokumentiert akzeptiert |
+| 5 Härtung | CSRF, Rate-Limits hinter Proxy, Upload-Limits, Content-Disposition, Prod-Images ohne Dev-Deps, Monitoring Plattenfüllstand | 2 W | alle 21 Befunde geschlossen oder dokumentiert akzeptiert — **erreicht 2026-09-10** (PRs #145–#151 im Altprojekt, Stand in `docs/security-findings.md`); offen bleiben TLS und die Zertifikatsrotation, beide auf dem Host |
 
 Reihenfolge: Signage vor Identität (größter Betriebsschmerz, unabhängig von Supabase). Identität vor Directus-Ausbau. Module zuletzt, weil sie einzeln liefern.
 
