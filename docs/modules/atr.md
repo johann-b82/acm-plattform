@@ -1,193 +1,85 @@
-# ATR-Modul (Lieferschein → ATR-Dokument)
+# ATR — Lieferschein zum ATR-Dokument
 
-Automatisiert das Erstellen von **ATR-Dokumenten** aus Diehl-**Lieferscheinen**:
-Ein Lieferschein-PDF wird eingelesen, seine Positionen werden gegen den
-**Teilekatalog** gematcht, und daraus werden die drei Ausgabedateien erzeugt
-(ATR-Excel, ATR-PDF, Container-Etikett) — optional vollautomatisch von einem
-Netzlaufwerk.
+Aus einem Diehl-Lieferschein entsteht ein ATR-Dokument: Excel, PDF und ein
+Container-Etikett. Dazu braucht es drei Dinge — den Lieferschein, den
+**Teilekatalog** (was ein Teil heißt, wiegt und zu welcher Zeichnung es gehört)
+und die **Vorlage** (Kopfdaten und Gerüstdatei je Programm).
 
-Ablauf:
+Der Port läuft in mehreren Schritten. Dieses Dokument wächst mit; was noch
+fehlt, steht unten.
 
-```
-Lieferschein-PDF ─► Parsen ─► Matchen (Teilekatalog) ─► Entwurf (draft)
-     ─► Review/Freigabe ─► Generieren (xlsx + pdf + docx)
-     ─► [Scan-Herkunft] in Output schreiben + Quelle ins Archiv verschieben
-```
-
-Zwei Einstiegswege:
-
-- **Automatischer Scan** eines SMB-Eingangsordners (Scheduler-Job), Standard
-  im **Review-Modus** (legt Entwürfe an, wartet auf Freigabe) oder optional
-  **Auto-Modus** (generiert + liefert ohne Rückfrage).
-- **Manueller Upload** eines PDFs im Frontend, bzw. „Aus Eingangsordner
-  verarbeiten".
-
----
-
-## Frontend / Bedienung
-
-Alles admin-only. Der Umschalter zwischen den beiden ATR-Ansichten liegt als
-**Dropdown im SubHeader** (die fixe Leiste unter dem Logo), URL-gesteuert:
-
-| Route | Ansicht |
+| Schritt | Stand |
 |---|---|
-| `/atr` | **Lieferungen** (Liste, Standard) |
-| `/atr/teilekatalog` | **Teilekatalog** (Referenzteile, inline editierbar) |
-| `/atr/deliveries/:id` | **Review** einer Lieferung (Kopfdaten + Positionen, Generieren) |
-| `/atr/import` | Referenzdatei(en) importieren (Vorschau → Commit) |
-| `/atr/template` | Struktur-Vorlage & Kopfdaten der ATR |
+| Teilekatalog und Vorlage | steht (Migration `0022_atr_katalog`) |
+| Lieferschein einlesen und abgleichen | offen |
+| Erzeugung von Excel, PDF und Etikett | offen |
+| Scan eines Eingangsordners | offen |
 
-Auf der **Review-Seite** werden die Kopffelder (ATR-Nr., Container-Nr., …)
-bearbeitet und pro Position **Gewicht** und **PO Pos** editiert; nicht
-zugeordnete Positionen sind rot markiert. „Generieren" erzeugt die Dateien und
-bietet sie zum Download an.
+## Der Schlüssel ist die Teilenummer ohne Beiwerk
 
-In der **Lieferungen-Liste** lassen sich mehrere Lieferungen per Checkbox
-markieren; „Containerbeschriftung erstellen" fragt eine Containernummer ab
-(vorbelegt, wenn alle markierten schon dieselbe tragen), schreibt sie in alle
-markierten Lieferungen und lädt eine **gemeinsame Containerbeschriftung** für
-den ganzen Container herunter. Die Spalte **Containernummer** zeigt die
-Zuordnung. Ein Container ist die Menge aller Lieferungen mit derselben Nummer;
-die Sammelbeschriftung wird bei jedem Abruf live daraus gebaut (nicht
-gespeichert) und lässt sich jederzeit über Auswahl + Button neu ziehen. Die
-Containernummer ändert man ebenso: neu markieren, Button, andere Nummer.
+Auf dem Lieferschein steht sie mal mit Präfix, mal mit Bindestrichen; im
+Katalog wieder anders. Verglichen werden deshalb nur die Ziffern:
+`VR-1234-56`, `VR 1234 56` und `1234/56` sind dasselbe Teil.
 
-Alle Listen nutzen die gemeinsame [`DataTable`](../../frontend/src/components/DataTable.tsx)
-(Card + Suche + sortierbare Spalten + Pagination, 25/Seite).
+Im Altprojekt macht das eine Python-Funktion (`norm_partno`). Hier ist es eine
+**erzeugte Spalte**: sie wird nie geschrieben, sondern folgt der Teilenummer.
+Damit kann sie nicht auseinanderlaufen, und niemand kann am Katalog vorbei eine
+Zeile mit falsch normierter Nummer einfügen — auch nicht über PostgREST.
 
----
+Der Eindeutigkeitsindex darauf ist **teilweise**: eine Teilenummer ganz ohne
+Ziffern ergibt keine normierte Nummer, fällt durch den Index und blockiert
+damit keine andere.
 
-## Automatischer Scan (Scheduler)
+Gesucht wird über beides. Wer Ziffern eintippt, findet auch eine anders
+geschriebene Nummer — genau dafür ist die Spalte da.
 
-Job `_run_atr_scan` in [`app/scheduler.py`](../../backend/app/scheduler.py),
-Intervall `atr_scan_interval_s` (0 = aus). Pro Lauf:
+## Die Referenzmappe
 
-1. Neue PDFs im SMB-Eingangsordner auflisten.
-2. **Dedup:** Ein Dateiname wird nur übersprungen, solange dazu noch eine
-   **offene `draft`-Lieferung** existiert (verhindert Entwurf-Spam alle paar
-   Sekunden, solange die Datei auf Review wartet). Sobald eine Lieferung über
-   `draft` hinaus ist (`generated`/`delivered`), gilt eine wieder auftauchende
-   gleichnamige Datei als bewusstes erneutes Ablegen und wird **neu
-   verarbeitet** — ein Dateiname wird also **nicht** für immer ignoriert.
-3. Parsen → Matchen → Entwurf anlegen (`origin = "scan"`).
-4. Bei `atr_auto_mode = true`: sofort generieren, in Output schreiben und die
-   Quelldatei ins Archiv verschieben. Schlägt das fehl, wird der Entwurf
-   gelöscht und beim nächsten Scan erneut versucht.
+Ein ausgefülltes ATR-Formular in Excel. Kopfdaten stehen in festen Zellen
+(`D1`–`D8`, `G3`, `G4`, `G8`, `F12`), ab Zeile 14 folgen die Teile,
+unterbrochen von Abschnittsüberschriften in Spalte A. Ein Teil erkennt man an
+einer Nummer mit Präfix `VR` in Spalte C; beim Summenblock hört das Lesen auf.
 
-> Deployment-Invariante: Der API-Container läuft mit `--workers 1`
-> (`docker-compose.yml`), damit der Scan nicht mehrfach parallel feuert.
+Diese Adressen sind aus dem Altprojekt übernommen und an einer echten Vorlage
+gewachsen. **Sie sind der Grund, vor dem ersten echten Import ein
+Referenzblatt durchlaufen zu lassen**: verschiebt der Kunde eine Zeile, stehen
+die Kopfdaten am falschen Ort. Deshalb prüft der Parser zuerst Zeile 13 auf die
+erwartete Tabellenüberschrift und scheitert laut, statt still falsche Werte zu
+übernehmen. Ebenso bei mehr als einem sichtbaren Blatt.
 
----
+Der Import ist der einzige Weg über `compute` — eine Excel-Datei mit festen
+Zellen ist weder in SQL noch über PostgREST zu lesen. Er läuft in einem Thread,
+weil openpyxl blockiert.
 
-## Parsen & Matchen
+**Erneut einlesen korrigiert, statt zu verdoppeln.** Der Konflikt geht auf die
+normierte Nummer; eine neuere Mappe darf die ältere überschreiben, ohne dass
+jemand vorher aufräumt. Die Gerüstdatei bleibt dabei, wo sie ist — sie wird
+getrennt hochgeladen und hat mit den Kopfdaten der Mappe nichts zu tun.
 
-**Text-Extraktion** via `pdftotext -layout`
-([`atr_lieferschein.py`](../../backend/app/services/atr_lieferschein.py)).
-Pro Lieferschein-Position werden u. a. gelesen:
+Ein Gewicht, das sich nicht lesen lässt (`ca. 0,4`), wird als Hinweis gemeldet
+und nicht still zu Null.
 
-| Feld | Quelle im Lieferschein |
+## Rechte
+
+| | Recht |
 |---|---|
-| Pos / Artikel / Menge | Positionszeile `1 6060 1 STK` |
-| `part_number` | `Ihre Nr. VR11S1010016000` |
-| `ba_auftrag` | `Auftrag Nr. 1024738 / 5` → **1024738** |
-| **`po_pos`** | `Auftrag Nr. 1024738 / 5` → **5** (die Positionsnummer) |
-| `po_base` + Konfiguration (Programm, Compartment, MSN, Bett) | `Bestelldaten 4501119979/A350/CCRC/MSN830/6-Bett` |
+| Katalog und Vorlagen sehen | ein `atr`-Recht |
+| Pflegen, einlesen, Gerüst hinterlegen | `atr: editor` |
 
-**PO Pos kommt aus dem Lieferschein**, nicht aus dem Katalog: Der Matcher
-([`atr_match.py`](../../backend/app/services/atr_match.py)) übernimmt `po_pos`
-für gematchte **und** ungematchte Positionen aus der geparsten Zeile und
-überschreibt damit den Katalog-Standard (die reale Position variiert pro
-Lieferung).
+Im Altprojekt hängen ATR und FAIR an einer gemeinsamen Zwischenrolle „QS", weil
+es nur Admin und Viewer gab. Mit App-Rechten entfällt sie; ATR und FAIR sind
+getrennt vergebbar.
 
-**Matching:** `part_number` wird normalisiert und gegen den Teilekatalog
-(`atr_part`) gesucht. Treffer übernehmen Bezeichnung, Zeichnung/Index, Gewicht
-und Kategorie aus dem Katalog; ohne Treffer bleibt die Position `unmatched`
-(rot in der Review).
+## Was noch kommt
 
----
+**Lieferschein einlesen.** PDF-Parsen der Diehl-Lieferscheine, Abgleich gegen
+den Katalog, Entwurf zur Freigabe.
 
-## Generieren
+**Erzeugung.** Excel aus der Gerüstdatei, PDF daraus, Container-Etikett als
+Word-Dokument.
 
-[`atr_deliver.py`](../../backend/app/services/atr_deliver.py) → `generate_and_deliver`:
-
-- **ATR-Excel** aus der Struktur-Vorlage (`atr_template.structure_xlsx`) via
-  [`atr_generate_xlsx.py`](../../backend/app/services/atr_generate_xlsx.py).
-- **ATR-PDF** aus dem Excel via LibreOffice (`convert_xlsx_to_pdf`). Schlägt die
-  Konvertierung fehl, bleiben xlsx + docx nutzbar (Warnung).
-- **Container-Etikett (docx)** via
-  [`atr_generate_docx.py`](../../backend/app/services/atr_generate_docx.py)
-  (`build_containerbeschriftung`, eine Lieferung). Dieselbe Datei liefert
-  `build_container_label` für die **Sammelbeschriftung** eines Containers
-  (`GET /api/atr/deliveries/container-label?nr=…`): Überschrift „Container …",
-  darunter ein Block BA/PO/Pos/MSN je Lieferung auf einer Querseite. Bis zwei
-  Lieferungen groß untereinander; ab drei ein rahmenloses Raster mit fester,
-  lesbarer Schrift: eine Spalte bis vier, zwei Spalten bis acht, drei Spalten
-  bis zwölf Lieferungen (vier Zeilen je Seite, schmale Ränder). Mehr als zwölf
-  laufen auf eine zweite Seite weiter — die Schrift wird nie verkleinert.
-- **Kopf:** Titel + Doc-No/Datum/Seite werden im PDF-Schritt via LibreOffice UNO
-  gesetzt ([`atr_uno_header.py`](../../backend/app/services/atr_uno_header.py)),
-  da openpyxl den Druckkopf verstümmelt. Das **Logo** (App-Logo aus
-  `AppSettings.logo_data`) kommt als **Header-Hintergrundgrafik** (`LEFT_TOP`)
-  in den Kopf — die Excel-`&G`-Grafik rendert LibreOffice beim PDF-Export nicht,
-  Floating-Shapes werden am Kopfrand abgeschnitten.
-- Für **Scan-Herkunft** und konfiguriertes SMB: Dateien in den Output schreiben,
-  bei Erfolg Status `delivered` setzen, committen und **dann** die Quelldatei
-  ins Archiv verschieben. Schlägt der Share-Schreibvorgang fehl, bleibt der
-  Status `generated` und die Quelle wird **nicht** archiviert.
-
----
-
-## HTTP-Endpunkte (admin-only)
-
-Prefix `/api/atr` ([`atr.py`](../../backend/app/routers/atr.py)) und
-`/api/atr/deliveries` ([`atr_delivery.py`](../../backend/app/routers/atr_delivery.py)).
-
-| Methode | Pfad | Zweck |
-|---|---|---|
-| `GET/POST/PATCH/DELETE` | `/api/atr/parts[/{id}]` | Teilekatalog (CRUD) |
-| `GET/PATCH` | `/api/atr/template` | ATR-Kopfdaten |
-| `POST` | `/api/atr/template/structure` | Struktur-Arbeitsmappe hochladen |
-| `POST` | `/api/atr/import/preview` · `/commit` | Referenzdatei(en) einlesen |
-| `POST` | `/api/atr/deliveries/upload` | Lieferschein-PDF hochladen → Entwurf |
-| `GET` | `/api/atr/deliveries/input-files` | PDFs im SMB-Eingang auflisten |
-| `POST` | `/api/atr/deliveries/input-files/process` | Eine Eingangsdatei manuell verarbeiten |
-| `GET` | `/api/atr/deliveries` · `/{id}` | Lieferungen listen / Detail |
-| `PATCH` | `/api/atr/deliveries/{id}` · `/{id}/items/{item_id}` | Kopf- / Positionsdaten ändern |
-| `POST` | `/api/atr/deliveries/{id}/generate` | Dokumente erzeugen (+ ggf. liefern) |
-| `GET` | `/api/atr/deliveries/{id}/files/{kind}` | `atr_xlsx` · `atr_pdf` · `label_docx` herunterladen |
-
----
-
-## Konfiguration & Datenmodell
-
-Zentral auf der `AppSettings`-Singleton-Zeile, gepflegt im Admin-Reiter
-**Einstellungen → ATR** ([`AtrSettingsPage.tsx`](../../frontend/src/pages/AtrSettingsPage.tsx)):
-
-| Feld | Zweck |
-|---|---|
-| `atr_smb_host` · `atr_smb_share` · `atr_smb_domain` · `atr_smb_user` · `atr_smb_password_enc` | SMB-Zugang (Servicekonto; Passwort Fernet-verschlüsselt) |
-| `atr_input_path` · `atr_output_path` · `atr_archive_path` | Eingang / Ausgabe / Archiv auf dem Share |
-| `atr_scan_interval_s` | Scan-Intervall in Sekunden (0 = aus) |
-| `atr_auto_mode` | `false` = Review, `true` = automatisch generieren + liefern |
-
-Tabellen: `atr_part` (Teilekatalog), `atr_template` (Struktur-Vorlage + Kopfdaten),
-`atr_delivery` + `atr_delivery_item` (Lieferungen/Positionen). Migrationen
-`v1_63_atr_reference`, `v1_64_atr_delivery`, `v1_65_atr_fileserver`.
-
----
-
-## Beteiligte Dateien
-
-| Datei | Rolle |
-|---|---|
-| `backend/app/services/atr_lieferschein.py` | Lieferschein-PDF → Header + Positionen (inkl. `po_pos`) |
-| `backend/app/services/atr_match.py` | Positionen gegen den Teilekatalog matchen |
-| `backend/app/services/atr_deliver.py` | Generieren + (Scan) in Output schreiben & archivieren |
-| `backend/app/services/atr_generate_xlsx.py` · `atr_generate_docx.py` | ATR-Excel/PDF bzw. Container-Etikett bauen |
-| `backend/app/services/atr_fileserver.py` | SMB-Zugriff (auflisten, lesen, schreiben, archivieren) |
-| `backend/app/scheduler.py` (`_run_atr_scan`) | Scan-Job + Dedup + Auto-Modus |
-| `backend/app/routers/atr.py` · `atr_delivery.py` | HTTP-Endpunkte |
-| `frontend/src/pages/AtrPartsPage.tsx` | ATR-Seite: URL-gesteuerte Ansicht (Lieferungen/Teilekatalog) |
-| `frontend/src/pages/AtrDeliveriesPage.tsx` · `AtrDeliveryReviewPage.tsx` · `AtrImportPage.tsx` · `AtrTemplatePage.tsx` | Lieferungen-Liste · Review · Import · Vorlage |
-| `frontend/src/components/SubHeader.tsx` | ATR-Umschalter im SubHeader |
-| `frontend/src/components/DataTable.tsx` | Gemeinsame Tabellen-Komponente |
+**Eingangsordner.** Im Altprojekt scannt ein Scheduler-Job einen SMB-Ordner.
+Hier stößt `pg_cron` über `pg_net` eine Route in `compute` an — der Dienst
+bleibt zwischen den Aufrufen zustandslos. Dazu gehört die Ziel-Allowlist auf
+Subnetze, die im Altprojekt als Befund 16 offen blieb, weil das System dort
+kurz vor der Ablösung stand.
