@@ -198,6 +198,19 @@ Drei Stellen, an denen der Rechenweg sich nicht von selbst versteht und die desh
 
 Der Zielwert von 98 % steht als Konstante im Frontend, wie im Altprojekt. Er wandert in die Einstellungen, sobald dieses Modul portiert ist.
 
+### Produktion (drittes Modul)
+
+Aufträge in Verzug. Zwei Uploads, weil zwei Dateien nötig sind: die Auftragspositionen tragen den Zieltermin, die Lieferscheine das Ist-Datum. Die Lieferscheine kommen als Excel-Datei.
+
+Der Rechenweg liegt in der Sicht `auftrag_verzug`, damit ihn die drei Funktionen darüber nicht dreimal beschreiben. Vier Regeln, die man beim Lesen des SQL leicht übersieht:
+
+- Der Zieltermin eines Auftrags ist das **späteste** Lieferdatum seiner Positionen.
+- Gezählt wird nur, wenn der Ausgang feststeht: geliefert **oder** Termin verstrichen. Ein offener Auftrag mit Termin in der Zukunft ist weder pünktlich noch verspätet und taucht nirgends auf.
+- Ein offener, überfälliger Auftrag zählt als verspätet. Sein Verzug wächst täglich weiter, auch für abgeschlossene Zeiträume.
+- Eine einzige frühe Teillieferung macht den Auftrag „geliefert". Das ist eine Schwäche der Quelldaten, keine der Rechnung, und in der Oberfläche nicht zu erkennen.
+
+Zwei bewusste Abweichungen vom Altprojekt: „Alles" rechnet hier wirklich über alles, statt still auf den laufenden Monat zurückzufallen. Und der wirkungslose Seriengeschäft-Filter ist nicht mitgekommen; die Spalte `pos_typ_2` schon, damit er später ohne Migration nachrüstbar ist.
+
 ### Zugriff vom Browser aus
 
 - **Lesen** geht direkt über PostgREST (`supabaseBrowser()`), die Zeilen-Policies filtern.

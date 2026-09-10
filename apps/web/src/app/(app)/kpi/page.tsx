@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/primitives";
 
 export const metadata = { title: "KPI-Dashboard · ACM-Plattform" };
 
-/** Die Fachbereiche des KPI-Dashboards. Vertrieb und Einkauf sind portiert, der Rest folgt
+/** Die Fachbereiche des KPI-Dashboards. Vertrieb, Einkauf und Produktion sind portiert, der Rest folgt
  *  nach demselben Muster (Ingestion in compute, Rechnung als SQL-Funktion). */
 const BEREICHE = [
   { path: "/kpi/vertrieb", name: "Vertrieb", beschreibung: "Umsatz, Auftragswert, Kundenanteil", bereit: true },
@@ -12,7 +12,7 @@ const BEREICHE = [
   { path: "/kpi/qualitaet", name: "Qualität", beschreibung: "Audits, Reklamationsquote", bereit: false },
   { path: "/kpi/finanzen", name: "Finanzen", beschreibung: "Material- und Personalkostenquote", bereit: false },
   { path: "/kpi/einkauf", name: "Einkauf", beschreibung: "Liefertermintreue der Lieferanten", bereit: true },
-  { path: "/kpi/produktion", name: "Produktion", beschreibung: "Verzug, überfällige Aufträge", bereit: false },
+  { path: "/kpi/produktion", name: "Produktion", beschreibung: "Verzug, überfällige Aufträge", bereit: true },
 ] as const;
 
 export default async function KpiHubPage() {

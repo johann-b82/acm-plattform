@@ -100,9 +100,58 @@ delivery_reliability = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+def _position_spalten() -> list[sa.Column]:
+    """Die Spalten, die beide Positionstabellen gemeinsam haben.
+
+    Als Funktion, nicht als Liste: ein `Column`-Objekt gehört genau einer
+    Tabelle, und `Column.copy()` ist seit SQLAlchemy 1.4 abgekündigt.
+    """
+    return [
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("vorgang_nr", sa.String(50), nullable=False),
+        sa.Column("pos", sa.Integer, nullable=False),
+        sa.Column("upos", sa.Integer, nullable=False),
+        sa.Column("typ", sa.String(10)),
+        sa.Column("entry_date", sa.Date),
+        sa.Column("customer_id", sa.String(50)),
+        sa.Column("customer_name", sa.String(255)),
+        sa.Column("customer_city", sa.String(255)),
+        sa.Column("article_number", sa.String(50)),
+        sa.Column("article_version", sa.String(50)),
+        sa.Column("article_name", sa.String(255)),
+        sa.Column("quantity", sa.Numeric(15, 3)),
+        sa.Column("unit", sa.String(20)),
+        sa.Column("price", sa.Numeric(15, 4)),
+        sa.Column("position_value", sa.Numeric(15, 2)),
+        sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+        sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("raw", JSONB),
+    ]
+
+
+def _position_tabelle(name: str, *eigene: sa.Column) -> sa.Table:
+    """Die beiden Positionstabellen unterscheiden sich nur in drei Spalten."""
+    return sa.Table(name, metadata, *_position_spalten(), *eigene)
+
+
+auftrag_positionen = _position_tabelle(
+    "auftrag_positionen",
+    sa.Column("lieferdatum", sa.Date),
+    sa.Column("pos_typ_2", sa.String(20)),
+)
+
+delivery_records = _position_tabelle(
+    "delivery_records",
+    sa.Column("delivery_date", sa.Date),
+    sa.Column("external_order_nr", sa.String(100)),
+    sa.Column("order_nr", sa.String(100)),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
     "auftraege": auftraege,
     "delivery_reliability": delivery_reliability,
+    "auftrag_positionen": auftrag_positionen,
+    "delivery_records": delivery_records,
 }

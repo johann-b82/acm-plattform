@@ -215,3 +215,22 @@ class TestRechte:
             finally:
                 await trans.rollback()
         assert anzahl == 0
+
+
+class TestRoutenUndArten:
+    """Der Pfad eines Uploads ist seine Art — sonst endet er in einem 404.
+
+    Genau das ist beim Bau der Produktionsseite passiert: die Route hiess
+    `/auftrag-positionen`, die Oberfläche schickte `auftrag_positionen`.
+    """
+
+    def test_jede_art_hat_eine_route(self):
+        from app.main import app
+        from app.routers.uploads import ARTEN
+
+        pfade = {
+            r.path.removeprefix("/api/uploads/")
+            for r in app.routes
+            if getattr(r, "path", "").startswith("/api/uploads/")
+        }
+        assert pfade == set(ARTEN)

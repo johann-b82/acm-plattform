@@ -18,7 +18,16 @@ import { cn } from "@/lib/cn";
  * beim Liefertreue-Export die Position. Dieselbe Datei zweimal hochzuladen
  * ändert nichts.
  */
-const ARTEN = [
+interface Art {
+  kind: string;
+  titel: string;
+  datei: string;
+  beschreibung: string;
+  /** Nur nötig, wenn die Datei keine Textdatei ist. */
+  endungen?: string;
+}
+
+const ARTEN: readonly Art[] = [
   {
     kind: "umsatz",
     titel: "Umsatz (Rechnungen und Gutschriften)",
@@ -32,13 +41,27 @@ const ARTEN = [
     beschreibung: "Speist Ø Auftragswert, Aufträge gesamt und die Auswertung je Erfasser.",
   },
   {
+    kind: "auftragspositionen",
+    titel: "Auftragspositionen",
+    datei: "AswKpf_AUF.txt (Positionsebene)",
+    beschreibung:
+      "Trägt den Zieltermin je Position. Zusammen mit den Lieferscheinen ergibt sich daraus der Verzug.",
+  },
+  {
+    kind: "lieferscheine",
+    titel: "Lieferscheine",
+    datei: "AswKpf_LS.xlsx",
+    beschreibung: "Trägt das Ist-Lieferdatum. Excel-Datei, eine Zeile je Lieferscheinposition.",
+    endungen: ".xlsx,.xls",
+  },
+  {
     kind: "liefertreue",
     titel: "Liefertermintreue (Einkauf)",
     datei: "dev_excel_Liefertreue_Einkauf.txt",
     beschreibung:
       "Speist die OTD-Quote im Einkauf. Eine Zeile je Lieferposition; das Ist-Lieferdatum bestimmt den Zeitraum.",
   },
-] as const;
+];
 
 interface UploadErgebnis {
   batch_id: number;
@@ -110,7 +133,7 @@ function Ablage({
         <input
           ref={input}
           type="file"
-          accept=".txt,.csv"
+          accept={art.endungen ?? ".txt,.csv"}
           className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0];

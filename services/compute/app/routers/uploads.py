@@ -24,14 +24,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import Claims, require_app
 from app.config import settings
-from app.db import SessionLocal, auftraege, delivery_reliability, revenues, upload_batches
+from app.db import (
+    SessionLocal,
+    auftrag_positionen,
+    auftraege,
+    delivery_records,
+    delivery_reliability,
+    revenues,
+    upload_batches,
+)
 from app.parsing.einkauf import parse_liefertreue
+from app.parsing.positionen import parse_auftrag_positionen, parse_lieferscheine
 from app.parsing.vertrieb import parse_auftraege, parse_umsatz
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depends(require_app("uploads", "admin"))])
 
 # asyncpg erlaubt 32767 Parameter je Anweisung; danach wird gestückelt.
 _MAX_PARAMS = 32767
+
+# Die Art eines Uploads ist zugleich sein Pfad. Beides getrennt zu pflegen ging
+# einmal schief: die Route hiess `/auftrag-positionen`, die Oberfläche schickte
+# `auftrag_positionen`, und der Upload endete in einem 404.
+ARTEN = ("umsatz", "auftraege", "liefertreue", "auftragspositionen", "lieferscheine")
 
 
 class Fehlerdetail(BaseModel):
@@ -100,10 +114,13 @@ async def _import(
     parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
     claims: Claims,
     schluessel: tuple[str, ...] = ("vorgang_nr",),
+    endungen: tuple[str, ...] = (".txt", ".csv"),
 ) -> UploadErgebnis:
     filename = file.filename or ""
-    if not filename.lower().endswith((".txt", ".csv")):
-        raise HTTPException(422, "Nur .txt- und .csv-Dateien werden angenommen.")
+    if not filename.lower().endswith(endungen):
+        raise HTTPException(
+            422, f"Nur {', '.join(endungen)}-Dateien werden angenommen."
+        )
 
     contents = await _read_limited(file)
     rows, fehler = await run_in_threadpool(parser, contents)
@@ -203,4 +220,42 @@ async def upload_liefertreue(
         parser=parse_liefertreue,
         claims=claims,
         schluessel=("auftrag", "pos", "upos"),
+    )
+
+
+@router.post("/auftragspositionen", response_model=UploadErgebnis)
+async def upload_auftrag_positionen(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_AUF auf Positionsebene — trägt den Zieltermin je Position.
+
+    Dieselbe Quelldatei wie der Auftragseingang, aber die Positionszeilen
+    statt der Kopfzeilen. Der Zieltermin des Auftrags ist das späteste
+    Lieferdatum seiner Positionen.
+    """
+    return await _import(
+        file=file,
+        kind="auftragspositionen",
+        tabelle=auftrag_positionen,
+        parser=parse_auftrag_positionen,
+        claims=claims,
+        schluessel=("vorgang_nr", "pos", "upos"),
+    )
+
+
+@router.post("/lieferscheine", response_model=UploadErgebnis)
+async def upload_lieferscheine(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_LS — Lieferscheinpositionen mit dem Ist-Lieferdatum."""
+    return await _import(
+        file=file,
+        kind="lieferscheine",
+        tabelle=delivery_records,
+        parser=parse_lieferscheine,
+        claims=claims,
+        schluessel=("vorgang_nr", "pos", "upos"),
+        endungen=(".xlsx", ".xls"),
     )
