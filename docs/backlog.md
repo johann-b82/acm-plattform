@@ -8,7 +8,6 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 
 | # | Modul | Alt (Operationen) | Inhalt |
 |---|---|---|---|
-| 2 | Kompetenzen | 13 | Kompetenzmatrix je Person und Stelle, Organigramm. Grundlage für Schulungen. |
 | 3 | Schulungen | 42 | Das größte Stück: Schulungskatalog, Pflicht- und Wunschschulungen, Teilnahmen, Nachweise, QR-Scan. |
 | 4 | Onboarding | 16 | Checklisten für neue Personen, Aufgaben je Rolle. |
 | 5 | Einarbeitung | 18 | Einarbeitungsplan mit Stationen und Bestätigungen. |
@@ -31,6 +30,7 @@ nicht zu raten.
 | Punkt | Grund |
 |---|---|
 | World Cup / Tippspiel (6 Operationen + 7 Embed-Seiten + Upload) | Entscheidung 2026-09-10: das Turnier ist vorbei. |
+| Personio-Rückschreiben | Im Altprojekt vorhanden, aber **inert**: es braucht Schreib-Scopes, die die Zugangsdaten nicht haben, und eine Dokumentenkategorie, die nicht gesetzt ist. Es hat dort nie etwas getan. |
 | `POST /api/upload` (Alt-Sammelroute) | Schreibt `sales_records`, seit v1.54 abgelöst (siehe `docs/inventory.md`). |
 | Zweisprachigkeit (DE/EN, 1.951 i18n-Schlüssel) | Der neue Stack ist einsprachig deutsch. Alle Beschriftungen stehen im Klartext im Markup; ein Sprachschalter war nie in Gebrauch. Wenn er gebraucht wird, ist er nachrüstbar — aber nicht als Nebenprodukt der Portierung. |
 | Directus, Forward-Auth, Phase-Guards | Siehe Löschliste in `docs/inventory.md`. |

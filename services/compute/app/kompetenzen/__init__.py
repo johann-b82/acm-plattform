@@ -1,0 +1,1 @@
+"""Kompetenzen: die Qualifikationsmatrix einlesen."""
