@@ -11,13 +11,18 @@ PostgREST — auch das Pflegen einzelner Teile.
     POST /api/atr/referenz       Mappe einlesen und in den Katalog übernehmen
     POST /api/atr/lieferschein   Lieferschein einlesen, abgleichen, als Entwurf ablegen
     POST /api/atr/lieferungen/{id}/erzeugen   Mappe, PDF und Etikett erzeugen
+    POST /api/atr/scan/probe     Verbindung zum Dateiserver pruefen
+    POST /api/atr/scan           Eingangsordner von Hand durchsehen
+    POST /api/atr/scan/geplant   derselbe Lauf aus pg_cron, gemeinsames Geheimnis
 """
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile
+import hmac
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -37,6 +42,8 @@ from app.parsing.atr_lieferschein import (
     TextNichtLesbar,
     lies_pdf,
 )
+from app.atr import dateiserver, scan as scan_modul
+from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
 from app.atr.format import programmfamilie
 from app.atr.etikett import baue_etikett
@@ -248,13 +255,21 @@ def _programm_und_grund(schein: Lieferschein) -> tuple[str | None, str, str | No
 
 @router.post("/lieferschein", response_model=LieferscheinErgebnis)
 async def lieferschein_einlesen(datei: UploadFile) -> LieferscheinErgebnis:
+    """Liest einen hochgeladenen Lieferschein."""
+    daten = await _lies_begrenzt(datei)
+    return await _lieferung_aus_pdf(daten, datei.filename or "unbekannt")
+
+
+async def _lieferung_aus_pdf(daten: bytes, dateiname: str) -> LieferscheinErgebnis:
     """Liest einen Lieferschein, gleicht gegen den Katalog ab und legt einen
     Entwurf an.
 
     Was der Katalog liefert, wird in die Position **kopiert**, nicht verlinkt.
     Der Katalog ändert sich; ein freigegebener ATR nicht.
+
+    Zwei Wege kommen hier zusammen: der Upload aus der Oberfläche und der
+    Scan des Eingangsordners. Beide sollen dieselbe Lieferung ergeben.
     """
-    daten = await _lies_begrenzt(datei)
     try:
         schein = await lies_pdf(daten)
     except TextNichtLesbar as fehler:
@@ -299,7 +314,7 @@ async def lieferschein_einlesen(datei: UploadFile) -> LieferscheinErgebnis:
                 await sitzung.execute(
                     atr_lieferungen.insert()
                     .values(
-                        quelle_dateiname=datei.filename or "unbekannt",
+                        quelle_dateiname=dateiname,
                         lieferschein_nr=schein.lieferschein_nr,
                         datum=_datum(schein.datum),
                         ba_auftrag=kopf.ba_auftrag if kopf else None,
@@ -352,7 +367,7 @@ async def lieferschein_einlesen(datei: UploadFile) -> LieferscheinErgebnis:
 
     return LieferscheinErgebnis(
         lieferung_id=str(lieferung),
-        dateiname=datei.filename or "unbekannt",
+        dateiname=dateiname,
         lieferschein_nr=schein.lieferschein_nr,
         programm=programm,
         programm_grund=grund,
@@ -372,6 +387,11 @@ class ErzeugtErgebnis(BaseModel):
 
 @router.post("/lieferungen/{lieferung_id}/erzeugen", response_model=ErzeugtErgebnis)
 async def erzeugen(lieferung_id: str = Path(...)) -> ErzeugtErgebnis:
+    ergebnis, _ = await _erzeuge(lieferung_id)
+    return ergebnis
+
+
+async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, bytes]]]:
     """Erzeugt Mappe, PDF und Etikett und legt sie im Eimer `atr` ab.
 
     Die Mappe entsteht aus dem Gerüst der Vorlage des Programms. Fehlt das
@@ -463,11 +483,24 @@ async def erzeugen(lieferung_id: str = Path(...)) -> ErzeugtErgebnis:
                 )
             )
 
-    return ErzeugtErgebnis(
-        mappe_pfad=mappe_pfad,
-        pdf_pfad=pdf_pfad,
-        etikett_pfad=etikett_pfad,
-        pdf_hinweis=hinweis,
+    # Die Bytes kommen mit zurueck: der Scan legt sie zusaetzlich in den
+    # Ausgangsordner auf dem Dateiserver.
+    stamm_name = lieferung["lieferschein_nr"] or lieferung["quelle_dateiname"]
+    dateien: list[tuple[str, bytes]] = [
+        (f"{stamm_name}_ATR.xlsx", mappe),
+        (f"{stamm_name}_Etikett.docx", etikett),
+    ]
+    if pdf_pfad is not None:
+        dateien.insert(1, (f"{stamm_name}_ATR.pdf", pdf))
+
+    return (
+        ErzeugtErgebnis(
+            mappe_pfad=mappe_pfad,
+            pdf_pfad=pdf_pfad,
+            etikett_pfad=etikett_pfad,
+            pdf_hinweis=hinweis,
+        ),
+        dateien,
     )
 
 
@@ -487,3 +520,85 @@ async def _hole_geruest(pfad: str) -> bytes:
             502, f"Die Gerüstdatei ließ sich nicht laden ({antwort.status_code})."
         )
     return antwort.content
+
+
+class ScanErgebnis(BaseModel):
+    gelesen: int
+    angelegt: int
+    erzeugt: int
+    liegen_geblieben: list[str]
+    hinweise: list[str]
+
+
+class ProbeErgebnis(BaseModel):
+    erreichbar: bool
+    dateien: int | None = None
+    meldung: str | None = None
+
+
+@router.post("/scan/probe", response_model=ProbeErgebnis)
+async def scan_probe() -> ProbeErgebnis:
+    """Prüft die Verbindung, ohne etwas zu verändern."""
+    try:
+        _, ziel = await scan_modul.einstellungen()
+    except scan_modul.NichtEingerichtet as fehler:
+        return ProbeErgebnis(erreichbar=False, meldung=str(fehler))
+
+    def _probe() -> tuple[bool, str | None, int | None]:
+        gut, meldung = dateiserver.probe(ziel)
+        if not gut:
+            return False, meldung, None
+        return True, None, len(dateiserver.liste_eingang(ziel))
+
+    gut, meldung, anzahl = await run_in_threadpool(_probe)
+    return ProbeErgebnis(erreichbar=gut, dateien=anzahl, meldung=meldung)
+
+
+async def _lauf() -> ScanErgebnis:
+    """Ein Durchgang. Die beiden Arbeitsschritte kommen als Funktionen herein,
+    damit der Ablauf selbst ohne Datenbank prüfbar bleibt."""
+
+    async def einlesen(daten: bytes, name: str) -> str:
+        return (await _lieferung_aus_pdf(daten, name)).lieferung_id
+
+    async def erzeugen(lieferung_id: str) -> list[tuple[str, bytes]]:
+        _, dateien = await _erzeuge(lieferung_id)
+        return dateien
+
+    try:
+        ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
+    except scan_modul.NichtEingerichtet as fehler:
+        raise HTTPException(503, str(fehler)) from fehler
+    except DateiserverFehler as fehler:
+        raise HTTPException(502, str(fehler)) from fehler
+
+    return ScanErgebnis(
+        gelesen=ergebnis.gelesen,
+        angelegt=ergebnis.angelegt,
+        erzeugt=ergebnis.erzeugt,
+        liegen_geblieben=ergebnis.liegen_geblieben,
+        hinweise=ergebnis.hinweise,
+    )
+
+
+@router.post("/scan", response_model=ScanErgebnis)
+async def scan_von_hand() -> ScanErgebnis:
+    return await _lauf()
+
+
+# Der geplante Lauf haengt nicht am Router-Gate: ein SQL-Job hat kein
+# Nutzer-Token und koennte keins erzeugen, ohne den JWT-Schluessel in der
+# Datenbank zu haben. Er weist sich mit einem gemeinsamen Geheimnis aus —
+# dasselbe Verfahren wie beim naechtlichen Personio-Abgleich.
+geplant = APIRouter(prefix="/api/atr", tags=["atr"])
+
+
+@geplant.post("/scan/geplant", response_model=ScanErgebnis, include_in_schema=False)
+async def scan_geplant(
+    x_atr_scan_token: str = Header(default=""),
+) -> ScanErgebnis:
+    if not settings.ATR_SCAN_TOKEN:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if not hmac.compare_digest(x_atr_scan_token, settings.ATR_SCAN_TOKEN):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+    return await _lauf()

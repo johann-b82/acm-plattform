@@ -5,15 +5,14 @@ Container-Etikett. Dazu braucht es drei Dinge — den Lieferschein, den
 **Teilekatalog** (was ein Teil heißt, wiegt und zu welcher Zeichnung es gehört)
 und die **Vorlage** (Kopfdaten und Gerüstdatei je Programm).
 
-Der Port läuft in mehreren Schritten. Dieses Dokument wächst mit; was noch
-fehlt, steht unten.
+Der Port lief in vier Schritten:
 
 | Schritt | Stand |
 |---|---|
 | Teilekatalog und Vorlage | steht (Migration `0022_atr_katalog`) |
 | Lieferschein einlesen und abgleichen | steht (Migration `0023_atr_lieferungen`) |
 | Erzeugung von Excel, PDF und Etikett | steht (Migration `0024_atr_ausgaben`) |
-| Scan eines Eingangsordners | offen |
+| Scan eines Eingangsordners | steht (Migration `0025_atr_scan`) |
 
 ## Der Schlüssel ist die Teilenummer ohne Beiwerk
 
@@ -63,8 +62,9 @@ und nicht still zu Null.
 
 | | Recht |
 |---|---|
-| Katalog und Vorlagen sehen | ein `atr`-Recht |
-| Pflegen, einlesen, Gerüst hinterlegen | `atr: editor` |
+| Katalog, Vorlagen und das Scan-Ziel sehen | ein `atr`-Recht |
+| Pflegen, einlesen, Gerüst hinterlegen, den Eingang durchsehen | `atr: editor` |
+| Eintragen, **worauf** der Scan zeigt | `platform: admin` |
 
 Im Altprojekt hängen ATR und FAIR an einer gemeinsamen Zwischenrolle „QS", weil
 es nur Admin und Viewer gab. Mit App-Rechten entfällt sie; ATR und FAIR sind
@@ -228,8 +228,55 @@ Die Lieferungen haben dafür eine eigene Triggerfunktion — die gemeinsame hän
 auch an `atr_positionen`, und plpgsql löst die Feldverweise einer Bedingung
 vorab auf.
 
-**Eingangsordner.** Im Altprojekt scannt ein Scheduler-Job einen SMB-Ordner.
-Hier stößt `pg_cron` über `pg_net` eine Route in `compute` an — der Dienst
-bleibt zwischen den Aufrufen zustandslos. Dazu gehört die Ziel-Allowlist auf
-Subnetze, die im Altprojekt als Befund 16 offen blieb, weil das System dort
-kurz vor der Ablösung stand.
+## Der Eingangsordner
+
+Ein Lieferschein landet als PDF in einem Ordner auf dem Dateiserver. Der Scan
+liest ihn, legt die Lieferung an und schiebt die Datei ins Archiv — im Modus
+`automatisch` erzeugt er dazu Mappe, PDF und Etikett und legt sie im Ausgang
+ab. Was er tut, steht in der einzeiligen Tabelle `atr_scan`; die Maske dafür
+sitzt unter den Lieferungen.
+
+**Der Takt kommt aus der Datenbank, nicht aus dem Dienst.** Im Altprojekt hielt
+ein Scheduler-Thread in der API den Zeitplan; ein Neustart hätte ihn mitgenommen.
+Hier stößt `pg_cron` alle zehn Minuten (werktags 5–19 Uhr) über `pg_net` die
+Route `/api/atr/scan/geplant` an. `compute` bleibt zwischen den Aufrufen
+zustandslos, und ein Deployment kostet höchstens einen ausgelassenen Lauf.
+
+**Der geplante Lauf hängt nicht am Router-Gate.** Ein SQL-Job hat kein
+Nutzertoken. Statt dessen ein gemeinsames Geheimnis: `ATR_SCAN_TOKEN` steht in
+der Umgebung von `compute` und als `acm.atr_scan_token` in der Datenbank, und
+die Route vergleicht mit `hmac.compare_digest`. Steht `aktiv` auf `false`,
+schickt die Datenbank gar nichts erst los — der Schalter wirkt vor dem Netz.
+
+### Wohin der Dienst greifen darf
+
+Das Ziel steht in der Datenbank, die Erlaubnis nicht. `ATR_SMB_ERLAUBT` gibt
+Namen und Subnetze vor; `pruefe_ziel()` löst den eingetragenen Rechner auf und
+prüft **jede** zurückgegebene Adresse gegen diese Liste. Damit ist der Befund 16
+aus dem Altprojekt geschlossen: dort durfte ein Admin ein beliebiges Ziel im
+Netz eintragen, und der Dienst meldete sich mit dem Dienstkonto dort an.
+
+Das Passwort steht aus demselben Grund nicht in der Tabelle, sondern als
+`ATR_SMB_PASSWORT` in der Umgebung: ein Geheimnis in der Datenbank bräuchte
+einen zweiten Schlüssel zum Entschlüsseln, und der Geheimtext läge in jeder
+Sicherung. Deshalb auch die zwei Rechtestufen oben — durchsehen darf, wer ATR
+bearbeitet; **worauf** gezeigt wird, setzt nur die Plattform-Verwaltung.
+
+### Was ein Lauf aushält
+
+- **Archiviert wird zuletzt.** Erst lesen, dann die Lieferung anlegen, dann
+  verschieben. Bricht etwas dazwischen ab, liegt die Datei noch im Eingang und
+  der nächste Lauf nimmt sie wieder mit — lieber zweimal gelesen als verloren.
+- **Eine kaputte Datei blockiert den Ordner nicht.** Der Fehler wird je Datei
+  eingefangen und als Hinweis gemeldet, die Datei bleibt liegen, der Rest läuft
+  weiter.
+- **Ein wegbrechender Dateiserver hält den Lauf an.** Bei einem
+  `DateiserverFehler` bricht die Schleife ab, statt sich an jeder verbliebenen
+  Datei erneut die Zähne auszubeißen.
+- **Gleicher Name, zweimal.** Liegt der Dateiname im Archiv schon, schreibt der
+  Lauf `… (1).pdf` statt zu überschreiben. Das ist auf dem echten Ordner
+  passiert und war richtig so.
+
+Vor Ort geprüft am 10.09.2026 gegen `\\acm_file\Dateiablage\0900 - EDV\Test_ATR`:
+ein echter Diehl-Lieferschein, 8 Positionen, alle 8 im Katalog gefunden, Mappe
+mit `Total weight 4,63` — und die Datei danach im Archiv.

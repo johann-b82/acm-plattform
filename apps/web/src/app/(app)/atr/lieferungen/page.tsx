@@ -6,5 +6,10 @@ export const metadata = { title: "ATR-Lieferungen · ACM-Plattform" };
 
 export default async function LieferungenPage() {
   const session = await requireApp("atr");
-  return <Lieferungsliste darfSchreiben={hasLevel(session.apps, "atr", "editor")} />;
+  return (
+    <Lieferungsliste
+      darfSchreiben={hasLevel(session.apps, "atr", "editor")}
+      darfEinrichten={hasLevel(session.apps, "platform", "admin")}
+    />
+  );
 }

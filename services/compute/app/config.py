@@ -34,6 +34,18 @@ class Settings(BaseSettings):
     # heisst: nur angemeldete HR-Admins duerfen den Abgleich ausloesen.
     HR_SYNC_TOKEN: str = ""
 
+    # ATR-Eingangsordner auf dem Dateiserver. Das Passwort steht hier und
+    # nicht in der Datenbank: sonst braeuchte es zusaetzlich einen Schluessel
+    # zum Entschluesseln, und der Geheimtext laege in jedem Abzug.
+    ATR_SMB_PASSWORT: str = ""
+    # Befund 16: welche Rechner der Dienst ueberhaupt ansprechen darf.
+    # Kommagetrennt, je Eintrag ein Rechnername oder ein Netz in
+    # CIDR-Schreibweise. Leer heisst: kein Ziel freigegeben, der Scan bleibt zu.
+    ATR_SMB_ERLAUBT: str = ""
+    # Gemeinsames Geheimnis fuer den Anstoss aus pg_cron, wie beim
+    # Personio-Abgleich.
+    ATR_SCAN_TOKEN: str = ""
+
     COMPUTE_LOG_LEVEL: str = "warning"
     # Größte angenommene Upload-Datei. Wird beim Lesen geprüft, nicht danach.
     MAX_UPLOAD_BYTES: int = 60 * 1024 * 1024

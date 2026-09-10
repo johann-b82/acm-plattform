@@ -219,10 +219,16 @@ def baue_atr(gerüst: bytes, lieferung: dict, positionen: list[dict]) -> bytes:
     zelle = blatt.cell(summe_neu, 8, float(gesamt))
     zelle.number_format = ZAHLFORMAT
 
-    if lieferung.get("max_gewicht_kg") is not None:
-        for z in range(summe_neu, min(summe_neu + 4, blatt.max_row + 1)):
-            if "max" in str(blatt.cell(z, 6).value or "").lower():
-                zelle = blatt.cell(z, 8, float(lieferung["max_gewicht_kg"]))
+    # Das Hoechstgewicht ist meist eine Konstante des Programms und steht
+    # schon in der Vorlage; ueberschrieben wird nur, wenn die Lieferung einen
+    # eigenen Wert traegt. Das **Format** wird in jedem Fall angeglichen: sonst
+    # steht auf demselben Blatt „211.00" neben „4,63".
+    for z in range(summe_neu, min(summe_neu + 4, blatt.max_row + 1)):
+        if "max" in str(blatt.cell(z, 6).value or "").lower():
+            zelle = blatt.cell(z, 8)
+            if lieferung.get("max_gewicht_kg") is not None:
+                zelle.value = float(lieferung["max_gewicht_kg"])
+            if isinstance(zelle.value, (int, float)):
                 zelle.number_format = ZAHLFORMAT
 
     # Die Zertifizierungszeile bricht auf drei Zeilen um; verbundene Zellen

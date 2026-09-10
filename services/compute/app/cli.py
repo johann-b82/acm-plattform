@@ -51,6 +51,15 @@ async def _uebernahme_nutzer(args) -> None:
         print(bericht.csv(), end="")
 
 
+async def _uebernahme_atr(args) -> None:
+    from app.uebernahme import atr
+
+    bericht = await atr.uebernehmen(_alte_datenbank(args.quelle), trocken=args.trocken)
+    print("Übernahme ATR" + (" (trocken, nichts geschrieben)" if args.trocken else ""))
+    for zeile in bericht.zeilen():
+        print("  " + zeile)
+
+
 def main() -> int:
     zerleger = argparse.ArgumentParser(prog="python -m app.cli")
     unter = zerleger.add_subparsers(dest="befehl", required=True)
@@ -60,6 +69,7 @@ def main() -> int:
     for name, hilfe in (
         ("uebernahme-vertrieb", "Upload-Protokolle, Rechnungen und Aufträge aus lumeapps holen"),
         ("uebernahme-nutzer", "Personen aus directus_users anlegen (neues Passwort je Person)"),
+        ("uebernahme-atr", "ATR-Teilekatalog und Vorlagen aus lumeapps holen"),
     ):
         p = unter.add_parser(name, help=hilfe)
         p.add_argument(
@@ -79,6 +89,7 @@ def main() -> int:
         "reload-postgrest": lambda a: _reload_postgrest(),
         "uebernahme-vertrieb": _uebernahme_vertrieb,
         "uebernahme-nutzer": _uebernahme_nutzer,
+        "uebernahme-atr": _uebernahme_atr,
     }[args.befehl]
     asyncio.run(lauf(args))
     return 0

@@ -261,9 +261,9 @@ Prüfen: `http://<host>/` → Anmeldung → Kacheln.
 
 ## 4. Daten übernehmen
 
-Drei Läufe, jeder erst trocken. Alle drei sind **geprüft** gegen eine echte Alt-Datenbank mit 125 Alembic-Revisionen und Directus 11.17.2.
+Vier Läufe, jeder erst trocken. Alle vier sind **geprüft** gegen eine echte Alt-Datenbank mit 125 Alembic-Revisionen und Directus 11.17.2.
 
-### 4a. Vertrieb und Personen
+### 4a. Vertrieb, Personen und ATR
 
 Ablauf in `docs/setup.md`, Abschnitt „Datenübernahme aus lumeapps". Kurz:
 
@@ -277,10 +277,24 @@ docker compose exec compute python -m app.cli uebernahme-vertrieb --quelle "$QUE
 docker compose exec compute python -m app.cli uebernahme-nutzer --quelle "$QUELLE" --trocken
 docker compose exec compute python -m app.cli uebernahme-nutzer --quelle "$QUELLE" > zugaenge.csv
 
+docker compose exec compute python -m app.cli uebernahme-atr --quelle "$QUELLE" --trocken
+docker compose exec compute python -m app.cli uebernahme-atr --quelle "$QUELLE"
+
 docker network disconnect lumeapps_default acm-compute-1
 ```
 
 `zugaenge.csv` enthält je Person ein neues Passwort, **einmalig**. Verteilen, dann löschen.
+
+Der ATR-Lauf holt 287 Teile und die Vorlagen samt Gerüstdateien. Er ist Pflicht,
+bevor der erste Lieferschein eingelesen wird — ein unvollständiger Katalog
+schlägt sich als „nicht zugeordnet" auf jeder Position nieder.
+
+Danach unter `/atr/lieferungen` den Eingangsordner eintragen: Rechner, Freigabe,
+Domäne, Benutzer und die drei Pfade. Dazu gehören in die `.env` von `compute`
+`ATR_SMB_PASSWORT`, `ATR_SMB_ERLAUBT` (Namen und Subnetze, gegen die sich der
+Dienst anmelden darf) und `ATR_SCAN_TOKEN` (`openssl rand -hex 24`), und
+dasselbe Token als `acm.atr_scan_token` in der Datenbank. Erst „Verbindung
+prüfen", dann den Schalter umlegen.
 
 ### 4b. Signage
 
