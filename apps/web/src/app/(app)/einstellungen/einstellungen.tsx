@@ -7,6 +7,7 @@ import { Kennzahlen } from "./abschnitte/kennzahlen";
 import { Personal } from "./abschnitte/personal";
 import { AtrVorlagen } from "./abschnitte/atr-vorlagen";
 import { Eingangsordner } from "./abschnitte/atr-eingangsordner";
+import { Qualitaet } from "./abschnitte/qualitaet";
 import { Sensoren } from "./abschnitte/sensoren";
 import { Zugaenge } from "./abschnitte/zugaenge";
 
@@ -80,6 +81,8 @@ function Inhalt({ gruppe, eigeneId }: { gruppe: Gruppe; eigeneId: string }) {
           <Eingangsordner />
         </div>
       );
+    case "qualitaet":
+      return <Qualitaet />;
     case "sensoren":
       return <Sensoren />;
     case "zugaenge":
