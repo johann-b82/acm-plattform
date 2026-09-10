@@ -255,6 +255,19 @@ Die Datenbank liefert die Fehlerquote, die Oberfläche zeigt `1 − Quote` als �
 
 **Stolperstein bei SQL-Funktionen:** ein Parameter, der wie eine Spalte heißt, wird zur Spalte aufgelöst. `art text` neben `quality_records.art` ließ die Funktion still null zählen. Parameter tragen deshalb ein `p_`.
 
+### Prüfmengen
+
+Die Kennzahl heißt „Produkte je Tag und Mitarbeiter". Vier Eigenheiten:
+
+- Der Nenner ist **gemeinsam** über beide Größenklassen: Prüfer mal Prüftage. Dieselben Leute prüfen an denselben Tagen große und kleine Produkte.
+- Gerundet wird **zur geraden Zahl**, wie Pythons `round()` (2,5 → 2; 3,5 → 4). Postgres rundet die Hälfte sonst vom Nullpunkt weg, und einzelne Kacheln wichen um eins vom Altprojekt ab. Dafür gibt es `public.runde_zur_geraden(numeric)`.
+- Ohne Prüfer oder Prüftage steht **0** in der Kachel, kein Strich.
+- Nur `rsc = '70000'` ist eine echte Qualitätsprüfung. Alles andere ist eine Sonderbuchung und zählt weder im Zähler noch im Nenner — bleibt aber in der Tabelle, damit sichtbar ist, was gebucht wurde.
+
+Die Größenklasse steht nicht in den Daten, sondern folgt einer Regel über Produktgruppe und Bezeichnung. Sie wird beim Einlesen abgeleitet; dreizehn Parametrisierungen decken die Regeln ab, darunter, dass „Internet" nicht als Netztasche zählt.
+
+**Dieser Upload ersetzt, statt zu aktualisieren.** Die Quelle hat keinen Geschäftsschlüssel — zwei gleiche Buchungszeilen sind erlaubt. Alle Zeilen im Datumsbereich der Datei werden gelöscht, dann kommen die neuen. Von Hand abgewählte Buchungen in diesem Bereich zählen danach wieder mit; ohne Schlüssel lässt sich das nicht sauber vermeiden, und die Upload-Karte sagt es.
+
 ### Eine Migration nachträglich ändern
 
 Solange eine Revision noch nicht gemerged ist, lässt sie sich bearbeiten. Die Testdatenbank merkt das aber nicht: ihr Container läuft zwischen den Läufen weiter und Alembic überspringt die bereits eingetragene Revision. Vorher zurücksetzen:

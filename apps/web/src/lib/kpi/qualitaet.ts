@@ -1,3 +1,4 @@
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { rpc, takt } from "@/lib/kpi/gemeinsam";
 
 /**
@@ -165,3 +166,78 @@ export const reklamationApi = {
 export function onQuality(fehlerquote: number | null): number | null {
   return fehlerquote == null ? null : 1 - fehlerquote;
 }
+
+// ---------------------------------------------------------------------------
+// Prüfmengen und Ausschussquote
+// ---------------------------------------------------------------------------
+
+export interface Pruefmengen {
+  gross: number;
+  klein: number;
+  pruefer: number;
+  prueftage: number;
+}
+
+export interface AusschussZeile {
+  bezeichnung: string | null;
+  size_class: "large" | "small";
+  buchungs_menge: number;
+  ausschuss_menge: number | null;
+  quote: number | null;
+}
+
+export interface BuchungsZeile {
+  id: number;
+  pruef_datum: string;
+  benutzer: string | null;
+  bezeichnung: string | null;
+  size_class: "large" | "small";
+  buchungs_menge: number | null;
+  ausschuss_menge: number | null;
+  excluded: boolean;
+}
+
+export const KLASSE_LABEL: Record<"large" | "small", string> = {
+  large: "groß",
+  small: "klein",
+};
+
+export const pruefungApi = {
+  mengen: async (von: string | null, bis: string | null): Promise<Pruefmengen> => {
+    const rows = await rpc<Pruefmengen[]>("kpi_qualitaet_pruefmengen", { von, bis });
+    const roh = rows[0];
+    return roh
+      ? {
+          gross: Number(roh.gross),
+          klein: Number(roh.klein),
+          pruefer: Number(roh.pruefer),
+          prueftage: Number(roh.prueftage),
+        }
+      : { gross: 0, klein: 0, pruefer: 0, prueftage: 0 };
+  },
+  ausschuss: async (von: string | null, bis: string | null, grenze = 500) => {
+    const rows = await rpc<AusschussZeile[]>("kpi_qualitaet_ausschuss", { von, bis, grenze });
+    return rows.map((z) => ({
+      ...z,
+      buchungs_menge: Number(z.buchungs_menge),
+      ausschuss_menge: z.ausschuss_menge == null ? null : Number(z.ausschuss_menge),
+      quote: z.quote == null ? null : Number(z.quote),
+    }));
+  },
+  buchungen: async (von: string | null, bis: string | null, grenze = 500) => {
+    const rows = await rpc<BuchungsZeile[]>("kpi_qualitaet_buchungen", { von, bis, grenze });
+    return rows.map((z) => ({
+      ...z,
+      buchungs_menge: z.buchungs_menge == null ? null : Number(z.buchungs_menge),
+      ausschuss_menge: z.ausschuss_menge == null ? null : Number(z.ausschuss_menge),
+    }));
+  },
+  /** Eine Buchung aus den Kennzahlen nehmen oder wieder aufnehmen. */
+  ausschlussSetzen: async (id: number, excluded: boolean): Promise<void> => {
+    const { error } = await supabaseBrowser()
+      .from("inspection_records")
+      .update({ excluded })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+};

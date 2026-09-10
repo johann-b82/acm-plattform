@@ -20,6 +20,7 @@ TYP_FAMILIE = {
     "character varying": "text",
     "text": "text",
     "date": "date",
+    "time without time zone": "time",
     "timestamp with time zone": "timestamptz",
     "numeric": "numeric",
     "jsonb": "jsonb",
@@ -33,6 +34,8 @@ def familie_aus_core(typ: sa.types.TypeEngine) -> str:
         return "int"
     if "string" in name or "text" in name or "varchar" in name:
         return "text"
+    if name == "time":
+        return "time"
     if "datetime" in name:
         return "timestamptz"
     if "date" in name:

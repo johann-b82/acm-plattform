@@ -69,6 +69,13 @@ const ARTEN: readonly Art[] = [
       "Audit-Befunde und Reklamationen in einer Datei. Das Level eines Befunds steht im Freitext und wird beim Einlesen abgeleitet.",
   },
   {
+    kind: "pruefungen",
+    titel: "Qualitätsprüfung",
+    datei: "AswQs2151.txt",
+    beschreibung:
+      "Buchungen der Prüfung. Ersetzt alle Zeilen im Datumsbereich der Datei — von Hand abgewählte Buchungen in diesem Bereich zählen danach wieder mit.",
+  },
+  {
     kind: "liefertreue",
     titel: "Liefertermintreue (Einkauf)",
     datei: "dev_excel_Liefertreue_Einkauf.txt",
