@@ -275,6 +275,51 @@ interessenten = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+# Personio-Stammdaten. Personenbezogen — die Zugriffsregeln in Migration 0013
+# binden sie an das Recht `hr`, die Kennzahlenfunktionen geben nur Aggregate
+# heraus und laufen deshalb mit `security definer`.
+personio_employees = sa.Table(
+    "personio_employees",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=False),
+    sa.Column("first_name", sa.String(128)),
+    sa.Column("last_name", sa.String(128)),
+    sa.Column("email", sa.String(255)),
+    sa.Column("department", sa.String(128)),
+    sa.Column("status", sa.String(32)),
+    sa.Column("hire_date", sa.Date),
+    sa.Column("termination_date", sa.Date),
+    sa.Column("weekly_working_hours", sa.Numeric(6, 2)),
+    sa.Column("raw_json", JSONB),
+    sa.Column("synced_at", sa.DateTime(timezone=True), nullable=False),
+)
+
+personio_attendance = sa.Table(
+    "personio_attendance",
+    metadata,
+    sa.Column("id", sa.String(64), primary_key=True),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("datum", sa.Date, nullable=False),
+    sa.Column("start_time", sa.Time),
+    sa.Column("end_time", sa.Time),
+    sa.Column("break_minutes", sa.Integer, nullable=False, server_default="0"),
+    sa.Column("synced_at", sa.DateTime(timezone=True), nullable=False),
+)
+
+personio_absences = sa.Table(
+    "personio_absences",
+    metadata,
+    sa.Column("id", sa.String(64), primary_key=True),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("absence_type_id", sa.Integer),
+    sa.Column("start_date", sa.Date, nullable=False),
+    sa.Column("end_date", sa.Date, nullable=False),
+    sa.Column("time_unit", sa.String(16)),
+    sa.Column("hours", sa.Numeric(8, 2)),
+    sa.Column("raw_json", JSONB),
+    sa.Column("synced_at", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -290,4 +335,7 @@ TABLES = {
     "sales_contacts": sales_contacts,
     "offers": offers,
     "interessenten": interessenten,
+    "personio_employees": personio_employees,
+    "personio_attendance": personio_attendance,
+    "personio_absences": personio_absences,
 }
