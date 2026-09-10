@@ -31,6 +31,7 @@ from app.db import (
     delivery_records,
     delivery_reliability,
     goods_receipt_records,
+    inspection_records,
     quality_records,
     revenues,
     upload_batches,
@@ -41,6 +42,7 @@ from app.parsing.positionen import (
     parse_lieferscheine,
     parse_wareneingaenge,
 )
+from app.parsing.pruefungen import parse_pruefungen
 from app.parsing.qualitaet import parse_8d
 from app.parsing.vertrieb import parse_auftraege, parse_umsatz
 
@@ -60,6 +62,7 @@ ARTEN = (
     "lieferscheine",
     "wareneingaenge",
     "acht_d",
+    "pruefungen",
 )
 
 
@@ -199,6 +202,86 @@ async def _import(
     )
 
 
+async def _import_ersetzend(
+    *,
+    file: UploadFile,
+    kind: str,
+    tabelle: sa.Table,
+    parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
+    claims: Claims,
+    datumsspalte: str,
+) -> UploadErgebnis:
+    """Wie `_import`, aber ersetzend statt aktualisierend.
+
+    Für Dateien ohne Geschäftsschlüssel: alle Zeilen im Datumsbereich der
+    neuen Datei werden gelöscht, dann kommen die neuen. Der Bereich ergibt
+    sich aus der Datei selbst, nicht aus einer Angabe des Nutzers — sonst
+    löscht ein Tippfehler mehr als gewollt.
+    """
+    filename = file.filename or ""
+    if not filename.lower().endswith((".txt", ".csv")):
+        raise HTTPException(422, "Nur .txt- und .csv-Dateien werden angenommen.")
+
+    contents = await _read_limited(file)
+    rows, fehler = await run_in_threadpool(parser, contents)
+
+    now = datetime.now(timezone.utc)
+    status = "failed" if (fehler and not rows) else ("partial" if fehler else "success")
+    spalte = tabelle.c[datumsspalte]
+
+    async with SessionLocal() as session:
+        async with session.begin():
+            ersetzt = 0
+            if rows:
+                daten = [r[datumsspalte] for r in rows]
+                von, bis = min(daten), max(daten)
+                ersetzt = (
+                    await session.execute(
+                        sa.select(sa.func.count())
+                        .select_from(tabelle)
+                        .where(spalte.between(von, bis))
+                    )
+                ).scalar_one()
+                await session.execute(sa.delete(tabelle).where(spalte.between(von, bis)))
+
+            batch_id = (
+                await session.execute(
+                    sa.insert(upload_batches)
+                    .values(
+                        filename=filename,
+                        uploaded_at=now,
+                        kind=kind,
+                        row_count=len(rows),
+                        error_count=len(fehler),
+                        status=status,
+                        uploaded_by=claims.sub,
+                    )
+                    .returning(upload_batches.c.id)
+                )
+            ).scalar_one()
+
+            for r in rows:
+                r["upload_batch_id"] = batch_id
+                r["imported_at"] = now
+                r.setdefault("excluded", False)
+            for start in range(0, len(rows), 1000):
+                await session.execute(sa.insert(tabelle), rows[start : start + 1000])
+
+    return UploadErgebnis(
+        batch_id=batch_id,
+        filename=filename,
+        kind=kind,
+        rows_total=len(rows),
+        rows_inserted=len(rows),
+        rows_updated=ersetzt,
+        status=status,
+        errors=[
+            Fehlerdetail(row=f.get("row", 0), field=f.get("field", ""), message=f.get("message", ""))
+            for f in fehler
+        ],
+    )
+
+
 @router.post("/umsatz", response_model=UploadErgebnis)
 async def upload_umsatz(
     file: UploadFile,
@@ -314,4 +397,29 @@ async def upload_wareneingaenge(
         parser=parse_wareneingaenge,
         claims=claims,
         schluessel=("vorgang_nr", "pos", "upos"),
+    )
+
+
+@router.post("/pruefungen", response_model=UploadErgebnis)
+async def upload_pruefungen(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswQs2151.txt — Buchungen der Qualitätsprüfung.
+
+    Kein Upsert, sondern Ersetzen: die Quelle hat keinen Geschäftsschlüssel,
+    zwei gleiche Buchungszeilen sind erlaubt. Alle Zeilen im Datumsbereich der
+    Datei werden vorher gelöscht.
+
+    Von Hand gesetzte Ausschlüsse in diesem Bereich gehen dabei verloren. Ohne
+    Schlüssel lässt sich das nicht sauber vermeiden; die Oberfläche sagt es
+    vor dem Hochladen.
+    """
+    return await _import_ersetzend(
+        file=file,
+        kind="pruefungen",
+        tabelle=inspection_records,
+        parser=parse_pruefungen,
+        claims=claims,
+        datumsspalte="pruef_datum",
     )

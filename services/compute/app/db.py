@@ -182,6 +182,28 @@ quality_records = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+inspection_records = sa.Table(
+    "inspection_records",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("pruef_datum", sa.Date, nullable=False),
+    sa.Column("pruef_zeit", sa.Time),
+    sa.Column("benutzer", sa.String(64)),
+    sa.Column("fa", sa.String(50)),
+    sa.Column("artikel", sa.String(50)),
+    sa.Column("bezeichnung", sa.Text),
+    sa.Column("buchungs_menge", sa.Numeric(15, 3)),
+    sa.Column("ausschuss_menge", sa.Numeric(15, 3)),
+    sa.Column("produktgruppe", sa.String(64)),
+    sa.Column("typ", sa.String(10)),
+    sa.Column("size_class", sa.String(10), nullable=False),
+    sa.Column("rsc", sa.String(32)),
+    sa.Column("excluded", sa.Boolean, nullable=False),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -191,4 +213,5 @@ TABLES = {
     "delivery_records": delivery_records,
     "quality_records": quality_records,
     "goods_receipt_records": goods_receipt_records,
+    "inspection_records": inspection_records,
 }

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import {
   Bar,
@@ -32,7 +33,9 @@ import {
   MENGENART_LABEL,
   REKLAMATION_BEZUG,
   REKLAMATION_LABEL,
+  KLASSE_LABEL,
   onQuality,
+  pruefungApi,
   qualitaetApi,
   reklamationApi,
   verlaufJeBucket,
@@ -75,6 +78,7 @@ function Kachel({
 }
 
 export function QualitaetDashboard() {
+  const queryClient = useQueryClient();
   const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
   const [arten, setArten] = useState<string[]>([...AUDIT_ARTEN]);
   const [reklArt, setReklArt] = useState<ReklamationsArt>("kunde");
@@ -108,6 +112,23 @@ export function QualitaetDashboard() {
     queryFn: () => reklamationApi.verlauf(reklArt, mengenart, von, bis),
   });
 
+  const mengen = useQuery({
+    queryKey: ["kpi", "qualitaet", "mengen", von, bis],
+    queryFn: () => pruefungApi.mengen(von, bis),
+  });
+  const buchungen = useQuery({
+    queryKey: ["kpi", "qualitaet", "buchungen", von, bis],
+    queryFn: () => pruefungApi.buchungen(von, bis),
+  });
+  const ausschluss = useMutation({
+    mutationFn: ({ id, excluded }: { id: number; excluded: boolean }) =>
+      pruefungApi.ausschlussSetzen(id, excluded),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kpi", "qualitaet"] });
+    },
+    onError: (err: Error) => toast.error(`Ändern fehlgeschlagen: ${err.message}`),
+  });
+
   const ohneLevel = useQuery({
     queryKey: ["kpi", "qualitaet", "ohneLevel", von, bis, filter],
     queryFn: () => qualitaetApi.ohneLevel(von, bis, filter),
@@ -138,6 +159,11 @@ export function QualitaetDashboard() {
   const zielFehlerquote = zielNach[`qualitaet_reklamation_${reklArt}`];
   const zielOnQuality = zielFehlerquote == null ? undefined : (1 - zielFehlerquote) * 100;
 
+  const zielGross = zielNach["qualitaet_pruefung_gross"];
+  const zielKlein = zielNach["qualitaet_pruefung_klein"];
+  const buchungsDaten = buchungen.data;
+  const buchungsListe = useMemo(() => buchungsDaten ?? [], [buchungsDaten]);
+
   const diagnoseDaten = ohneLevel.data;
   const diagnose = useMemo(() => diagnoseDaten ?? [], [diagnoseDaten]);
 
@@ -147,7 +173,14 @@ export function QualitaetDashboard() {
     summe.data?.level_2 === 0 &&
     summe.data?.ohne_level === 0;
   const fehler =
-    summe.error ?? verlauf.error ?? ohneLevel.error ?? ziele.error ?? rekl.error ?? reklVerlauf.error;
+    summe.error ??
+    verlauf.error ??
+    ohneLevel.error ??
+    ziele.error ??
+    rekl.error ??
+    reklVerlauf.error ??
+    mengen.error ??
+    buchungen.error;
 
   function umschalten(art: string) {
     setArten((vorher) =>
@@ -167,7 +200,7 @@ export function QualitaetDashboard() {
           </Link>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Qualität</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Audit-Findings und Reklamationsquote aus den 8D-Berichten.
+            Audit-Findings, Reklamationsquote und Prüfmengen.
           </p>
         </div>
         <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
@@ -414,6 +447,81 @@ export function QualitaetDashboard() {
           </div>
         )}
       </Card>
+
+      <Card className="p-5">
+        <h2 className="font-medium">Geprüfte Produkte</h2>
+        <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+          Menge je Prüfer und Prüftag. Der Teiler ist für beide Größen derselbe:{" "}
+          {mengen.data?.pruefer ?? 0} Prüfer an {mengen.data?.prueftage ?? 0} Tagen.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Kachel
+            titel="Große Produkte"
+            wert={fmt.zahl(mengen.data?.gross)}
+            hinweis={zielGross == null ? undefined : `Mindestens ${zielGross} je Tag und Prüfer`}
+            warnung={zielGross != null && (mengen.data?.gross ?? 0) < zielGross}
+            laedt={mengen.isLoading}
+          />
+          <Kachel
+            titel="Kleine Produkte"
+            wert={fmt.zahl(mengen.data?.klein)}
+            hinweis={zielKlein == null ? undefined : `Mindestens ${zielKlein} je Tag und Prüfer`}
+            warnung={zielKlein != null && (mengen.data?.klein ?? 0) < zielKlein}
+            laedt={mengen.isLoading}
+          />
+        </div>
+      </Card>
+
+      {buchungsListe.length > 0 && (
+        <Card className="p-5">
+          <h2 className="font-medium">Buchungen der Qualitätsprüfung</h2>
+          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+            Eine abgewählte Buchung bleibt stehen, zählt aber in keiner Kachel. Größte Menge
+            zuerst, höchstens 500 Zeilen.
+          </p>
+          <TableWrap className="mt-4">
+            <Table>
+              <thead>
+                <tr>
+                  <Th className="w-20">Zählt mit</Th>
+                  <Th>Datum</Th>
+                  <Th>Prüfer</Th>
+                  <Th>Produkt</Th>
+                  <Th>Größe</Th>
+                  <Th className="text-right">Menge</Th>
+                  <Th className="text-right">Ausschuss</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {buchungsListe.map((b) => (
+                  <tr key={b.id}>
+                    <Td>
+                      <input
+                        type="checkbox"
+                        checked={!b.excluded}
+                        disabled={ausschluss.isPending}
+                        aria-label={`Buchung vom ${new Date(b.pruef_datum).toLocaleDateString("de-DE")} mitzählen`}
+                        onChange={(e) =>
+                          ausschluss.mutate({ id: b.id, excluded: !e.target.checked })
+                        }
+                        className="h-4 w-4 accent-[var(--fg)]"
+                      />
+                    </Td>
+                    <Td className="tabular-nums">
+                      {new Date(b.pruef_datum).toLocaleDateString("de-DE")}
+                    </Td>
+                    <Td>{b.benutzer ?? "—"}</Td>
+                    <Td className="max-w-sm truncate">{b.bezeichnung ?? "—"}</Td>
+                    <Td>{KLASSE_LABEL[b.size_class]}</Td>
+                    <Td className="text-right tabular-nums">{fmt.zahl(b.buchungs_menge)}</Td>
+                    <Td className="text-right tabular-nums">{fmt.zahl(b.ausschuss_menge)}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrap>
+        </Card>
+      )}
 
       {diagnose.length > 0 && (
         <Card className="p-5">
