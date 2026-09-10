@@ -295,6 +295,11 @@ Der Abgleich läuft nachts um 02:15 über `pg_cron` → `pg_net` →
 Fernet-verschlüsselt in der Datenbank — ein Schlüssel weniger, der verloren
 gehen kann.
 
+Das Dashboard liegt unter `/hr` und zeigt oben den Stand des letzten
+Abgleichs samt Fehlertext; wer `hr:admin` hat, kann ihn von Hand anstoßen.
+Welche Abwesenheitsarten als Krankheit zählen, steht unter `/einstellungen` —
+ohne die Angabe bleibt die Kachel sichtbar leer statt still null.
+
 ### Kompetenzentwicklung
 
 - **Anzeige**: Kachel „Kompetenzentwicklung". `GET /api/hr/kpis` → `skill_development`. Nicht im Verlaufsdiagramm.
