@@ -32,11 +32,13 @@ from app.db import (
     delivery_reliability,
     goods_receipt_records,
     inspection_records,
+    material_movements,
     quality_records,
     revenues,
     upload_batches,
 )
 from app.parsing.einkauf import parse_liefertreue
+from app.parsing.material import parse_lagerbewegungen
 from app.parsing.positionen import (
     parse_auftrag_positionen,
     parse_lieferscheine,
@@ -63,6 +65,7 @@ ARTEN = (
     "wareneingaenge",
     "acht_d",
     "pruefungen",
+    "lagerbewegungen",
 )
 
 
@@ -422,4 +425,25 @@ async def upload_pruefungen(
         parser=parse_pruefungen,
         claims=claims,
         datumsspalte="pruef_datum",
+    )
+
+
+@router.post("/lagerbewegungen", response_model=UploadErgebnis)
+async def upload_lagerbewegungen(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswLagBew.txt — Lagerbewegungen.
+
+    Ersetzend wie die Prüfbuchungen: eine Bewegung hat keinen
+    Geschäftsschlüssel, dieselbe Entnahme kann zweimal in derselben Minute
+    stehen.
+    """
+    return await _import_ersetzend(
+        file=file,
+        kind="lagerbewegungen",
+        tabelle=material_movements,
+        parser=parse_lagerbewegungen,
+        claims=claims,
+        datumsspalte="buch_datum",
     )
