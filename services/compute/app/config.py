@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "postgres"
     POSTGRES_PASSWORD: str
 
+    # Personio. Leer heisst: der Abgleich ist nicht eingerichtet und die Route
+    # antwortet mit 503 statt zu scheitern.
+    PERSONIO_CLIENT_ID: str = ""
+    PERSONIO_CLIENT_SECRET: str = ""
+    # Gemeinsames Geheimnis fuer den naechtlichen Anstoss aus pg_cron. Leer
+    # heisst: nur angemeldete HR-Admins duerfen den Abgleich ausloesen.
+    HR_SYNC_TOKEN: str = ""
+
     COMPUTE_LOG_LEVEL: str = "warning"
     # Größte angenommene Upload-Datei. Wird beim Lesen geprüft, nicht danach.
     MAX_UPLOAD_BYTES: int = 60 * 1024 * 1024

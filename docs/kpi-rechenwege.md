@@ -268,6 +268,33 @@ Bei tagesbasierten Abwesenheiten wird `hours = Tage × Tagesarbeitszeit` mit Tag
 - **Sonderfälle**: Ø Bestand = 0 → `None`. Der Wert ist **nicht annualisiert**: ein Monatsfenster ergibt die Monatsquote.
 - **Code**: `_fluctuation`, `_avg_active_headcount_across_range` in `hr_kpi_aggregation.py`.
 
+#### Im neuen Stack
+
+Portiert in Migration `0013_hr_grundlage`. Alles Zeitliche hängt an einer
+Funktion, `hr_tagessoll(person, tag)`, die das Personio-Arbeitszeitmodell
+ausliest — Sollzeit je Wochentag, Fallback `weekly_working_hours / 5`, dann
+8 h. Am Host nachgesehen: alle 75 aktiven Personen haben ein Modell, und es
+ist nicht flach.
+
+Daraus folgen drei Funktionen: `kpi_hr_ueberstunden`, `kpi_hr_krankheit`,
+`kpi_hr_fluktuation`, dazu `kpi_hr_verlauf` für das Diagramm. Sie sind
+`security definer` und geben nur Aggregate her — das Dashboard zeigt die
+Quote, ohne dass der Betrachter das Recht `hr` und damit Zugriff auf die
+Personenzeilen braucht.
+
+Zwei Abweichungen vom Altprojekt:
+
+- **Der Stundenzweig der Krankheitsquote lebt** (Auffälligkeit 1 oben).
+- **Tagesbasierte Abwesenheiten werden über das Modell verteilt**, nicht über
+  Kalendertage. Ein Krankheitstag am Samstag kostet damit null Stunden statt
+  acht, und die Sollstunden im Nenner sind die tatsächlich geplanten statt
+  „Werktage × Wochenstunden / 5".
+
+Der Abgleich läuft nachts um 02:15 über `pg_cron` → `pg_net` →
+`POST /api/hr/sync/geplant`. Die Zugangsdaten stehen in der `.env`, nicht
+Fernet-verschlüsselt in der Datenbank — ein Schlüssel weniger, der verloren
+gehen kann.
+
 ### Kompetenzentwicklung
 
 - **Anzeige**: Kachel „Kompetenzentwicklung". `GET /api/hr/kpis` → `skill_development`. Nicht im Verlaufsdiagramm.
@@ -534,8 +561,8 @@ Im Code belegte Punkte, die eine fachliche Entscheidung brauchen. Keine davon wu
 
 **Rechenlogik**
 
-1. **Krankheitsquote, Stundenzweig tot**: `_sick_leave_ratio` prüft `time_unit == "hours"`, der Sync schreibt `"hour"`, `"day"` oder `"days"`. Stundenbasierte Abwesenheiten werden daher immer über Kalendertage × Tagessatz gerechnet, auch über Wochenenden (`hr_kpi_aggregation.py`, `hr_sync.py`).
-2. **Überstunden-Quote je Zeile statt je Tag**: Bei mehreren Personio-Segmenten pro Tag wird das Tagessoll mehrfach abgezogen. Der Weekly Report summiert dagegen erst je (Mitarbeiter, Tag). Zwei nicht ineinander überführbare Überstunden-Definitionen laufen parallel.
+1. **Krankheitsquote, Stundenzweig tot**: `_sick_leave_ratio` prüft `time_unit == "hours"`, der Sync schreibt `"hour"`, `"day"` oder `"days"`. Stundenbasierte Abwesenheiten werden daher immer über Kalendertage × Tagessatz gerechnet, auch über Wochenenden (`hr_kpi_aggregation.py`, `hr_sync.py`). Am Host gemessen: 200 Abwesenheiten tragen `day`, 50 tragen `hour` — der Zweig springt bei keiner einzigen an. Über 90 Tage ergibt das 19.106 Krankstunden statt 17.665, also 7,5 % zu viel. Im neuen Stack behoben (Migration `0013_hr_grundlage`).
+2. ~~**Überstunden-Quote je Zeile statt je Tag**~~ — **überholt.** Beschrieb den Stand vor `f4dd26b` (2026-09-05). Seitdem summiert `_overtime_ratio` erst je (Mitarbeiter, Tag) und nimmt das Tagessoll aus dem exakten Personio-Arbeitszeitmodell, wie der Weekly Report. Die beiden Definitionen sind zusammengeführt. Am Host gemessen: mit dem Modell 4,93 % über 90 Tage, mit einem flachen Tagessoll von `weekly_working_hours / 5` wären es 9,58 % — fast das Doppelte, weil das echte Modell Mo–Do 8:45 statt 8:00 vorsieht.
 3. **Krankheit im Weekly Report** verteilt über Kalendertage, entschuldigte Stunden über Solltage.
 4. **Zwei Umsatzbegriffe**: „Umsatz / Produktions-MA" und die Vertriebs-Kacheln nutzen `auftraege` (Auftragswert), Material- und Personalkostenquote nutzen `revenues` (Rechnungsumsatz).
 5. **Uneinheitliche Null-Filter im Vertrieb**: `wert_eur > 0` gilt für Ø Auftragswert, Aufträge gesamt und `orders-distribution`, nicht für Umsatz, Kundenanteil und den Wochen-Balken „Auftrag / Wo. / VL".
