@@ -9,6 +9,7 @@ from app.config import settings
 from app.db import engine
 from app.routers.atr import geplant as atr_geplant
 from app.routers.atr import router as atr_router
+from app.routers.einarbeitung import router as einarbeitung_router
 from app.routers.hr import router as hr_router
 from app.routers.kompetenzen import router as kompetenzen_router
 from app.routers.schulungen import router as schulungen_router
@@ -30,6 +31,7 @@ app.include_router(uploads_router)
 app.include_router(atr_router)
 app.include_router(atr_geplant)
 app.include_router(hr_router)
+app.include_router(einarbeitung_router)
 app.include_router(kompetenzen_router)
 app.include_router(schulungen_router)
 app.include_router(sensoren_router)

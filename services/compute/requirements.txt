@@ -19,3 +19,5 @@ smbprotocol==1.15.0
 pysnmp==7.1.23
 # Sensoren: die SNMP-Community verschluesselt ablegen (Fernet).
 cryptography==46.0.7
+# Formblätter: das Logo einbetten. openpyxl braucht Pillow für Bilder.
+pillow==11.3.0

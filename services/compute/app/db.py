@@ -655,6 +655,43 @@ schulung_teilnahmen = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+onboarding_abteilung = sa.Table(
+    "onboarding_abteilung",
+    metadata,
+    sa.Column("employee_id", sa.Integer, primary_key=True),
+    sa.Column("abteilung", sa.Text, nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+einarbeitung_katalog = sa.Table(
+    "einarbeitung_katalog",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("inhalt", sa.Text, nullable=False),
+    sa.Column("ansprechpartner", sa.Text),
+    sa.Column("bereich", sa.Text),
+    sa.Column("reihenfolge", sa.Integer, nullable=False),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+einarbeitung_pflicht = sa.Table(
+    "einarbeitung_pflicht",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("einarbeitung_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("abteilung", sa.String(120), nullable=False),
+)
+
+plattform_logo = sa.Table(
+    "plattform_logo",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("pfad", sa.Text),
+    sa.Column("dateiname", sa.Text),
+    sa.Column("mime", sa.String(64)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -695,4 +732,8 @@ TABLES = {
     "schulung_rollen": schulung_rollen,
     "schulung_importe": schulung_importe,
     "schulung_teilnahmen": schulung_teilnahmen,
+    "einarbeitung_katalog": einarbeitung_katalog,
+    "einarbeitung_pflicht": einarbeitung_pflicht,
+    "plattform_logo": plattform_logo,
+    "onboarding_abteilung": onboarding_abteilung,
 }

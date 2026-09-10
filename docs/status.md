@@ -16,6 +16,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. Dazu die Wartung unter `/produktion`: Maschinen, wiederkehrende Aufgaben, Herstellerpläne und der Nachweisbogen als PDF je Halbjahr. |
 | Fachmodul Qualität | Kennzahlen: Audit-Findings, Reklamationsquote (On Quality), Prüfmengen mit Ausschussquote. Dazu das Audit-Modul unter `/qualitaet`: Planung, Phasen-Checkliste aus Vorlagen, Normbezug und ein Verlauf, den die Datenbank selbst schreibt und niemand mehr ändern kann. |
 | Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
+| Einarbeitung | Inhalte mit Ansprechpartner, Abteilungsmatrix und der persönliche Einarbeitungsplan als PDF (ACM-Formblatt mit Logo). |
 | Onboarding | Eintritte aus Personio und extern gepflegte Personen in einer Liste, der Schulungsplan als Datenbankfunktion (Soll gegen Ist, beide Ebenen der Matrix), Abteilungs-Übersteuerung und die Zuordnung Position → Abteilungskürzel. |
 | Schulungen | Katalog mit Turnus und Frist, Anforderungsmatrix auf zwei Ebenen, Teilnahmen und eine Liste „was offen ist" nach Dringlichkeit. Fälligkeiten rechnet die Sicht `schulung_stand`, sie stehen nirgends gespeichert. Der Import ergänzt und verwirft keine Zeile, die sich Personio nicht zuordnen lässt. |
 | Kompetenzen | Qualifikationsmatrix je Bereich unter `/hr/kompetenzen`: Bereichsdatei einlesen (mit Vorschau), Raster mit stehender Kopfspalte, Lücken in Warnfarbe, Zeilendurchschnitt aus der Sicht statt aus einer Excel-Formel. |
@@ -35,7 +36,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh`, zwei Teile: Abzug von `public`, `auth`, `storage` und ein `tar` des Datei-Volumes. 14 Tage Aufbewahrung, nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 736 in `compute`, 97 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 757 in `compute`, 97 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 

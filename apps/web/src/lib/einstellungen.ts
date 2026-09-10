@@ -51,6 +51,12 @@ export const GRUPPEN: Gruppe[] = [
       "Die Messgeräte im Netz: wo sie stehen, unter welcher Kennung sie Temperatur und Luftfeuchte liefern und ab wann ein Wert als zu hoch gilt.",
   },
   {
+    id: "erscheinung",
+    titel: "Erscheinungsbild",
+    beschreibung:
+      "Das Firmenlogo für die erzeugten Formblätter — Einarbeitungsplan, Wartungsnachweis, Zeugnis.",
+  },
+  {
     id: "zugaenge",
     titel: "Nutzer und Gruppen",
     beschreibung:
