@@ -23,7 +23,8 @@ import {
   takt,
   type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
-import { OTD_ZIEL, einkaufApi, verzugText } from "@/lib/kpi/einkauf";
+import { einkaufApi, verzugText } from "@/lib/kpi/einkauf";
+import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 
@@ -72,6 +73,8 @@ export function EinkaufDashboard() {
     queryKey: ["kpi", "einkauf", "positionen", von, bis],
     queryFn: () => einkaufApi.positionen(von, bis),
   });
+  const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
+  const ziel = nachSchluessel(ziele.data ?? [])["einkauf_otd"];
 
   const verlaufDaten = verlauf.data;
   const chartDaten = useMemo(
@@ -90,7 +93,7 @@ export function EinkaufDashboard() {
   const zeilen = useMemo(() => zeilenDaten ?? [], [zeilenDaten]);
 
   const keineDaten = !otd.isLoading && otd.data?.gesamt === 0;
-  const fehler = otd.error ?? verlauf.error ?? positionen.error;
+  const fehler = otd.error ?? verlauf.error ?? positionen.error ?? ziele.error;
 
   return (
     <div className="space-y-6">
@@ -150,7 +153,7 @@ export function EinkaufDashboard() {
         <Kachel
           titel="OTD-Quote"
           wert={fmt.prozent(otd.data?.quote == null ? null : Number(otd.data.quote))}
-          hinweis={`Ziel ${fmt.prozent(OTD_ZIEL)} · pünktlich heißt Verzug ≤ 0`}
+          hinweis={`Ziel ${fmt.prozent(ziel)} · pünktlich heißt Verzug ≤ 0`}
           laedt={otd.isLoading}
         />
         <Kachel
@@ -200,12 +203,14 @@ export function EinkaufDashboard() {
                     ] as [string, string];
                   }}
                 />
+                {ziel != null && (
                 <ReferenceLine
-                  y={OTD_ZIEL * 100}
+                  y={ziel * 100}
                   stroke="var(--fg-muted)"
                   strokeDasharray="4 4"
                   label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
                 />
+                )}
                 <Line
                   type="monotone"
                   dataKey="quote"

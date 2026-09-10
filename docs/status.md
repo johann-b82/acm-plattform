@@ -15,13 +15,14 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 | Fachmodul Einkauf | Liefertermintreue: ein ERP-Upload, drei KPI-Funktionen als SQL, Dashboard mit Ziellinie und Prüftabelle. |
 | Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. |
 | Fachmodul Qualität | Audit-Findings aus den 8D-Berichten: ein Upload, drei KPI-Funktionen, Dashboard mit Artfilter und Diagnoseliste. Die Reklamationsquote folgt. |
+| Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
 | Logging | `x-logging`-Anker auf jedem Dienst, Caddy `level ERROR`, uvicorn ohne Access-Log, Guard im CI. |
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 164 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 181 in `compute`, 35 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 

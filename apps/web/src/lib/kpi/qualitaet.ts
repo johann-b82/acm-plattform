@@ -40,13 +40,6 @@ export const AUDIT_LABEL: Record<string, string> = {
   "KU AUD": "Kunde",
 };
 
-/**
- * Höchstwerte. Im Altprojekt liegen sie als `target_audit_findings_level1`
- * und `_level2` in den Einstellungen; die sind noch nicht portiert, deshalb
- * hier als Konstanten mit denselben Ausgangswerten.
- */
-export const AUDIT_ZIEL = { level_1: 0, level_2: 5 };
-
 export const qualitaetApi = {
   audits: async (von: string | null, bis: string | null, arten: string[] | null): Promise<AuditSumme> => {
     const rows = await rpc<AuditSumme[]>("kpi_qualitaet_audits", { von, bis, arten });

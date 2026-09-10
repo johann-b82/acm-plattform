@@ -23,7 +23,8 @@ import {
   takt,
   type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
-import { ART_LABEL, VERZUG_ZIEL, produktionApi } from "@/lib/kpi/produktion";
+import { ART_LABEL, produktionApi } from "@/lib/kpi/produktion";
+import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Badge, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 
@@ -72,6 +73,8 @@ export function ProduktionDashboard() {
     queryKey: ["kpi", "produktion", "liste", von, bis],
     queryFn: () => produktionApi.liste(von, bis),
   });
+  const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
+  const ziel = nachSchluessel(ziele.data ?? [])["produktion_verzug"];
 
   const verlaufDaten = verlauf.data;
   const chartDaten = useMemo(
@@ -89,7 +92,7 @@ export function ProduktionDashboard() {
   const offene = zeilen.filter((z) => z.art === "offen").length;
 
   const keineDaten = !verzug.isLoading && verzug.data?.gesamt === 0;
-  const fehler = verzug.error ?? verlauf.error ?? liste.error;
+  const fehler = verzug.error ?? verlauf.error ?? liste.error ?? ziele.error;
 
   return (
     <div className="space-y-6">
@@ -150,7 +153,7 @@ export function ProduktionDashboard() {
         <Kachel
           titel="Verzugsquote"
           wert={fmt.prozent(verzug.data?.quote == null ? null : Number(verzug.data.quote))}
-          hinweis={`Höchstens ${fmt.prozent(VERZUG_ZIEL)}`}
+          hinweis={`Höchstens ${fmt.prozent(ziel)}`}
           laedt={verzug.isLoading}
         />
         <Kachel
@@ -208,12 +211,14 @@ export function ProduktionDashboard() {
                     ] as [string, string];
                   }}
                 />
+                {ziel != null && (
                 <ReferenceLine
-                  y={VERZUG_ZIEL * 100}
+                  y={ziel * 100}
                   stroke="var(--fg-muted)"
                   strokeDasharray="4 4"
                   label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
                 />
+                )}
                 <Line
                   type="monotone"
                   dataKey="quote"

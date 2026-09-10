@@ -33,12 +33,6 @@ export interface OtdPosition {
   verzug_tage: number | null;
 }
 
-/**
- * Zielwert 98 %. Steht im Altprojekt als Konstante im Frontend und nicht in
- * den Einstellungen; das bleibt so, bis das Einstellungsmodul portiert ist.
- */
-export const OTD_ZIEL = 0.98;
-
 export const einkaufApi = {
   otd: async (von: string | null, bis: string | null): Promise<OtdSumme> => {
     const rows = await rpc<OtdSumme[]>("kpi_einkauf_otd", { von, bis });

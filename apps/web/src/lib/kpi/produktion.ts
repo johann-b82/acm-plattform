@@ -31,13 +31,6 @@ export interface VerzugZeile {
   art: "verspaetet" | "offen";
 }
 
-/**
- * Höchstwert für die Verzugsquote. Im Altprojekt liegt er als
- * `target_produktion_verzug` in den Einstellungen; die sind noch nicht
- * portiert, deshalb hier als Konstante mit demselben Ausgangswert.
- */
-export const VERZUG_ZIEL = 0.1;
-
 export const ART_LABEL: Record<VerzugZeile["art"], string> = {
   verspaetet: "zu spät geliefert",
   offen: "offen, überfällig",

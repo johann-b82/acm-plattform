@@ -23,13 +23,8 @@ import {
   takt,
   type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
-import {
-  AUDIT_ARTEN,
-  AUDIT_LABEL,
-  AUDIT_ZIEL,
-  qualitaetApi,
-  verlaufJeBucket,
-} from "@/lib/kpi/qualitaet";
+import { AUDIT_ARTEN, AUDIT_LABEL, qualitaetApi, verlaufJeBucket } from "@/lib/kpi/qualitaet";
+import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 
@@ -82,6 +77,11 @@ export function QualitaetDashboard() {
     queryKey: ["kpi", "qualitaet", "verlauf", von, bis, filter],
     queryFn: () => qualitaetApi.verlauf(von, bis, filter),
   });
+  const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
+  const zielNach = nachSchluessel(ziele.data ?? []);
+  const zielL1 = zielNach["qualitaet_audit_level1"];
+  const zielL2 = zielNach["qualitaet_audit_level2"];
+
   const ohneLevel = useQuery({
     queryKey: ["kpi", "qualitaet", "ohneLevel", von, bis, filter],
     queryFn: () => qualitaetApi.ohneLevel(von, bis, filter),
@@ -106,7 +106,7 @@ export function QualitaetDashboard() {
     summe.data?.level_1 === 0 &&
     summe.data?.level_2 === 0 &&
     summe.data?.ohne_level === 0;
-  const fehler = summe.error ?? verlauf.error ?? ohneLevel.error;
+  const fehler = summe.error ?? verlauf.error ?? ohneLevel.error ?? ziele.error;
 
   function umschalten(art: string) {
     setArten((vorher) =>
@@ -198,15 +198,15 @@ export function QualitaetDashboard() {
         <Kachel
           titel="Audit-Findings Level 1"
           wert={fmt.zahl(summe.data?.level_1)}
-          hinweis={`Höchstens ${AUDIT_ZIEL.level_1}`}
-          warnung={(summe.data?.level_1 ?? 0) > AUDIT_ZIEL.level_1}
+          hinweis={zielL1 == null ? undefined : `Höchstens ${zielL1}`}
+          warnung={zielL1 != null && (summe.data?.level_1 ?? 0) > zielL1}
           laedt={summe.isLoading}
         />
         <Kachel
           titel="Audit-Findings Level 2"
           wert={fmt.zahl(summe.data?.level_2)}
-          hinweis={`Höchstens ${AUDIT_ZIEL.level_2}`}
-          warnung={(summe.data?.level_2 ?? 0) > AUDIT_ZIEL.level_2}
+          hinweis={zielL2 == null ? undefined : `Höchstens ${zielL2}`}
+          warnung={zielL2 != null && (summe.data?.level_2 ?? 0) > zielL2}
           laedt={summe.isLoading}
         />
         <Kachel
