@@ -186,6 +186,18 @@ Rechte: `kpi` zum Ansehen der Kennzahlen, `uploads: admin` zum Einlesen der Date
 
 Ein neues Modul folgt demselben Weg: Parser und Upload-Route in compute, Tabelle mit Policy in einer Alembic-Revision, Rechenweg als SQL-Funktion, Seite unter `apps/web`.
 
+### Einkauf (zweites Modul, nach demselben Muster gebaut)
+
+Liefertermintreue der Lieferanten. Ein Upload (`dev_excel_Liefertreue_Einkauf.txt`), drei SQL-Funktionen (`kpi_einkauf_otd`, `_verlauf`, `kpi_einkauf_positionen`), eine Seite unter `/kpi/einkauf`.
+
+Drei Stellen, an denen der Rechenweg sich nicht von selbst versteht und die deshalb je einen eigenen Test haben:
+
+- Das Fenster liegt auf dem **Ist-Lieferdatum**, nicht auf dem Zieltermin. Gezählt wird, was im Zeitraum angekommen ist.
+- Pünktlich heißt `Verzug ≤ 0`, nicht `= 0`. Eine frühe Lieferung ist pünktlich.
+- Eine Position **ohne** Verzugswert zählt im Nenner der Quote mit und drückt sie, geht aber nicht in den Mittelwert ein. Sie kann nie pünktlich sein, verzerrt aber den Durchschnitt nicht.
+
+Der Zielwert von 98 % steht als Konstante im Frontend, wie im Altprojekt. Er wandert in die Einstellungen, sobald dieses Modul portiert ist.
+
 ### Zugriff vom Browser aus
 
 - **Lesen** geht direkt über PostgREST (`supabaseBrowser()`), die Zeilen-Policies filtern.

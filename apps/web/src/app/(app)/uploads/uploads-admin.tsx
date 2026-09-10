@@ -7,14 +7,16 @@ import { FileUp, Loader2 } from "lucide-react";
 
 import { computeJson } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { fmt } from "@/lib/kpi/vertrieb";
+import { fmt } from "@/lib/kpi/gemeinsam";
 import { Badge, Button, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 
 /**
  * Die ERP-Exporte. Jede Art hat ihren eigenen Endpunkt in compute, weil die
- * Dateien unterschiedliche Spalten haben. Der Import ist ein Upsert auf die
- * Vorgangsnummer: dieselbe Datei zweimal hochzuladen ändert nichts.
+ * Dateien unterschiedliche Spalten haben. Der Import ist ein Upsert auf den
+ * Geschäftsschlüssel der Datei — bei den Vertriebsdateien die Vorgangsnummer,
+ * beim Liefertreue-Export die Position. Dieselbe Datei zweimal hochzuladen
+ * ändert nichts.
  */
 const ARTEN = [
   {
@@ -28,6 +30,13 @@ const ARTEN = [
     titel: "Auftragseingang",
     datei: "AswKpf_AUF.txt",
     beschreibung: "Speist Ø Auftragswert, Aufträge gesamt und die Auswertung je Erfasser.",
+  },
+  {
+    kind: "liefertreue",
+    titel: "Liefertermintreue (Einkauf)",
+    datei: "dev_excel_Liefertreue_Einkauf.txt",
+    beschreibung:
+      "Speist die OTD-Quote im Einkauf. Eine Zeile je Lieferposition; das Ist-Lieferdatum bestimmt den Zeitraum.",
   },
 ] as const;
 
@@ -178,8 +187,8 @@ export function UploadsAdmin() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Uploads</h1>
         <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          ERP-Exporte einlesen. Dieselbe Datei erneut hochzuladen ist gefahrlos: Zeilen werden über
-          die Vorgangsnummer aktualisiert, nicht doppelt angelegt.
+          ERP-Exporte einlesen. Dieselbe Datei erneut hochzuladen ist gefahrlos: bestehende
+            Zeilen werden aktualisiert, nicht doppelt angelegt.
         </p>
       </div>
 
