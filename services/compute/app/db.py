@@ -529,6 +529,59 @@ wartungsdateien = sa.Table(
     sa.Column("hochgeladen_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+kompetenz_matrizen = sa.Table(
+    "kompetenz_matrizen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("bereich", sa.String(30), nullable=False),
+    sa.Column("blatt", sa.String(120), nullable=False),
+    sa.Column("titel", sa.Text),
+    sa.Column("stand", sa.Date),
+    sa.Column("dateiname", sa.Text, nullable=False),
+    sa.Column("importiert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+kompetenz_kategorien = sa.Table(
+    "kompetenz_kategorien",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("matrix_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("reihenfolge", sa.Integer, nullable=False),
+)
+
+kompetenz_qualifikationen = sa.Table(
+    "kompetenz_qualifikationen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("matrix_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("nr", sa.Integer),
+    sa.Column("kategorie", sa.Text),
+    sa.Column("bezeichnung", sa.Text, nullable=False),
+    sa.Column("reihenfolge", sa.Integer, nullable=False),
+)
+
+kompetenz_personen = sa.Table(
+    "kompetenz_personen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("matrix_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("employee_id", sa.Integer),
+    sa.Column("reihenfolge", sa.Integer, nullable=False),
+)
+
+kompetenz_bewertungen = sa.Table(
+    "kompetenz_bewertungen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("qualifikation_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("person_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("anforderungslevel", sa.Integer),
+    sa.Column("erfuellungsgrad", sa.Integer),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -558,4 +611,9 @@ TABLES = {
     "maschinen": maschinen,
     "wartungsaufgaben": wartungsaufgaben,
     "wartungsdateien": wartungsdateien,
+    "kompetenz_matrizen": kompetenz_matrizen,
+    "kompetenz_kategorien": kompetenz_kategorien,
+    "kompetenz_qualifikationen": kompetenz_qualifikationen,
+    "kompetenz_personen": kompetenz_personen,
+    "kompetenz_bewertungen": kompetenz_bewertungen,
 }
