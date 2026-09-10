@@ -18,6 +18,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
 | Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Vollständig: Dashboard unter `/hr` mit Abgleichstand, drei Quoten, Belegschaft, Kompetenzentwicklung, Mitarbeitertabelle und Wochenbericht. |
 | Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. Dort auch die Personal-Einstellungen (Krankheitsarten, Produktionsabteilungen) als Listen. |
+| KPI-Bewertung | Kommentar und Maßnahme zu jeder Kennzahl mit Zielwert. Die Liste ist `zielwerte` selbst — kein zweites Register, das hinter den Dashboards zurückbleiben kann. Lesen mit `kpi`-Recht, Schreiben ab `settings: editor`. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
 | Zeitgesteuertes | `pg_cron` stößt an, `pg_net` ruft. Der Dienst bleibt zustandslos — das Altprojekt ist wegen seines Schedulers im Prozess auf `--workers 1` festgenagelt. |
@@ -25,7 +26,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 426 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 439 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -40,6 +41,7 @@ Tests: 426 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Gehälter verlassen die Datenbank nicht als Einzelwerte.** Die Zeile je Person (`hr_personalkosten_je_person`) ist nicht an `authenticated` freigegeben; nur die Aggregatfunktionen dürfen sie rufen. Ein Test prüft, dass ein direkter Aufruf mit `permission denied` scheitert. Abteilungen mit weniger als drei beitragenden Personen werden zu „Übrige" zusammengefasst, und die Schwelle lässt sich nicht per Aufrufparameter unter drei drücken.
 - **Eine abgewiesene Änderung meldet keinen Erfolg mehr.** In der Datenbank nachgestellt: weist eine Policy ein `update` ab, meldet Postgres `UPDATE 0` — keinen Fehler. PostgREST reicht das als Erfolg durch, und die Einstellungsseite sagte „Gespeichert", während sich nichts geändert hatte. Beide Schreibwege holen die geänderten Zeilen jetzt mit `.select()` zurück und werfen bei einer leeren Antwort.
 - **Die HR-Rechenwege sind an echten Daten geprüft.** Aus dem LAN gegen die Produktionsdatenbank gerechnet (nur Aggregate, lesend): das Arbeitszeitmodell steckt bei allen 75 aktiven Personen und ist nicht flach — Mo–Do 8:45, Fr 5:00. Mit dem Modell ergibt die Überstundenquote über 90 Tage 4,93 %, mit einem flachen Tagessoll wären es 9,58 %. Und der Stundenzweig der Krankheitsquote springt im Altprojekt bei keiner der 250 Abwesenheiten an; über 90 Tage sind das 19.106 statt 17.665 Krankstunden.
+- **Die Maßnahmenliste kann nicht auf eine Kennzahl zeigen, die es nicht gibt.** Der Fremdschlüssel geht auf `zielwerte.schluessel`; ein Eintrag auf einen unbekannten Schlüssel scheitert in der Datenbank, und wird ein Ziel gelöscht, gehen Kommentare und Maßnahmen mit. Das Erledigungsdatum setzt ein Trigger, nicht die Oberfläche: über das echte Formular auf „erledigt" gestellt, stand `erledigt_am` in der Zeile, ohne dass der Browser ein Datum geschickt hätte.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.
 - **Das Altsystem ist abgesichert, solange es noch läuft.** 18 der 21 Befunde aus `docs/security-findings.md` sind in `lumeapps` abgearbeitet (PRs #145–#151): kein Dev-Server und kein root im Betrieb, JWT mit Aussteller und Pflicht-Ablauf, Kiosk-Einbettung ohne Personaldaten, Rumpf- und Archivgrenzen vor pandas, Nutzerdateien nicht mehr inline im eigenen Ursprung, CSRF-Riegel auf der Cookie-Sitzung, Produktionsbild ohne Testsuite. Drei bleiben bewusst offen, mit Begründung in derselben Datei. Zwei verlangen den Host: TLS und die Zertifikatsrotation.
 
