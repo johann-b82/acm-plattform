@@ -72,3 +72,96 @@ export function verlaufJeBucket(
   }
   return [...nach.values()].sort((a, b) => a.bucket.localeCompare(b.bucket));
 }
+
+// ---------------------------------------------------------------------------
+// Reklamationsquote (On Quality)
+// ---------------------------------------------------------------------------
+
+export type ReklamationsArt = "kunde" | "intern" | "lieferant" | "werkbank";
+export type Mengenart = "gesamt" | "akzeptiert";
+
+export const REKLAMATION_LABEL: Record<ReklamationsArt, string> = {
+  kunde: "Kunde",
+  intern: "intern",
+  lieferant: "Material-Lieferanten",
+  werkbank: "Werkbänke",
+};
+
+/** Bezugsgröße je Art — steht in der Kachel, sonst rät man. */
+export const REKLAMATION_BEZUG: Record<ReklamationsArt, string> = {
+  kunde: "gelieferte Menge",
+  intern: "gelieferte Menge",
+  lieferant: "Wareneingang ohne Dienstleistung",
+  werkbank: "Wareneingang der Warengruppen DIENST und SERVIC",
+};
+
+export const MENGENART_LABEL: Record<Mengenart, string> = {
+  gesamt: "gemeldete Menge",
+  akzeptiert: "akzeptierte Menge",
+};
+
+export interface ReklamationSumme {
+  quote: number | null;
+  reklamiert: number;
+  bezugsmenge: number;
+}
+
+export interface ReklamationVerlaufPunkt {
+  bucket: string;
+  quote: number | null;
+  reklamiert: number;
+  bezugsmenge: number;
+}
+
+export const reklamationApi = {
+  quote: async (
+    p_art: ReklamationsArt,
+    p_mengenart: Mengenart,
+    von: string | null,
+    bis: string | null,
+  ): Promise<ReklamationSumme> => {
+    const rows = await rpc<ReklamationSumme[]>("kpi_qualitaet_reklamationen", {
+      p_art,
+      p_mengenart,
+      von,
+      bis,
+    });
+    const roh = rows[0];
+    return roh
+      ? {
+          quote: roh.quote == null ? null : Number(roh.quote),
+          reklamiert: Number(roh.reklamiert),
+          bezugsmenge: Number(roh.bezugsmenge),
+        }
+      : { quote: null, reklamiert: 0, bezugsmenge: 0 };
+  },
+  verlauf: async (
+    p_art: ReklamationsArt,
+    p_mengenart: Mengenart,
+    von: string | null,
+    bis: string | null,
+  ): Promise<ReklamationVerlaufPunkt[]> => {
+    const rows = await rpc<ReklamationVerlaufPunkt[]>("kpi_qualitaet_reklamationen_verlauf", {
+      p_art,
+      p_mengenart,
+      von,
+      bis,
+      takt: takt(von, bis),
+    });
+    return rows.map((r) => ({
+      ...r,
+      quote: r.quote == null ? null : Number(r.quote),
+      reklamiert: Number(r.reklamiert),
+      bezugsmenge: Number(r.bezugsmenge),
+    }));
+  },
+};
+
+/**
+ * „On Quality" ist das Gegenstück zur Fehlerquote. Die Datenbank liefert die
+ * Fehlerquote, weil sie sich direkt aus Zähler und Nenner ergibt; die
+ * Umkehrung passiert hier, an einer Stelle.
+ */
+export function onQuality(fehlerquote: number | null): number | null {
+  return fehlerquote == null ? null : 1 - fehlerquote;
+}

@@ -55,6 +55,13 @@ const ARTEN: readonly Art[] = [
     endungen: ".xlsx,.xls",
   },
   {
+    kind: "wareneingaenge",
+    titel: "Wareneingänge",
+    datei: "AswKpf_WE.txt",
+    beschreibung:
+      "Bezugsgröße der Fehlerquote auf der Einkaufsseite. Die Warengruppe trennt Material-Lieferanten von Werkbänken.",
+  },
+  {
     kind: "acht_d",
     titel: "8D-Berichte",
     datei: "8D.txt",

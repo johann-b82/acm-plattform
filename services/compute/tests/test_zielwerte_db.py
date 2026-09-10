@@ -45,14 +45,16 @@ def db(datenbank_da):
 
 
 class TestBestand:
-    async def test_die_vier_zielwerte_sind_da(self, db):
-        zeilen = await als(PLATTFORM_ADMIN, "select schluessel from public.zielwerte order by 1")
-        assert [z["schluessel"] for z in zeilen] == [
+    async def test_die_zielwerte_der_portierten_module_sind_da(self, db):
+        """Bewusst `issubset`: jedes weitere Modul bringt eigene Ziele mit."""
+        zeilen = await als(PLATTFORM_ADMIN, "select schluessel from public.zielwerte")
+        vorhanden = {z["schluessel"] for z in zeilen}
+        assert {
             "einkauf_otd",
             "produktion_verzug",
             "qualitaet_audit_level1",
             "qualitaet_audit_level2",
-        ]
+        } <= vorhanden
 
     async def test_anteile_stehen_als_bruch(self, db):
         """0.98, nicht 98 — die Oberfläche rechnet um, die Datenbank nicht."""
@@ -76,7 +78,8 @@ class TestBestand:
 class TestLesen:
     async def test_wer_kennzahlen_sieht_sieht_die_ziele(self, db):
         zeilen = await als(NUR_KPI, "select schluessel from public.zielwerte")
-        assert len(zeilen) == 4
+        alle = await als(PLATTFORM_ADMIN, "select schluessel from public.zielwerte")
+        assert len(zeilen) == len(alle) > 0
 
     async def test_ohne_kpi_recht_keine_zeilen(self, db):
         zeilen = await als(OHNE_RECHTE, "select schluessel from public.zielwerte")

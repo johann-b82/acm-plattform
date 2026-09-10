@@ -30,12 +30,17 @@ from app.db import (
     auftraege,
     delivery_records,
     delivery_reliability,
+    goods_receipt_records,
     quality_records,
     revenues,
     upload_batches,
 )
 from app.parsing.einkauf import parse_liefertreue
-from app.parsing.positionen import parse_auftrag_positionen, parse_lieferscheine
+from app.parsing.positionen import (
+    parse_auftrag_positionen,
+    parse_lieferscheine,
+    parse_wareneingaenge,
+)
 from app.parsing.qualitaet import parse_8d
 from app.parsing.vertrieb import parse_auftraege, parse_umsatz
 
@@ -53,6 +58,7 @@ ARTEN = (
     "liefertreue",
     "auftragspositionen",
     "lieferscheine",
+    "wareneingaenge",
     "acht_d",
 )
 
@@ -287,4 +293,25 @@ async def upload_8d(
         parser=parse_8d,
         claims=claims,
         schluessel=("report_nr",),
+    )
+
+
+@router.post("/wareneingaenge", response_model=UploadErgebnis)
+async def upload_wareneingaenge(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_WE — Wareneingänge der Lieferanten.
+
+    Bezugsgröße der Fehlerquote auf der Einkaufsseite. Die Warengruppe
+    entscheidet, ob eine Zeile zu den Lieferanten oder zu den Werkbänken
+    zählt.
+    """
+    return await _import(
+        file=file,
+        kind="wareneingaenge",
+        tabelle=goods_receipt_records,
+        parser=parse_wareneingaenge,
+        claims=claims,
+        schluessel=("vorgang_nr", "pos", "upos"),
     )

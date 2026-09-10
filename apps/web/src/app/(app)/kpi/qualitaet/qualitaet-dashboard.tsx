@@ -9,6 +9,9 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  Line,
+  LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,7 +26,19 @@ import {
   takt,
   type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
-import { AUDIT_ARTEN, AUDIT_LABEL, qualitaetApi, verlaufJeBucket } from "@/lib/kpi/qualitaet";
+import {
+  AUDIT_ARTEN,
+  AUDIT_LABEL,
+  MENGENART_LABEL,
+  REKLAMATION_BEZUG,
+  REKLAMATION_LABEL,
+  onQuality,
+  qualitaetApi,
+  reklamationApi,
+  verlaufJeBucket,
+  type Mengenart,
+  type ReklamationsArt,
+} from "@/lib/kpi/qualitaet";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
@@ -62,6 +77,8 @@ function Kachel({
 export function QualitaetDashboard() {
   const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
   const [arten, setArten] = useState<string[]>([...AUDIT_ARTEN]);
+  const [reklArt, setReklArt] = useState<ReklamationsArt>("kunde");
+  const [mengenart, setMengenart] = useState<Mengenart>("gesamt");
   const { von, bis } = useMemo(() => fenster(zeitraum), [zeitraum]);
   const t = takt(von, bis);
 
@@ -82,6 +99,15 @@ export function QualitaetDashboard() {
   const zielL1 = zielNach["qualitaet_audit_level1"];
   const zielL2 = zielNach["qualitaet_audit_level2"];
 
+  const rekl = useQuery({
+    queryKey: ["kpi", "qualitaet", "rekl", reklArt, mengenart, von, bis],
+    queryFn: () => reklamationApi.quote(reklArt, mengenart, von, bis),
+  });
+  const reklVerlauf = useQuery({
+    queryKey: ["kpi", "qualitaet", "reklVerlauf", reklArt, mengenart, von, bis],
+    queryFn: () => reklamationApi.verlauf(reklArt, mengenart, von, bis),
+  });
+
   const ohneLevel = useQuery({
     queryKey: ["kpi", "qualitaet", "ohneLevel", von, bis, filter],
     queryFn: () => qualitaetApi.ohneLevel(von, bis, filter),
@@ -98,6 +124,20 @@ export function QualitaetDashboard() {
     [verlaufDaten, t],
   );
 
+  const reklVerlaufDaten = reklVerlauf.data;
+  const reklChart = useMemo(
+    () =>
+      (reklVerlaufDaten ?? []).map((p) => ({
+        label: bucketLabel(p.bucket, t),
+        // Angezeigt wird On Quality, nicht die Fehlerquote — hoch ist gut.
+        onQuality: p.quote == null ? null : onQuality(p.quote)! * 100,
+        bezugsmenge: p.bezugsmenge,
+      })),
+    [reklVerlaufDaten, t],
+  );
+  const zielFehlerquote = zielNach[`qualitaet_reklamation_${reklArt}`];
+  const zielOnQuality = zielFehlerquote == null ? undefined : (1 - zielFehlerquote) * 100;
+
   const diagnoseDaten = ohneLevel.data;
   const diagnose = useMemo(() => diagnoseDaten ?? [], [diagnoseDaten]);
 
@@ -106,7 +146,8 @@ export function QualitaetDashboard() {
     summe.data?.level_1 === 0 &&
     summe.data?.level_2 === 0 &&
     summe.data?.ohne_level === 0;
-  const fehler = summe.error ?? verlauf.error ?? ohneLevel.error ?? ziele.error;
+  const fehler =
+    summe.error ?? verlauf.error ?? ohneLevel.error ?? ziele.error ?? rekl.error ?? reklVerlauf.error;
 
   function umschalten(art: string) {
     setArten((vorher) =>
@@ -126,7 +167,7 @@ export function QualitaetDashboard() {
           </Link>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Qualität</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Audit-Findings aus den 8D-Berichten. Gezählt werden Befunde, nicht Mengen.
+            Audit-Findings und Reklamationsquote aus den 8D-Berichten.
           </p>
         </div>
         <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
@@ -235,6 +276,144 @@ export function QualitaetDashboard() {
           </div>
         </Card>
       )}
+
+      <Card className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="font-medium">On Quality</h2>
+            <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+              Anteil der Menge ohne Beanstandung. Bezugsgröße:{" "}
+              {REKLAMATION_BEZUG[reklArt]}.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
+              {(Object.keys(REKLAMATION_LABEL) as ReklamationsArt[]).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setReklArt(a)}
+                  aria-pressed={reklArt === a}
+                  className={cn(
+                    "rounded px-3 py-1 text-sm transition-colors",
+                    reklArt === a
+                      ? "bg-[var(--fg)] text-[var(--bg)]"
+                      : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+                  )}
+                >
+                  {REKLAMATION_LABEL[a]}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
+              {(Object.keys(MENGENART_LABEL) as Mengenart[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMengenart(m)}
+                  aria-pressed={mengenart === m}
+                  className={cn(
+                    "rounded px-3 py-1 text-sm transition-colors",
+                    mengenart === m
+                      ? "bg-[var(--fg)] text-[var(--bg)]"
+                      : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+                  )}
+                >
+                  {MENGENART_LABEL[m]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <Kachel
+            titel="On Quality"
+            wert={fmt.prozent(onQuality(rekl.data?.quote ?? null))}
+            hinweis={
+              zielFehlerquote == null
+                ? `Fehlerquote: ${fmt.prozent(rekl.data?.quote ?? null)}`
+                : `Fehlerquote: ${fmt.prozent(rekl.data?.quote ?? null)} · Ziel ${fmt.prozent(1 - zielFehlerquote)}`
+            }
+            warnung={
+              zielFehlerquote != null &&
+              rekl.data?.quote != null &&
+              rekl.data.quote > zielFehlerquote
+            }
+            laedt={rekl.isLoading}
+          />
+          <Kachel
+            titel="Reklamierte Menge"
+            wert={fmt.zahl(rekl.data?.reklamiert)}
+            laedt={rekl.isLoading}
+          />
+          <Kachel
+            titel="Bezugsmenge"
+            wert={fmt.zahl(rekl.data?.bezugsmenge)}
+            hinweis={rekl.data?.bezugsmenge === 0 ? "ohne sie gibt es keine Quote" : undefined}
+            laedt={rekl.isLoading}
+          />
+        </div>
+
+        {(rekl.data?.quote ?? 0) > 1 && (
+          <p className="mt-3 text-sm text-[var(--danger)]">
+            Es ist mehr reklamiert als bezogen worden. Das kann die Rechnung nicht auflösen:
+            Zähler und Nenner kommen aus verschiedenen Dateien mit eigenen Datumsfeldern. Prüfe,
+            ob die Bezugsdatei für diesen Zeitraum vollständig hochgeladen ist.
+          </p>
+        )}
+
+        {reklChart.length > 0 && (
+          <div className="mt-6 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              {/* Rechter Rand trägt die Beschriftung der Ziellinie. */}
+              <LineChart data={reklChart} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--fg-muted)" />
+                <YAxis
+                  domain={[0, 100]}
+                  // Ohne das dehnt Recharts die Achse bis zum kleinsten Wert;
+                  // ein einzelner Ausreißer weit unter null macht dann die
+                  // ganze Kurve unlesbar. On Quality gehört zwischen 0 und 100.
+                  allowDataOverflow
+                  tick={{ fontSize: 12 }}
+                  stroke="var(--fg-muted)"
+                  tickFormatter={(v: number) => `${v} %`}
+                  width={56}
+                />
+                <Tooltip
+                  formatter={(wert, _name, eintrag) => {
+                    const zahl = typeof wert === "number" ? wert : null;
+                    const menge =
+                      (eintrag?.payload as { bezugsmenge?: number } | undefined)?.bezugsmenge ?? 0;
+                    return [
+                      zahl == null ? "—" : `${zahl.toFixed(2)} %`,
+                      `On Quality (Bezug ${menge})`,
+                    ] as [string, string];
+                  }}
+                />
+                {zielOnQuality != null && (
+                  <ReferenceLine
+                    y={zielOnQuality}
+                    stroke="var(--fg-muted)"
+                    strokeDasharray="4 4"
+                    label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
+                  />
+                )}
+                <Line
+                  type="monotone"
+                  dataKey="onQuality"
+                  stroke="var(--accent, #2f6f8f)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
 
       {diagnose.length > 0 && (
         <Card className="p-5">
