@@ -13,7 +13,7 @@ docker compose up -d --build                                                  # 
 bash scripts/bootstrap-admin.sh admin@example.com '<sicheres Passwort>'       # Break-Glass-Admin in "Plattform-Admins"
 ```
 
-Danach: http://localhost → Login → Launcher. Der Admin sieht alle Apps und die Verwaltung unter `/platform`.
+Danach: http://localhost → Login → Launcher. Der Admin sieht alle Apps; alles Einstellbare liegt unter `/einstellungen`, nach Bereich gruppiert.
 
 `SITE_URL`, `SUPABASE_PUBLIC_URL` und `API_EXTERNAL_URL` in `.env` auf den echten Hostnamen setzen, bevor der Stack auf dem Host läuft. `API_EXTERNAL_URL` ist der JWT-Issuer; `compute` prüft ihn.
 
@@ -143,7 +143,7 @@ Passwörter sind nicht portierbar: Directus und GoTrue speichern sie mit verschi
 
 Gesperrte Konten (`status != active`) kommen nicht mit: wer nicht aktiv war, soll nicht durch die Übernahme wieder Zugang bekommen.
 
-Von den Rechten kommt nur die Zugehörigkeit zur Gruppe `Plattform-Admins` mit, und zwar für die alte Rolle `Administrator`. Alles andere wird nicht geraten, sondern unter `/platform` gesetzt: die alte Welt kannte drei Rollen für die ganze Anwendung, die neue vergibt Rechte je App.
+Von den Rechten kommt nur die Zugehörigkeit zur Gruppe `Plattform-Admins` mit, und zwar für die alte Rolle `Administrator`. Alles andere wird nicht geraten, sondern unter `/einstellungen#zugaenge` gesetzt: die alte Welt kannte drei Rollen für die ganze Anwendung, die neue vergibt Rechte je App.
 
 ### Lauf 3: ATR-Teilekatalog und Vorlagen
 

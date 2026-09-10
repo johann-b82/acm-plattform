@@ -289,7 +289,7 @@ Der ATR-Lauf holt 287 Teile und die Vorlagen samt Gerüstdateien. Er ist Pflicht
 bevor der erste Lieferschein eingelesen wird — ein unvollständiger Katalog
 schlägt sich als „nicht zugeordnet" auf jeder Position nieder.
 
-Danach unter `/atr/lieferungen` den Eingangsordner eintragen: Rechner, Freigabe,
+Danach unter `/einstellungen#atr` den Eingangsordner eintragen: Rechner, Freigabe,
 Domäne, Benutzer und die drei Pfade. Dazu gehören in die `.env` von `compute`
 `ATR_SMB_PASSWORT`, `ATR_SMB_ERLAUBT` (Namen und Subnetze, gegen die sich der
 Dienst anmelden darf) und `ATR_SCAN_TOKEN` (`openssl rand -hex 24`), und

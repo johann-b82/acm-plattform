@@ -8,7 +8,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 |---|---|
 | Supabase self-hosted | Upstream `v1.26.08` gepinnt, per `include:` eingebunden, Overrides in `infra/supabase/`. Analytics und Vector aus, Ports nur auf 127.0.0.1. |
 | Rechtemodell | `apps`, `groups`, `user_groups`, `app_grants`. `custom_access_token_hook` schreibt den Claim `apps` in jedes Token. RLS auf jeder Tabelle. |
-| Rechteverwaltung | `/platform`: Personen anlegen, Gruppen, Mitglieder, App-Rechte pflegbar. Schreibt über PostgREST, geprüft von den Policies; nur das Anlegen einer Person läuft über `compute`. |
+| Rechteverwaltung | `/einstellungen#zugaenge`: Personen anlegen, Gruppen, Mitglieder, App-Rechte pflegbar. Schreibt über PostgREST, geprüft von den Policies; nur das Anlegen einer Person läuft über `compute`. |
 | Next.js-Shell | Login, Launcher, Proxy (`src/proxy.ts`), Server Components lesen über die Nutzer-Session. |
 | Compute-Dienst | FastAPI, prüft das Supabase-JWT. Dreizehn Upload-Routen, zwei für Personen, zwei für den Personio-Abgleich. Zustandslos, kein Scheduler, kein SSE — der nächtliche Anstoß kommt von pg_cron. |
 | Fachmodul Vertrieb | Vollständig: fünf ERP-Uploads, sechs KPI-Funktionen als SQL, Dashboard mit Kacheln, Umsatzverlauf, Kundenanteil, Auswertung je Erfasser und der Vertriebsaktivität je Kalenderwoche. |
@@ -18,6 +18,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
 | Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Vollständig: Dashboard unter `/hr` mit Abgleichstand, drei Quoten, Belegschaft, Kompetenzentwicklung, Mitarbeitertabelle und Wochenbericht. |
 | Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. Dort auch die Personal-Einstellungen (Krankheitsarten, Produktionsabteilungen) als Listen. |
+| Einstellungen | Eine Seite für alles Einstellbare, nach Bereich gruppiert: Kennzahlen, Personal, ATR, Nutzer und Gruppen. Die Seite steht jeder angemeldeten Person offen; welche Gruppen erscheinen, entscheidet das App-Recht — dasselbe, mit dem die Datenbank die Zeilen herausgibt. |
 | KPI-Bewertung | Kommentar und Maßnahme zu jeder Kennzahl mit Zielwert. Die Liste ist `zielwerte` selbst — kein zweites Register, das hinter den Dashboards zurückbleiben kann. Lesen mit `kpi`-Recht, Schreiben ab `settings: editor`. |
 | Newsletter | Eine Ausgabe je Quartal mit Kapiteln, Markdown und Bildern; Leseransicht und PDF unter `/newsletter`, Redaktion unter `/newsletter/redaktion`. Belegschaftszahlen und Neuzugänge werden je Ausgabe eingefroren, nicht live gelesen. |
 | FAIR | Erstmusterprüfung: Zeichnung hochladen, Maße ballonieren, Prüfliste als CSV. Nummerierung gehört der Datenbank — lückenlos, auch über PostgREST. Ohne OCR (siehe `docs/modules/fair.md`). |

@@ -22,7 +22,6 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
-import { Eingangsordner } from "./eingangsordner";
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
@@ -31,13 +30,7 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
  * freigegebene Lieferung ist fertig — und ihre Positionen lassen sich dann
  * nicht mehr ändern (das hält die Datenbank, nicht diese Seite).
  */
-export function Lieferungsliste({
-  darfSchreiben,
-  darfEinrichten,
-}: {
-  darfSchreiben: boolean;
-  darfEinrichten: boolean;
-}) {
+export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const queryClient = useQueryClient();
   const [bericht, setBericht] = useState<LieferscheinErgebnis | null>(null);
 
@@ -78,9 +71,14 @@ export function Lieferungsliste({
             freigegeben.
           </p>
         </div>
-        <Link href="/atr" className="text-sm underline-offset-4 hover:underline">
-          Zum Teilekatalog
-        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/atr" className="underline-offset-4 hover:underline">
+            Zum Teilekatalog
+          </Link>
+          <Link href="/einstellungen#atr" className="underline-offset-4 hover:underline">
+            Eingangsordner
+          </Link>
+        </div>
       </div>
 
       {darfSchreiben && (
@@ -198,8 +196,6 @@ export function Lieferungsliste({
           </Table>
         </TableWrap>
       )}
-
-      <Eingangsordner darfSchreiben={darfSchreiben} darfEinrichten={darfEinrichten} />
     </div>
   );
 }

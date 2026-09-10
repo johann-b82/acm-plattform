@@ -99,7 +99,7 @@ export function Eingangsordner({
   return (
     <Card className="space-y-4 p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-medium">Eingangsordner</h2>
+        <h3 className="font-medium">Eingangsordner</h3>
         {s.aktiv ? <Badge>läuft</Badge> : <Badge variant="outline">aus</Badge>}
         <span className="text-sm text-[var(--fg-muted)]">
           {s.zuletzt_am
