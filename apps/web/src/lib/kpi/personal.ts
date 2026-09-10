@@ -298,3 +298,28 @@ export const personalKeys = {
   mitarbeiter: (von: string, bis: string) =>
     ["kpi", "personal", "mitarbeiter", von, bis] as const,
 };
+
+/**
+ * Beschriftungen für die Kategorien der Belegschaftsverteilung.
+ *
+ * Die Datenbank liefert Schlüssel (`maennlich`, `geringfuegig`), keine Sprache.
+ * Beides steht hier statt in jeder Ansicht: das Personal-Dashboard und der
+ * Newsletter zeigen dieselben Zahlen und dürfen sie nicht verschieden nennen.
+ */
+export const KATEGORIE_LABEL: Record<string, string> = {
+  maennlich: "männlich",
+  weiblich: "weiblich",
+  divers: "divers",
+  unbekannt: "unbekannt",
+  vollzeit: "Vollzeit",
+  teilzeit: "Teilzeit",
+  geringfuegig: "geringfügig",
+  extern: "extern",
+};
+
+/** Beschriftungen für die Gruppen, nach denen verteilt wird. */
+export const VERTEILUNG_LABEL: Record<string, string> = {
+  geschlecht: "Geschlecht",
+  beschaeftigung: "Beschäftigungsart",
+  abteilung: "Abteilungen",
+};

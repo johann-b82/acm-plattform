@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import { fmt } from "@/lib/kpi/gemeinsam";
-import { personalApi, personalKeys, prozente } from "@/lib/kpi/personal";
+import {
+  KATEGORIE_LABEL,
+  personalApi,
+  personalKeys,
+  prozente,
+} from "@/lib/kpi/personal";
 import { Card } from "@/components/ui/primitives";
 
 /**
@@ -18,17 +23,6 @@ import { Card } from "@/components/ui/primitives";
  * Verteilungen nutzen die **heutigen** Stammdaten. Personio liefert keine
  * Historie — nur die Kopfzahl ist echt stichtagsbezogen.
  */
-
-const LABEL: Record<string, string> = {
-  maennlich: "männlich",
-  weiblich: "weiblich",
-  divers: "divers",
-  unbekannt: "unbekannt",
-  vollzeit: "Vollzeit",
-  teilzeit: "Teilzeit",
-  geringfuegig: "geringfügig",
-  extern: "extern",
-};
 
 function Balken({
   titel,
@@ -51,7 +45,7 @@ function Balken({
         {mitAnteil.map((z) => (
           <li key={z.kategorie} className="text-sm">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate">{LABEL[z.kategorie] ?? z.kategorie}</span>
+              <span className="truncate">{KATEGORIE_LABEL[z.kategorie] ?? z.kategorie}</span>
               <span className="shrink-0 font-mono tabular-nums text-[var(--fg-muted)]">
                 {alsProzent ? `${z.prozent} %` : fmt.zahl(z.anzahl)}
               </span>
