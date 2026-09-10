@@ -8,11 +8,12 @@ export const metadata = { title: "KPI-Dashboard · ACM-Plattform" };
  *  nach demselben Muster (Ingestion in compute, Rechnung als SQL-Funktion). */
 const BEREICHE = [
   { path: "/kpi/vertrieb", name: "Vertrieb", beschreibung: "Umsatz, Auftragswert, Kundenanteil", bereit: true },
-  { path: "/kpi/hr", name: "HR", beschreibung: "Belegschaft, Fluktuation, Krankenstand", bereit: false },
+  { path: "/hr", name: "Personal", beschreibung: "Belegschaft, Fluktuation, Krankenstand — eigene Berechtigung", bereit: true },
   { path: "/kpi/qualitaet", name: "Qualität", beschreibung: "Audit-Findings und Reklamationsquote", bereit: true },
-  { path: "/kpi/finanzen", name: "Finanzen", beschreibung: "Materialkostenquote; Personalkosten mit HR", bereit: true },
+  { path: "/kpi/finanzen", name: "Finanzen", beschreibung: "Material- und Personalkostenquote", bereit: true },
   { path: "/kpi/einkauf", name: "Einkauf", beschreibung: "Liefertermintreue der Lieferanten", bereit: true },
   { path: "/kpi/produktion", name: "Produktion", beschreibung: "Verzug, überfällige Aufträge", bereit: true },
+  { path: "/kpi/bewertung", name: "Bewertung", beschreibung: "Kommentare und Maßnahmen zu jeder Kennzahl", bereit: true },
 ] as const;
 
 export default async function KpiHubPage() {
