@@ -279,6 +279,17 @@ Vier Entscheidungen des Rechenwegs, alle aus dem Altprojekt übernommen:
 
 Eine Vereinfachung gegenüber dem Altprojekt: dort wird `AswKpf_WE.txt` **zweimal** hochgeladen, einmal als Wareneingang und einmal als Preisliste in eine eigene Tabelle. Es sind dieselben Zeilen. Hier ist die Preisliste die Sicht `artikel_preise` auf die Wareneingänge, die es schon gibt.
 
+### Ladenhüter
+
+Diese Kennzahl weicht von allen anderen ab, und darin liegen die Fallstricke:
+
+- **Der Zeitraum des Dashboards gilt nicht.** Stichtag ist immer heute. Ein Bestand ist ein Stichtagswert; was im März im Regal lag, sagt der Bewegungsverlauf nicht.
+- **Kein Buchtyp-Filter.** Jede Bewegung zählt, auch Zugänge — der Bestand ist die Summe über alles.
+- Nur Artikelnummern, die mit `L` beginnen, sind Lagerartikel.
+- Ohne Preiszeile fällt ein Artikel still heraus. Anders als bei der Materialkostenquote gibt es hier keine Quote, die dadurch geschönt würde.
+
+Die Preise kommen aus einer **eigenen** Preisliste, nicht aus den Wareneingängen: ein Lagerartikel muss nie eingekauft worden sein, er kann aus der eigenen Fertigung kommen. Der Upload ersetzt die ganze Liste, nicht nur die enthaltenen Artikel — sonst blieben Preise für Artikel stehen, die es nicht mehr gibt.
+
 ### Eine Migration nachträglich ändern
 
 Solange eine Revision noch nicht gemerged ist, lässt sie sich bearbeiten. Die Testdatenbank merkt das aber nicht: ihr Container läuft zwischen den Läufen weiter und Alembic überspringt die bereits eingetragene Revision. Vorher zurücksetzen:
