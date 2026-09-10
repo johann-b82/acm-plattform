@@ -8,6 +8,7 @@
 #     Postgres für lokale Werkzeuge); der Plattform-Caddy routet /supabase/*
 #   - Edge-Functions und Supavisor werden nicht betrieben (Profil "unused")
 #   - GoTrue ruft den Custom Access Token Hook (Claim `apps`) auf
+#   - die Dateien des Speichers liegen in einem benannten Volume
 x-logging: &default-logging
   driver: json-file
   options:
@@ -37,9 +38,13 @@ services:
 
   storage:
     logging: *default-logging
+    volumes: !override
+      - speicher:/var/lib/storage
 
   imgproxy:
     logging: *default-logging
+    volumes: !override
+      - speicher:/var/lib/storage
 
   meta:
     logging: *default-logging
@@ -56,3 +61,17 @@ services:
   supavisor:
     logging: *default-logging
     profiles: ["unused"]
+
+# Der Upstream haengt die Dateien des Speichers als Bind-Mount in
+# `upstream/volumes/storage`. Das ist aus zwei Gruenden der falsche Ort.
+#
+# Erstens gehoert das Verzeichnis `fetch-upstream.sh`: es ist nicht
+# eingecheckt und wird beim naechsten Holen neu angelegt. Hochgeladene Dateien
+# lagen damit in einem Verzeichnis, das ein Werkzeug jederzeit wegraeumen darf.
+#
+# Zweitens legt der Speicher-Dienst die Metadaten eines Objekts als erweiterte
+# Attribute an der Datei ab. Ein Bind-Mount vom Mac kann das nicht, und der
+# Upload scheitert mit `ENOTSUP`. Ein benanntes Volume liegt im Dateisystem
+# der Docker-VM und kann es.
+volumes:
+  speicher:

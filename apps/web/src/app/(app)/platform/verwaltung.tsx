@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, KeyRound, Pencil, UserPlus, X } from "lucide-react";
 
@@ -16,6 +17,7 @@ import {
   type Recht,
 } from "@/lib/verwaltung";
 import { LEVELS, type Level } from "@/lib/rechte";
+import { feedbackApi, feedbackKeys } from "@/lib/feedback";
 import {
   Badge,
   Button,
@@ -45,6 +47,11 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
   const [zugang, setZugang] = useState<{ titel: string; email: string; passwort: string } | null>(
     null,
   );
+
+  // Nur die Zahl der noch nicht angesehenen Meldungen — die Liste selbst
+  // holt die eigene Seite.
+  const meldungen = useQuery({ queryKey: feedbackKeys.liste(), queryFn: feedbackApi.liste });
+  const ungesehene = (meldungen.data ?? []).filter((m) => m.gesehen_am === null).length;
 
   const [apps, gruppen, rechte, mitgliedschaften, nutzer] = useQueries({
     queries: [
@@ -191,12 +198,21 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Verwaltung</h1>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          Gruppen bündeln Personen, App-Rechte hängen an der Gruppe. Änderungen wirken, sobald sich
-          die betroffene Person das nächste Mal anmeldet — die Rechte stehen in ihrem Token.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Verwaltung</h1>
+          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
+            Gruppen bündeln Personen, App-Rechte hängen an der Gruppe. Änderungen wirken, sobald
+            sich die betroffene Person das nächste Mal anmeldet — die Rechte stehen in ihrem Token.
+          </p>
+        </div>
+        <Link
+          href="/platform/feedback"
+          className="inline-flex items-center gap-2 text-sm underline-offset-4 hover:underline"
+        >
+          Meldungen
+          {ungesehene > 0 && <Badge>{ungesehene}</Badge>}
+        </Link>
       </div>
 
       {fehler && (

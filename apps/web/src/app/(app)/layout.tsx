@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireSession } from "@/lib/auth";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/providers";
+import { MeldeKnopf } from "@/components/feedback/melde-knopf";
 
 /**
  * Shell für alle angemeldeten Seiten. Läuft immer pro Anfrage (die Sitzung
@@ -35,6 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
         <main className="mx-auto max-w-7xl p-6">{children}</main>
+        <MeldeKnopf />
       </div>
     </Providers>
   );
