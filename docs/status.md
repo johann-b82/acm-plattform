@@ -15,7 +15,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Einkauf | Vollständig: Liefertermintreue und Ladenhüter der Lagerbestände. |
 | Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. |
 | Fachmodul Qualität | Vollständig: Audit-Findings, Reklamationsquote (On Quality) und Prüfmengen mit Ausschussquote. |
-| Fachmodul Finanzen | Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge. Personalkosten sind mit dem Personio-Abgleich jetzt möglich, aber noch nicht gebaut. |
+| Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
 | Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Dashboard unter `/hr` mit Abgleichstand und Knopf für den Sofortlauf. Offen: Mitarbeitertabelle, Wochenbericht, Personalkostenquote. |
 | Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. Dort auch die Personal-Einstellungen (Krankheitsarten, Produktionsabteilungen) als Listen. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
@@ -25,7 +25,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 346 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 368 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -35,6 +35,7 @@ Tests: 346 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Die Platte wächst nicht mehr im Leerlauf.** Alle zwölf Container tragen den Rotationsanker (`json-file`, 3×10 MB). Nach einem vollständigen Durchgang durch Launcher, Kennzahlen, Uploads, Signage und Verwaltung stehen im Caddy-Log 14 Zeilen, alle vom Start, keine einzige pro Anfrage. Der Compute-Dienst schrieb null Zeilen. Zum Vergleich: im Altprojekt kamen allein von einem Pi rund 13.000 Zeilen pro Tag.
 - **Der Weg zurück ist gegangen worden, nicht nur beschrieben.** `scripts/backup.sh` erzeugt einen Abzug und prüft ihn mit `pg_restore --list`. Zurückgespielt in eine leere Datenbank kamen alle Tabellen, alle Zeilen und alle zehn Policies wieder, bei sieben harmlosen Meldungen.
 - **Die Vertriebsaktivität rechnet, was das Altprojekt rechnete.** Fünf Wochen-Diagramme über 465 Kontakte, 119 Angebote, 57 Interessenten und 86 Auftragszeilen. Stichprobe KW 33: die Karte zeigt 28 Erstkontakte, aufgeteilt KH 10 · MM 10 · SB 8 — dieselben Zahlen liefert eine direkte Abfrage auf `sales_contacts`. Angebotssumme KW 29 (440.428,39 €) und Auftragseingang KW 35 (41.939 €, Stornos gegengerechnet) ebenso gegengerechnet.
+- **Gehälter verlassen die Datenbank nicht als Einzelwerte.** Die Zeile je Person (`hr_personalkosten_je_person`) ist nicht an `authenticated` freigegeben; nur die Aggregatfunktionen dürfen sie rufen. Ein Test prüft, dass ein direkter Aufruf mit `permission denied` scheitert. Abteilungen mit weniger als drei beitragenden Personen werden zu „Übrige" zusammengefasst, und die Schwelle lässt sich nicht per Aufrufparameter unter drei drücken.
 - **Eine abgewiesene Änderung meldet keinen Erfolg mehr.** In der Datenbank nachgestellt: weist eine Policy ein `update` ab, meldet Postgres `UPDATE 0` — keinen Fehler. PostgREST reicht das als Erfolg durch, und die Einstellungsseite sagte „Gespeichert", während sich nichts geändert hatte. Beide Schreibwege holen die geänderten Zeilen jetzt mit `.select()` zurück und werfen bei einer leeren Antwort.
 - **Die HR-Rechenwege sind an echten Daten geprüft.** Aus dem LAN gegen die Produktionsdatenbank gerechnet (nur Aggregate, lesend): das Arbeitszeitmodell steckt bei allen 75 aktiven Personen und ist nicht flach — Mo–Do 8:45, Fr 5:00. Mit dem Modell ergibt die Überstundenquote über 90 Tage 4,93 %, mit einem flachen Tagessoll wären es 9,58 %. Und der Stundenzweig der Krankheitsquote springt im Altprojekt bei keiner der 250 Abwesenheiten an; über 90 Tage sind das 19.106 statt 17.665 Krankstunden.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.

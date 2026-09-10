@@ -35,6 +35,21 @@ function zahl(v: unknown): number {
   return v == null ? 0 : Number(v);
 }
 
+export interface PersonalkostenSumme {
+  personalkosten: number;
+  umsatz: number;
+  quote: number | null;
+  personen: number;
+}
+
+export interface PersonalkostenAbteilung {
+  abteilung: string;
+  kosten: number;
+  personen: number;
+  /** Zusammengefasste Kleinabteilungen — die Zeile ist kein einzelnes Gehalt. */
+  gebuendelt: boolean;
+}
+
 export const finanzenApi = {
   materialkosten: async (von: string | null, bis: string | null): Promise<MaterialkostenSumme> => {
     const rows = await rpc<MaterialkostenSumme[]>("kpi_finanzen_materialkosten", { von, bis });
@@ -61,6 +76,38 @@ export const finanzenApi = {
       umsatz: zahl(r.umsatz),
     }));
   },
+  /**
+   * Personalkostenquote. Rechenweg in Alembic 0014.
+   *
+   * Braucht ein Fenster: die anteilige Verteilung des Monatsbruttos hat ohne
+   * Grenzen keinen Sinn. Der Zeitraum „Alles" ruft sie deshalb nicht.
+   */
+  personalkosten: async (von: string, bis: string): Promise<PersonalkostenSumme> => {
+    const rows = await rpc<PersonalkostenSumme[]>("kpi_finanzen_personalkosten", {
+      p_von: von,
+      p_bis: bis,
+    });
+    const r = rows[0];
+    return {
+      personalkosten: zahl(r?.personalkosten),
+      umsatz: zahl(r?.umsatz),
+      quote: r?.quote == null ? null : Number(r.quote),
+      personen: zahl(r?.personen),
+    };
+  },
+
+  personalkostenJeAbteilung: async (von: string, bis: string) => {
+    const rows = await rpc<PersonalkostenAbteilung[]>(
+      "kpi_finanzen_personalkosten_abteilung",
+      { p_von: von, p_bis: bis },
+    );
+    return rows.map((z) => ({
+      ...z,
+      kosten: zahl(z.kosten),
+      personen: zahl(z.personen),
+    }));
+  },
+
   verbrauch: async (von: string | null, bis: string | null, grenze = 500) => {
     const rows = await rpc<VerbrauchZeile[]>("kpi_finanzen_materialverbrauch", { von, bis, grenze });
     return rows.map((z) => ({
