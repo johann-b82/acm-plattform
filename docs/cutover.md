@@ -39,9 +39,17 @@ Prüfen:
 ```bash
 docker compose ps --format '{{.Service}}\t{{.Ports}}'   # nur caddy auf :80
 docker compose exec api id                              # uid=10001
+docker compose exec api ls /app/tests                   # darf es nicht geben
+docker compose exec api python -c 'import pytest'       # ModuleNotFoundError
+curl -sI http://127.0.0.1/ | grep -i x-content-type     # nosniff
 ```
 
-Damit sind drei der fünf Hoch-Befunde zu. Der vierte (JWT ohne Aussteller) ist im selben Stand enthalten, der fünfte (TLS) folgt in Schritt 5.
+Der `git pull` bringt die Sicherheitsarbeit von 2026-09-10 mit: 18 der 21 Befunde sind zu (PRs #145–#151, Stand in `docs/security-findings.md`). Zwei Punkte ändern das Verhalten spürbar und gehören deshalb in die Beobachtung der ersten Stunde:
+
+- **Die Sitzung läuft nach 8 statt 24 Stunden ab.** Die Oberfläche erneuert sie stillschweigend; sollten Nutzer trotzdem unerwartet auf der Anmeldeseite landen, ist `SESSION_COOKIE_TTL` in `docker-compose.yml` die Stellschraube.
+- **Der Kiosk-Foto-Weg antwortet nur noch für Personen, die gerade auf einem Board stehen.** Wer ein leeres Bild auf einem Bildschirm sieht, sollte prüfen, ob die Person überhaupt Geburtstag hat oder in den letzten 52 Wochen eingetreten ist — 404 ist dort die richtige Antwort, keine Störung.
+
+Damit sind vier der fünf Hoch-Befunde zu; der fünfte (TLS) folgt im nächsten Schritt.
 
 Zurück geht es jederzeit mit `docker compose up -d` ohne das Overlay.
 

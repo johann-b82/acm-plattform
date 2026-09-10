@@ -33,6 +33,7 @@ Tests: 257 in `compute`, 35 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Die Platte wächst nicht mehr im Leerlauf.** Alle zwölf Container tragen den Rotationsanker (`json-file`, 3×10 MB). Nach einem vollständigen Durchgang durch Launcher, Kennzahlen, Uploads, Signage und Verwaltung stehen im Caddy-Log 14 Zeilen, alle vom Start, keine einzige pro Anfrage. Der Compute-Dienst schrieb null Zeilen. Zum Vergleich: im Altprojekt kamen allein von einem Pi rund 13.000 Zeilen pro Tag.
 - **Der Weg zurück ist gegangen worden, nicht nur beschrieben.** `scripts/backup.sh` erzeugt einen Abzug und prüft ihn mit `pg_restore --list`. Zurückgespielt in eine leere Datenbank kamen alle Tabellen, alle Zeilen und alle zehn Policies wieder, bei sieben harmlosen Meldungen.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.
+- **Das Altsystem ist abgesichert, solange es noch läuft.** 18 der 21 Befunde aus `docs/security-findings.md` sind in `lumeapps` abgearbeitet (PRs #145–#151): kein Dev-Server und kein root im Betrieb, JWT mit Aussteller und Pflicht-Ablauf, Kiosk-Einbettung ohne Personaldaten, Rumpf- und Archivgrenzen vor pandas, Nutzerdateien nicht mehr inline im eigenen Ursprung, CSRF-Riegel auf der Cookie-Sitzung, Produktionsbild ohne Testsuite. Drei bleiben bewusst offen, mit Begründung in derselben Datei. Zwei verlangen den Host: TLS und die Zertifikatsrotation.
 
 ## Was bewusst fehlt
 
