@@ -1,0 +1,194 @@
+import { supabaseBrowser } from "@/lib/supabase/client";
+import { computeJson } from "@/lib/compute";
+
+/**
+ * ATR: Teilekatalog und Vorlage.
+ *
+ * Pflegen und Lesen gehen über PostgREST. Nur das Einlesen der Referenzmappe
+ * läuft über `compute` — eine Excel-Datei mit festen Zellen und
+ * Abschnittsüberschriften ist weder in SQL noch über PostgREST zu lesen.
+ */
+
+export const EIMER = "atr";
+export const MAX_DATEI_BYTES = 25 * 1024 * 1024;
+export const XLSX_TYP =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+export interface Teil {
+  id: string;
+  teilenummer: string;
+  teilenummer_norm: string | null;
+  lieferantennummer: string | null;
+  bezeichnung: string | null;
+  zeichnung: string | null;
+  gewicht_kg: string | null;
+  menge: number;
+  kategorie: string | null;
+  bestellposition: string | null;
+  herkunft: string | null;
+  geaendert_am: string;
+}
+
+export interface Vorlage {
+  programm: string;
+  kunde: string | null;
+  arbeitspaket: string | null;
+  besteller_spez: string | null;
+  atp: string | null;
+  lieferanten_spez: string | null;
+  referenz: string | null;
+  lieferant: string | null;
+  kunden_spez: string | null;
+  nscm: string | null;
+  ata_kapitel: string | null;
+  waage: string | null;
+  qs_unterschrift: string | null;
+  geruest_pfad: string | null;
+  geruest_dateiname: string | null;
+  geaendert_am: string;
+}
+
+export interface ImportErgebnis {
+  dateiname: string;
+  programm: string | null;
+  teile_gelesen: number;
+  teile_neu: number;
+  teile_aktualisiert: number;
+  vorlage_uebernommen: boolean;
+  hinweise: string[];
+}
+
+export const atrKeys = {
+  teile: (suche: string) => ["atr", "teile", suche] as const,
+  vorlagen: () => ["atr", "vorlagen"] as const,
+};
+
+const TEIL_FELDER =
+  "id,teilenummer,teilenummer_norm,lieferantennummer,bezeichnung,zeichnung," +
+  "gewicht_kg,menge,kategorie,bestellposition,herkunft,geaendert_am";
+
+const VORLAGE_FELDER =
+  "programm,kunde,arbeitspaket,besteller_spez,atp,lieferanten_spez,referenz," +
+  "lieferant,kunden_spez,nscm,ata_kapitel,waage,qs_unterschrift," +
+  "geruest_pfad,geruest_dateiname,geaendert_am";
+
+function pruefeBetroffen(daten: unknown[] | null): void {
+  if (!daten?.length) {
+    throw new Error("Nicht gespeichert — fehlt das Recht, ATR zu bearbeiten?");
+  }
+}
+
+export const atrApi = {
+  /** Sucht über Teilenummer und Bezeichnung. Eine Zifferneingabe trifft auch
+   *  eine anders geschriebene Nummer, weil die normierte Spalte mitgesucht
+   *  wird — genau dafür ist sie da. */
+  teile: async (suche: string): Promise<Teil[]> => {
+    let anfrage = supabaseBrowser()
+      .from("atr_teile")
+      .select(TEIL_FELDER)
+      .order("teilenummer")
+      .limit(500);
+    const text = suche.trim();
+    if (text) {
+      const muster = `%${text}%`;
+      const ziffern = text.replace(/\D/g, "");
+      const teile = [
+        `teilenummer.ilike.${muster}`,
+        `bezeichnung.ilike.${muster}`,
+        `zeichnung.ilike.${muster}`,
+      ];
+      if (ziffern) teile.push(`teilenummer_norm.ilike.%${ziffern}%`);
+      anfrage = anfrage.or(teile.join(","));
+    }
+    const { data, error } = await anfrage;
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Teil[];
+  },
+
+  teilAendern: async (id: string, felder: Partial<Teil>): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_teile")
+      .update(felder)
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  teilAnlegen: async (teilenummer: string): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_teile")
+      .insert({ teilenummer, herkunft: "von Hand" })
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  teilLoeschen: async (id: string): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_teile")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  vorlagen: async (): Promise<Vorlage[]> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_vorlagen")
+      .select(VORLAGE_FELDER)
+      .order("programm");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Vorlage[];
+  },
+
+  vorlageAendern: async (
+    programm: string,
+    felder: Partial<Vorlage>,
+  ): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_vorlagen")
+      .update(felder)
+      .eq("programm", programm)
+      .select("programm");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  /** Legt die Gerüstdatei ab und ersetzt eine vorhandene, statt sie liegen
+   *  zu lassen. */
+  geruestSetzen: async (v: Vorlage, datei: File): Promise<void> => {
+    if (datei.size > MAX_DATEI_BYTES) {
+      throw new Error("Die Datei ist größer als 25 MB.");
+    }
+    if (datei.type !== XLSX_TYP) {
+      throw new Error("Das Gerüst muss eine .xlsx-Datei sein.");
+    }
+    const sb = supabaseBrowser();
+    const { data: sitzung } = await sb.auth.getUser();
+    const kennung = sitzung.user?.id;
+    if (!kennung) throw new Error("Keine Sitzung.");
+    const pfad = `${kennung}/${crypto.randomUUID()}.xlsx`;
+    const { error: speicherFehler } = await sb.storage
+      .from(EIMER)
+      .upload(pfad, datei, { contentType: datei.type });
+    if (speicherFehler) throw new Error(speicherFehler.message);
+
+    await atrApi.vorlageAendern(v.programm, {
+      geruest_pfad: pfad,
+      geruest_dateiname: datei.name,
+    });
+    if (v.geruest_pfad) await sb.storage.from(EIMER).remove([v.geruest_pfad]);
+  },
+
+  /** Liest eine Referenzmappe ein — der einzige Weg über `compute`. */
+  referenzEinlesen: async (datei: File): Promise<ImportErgebnis> => {
+    const rumpf = new FormData();
+    rumpf.append("datei", datei);
+    return computeJson<ImportErgebnis>("/api/atr/referenz", {
+      method: "POST",
+      body: rumpf,
+    });
+  },
+};

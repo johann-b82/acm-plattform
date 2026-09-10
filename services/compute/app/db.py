@@ -15,7 +15,7 @@ from __future__ import annotations
 import os
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -320,6 +320,46 @@ personio_absences = sa.Table(
     sa.Column("synced_at", sa.DateTime(timezone=True), nullable=False),
 )
 
+atr_teile = sa.Table(
+    "atr_teile",
+    metadata,
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column("teilenummer", sa.String(60), nullable=False),
+    # Erzeugte Spalte — wird nie geschrieben, siehe Migration 0022.
+    sa.Column("teilenummer_norm", sa.Text),
+    sa.Column("lieferantennummer", sa.String(40)),
+    sa.Column("bezeichnung", sa.String(200)),
+    sa.Column("zeichnung", sa.String(60)),
+    sa.Column("gewicht_kg", sa.Numeric(8, 3)),
+    sa.Column("menge", sa.SmallInteger, nullable=False),
+    sa.Column("kategorie", sa.String(40)),
+    sa.Column("bestellposition", sa.String(20)),
+    sa.Column("herkunft", sa.String(255)),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+atr_vorlagen = sa.Table(
+    "atr_vorlagen",
+    metadata,
+    sa.Column("programm", sa.String(20), primary_key=True),
+    sa.Column("kunde", sa.String(200)),
+    sa.Column("arbeitspaket", sa.Text),
+    sa.Column("besteller_spez", sa.String(200)),
+    sa.Column("atp", sa.String(200)),
+    sa.Column("lieferanten_spez", sa.String(200)),
+    sa.Column("referenz", sa.String(200)),
+    sa.Column("lieferant", sa.String(200)),
+    sa.Column("kunden_spez", sa.String(100)),
+    sa.Column("nscm", sa.String(40)),
+    sa.Column("ata_kapitel", sa.String(20)),
+    sa.Column("waage", sa.String(100)),
+    sa.Column("qs_unterschrift", sa.String(100)),
+    sa.Column("geruest_pfad", sa.Text),
+    sa.Column("geruest_dateiname", sa.String(255)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -338,4 +378,6 @@ TABLES = {
     "personio_employees": personio_employees,
     "personio_attendance": personio_attendance,
     "personio_absences": personio_absences,
+    "atr_teile": atr_teile,
+    "atr_vorlagen": atr_vorlagen,
 }
