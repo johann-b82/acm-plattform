@@ -219,6 +219,16 @@ material_movements = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+stock_article_prices = sa.Table(
+    "stock_article_prices",
+    metadata,
+    sa.Column("artnr", sa.String(50), primary_key=True),
+    sa.Column("unit_price", sa.Numeric(15, 5), nullable=False),
+    sa.Column("price_unit", sa.String(20)),
+    sa.Column("article_name", sa.String(255)),
+    sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -230,4 +240,5 @@ TABLES = {
     "goods_receipt_records": goods_receipt_records,
     "inspection_records": inspection_records,
     "material_movements": material_movements,
+    "stock_article_prices": stock_article_prices,
 }

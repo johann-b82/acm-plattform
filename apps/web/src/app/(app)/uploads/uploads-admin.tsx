@@ -76,6 +76,13 @@ const ARTEN: readonly Art[] = [
       "Verbrauch je Artikel für die Materialkostenquote. Ersetzt alle Zeilen im Datumsbereich der Datei.",
   },
   {
+    kind: "lagerpreise",
+    titel: "Artikelpreise Lager",
+    datei: "AswLagBew-Preiskonditionen",
+    beschreibung:
+      "Stammdaten für die Lagerbewertung. Ersetzt die ganze Preisliste, nicht nur die enthaltenen Artikel.",
+  },
+  {
     kind: "pruefungen",
     titel: "Qualitätsprüfung",
     datei: "AswQs2151.txt",

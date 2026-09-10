@@ -12,7 +12,7 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 | Next.js-Shell | Login, Launcher, Proxy (`src/proxy.ts`), Server Components lesen über die Nutzer-Session. |
 | Compute-Dienst | FastAPI, prüft das Supabase-JWT. Zwei Upload-Routen, zwei Routen für Personen. Zustandslos, kein Scheduler, kein SSE. |
 | Fachmodul Vertrieb | Zwei ERP-Uploads, vier KPI-Funktionen als SQL, Dashboard mit Recharts. |
-| Fachmodul Einkauf | Liefertermintreue: ein ERP-Upload, drei KPI-Funktionen als SQL, Dashboard mit Ziellinie und Prüftabelle. |
+| Fachmodul Einkauf | Vollständig: Liefertermintreue und Ladenhüter der Lagerbestände. |
 | Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. |
 | Fachmodul Qualität | Vollständig: Audit-Findings, Reklamationsquote (On Quality) und Prüfmengen mit Ausschussquote. |
 | Fachmodul Finanzen | Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge. Personalkosten warten auf HR. |
@@ -23,7 +23,7 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 244 in `compute`, 35 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 257 in `compute`, 35 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 

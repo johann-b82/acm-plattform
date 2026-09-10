@@ -34,10 +34,12 @@ from app.db import (
     inspection_records,
     material_movements,
     quality_records,
+    stock_article_prices,
     revenues,
     upload_batches,
 )
 from app.parsing.einkauf import parse_liefertreue
+from app.parsing.lagerpreise import parse_lagerpreise
 from app.parsing.material import parse_lagerbewegungen
 from app.parsing.positionen import (
     parse_auftrag_positionen,
@@ -66,6 +68,7 @@ ARTEN = (
     "acht_d",
     "pruefungen",
     "lagerbewegungen",
+    "lagerpreise",
 )
 
 
@@ -446,4 +449,71 @@ async def upload_lagerbewegungen(
         parser=parse_lagerbewegungen,
         claims=claims,
         datumsspalte="buch_datum",
+    )
+
+
+@router.post("/lagerpreise", response_model=UploadErgebnis)
+async def upload_lagerpreise(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """Artikel-Preiskonditionen für die Lagerbewertung.
+
+    Stammdaten, kein Zeitraum: die Datei ist immer der ganze Bestand. Die
+    Tabelle wird deshalb komplett ersetzt, nicht ergänzt — sonst blieben
+    Preise für Artikel stehen, die es nicht mehr gibt.
+    """
+    filename = file.filename or ""
+    if not filename.lower().endswith((".txt", ".csv")):
+        raise HTTPException(422, "Nur .txt- und .csv-Dateien werden angenommen.")
+
+    contents = await _read_limited(file)
+    rows, fehler = await run_in_threadpool(parse_lagerpreise, contents)
+
+    now = datetime.now(timezone.utc)
+    status = "failed" if (fehler and not rows) else ("partial" if fehler else "success")
+
+    async with SessionLocal() as session:
+        async with session.begin():
+            vorher = (
+                await session.execute(
+                    sa.select(sa.func.count()).select_from(stock_article_prices)
+                )
+            ).scalar_one()
+            batch_id = (
+                await session.execute(
+                    sa.insert(upload_batches)
+                    .values(
+                        filename=filename,
+                        uploaded_at=now,
+                        kind="lagerpreise",
+                        row_count=len(rows),
+                        error_count=len(fehler),
+                        status=status,
+                        uploaded_by=claims.sub,
+                    )
+                    .returning(upload_batches.c.id)
+                )
+            ).scalar_one()
+            if rows:
+                await session.execute(sa.delete(stock_article_prices))
+                for r in rows:
+                    r["updated_at"] = now
+                for start in range(0, len(rows), 1000):
+                    await session.execute(
+                        sa.insert(stock_article_prices), rows[start : start + 1000]
+                    )
+
+    return UploadErgebnis(
+        batch_id=batch_id,
+        filename=filename,
+        kind="lagerpreise",
+        rows_total=len(rows),
+        rows_inserted=len(rows),
+        rows_updated=vorher,
+        status=status,
+        errors=[
+            Fehlerdetail(row=f.get("row", 0), field=f.get("field", ""), message=f.get("message", ""))
+            for f in fehler
+        ],
     )

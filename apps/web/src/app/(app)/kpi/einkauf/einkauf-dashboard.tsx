@@ -23,7 +23,13 @@ import {
   takt,
   type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
-import { einkaufApi, verzugText } from "@/lib/kpi/einkauf";
+import {
+  LIEGETAGE,
+  einkaufApi,
+  gebundenesKapital,
+  ladenhueterApi,
+  verzugText,
+} from "@/lib/kpi/einkauf";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
@@ -74,6 +80,11 @@ export function EinkaufDashboard() {
     queryFn: () => einkaufApi.positionen(von, bis),
   });
   const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
+  const ladenhueter = useQuery({
+    // Ohne Zeitraum im Schlüssel: der Bestand ist ein Stichtagswert.
+    queryKey: ["kpi", "einkauf", "ladenhueter"],
+    queryFn: () => ladenhueterApi.top(),
+  });
   const ziel = nachSchluessel(ziele.data ?? [])["einkauf_otd"];
 
   const verlaufDaten = verlauf.data;
@@ -91,9 +102,11 @@ export function EinkaufDashboard() {
 
   const zeilenDaten = positionen.data;
   const zeilen = useMemo(() => zeilenDaten ?? [], [zeilenDaten]);
+  const lagerDaten = ladenhueter.data;
+  const lager = useMemo(() => lagerDaten ?? [], [lagerDaten]);
 
   const keineDaten = !otd.isLoading && otd.data?.gesamt === 0;
-  const fehler = otd.error ?? verlauf.error ?? positionen.error ?? ziele.error;
+  const fehler = otd.error ?? verlauf.error ?? positionen.error ?? ziele.error ?? ladenhueter.error;
 
   return (
     <div className="space-y-6">
@@ -223,6 +236,48 @@ export function EinkaufDashboard() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        </Card>
+      )}
+
+      {lager.length > 0 && (
+        <Card className="p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-medium">Bestellung auf Lager — Ladenhüter</h2>
+            <span className="text-sm text-[var(--fg-muted)]">
+              Gebundenes Kapital: {fmt.eur(gebundenesKapital(lager))}
+            </span>
+          </div>
+          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+            Lagerartikel ohne Bewegung seit mindestens {LIEGETAGE} Tagen, höchster Wert zuerst.
+            Stichtag ist heute — der Zeitraum oben gilt hier nicht, weil ein Bestand kein
+            Zeitraum ist.
+          </p>
+          <TableWrap className="mt-4">
+            <Table>
+              <thead>
+                <tr>
+                  <Th>Artikel</Th>
+                  <Th>Bezeichnung</Th>
+                  <Th className="text-right">Bestand</Th>
+                  <Th className="text-right">Liegt seit</Th>
+                  <Th className="text-right">Stückpreis</Th>
+                  <Th className="text-right">Wert</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {lager.map((z) => (
+                  <tr key={z.artnr}>
+                    <Td className="font-mono text-xs">{z.artnr}</Td>
+                    <Td className="max-w-sm truncate">{z.article_name ?? "—"}</Td>
+                    <Td className="text-right tabular-nums">{fmt.zahl(z.bestand)}</Td>
+                    <Td className="text-right tabular-nums">{fmt.zahl(z.tage_liegend)} d</Td>
+                    <Td className="text-right tabular-nums">{fmt.eurGenau(z.stueckpreis)}</Td>
+                    <Td className="text-right tabular-nums">{fmt.eur(z.wert)}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrap>
         </Card>
       )}
 
