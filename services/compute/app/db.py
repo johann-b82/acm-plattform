@@ -582,6 +582,79 @@ kompetenz_bewertungen = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+externe_personen = sa.Table(
+    "externe_personen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("abteilung", sa.Text),
+    sa.Column("position", sa.Text),
+    sa.Column("eintritt", sa.Date),
+    sa.Column("angelegt_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+schulung_katalog = sa.Table(
+    "schulung_katalog",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("bereich", sa.String(50), nullable=False),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("turnus", sa.String(80)),
+    sa.Column("turnus_monate", sa.Integer),
+    sa.Column("frist_tage", sa.Integer),
+    sa.Column("verantwortlicher", sa.Text),
+    sa.Column("beschreibung", sa.Text),
+    sa.Column("sortierung", sa.Integer, nullable=False),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+)
+
+schulung_pflicht = sa.Table(
+    "schulung_pflicht",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("schulung_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("ebene", sa.String(20), nullable=False),
+    sa.Column("abteilung", sa.String(80), nullable=False),
+)
+
+schulung_rollen = sa.Table(
+    "schulung_rollen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("position", sa.Text, nullable=False),
+    sa.Column("position_norm", sa.String(200), nullable=False),
+    sa.Column("abteilung_kuerzel", sa.String(30), nullable=False),
+)
+
+schulung_importe = sa.Table(
+    "schulung_importe",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("dateiname", sa.Text, nullable=False),
+    sa.Column("importiert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("schulungen", sa.Integer, nullable=False),
+    sa.Column("teilnahmen", sa.Integer, nullable=False),
+    sa.Column("nicht_zugeordnet", sa.Integer, nullable=False),
+    sa.Column("notiz", sa.Text),
+)
+
+schulung_teilnahmen = sa.Table(
+    "schulung_teilnahmen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("schulung_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("employee_id", sa.Integer),
+    sa.Column("extern_id", UUID(as_uuid=False)),
+    sa.Column("personalnummer", sa.String(30)),
+    sa.Column("mitarbeiter_name", sa.Text),
+    sa.Column("abteilung_kuerzel", sa.String(30)),
+    sa.Column("initial_datum", sa.Date),
+    sa.Column("aktuell_datum", sa.Date),
+    sa.Column("naechste_faellig", sa.String(30)),
+    sa.Column("import_id", UUID(as_uuid=False)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -616,4 +689,10 @@ TABLES = {
     "kompetenz_qualifikationen": kompetenz_qualifikationen,
     "kompetenz_personen": kompetenz_personen,
     "kompetenz_bewertungen": kompetenz_bewertungen,
+    "externe_personen": externe_personen,
+    "schulung_katalog": schulung_katalog,
+    "schulung_pflicht": schulung_pflicht,
+    "schulung_rollen": schulung_rollen,
+    "schulung_importe": schulung_importe,
+    "schulung_teilnahmen": schulung_teilnahmen,
 }
