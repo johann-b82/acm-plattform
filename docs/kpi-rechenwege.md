@@ -326,6 +326,36 @@ ohne die Angabe bleibt die Kachel sichtbar leer statt still null.
 - **Filter/Defaults**: Nur Mitarbeiter mit Anwesenheit im Fenster; Frontend füllt fehlende mit 0 auf. Tabellen-Default-Filter „Mit Überstunden", Sortierung Überstunden absteigend. `date_from > date_to` → HTTP 422.
 - **Code**: `hr_overtime.py`; `EmployeeTable.tsx`.
 
+#### Im neuen Stack
+
+Portiert in Migration `0016_mitarbeitertabelle` als `kpi_hr_mitarbeiter`,
+angezeigt auf `/hr`.
+
+**Eine Abweichung, und sie ist groß.** Das Altprojekt rechnet die Tabelle
+anders als die Kachel darüber: je Anwesenheitszeile statt je Tag, und mit
+einem pauschalen Tagessoll statt mit dem Arbeitszeitmodell. Auf den echten
+Daten über 90 Tage gemessen:
+
+| Definition | Überstunden |
+|---|---|
+| Tabelle heute (je Segment, pauschal) | 89,6 Std., 6 Personen |
+| Kachel daneben (je Tag, Modell) | 926,3 Std. |
+
+Faktor zehn zwischen zwei Zahlen auf einer Seite. Der Grund ist derselbe wie
+bei der Kachel vor `f4dd26b`: Personio liefert Vor- und Nachmittag getrennt,
+und je Segment abgezogen verschwindet fast jede Überstunde — bei 82,5 % der
+Tage stehen mehrere Segmente.
+
+Hier rechnet die Tabelle mit `hr_tagessoll` und Tagessummen. Ein Test prüft,
+dass die Summe der Zeilen genau die Kachel ergibt.
+
+Zum Recht: die Tabelle trägt Namen neben Stunden und hängt deshalb an `hr`.
+Im Altprojekt sieht sie jeder Dashboard-Leser. `hr:viewer` genügt — anders
+als beim Wochenbericht, der wegen der Gesundheitsdaten `hr:admin` verlangt.
+
+Unverändert: die Quote bleibt leer, wenn es keine Überstunden gibt (nicht
+null), und die Vorgabe der Tabelle zeigt nur Personen mit Überstunden.
+
 ### Weekly Report (nur Admin)
 
 `GET /api/hr/weekly-report?year&week`, Router `hr_weekly.py`. Personenbezogene Leistungs- und Gesundheitsdaten, deshalb Admin-Gate und `<AdminOnly>` im Frontend.

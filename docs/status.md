@@ -16,7 +16,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. |
 | Fachmodul Qualität | Vollständig: Audit-Findings, Reklamationsquote (On Quality) und Prüfmengen mit Ausschussquote. |
 | Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
-| Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Dashboard unter `/hr` mit Abgleichstand und Wochenbericht. Offen: Mitarbeitertabelle, Belegschafts-Kennzahlen, Kompetenzentwicklung. |
+| Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Dashboard unter `/hr` mit Abgleichstand, Mitarbeitertabelle und Wochenbericht. Offen: Belegschafts-Kennzahlen, Kompetenzentwicklung. |
 | Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. Dort auch die Personal-Einstellungen (Krankheitsarten, Produktionsabteilungen) als Listen. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
@@ -25,7 +25,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 389 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 399 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -35,6 +35,7 @@ Tests: 389 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Die Platte wächst nicht mehr im Leerlauf.** Alle zwölf Container tragen den Rotationsanker (`json-file`, 3×10 MB). Nach einem vollständigen Durchgang durch Launcher, Kennzahlen, Uploads, Signage und Verwaltung stehen im Caddy-Log 14 Zeilen, alle vom Start, keine einzige pro Anfrage. Der Compute-Dienst schrieb null Zeilen. Zum Vergleich: im Altprojekt kamen allein von einem Pi rund 13.000 Zeilen pro Tag.
 - **Der Weg zurück ist gegangen worden, nicht nur beschrieben.** `scripts/backup.sh` erzeugt einen Abzug und prüft ihn mit `pg_restore --list`. Zurückgespielt in eine leere Datenbank kamen alle Tabellen, alle Zeilen und alle zehn Policies wieder, bei sieben harmlosen Meldungen.
 - **Die Vertriebsaktivität rechnet, was das Altprojekt rechnete.** Fünf Wochen-Diagramme über 465 Kontakte, 119 Angebote, 57 Interessenten und 86 Auftragszeilen. Stichprobe KW 33: die Karte zeigt 28 Erstkontakte, aufgeteilt KH 10 · MM 10 · SB 8 — dieselben Zahlen liefert eine direkte Abfrage auf `sales_contacts`. Angebotssumme KW 29 (440.428,39 €) und Auftragseingang KW 35 (41.939 €, Stornos gegengerechnet) ebenso gegengerechnet.
+- **Tabelle und Kachel rechnen dasselbe.** Die Summe der Mitarbeiterzeilen ergibt genau die Überstunden-Kachel (54.291,00 Ist und 3.023,50 Überstunden auf beiden Seiten, an Testdaten gemessen). Im Altprojekt weichen sie um den Faktor zehn ab, weil die Tabelle dort je Anwesenheitssegment und mit pauschalem Tagessoll rechnet: 89,6 gegen 926,3 Stunden über 90 Tage, auf den echten Daten gemessen.
 - **Der Wochenbericht prüft sein Recht selbst.** Er trägt Namen neben Stunden; die Zugriffsregeln an den Tabellen kennen aber nur „darf HR sehen". Ohne `hr:admin` gibt die Funktion keine Zeilen zurück — kein Fehler, keine Zeilen. Zwei Tests halten beide Richtungen fest.
 - **Gehälter verlassen die Datenbank nicht als Einzelwerte.** Die Zeile je Person (`hr_personalkosten_je_person`) ist nicht an `authenticated` freigegeben; nur die Aggregatfunktionen dürfen sie rufen. Ein Test prüft, dass ein direkter Aufruf mit `permission denied` scheitert. Abteilungen mit weniger als drei beitragenden Personen werden zu „Übrige" zusammengefasst, und die Schwelle lässt sich nicht per Aufrufparameter unter drei drücken.
 - **Eine abgewiesene Änderung meldet keinen Erfolg mehr.** In der Datenbank nachgestellt: weist eine Policy ein `update` ab, meldet Postgres `UPDATE 0` — keinen Fehler. PostgREST reicht das als Erfolg durch, und die Einstellungsseite sagte „Gespeichert", während sich nichts geändert hatte. Beide Schreibwege holen die geänderten Zeilen jetzt mit `.select()` zurück und werfen bei einer leeren Antwort.
