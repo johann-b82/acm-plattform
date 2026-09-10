@@ -1,4 +1,4 @@
-"""Die ATR-Mappe nach PDF wandeln.
+"""Eine Excel-Mappe nach PDF wandeln.
 
 LibreOffice im Kopflos-Betrieb. Zwei Dinge sind dabei zu wissen:
 
@@ -6,12 +6,11 @@ LibreOffice im Kopflos-Betrieb. Zwei Dinge sind dabei zu wissen:
 keine zwei Läufe darin. Ein Semaphor reiht sie auf; im Altprojekt steht
 dieselbe Sperre.
 
-**Das Kopfbild fehlt im PDF.** LibreOffice rendert die VML-Grafik der
-Druckkopfzeile nicht — nachgemessen an einer erzeugten Mappe. Das Altprojekt
-löst das, indem es LibreOffice über UNO fernsteuert und das Logo als
-schwebende Form in das Kopfband setzt. Hier steht das PDF ohne Logo; die
-Mappe selbst trägt es. Was das Schließen kostet, steht in
-`docs/modules/atr.md`.
+**Das Kopfbild fehlt im PDF.** LibreOffice rendert die VML-Grafik einer
+Druckkopfzeile nicht — nachgemessen an einer ATR-Mappe. Das Altprojekt löst
+das, indem es LibreOffice über UNO fernsteuert und das Logo als schwebende
+Form in das Kopfband setzt. Hier steht das PDF ohne Logo; die Mappe selbst
+trägt es. Was das Schließen kostet, steht in `docs/modules/atr.md`.
 """
 from __future__ import annotations
 
@@ -29,12 +28,12 @@ class PdfFehlgeschlagen(RuntimeError):
     """LibreOffice kam nicht durch."""
 
 
-async def nach_pdf(xlsx: bytes) -> bytes:
+async def nach_pdf(xlsx: bytes, name: str = "dokument") -> bytes:
     async with _EINER:
-        ordner = Path(f"/tmp/atr_{uuid.uuid4()}")
+        ordner = Path(f"/tmp/{name}_{uuid.uuid4()}")
         try:
             ordner.mkdir(parents=True, exist_ok=True)
-            quelle = ordner / "atr.xlsx"
+            quelle = ordner / f"{name}.xlsx"
             quelle.write_bytes(xlsx)
             prozess = await asyncio.create_subprocess_exec(
                 "soffice",
@@ -63,7 +62,7 @@ async def nach_pdf(xlsx: bytes) -> bytes:
                     f"Die Umwandlung hat nach {_FRIST} s nicht geantwortet."
                 ) from ausnahme
 
-            ziel = ordner / "atr.pdf"
+            ziel = ordner / f"{name}.pdf"
             if prozess.returncode != 0 or not ziel.exists():
                 raise PdfFehlgeschlagen(
                     "LibreOffice ist gescheitert: "

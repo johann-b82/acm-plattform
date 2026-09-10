@@ -13,7 +13,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Compute-Dienst | FastAPI, prüft das Supabase-JWT. Dreizehn Upload-Routen, zwei für Personen, zwei für den Personio-Abgleich. Zustandslos, kein Scheduler, kein SSE — der nächtliche Anstoß kommt von pg_cron. |
 | Fachmodul Vertrieb | Vollständig: fünf ERP-Uploads, sechs KPI-Funktionen als SQL, Dashboard mit Kacheln, Umsatzverlauf, Kundenanteil, Auswertung je Erfasser und der Vertriebsaktivität je Kalenderwoche. |
 | Fachmodul Einkauf | Vollständig: Liefertermintreue und Ladenhüter der Lagerbestände. |
-| Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. |
+| Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. Dazu die Wartung unter `/produktion`: Maschinen, wiederkehrende Aufgaben, Herstellerpläne und der Nachweisbogen als PDF je Halbjahr. |
 | Fachmodul Qualität | Vollständig: Audit-Findings, Reklamationsquote (On Quality) und Prüfmengen mit Ausschussquote. |
 | Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
 | Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Vollständig: Dashboard unter `/hr` mit Abgleichstand, drei Quoten, Belegschaft, Kompetenzentwicklung, Mitarbeitertabelle und Wochenbericht. |
@@ -32,7 +32,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh`, zwei Teile: Abzug von `public`, `auth`, `storage` und ein `tar` des Datei-Volumes. 14 Tage Aufbewahrung, nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 627 in `compute`, 92 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 649 in `compute`, 97 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -62,6 +62,7 @@ Tests: 627 in `compute`, 92 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewusst fehlt
 
+- **World Cup und Tippspiel kommen nicht mit** (Entscheidung 2026-09-10). Ein Upstream-Proxy mit Cache und sieben Embed-Seiten für ein einmaliges Turnier — das Turnier ist vorbei, der Code bleibt im Altrepo lesbar.
 - **Datenübernahme aus `lumeapps` — vorbereitet, nicht ausgeführt.** Die Läufe stehen und sind gegen eine echte Alt-Datenbank geprüft: `uebernahme-vertrieb` und `uebernahme-nutzer` hier (siehe `docs/setup.md`), `python -m app.uebernahme` im Signage-Repo. Alle drei sind wiederholbar und zuerst trocken fahrbar. Ausgeführt wird auf dem Host, mit den echten Daten.
 - **AD-Anbindung.** Vorbereitet über `groups.source` und `groups.external_id`, bewertet in ADR-0004, nicht gebaut.
 - **TLS.** Lokal läuft alles über HTTP. Der Header-Block und `request_body max_size` stehen bereits im Caddyfile.

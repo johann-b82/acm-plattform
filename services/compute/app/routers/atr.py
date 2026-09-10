@@ -47,7 +47,7 @@ from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
 from app.atr.format import programmfamilie
 from app.atr.etikett import baue_etikett
-from app.atr.pdf import PdfFehlgeschlagen, nach_pdf
+from app.dokumente.pdf import PdfFehlgeschlagen, nach_pdf
 from app.atr.speicher import SpeicherFehler, ablegen
 from app.parsing.atr_referenz import MappeUnbrauchbar, lies_referenzmappe
 
@@ -464,7 +464,7 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
     pdf_pfad: str | None = None
     hinweis: str | None = None
     try:
-        pdf = await nach_pdf(mappe)
+        pdf = await nach_pdf(mappe, name="atr")
         pdf_pfad = await ablegen(f"{stamm}/atr.pdf", pdf, "application/pdf")
     except (PdfFehlgeschlagen, SpeicherFehler) as fehler:
         hinweis = f"Das PDF ist nicht entstanden: {fehler}"
