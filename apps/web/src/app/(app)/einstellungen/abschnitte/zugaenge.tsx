@@ -33,11 +33,15 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 /**
  * Gruppen, Mitglieder und App-Rechte pflegen.
  *
+ * Steht als Gruppe in den Einstellungen, nicht mehr auf einer eigenen Seite:
+ * wer Rechte vergibt, stellt etwas ein. Die Überschrift kommt deshalb von der
+ * Einstellungsseite, hier beginnt es mit dem, was man tun kann.
+ *
  * Das Modell trägt bereits die spätere Verzeichnis-Anbindung: Gruppen mit
  * Quelle „ad“ werden hier nicht bearbeitet, ihre Mitglieder kommen dann aus
  * dem Verzeichnis. Die App-Rechte bleiben in jedem Fall hier.
  */
-export function Verwaltung({ eigeneId }: { eigeneId: string }) {
+export function Zugaenge({ eigeneId }: { eigeneId: string }) {
   const queryClient = useQueryClient();
   const [neueGruppe, setNeueGruppe] = useState("");
   const [umbenennen, setUmbenennen] = useState<{ gruppe: Gruppe; name: string } | null>(null);
@@ -197,23 +201,14 @@ export function Verwaltung({ eigeneId }: { eigeneId: string }) {
   const nochNichtMitglied = nutzerListe.filter((n) => !mitgliederDerGruppe.includes(n.id));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Verwaltung</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Gruppen bündeln Personen, App-Rechte hängen an der Gruppe. Änderungen wirken, sobald
-            sich die betroffene Person das nächste Mal anmeldet — die Rechte stehen in ihrem Token.
-          </p>
-        </div>
-        <Link
-          href="/platform/feedback"
-          className="inline-flex items-center gap-2 text-sm underline-offset-4 hover:underline"
-        >
-          Meldungen
-          {ungesehene > 0 && <Badge>{ungesehene}</Badge>}
-        </Link>
-      </div>
+    <div className="space-y-4">
+      <Link
+        href="/platform/feedback"
+        className="inline-flex items-center gap-2 text-sm underline-offset-4 hover:underline"
+      >
+        Gemeldete Seiten ansehen
+        {ungesehene > 0 && <Badge>{ungesehene}</Badge>}
+      </Link>
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">

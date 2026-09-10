@@ -234,7 +234,7 @@ Ein Lieferschein landet als PDF in einem Ordner auf dem Dateiserver. Der Scan
 liest ihn, legt die Lieferung an und schiebt die Datei ins Archiv — im Modus
 `automatisch` erzeugt er dazu Mappe, PDF und Etikett und legt sie im Ausgang
 ab. Was er tut, steht in der einzeiligen Tabelle `atr_scan`; die Maske dafür
-sitzt unter den Lieferungen.
+sitzt unter `/einstellungen#atr`, zusammen mit den Vorlagen.
 
 **Der Takt kommt aus der Datenbank, nicht aus dem Dienst.** Im Altprojekt hielt
 ein Scheduler-Thread in der API den Zeitplan; ein Neustart hätte ihn mitgenommen.

@@ -23,11 +23,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-[var(--fg-muted)]">{session.email}</span>
-            {session.apps.platform === "admin" && (
-              <Link href="/platform" className="underline-offset-4 hover:underline">
-                Verwaltung
-              </Link>
-            )}
+            <Link href="/einstellungen" className="underline-offset-4 hover:underline">
+              Einstellungen
+            </Link>
             <form action={signOut}>
               <button type="submit" className="underline-offset-4 hover:underline">
                 Abmelden

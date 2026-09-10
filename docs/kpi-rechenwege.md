@@ -297,7 +297,7 @@ gehen kann.
 
 Das Dashboard liegt unter `/hr` und zeigt oben den Stand des letzten
 Abgleichs samt Fehlertext; wer `hr:admin` hat, kann ihn von Hand anstoßen.
-Welche Abwesenheitsarten als Krankheit zählen, steht unter `/einstellungen` —
+Welche Abwesenheitsarten als Krankheit zählen, steht unter `/einstellungen#personal` —
 ohne die Angabe bleibt die Kachel sichtbar leer statt still null.
 
 ### Kompetenzentwicklung

@@ -44,7 +44,7 @@ Host (Linux, 192.9.201.9)
 
 ## Rechteverwaltung
 
-Unter `/platform` pflegen Plattform-Admins Gruppen, Mitglieder und App-Rechte. Die Seite schreibt direkt über PostgREST — es gibt keinen eigenen Verwaltungs-Endpunkt in `compute`. Was erlaubt ist, entscheiden die Policies auf `groups`, `user_groups` und `app_grants`; die Oberfläche blendet nur aus, was die Datenbank ohnehin abweist.
+Unter `/einstellungen`, Gruppe „Nutzer und Gruppen“, pflegen Plattform-Admins Gruppen, Mitglieder und App-Rechte (`/platform` leitet dorthin weiter). Die Seite schreibt direkt über PostgREST — es gibt keinen eigenen Verwaltungs-Endpunkt in `compute`. Was erlaubt ist, entscheiden die Policies auf `groups`, `user_groups` und `app_grants`; die Oberfläche blendet nur aus, was die Datenbank ohnehin abweist.
 
 Zwei Besonderheiten:
 

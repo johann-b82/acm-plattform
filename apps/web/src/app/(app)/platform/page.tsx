@@ -1,9 +1,9 @@
-import { requireApp } from "@/lib/auth";
-import { Verwaltung } from "./verwaltung";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Verwaltung · ACM-Plattform" };
-
-export default async function PlatformPage() {
-  const session = await requireApp("platform", "admin");
-  return <Verwaltung eigeneId={session.userId} />;
+/**
+ * Die Verwaltung ist in die Einstellungen gezogen. Der Pfad bleibt: er steht
+ * in der Tabelle `apps`, in Lesezeichen und in der Dokumentation.
+ */
+export default function PlatformPage() {
+  redirect("/einstellungen#zugaenge");
 }

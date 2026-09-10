@@ -16,7 +16,13 @@ export default async function LauncherPage({
   // kommt aus dem Claim `apps`, den der Token-Hook aus app_grants berechnet.
   const { data, error } = await supabase.from("apps").select("id,name,path,sort").order("sort");
   if (error) throw new Error("Apps konnten nicht geladen werden.");
-  const visible = (data as App[]).filter((a) => a.id !== "platform" && levelFor(session.apps, a.id));
+  // `platform` und `settings` sind keine Apps, sondern Querschnitt: beide
+  // hängen als „Einstellungen“ in der Kopfzeile und stehen jeder Person
+  // offen — was drinsteht, entscheidet dort das Recht je Gruppe.
+  const quer = ["platform", "settings"];
+  const visible = (data as App[]).filter(
+    (a) => !quer.includes(a.id) && levelFor(session.apps, a.id),
+  );
 
   return (
     <div>

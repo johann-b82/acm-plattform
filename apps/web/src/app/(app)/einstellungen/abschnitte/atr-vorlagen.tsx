@@ -29,7 +29,7 @@ const FELDER: { feld: keyof Vorlage; label: string }[] = [
   { feld: "qs_unterschrift", label: "QS-Unterschrift" },
 ];
 
-export function Vorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
+export function AtrVorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
   const queryClient = useQueryClient();
   const vorlagen = useQuery({
     queryKey: atrKeys.vorlagen(),
@@ -58,15 +58,13 @@ export function Vorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
   });
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold">Vorlagen</h2>
-        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-          Eine je Programm. Kopfdaten und Gerüstdatei stehen in jedem
-          ATR-Dokument dieses Programms gleich. Angelegt wird eine Vorlage
-          beim Einlesen einer Referenzmappe.
-        </p>
-      </div>
+    <div className="space-y-3">
+      <h3 className="font-medium">Vorlagen</h3>
+      <p className="max-w-prose text-sm text-[var(--fg-muted)]">
+        Eine Vorlage je Programm. Kopfdaten und Gerüstdatei stehen in jedem
+        ATR-Dokument dieses Programms gleich. Angelegt wird eine Vorlage beim
+        Einlesen einer Referenzmappe im Teilekatalog.
+      </p>
 
       {liste.length === 0 ? (
         <EmptyState
@@ -77,7 +75,7 @@ export function Vorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
         liste.map((v) => (
           <Card key={v.programm} className="space-y-4 p-5">
             <div className="flex flex-wrap items-center gap-3">
-              <h3 className="font-medium">{v.programm}</h3>
+              <h4 className="font-medium">{v.programm}</h4>
               {darfSchreiben && (
                 <label
                   className={
@@ -137,6 +135,6 @@ export function Vorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
           </Card>
         ))
       )}
-    </section>
+    </div>
   );
 }

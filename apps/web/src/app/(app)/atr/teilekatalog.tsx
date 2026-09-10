@@ -19,7 +19,6 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
-import { Vorlagen } from "./vorlagen";
 
 /**
  * Der Teilekatalog: was ein Teil heißt, wiegt und zu welcher Zeichnung es
@@ -114,12 +113,14 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
           Teilenummer ohne Beiwerk — nur die Ziffern zählen.
         </p>
         </div>
-        <Link
-          href="/atr/lieferungen"
-          className="text-sm underline-offset-4 hover:underline"
-        >
-          Zu den Lieferungen
-        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/atr/lieferungen" className="underline-offset-4 hover:underline">
+            Zu den Lieferungen
+          </Link>
+          <Link href="/einstellungen#atr" className="underline-offset-4 hover:underline">
+            Vorlagen und Eingangsordner
+          </Link>
+        </div>
       </div>
 
       {darfSchreiben && (
@@ -267,8 +268,6 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
           Nur die ersten 500 Treffer — bitte enger suchen.
         </p>
       )}
-
-      <Vorlagen darfSchreiben={darfSchreiben} />
     </div>
   );
 }
