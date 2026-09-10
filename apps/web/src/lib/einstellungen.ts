@@ -39,6 +39,12 @@ export const GRUPPEN: Gruppe[] = [
       "Was in jedem Dokument eines Programms gleich steht, und woher die Lieferscheine kommen.",
   },
   {
+    id: "sensoren",
+    titel: "Sensoren",
+    beschreibung:
+      "Die Messgeräte im Netz: wo sie stehen, unter welcher Kennung sie Temperatur und Luftfeuchte liefern und ab wann ein Wert als zu hoch gilt.",
+  },
+  {
     id: "zugaenge",
     titel: "Nutzer und Gruppen",
     beschreibung:

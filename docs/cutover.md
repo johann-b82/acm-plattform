@@ -293,7 +293,14 @@ Danach unter `/einstellungen#atr` den Eingangsordner eintragen: Rechner, Freigab
 Domäne, Benutzer und die drei Pfade. Dazu gehören in die `.env` von `compute`
 `ATR_SMB_PASSWORT`, `ATR_SMB_ERLAUBT` (Namen und Subnetze, gegen die sich der
 Dienst anmelden darf) und `ATR_SCAN_TOKEN` (`openssl rand -hex 24`), und
-dasselbe Token als `acm.atr_scan_token` in der Datenbank. Erst „Verbindung
+dasselbe Token als `acm.atr_scan_token` in der Datenbank — gesetzt als
+`supabase_admin`, `postgres` darf den Parameter nicht schreiben:
+
+```bash
+docker compose exec db psql -U supabase_admin -d postgres \
+  -c "alter database postgres set acm.atr_scan_token = '<Token>';"
+```
+ Erst „Verbindung
 prüfen", dann den Schalter umlegen.
 
 ### 4b. Signage

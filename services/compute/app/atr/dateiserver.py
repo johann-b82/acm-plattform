@@ -16,12 +16,11 @@ sitzt im Erbauer, weil das die Stelle ist, die jeder Aufruf passiert.
 """
 from __future__ import annotations
 
-import ipaddress
-import socket
 from dataclasses import dataclass
 
 import smbclient
 
+from app import netz
 from app.config import settings
 
 
@@ -42,56 +41,20 @@ class DateiserverFehler(RuntimeError):
 
 
 class ZielNichtErlaubt(DateiserverFehler):
-    """Der eingetragene Rechner steht nicht in der Allowlist."""
-
-
-def _erlaubte() -> list[str]:
-    return [t.strip() for t in settings.ATR_SMB_ERLAUBT.split(",") if t.strip()]
+    """Der eingetragene Rechner steht nicht in der Allowlist (siehe `app.netz`)."""
 
 
 def pruefe_ziel(rechner: str) -> None:
-    """Lässt nur durch, was der Betreiber freigegeben hat.
-
-    Ein Eintrag ist entweder ein Rechnername (genau so, ohne Rücksicht auf
-    Groß- und Kleinschreibung) oder ein Netz in CIDR-Schreibweise. Bei einem
-    Netz wird der Name aufgelöst und **jede** Adresse geprüft: ein Name, der
-    auf zwei Adressen zeigt, darf nicht über die eine hineinkommen und über
-    die andere hinaus.
-    """
-    erlaubt = _erlaubte()
-    if not erlaubt:
-        raise ZielNichtErlaubt(
-            "ATR_SMB_ERLAUBT ist nicht gesetzt — es ist kein Ziel freigegeben."
-        )
-
-    namen = {e.lower() for e in erlaubt if "/" not in e}
-    if rechner.lower() in namen:
-        return
-
-    netze = [ipaddress.ip_network(e, strict=False) for e in erlaubt if "/" in e]
-    if not netze:
-        raise ZielNichtErlaubt(
-            f'„{rechner}“ steht nicht in ATR_SMB_ERLAUBT.'
-        )
-
+    """Lässt nur durch, was der Betreiber in `ATR_SMB_ERLAUBT` freigegeben hat."""
     try:
-        adressen = {
-            ipaddress.ip_address(eintrag[4][0])
-            for eintrag in socket.getaddrinfo(rechner, 445, proto=socket.IPPROTO_TCP)
-        }
-    except OSError as fehler:
-        raise ZielNichtErlaubt(
-            f'„{rechner}“ ließ sich nicht auflösen: {fehler}'
-        ) from fehler
-
-    if not adressen:
-        raise ZielNichtErlaubt(f'„{rechner}“ löst auf keine Adresse auf.')
-    for adresse in adressen:
-        if not any(adresse in netz for netz in netze):
-            raise ZielNichtErlaubt(
-                f'„{rechner}“ zeigt auf {adresse} — das liegt in keinem '
-                "freigegebenen Netz."
-            )
+        netz.pruefe_ziel(
+            rechner,
+            netz.erlaubte(settings.ATR_SMB_ERLAUBT),
+            port=445,
+            name="ATR_SMB_ERLAUBT",
+        )
+    except netz.ZielNichtErlaubt as fehler:
+        raise ZielNichtErlaubt(str(fehler)) from fehler
 
 
 def unc(rechner: str, freigabe: str, *teile: str) -> str:

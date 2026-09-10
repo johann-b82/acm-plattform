@@ -81,6 +81,8 @@ create trigger atr_scan_beruehrt before update on public.atr_scan
 --
 --   alter database postgres set acm.atr_scan_token = '<geheimnis>';
 --
+-- Als `supabase_admin` — `postgres` darf den Parameter nicht setzen.
+--
 -- Ohne gesetzten Wert wird kein Job angelegt; der Scan laeuft dann nur von
 -- Hand ueber die Oberflaeche.
 -- ---------------------------------------------------------------------------
