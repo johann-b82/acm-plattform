@@ -7,5 +7,7 @@ asyncpg==0.31.0
 alembic==1.18.4
 psycopg[binary]==3.2.9
 pandas==3.0.2
+# Liest die Lieferschein-Datei; pandas braucht die Engine als eigene Abhaengigkeit.
+openpyxl==3.1.5
 python-multipart==0.0.26
 httpx==0.28.1
