@@ -194,6 +194,9 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
             <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
               Schulungen
             </Link>
+            <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
+              Onboarding
+            </Link>
           </div>
         </div>
         <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
