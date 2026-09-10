@@ -14,7 +14,6 @@ import {
   type Zielwert,
 } from "@/lib/zielwerte";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
-import { Hinweis } from "@/components/ui/hinweis";
 
 /**
  * Zielwerte der Kennzahlen pflegen.
@@ -90,10 +89,7 @@ export function Kennzahlen() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {werte.map((z) => (
               <div key={z.schluessel} className="flex flex-col gap-1">
-                <Label htmlFor={z.schluessel} className="flex items-center gap-1.5">
-                  {z.label}
-                  {z.beschreibung && <Hinweis text={z.beschreibung} />}
-                </Label>
+                <Label htmlFor={z.schluessel}>{z.label}</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id={z.schluessel}
@@ -116,6 +112,9 @@ export function Kennzahlen() {
                     </Button>
                   )}
                 </div>
+                {z.beschreibung && (
+                  <p className="text-xs text-[var(--fg-muted)]">{z.beschreibung}</p>
+                )}
               </div>
             ))}
           </div>

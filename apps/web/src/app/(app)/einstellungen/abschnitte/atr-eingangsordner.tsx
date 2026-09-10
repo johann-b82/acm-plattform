@@ -26,7 +26,7 @@ const FELDER: { feld: keyof ScanEinstellung; label: string; hinweis?: string }[]
   {
     feld: "rechner",
     label: "Rechner",
-    hinweis: "Muss in ATR_SMB_ERLAUBT stehen — sonst lehnt der Dienst das Ziel ab.",
+    hinweis: "muss in ATR_SMB_ERLAUBT stehen",
   },
   { feld: "freigabe", label: "Freigabe" },
   { feld: "domaene", label: "Domäne" },
@@ -136,10 +136,7 @@ export function Eingangsordner() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {FELDER.map(({ feld, label, hinweis }) => (
           <div key={feld} className="flex flex-col gap-1">
-            <Label htmlFor={feld} className="flex items-center gap-1.5">
-              {label}
-              {hinweis && <Hinweis text={hinweis} />}
-            </Label>
+            <Label htmlFor={feld}>{label}</Label>
             <Input
               id={feld}
               defaultValue={(s[feld] as string | null) ?? ""}
@@ -151,6 +148,9 @@ export function Eingangsordner() {
                 }
               }}
             />
+            {hinweis && (
+              <span className="text-xs text-[var(--fg-muted)]">{hinweis}</span>
+            )}
           </div>
         ))}
         <div className="flex flex-col gap-1">
