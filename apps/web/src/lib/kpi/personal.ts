@@ -52,6 +52,16 @@ export interface Abgleichstand {
   dauer_sekunden: number | null;
 }
 
+/** Eine Zeile der Mitarbeitertabelle. Trägt Namen — braucht `hr`. */
+export interface MitarbeiterZeile {
+  employee_id: number;
+  name: string | null;
+  department: string | null;
+  ist_stunden: number;
+  ueberstunden: number;
+  quote: number | null;
+}
+
 /** Eine Zeile des Wochenberichts. Trägt Namen — nur für `hr:admin`. */
 export interface WochenZeile {
   employee_id: number;
@@ -135,6 +145,26 @@ export const personalApi = {
   },
 
   /**
+   * Ist-Stunden und Überstunden je Person.
+   *
+   * Rechnet mit denselben Tagessummen und demselben Arbeitszeitmodell wie
+   * die Kachel darüber — die Summe der Zeilen ergibt die Kachel. Im
+   * Altprojekt tut sie das nicht.
+   */
+  mitarbeiter: async (von: string, bis: string): Promise<MitarbeiterZeile[]> => {
+    const rows = await rpc<MitarbeiterZeile[]>("kpi_hr_mitarbeiter", {
+      p_von: von,
+      p_bis: bis,
+    });
+    return rows.map((r) => ({
+      ...r,
+      ist_stunden: zahl(r.ist_stunden),
+      ueberstunden: zahl(r.ueberstunden),
+      quote: r.quote == null ? null : Number(r.quote),
+    }));
+  },
+
+  /**
    * Wochenbericht. Die Funktion prüft `hr:admin` selbst und gibt sonst keine
    * Zeilen zurück — die Oberfläche blendet nur aus, was die Datenbank ohnehin
    * verweigert.
@@ -177,4 +207,6 @@ export const personalKeys = {
   abgleich: () => ["kpi", "personal", "abgleich"] as const,
   wochen: () => ["kpi", "personal", "wochen"] as const,
   woche: (jahr: number, w: number) => ["kpi", "personal", "woche", jahr, w] as const,
+  mitarbeiter: (von: string, bis: string) =>
+    ["kpi", "personal", "mitarbeiter", von, bis] as const,
 };
