@@ -16,7 +16,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Produktion | Aufträge in Verzug: zwei ERP-Uploads (Text und Excel), Sicht `auftrag_verzug`, drei KPI-Funktionen, Dashboard mit Verzugsliste. |
 | Fachmodul Qualität | Vollständig: Audit-Findings, Reklamationsquote (On Quality) und Prüfmengen mit Ausschussquote. |
 | Fachmodul Finanzen | Vollständig: Materialkostenquote mit Preisliste als Sicht auf die Wareneingänge, Personalkostenquote aus dem Personio-Abgleich samt Aufteilung nach Abteilung. |
-| Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Dashboard unter `/hr` mit Abgleichstand, Mitarbeitertabelle und Wochenbericht. Offen: Belegschafts-Kennzahlen, Kompetenzentwicklung. |
+| Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Vollständig: Dashboard unter `/hr` mit Abgleichstand, drei Quoten, Belegschaft, Kompetenzentwicklung, Mitarbeitertabelle und Wochenbericht. |
 | Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. Dort auch die Personal-Einstellungen (Krankheitsarten, Produktionsabteilungen) als Listen. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
@@ -25,7 +25,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 399 in `compute`, 53 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 426 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 

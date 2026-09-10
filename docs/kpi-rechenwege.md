@@ -309,6 +309,14 @@ ohne die Angabe bleibt die Kachel sichtbar leer statt still null.
 - **Sonderfälle**: Nenner 0 → `None`. Vorperiode/Vorjahr sind Stichtagswerte (heutige Stammdaten), keine echten historischen Snapshots. Deshalb kein Verlauf.
 - **Code**: `_skill_development`, `_headcount_at_eom` in `hr_kpi_aggregation.py`.
 
+#### Im neuen Stack
+
+`kpi_hr_kompetenz(stichtag)` in derselben Migration. Die Felder stehen als
+Liste in `hr_einstellungen` unter `kompetenz_attribute`; ohne Angabe bleibt
+die Kachel sichtbar leer statt still null. Nenner ist die Zahl der am Stichtag
+nach Ein- und Austritt Beschäftigten — nicht dieselbe Grundmenge wie die
+Kachel „Beschäftigte" daneben, siehe oben.
+
 ### Umsatz / Produktions-MA
 
 - **Anzeige**: Kachel „Umsatz / Produktions-MA" (EUR, 0 Nachkommastellen). `GET /api/hr/kpis` → `revenue_per_production_employee`.
@@ -436,6 +444,25 @@ ein (alle 75 aktiven Personen haben ein Modell), aber falsch bleibt falsch.
 
 - **Sonderfälle**: Verteilungen (Geschlecht, Beschäftigungsart, Abteilung) nutzen immer die **heutigen** Stammdaten der damals Beschäftigten, Personio liefert keine Historie. Nur Kopfzahl und Neu/Bestand sind echt stichtagsbezogen. Quartal außerhalb 1–4 → HTTP 422.
 - **Code**: `hr_belegschaft.py`; `BelegschaftKpiSection.tsx` (`prozente`).
+
+#### Im neuen Stack
+
+Portiert in Migration `0017_belegschaft`: `kpi_hr_belegschaft` (Kopfzahl, Neu,
+Bestand), `kpi_hr_belegschaft_verteilung` (alle drei Verteilungen in einer
+Abfrage über dieselbe Grundmenge) und die beiden Helfer `hr_geschlecht` und
+`hr_beschaeftigungsart`. Angezeigt auf `/hr`, die Prozentrundung nach größtem
+Rest liegt als reine Funktion `prozente` im Web und ist einzeln getestet.
+
+Unverändert übernommen, samt der Eigenheit, dass die beiden Modi verschiedene
+Grundmengen haben: „Aktuell" folgt dem Personio-Status, ein Stichtag folgt Ein-
+und Austrittsdatum. Ein `inactive` ohne Austrittsdatum zählt im Stichtagsmodus
+also mit. Weil beide Zahlen jetzt nebeneinander auf einem Bildschirm stehen,
+sagt die Oberfläche dazu, welcher Nenner welcher ist — im Altprojekt lagen sie
+auf verschiedenen Seiten.
+
+Eine Abweichung: bei leerer Belegschaft gibt `kpi_hr_belegschaft` **eine Zeile
+mit Null** zurück, nicht null Zeilen. Sonst zeigte das Dashboard nichts statt
+einer Null.
 
 ### Personen-Feeds (keine Quoten)
 

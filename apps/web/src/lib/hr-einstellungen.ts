@@ -57,4 +57,5 @@ export function alsFreitext(werte: string[]): string {
 export const HR_LABEL: Record<string, string> = {
   krank_typ_ids: "Abwesenheitsarten, die als Krankheit zählen",
   produktion_abteilungen: "Abteilungen der Produktion",
+  kompetenz_attribute: "Personio-Felder, die als gepflegte Kompetenz zählen",
 };

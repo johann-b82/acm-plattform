@@ -27,6 +27,7 @@ import {
 import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { ladeZielwerte, nachSchluessel, verfehlt, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
+import { Belegschaft } from "./belegschaft";
 import { Mitarbeitertabelle } from "./mitarbeitertabelle";
 import { Wochenbericht } from "./wochenbericht";
 import { cn } from "@/lib/cn";
@@ -282,6 +283,8 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
           </p>
         </Card>
       )}
+
+      <Belegschaft />
 
       <Mitarbeitertabelle von={von} bis={bis} />
 
