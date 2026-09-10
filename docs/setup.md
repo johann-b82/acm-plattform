@@ -103,7 +103,7 @@ Sieben Meldungen sind dabei normal und ohne Folgen: „schema public already exi
 
 ## Datenübernahme aus lumeapps
 
-Zwei Läufe, beide wiederholbar und beide zuerst trocken machbar. Sie lesen aus der alten Datenbank und schreiben in die neue; die alte wird nicht verändert.
+Drei Läufe, alle wiederholbar und alle zuerst trocken machbar. Sie lesen aus der alten Datenbank und schreiben in die neue; die alte wird nicht verändert.
 
 ### Vorbereitung: die beiden Stacks sehen einander nicht
 
@@ -145,6 +145,25 @@ Gesperrte Konten (`status != active`) kommen nicht mit: wer nicht aktiv war, sol
 
 Von den Rechten kommt nur die Zugehörigkeit zur Gruppe `Plattform-Admins` mit, und zwar für die alte Rolle `Administrator`. Alles andere wird nicht geraten, sondern unter `/platform` gesetzt: die alte Welt kannte drei Rollen für die ganze Anwendung, die neue vergibt Rechte je App.
 
+### Lauf 3: ATR-Teilekatalog und Vorlagen
+
+```bash
+docker compose exec compute python -m app.cli uebernahme-atr --quelle "$QUELLE" --trocken
+docker compose exec compute python -m app.cli uebernahme-atr --quelle "$QUELLE"
+```
+
+Holt `atr_part` in den Teilekatalog und `atr_template` in die Vorlagen, samt der
+Gerüstdateien, die dabei in den Eimer `atr` wandern. Der Abgleich läuft über die
+normierte Teilenummer, der Lauf ist also wiederholbar.
+
+Dieser Lauf ist nicht optional: der Katalog muss vollständig sein, sonst findet
+ein Lieferschein seine Teile nicht. Die Produktion führt 287 Teile aus neun
+Referenzmappen — eine einzelne Mappe neu einzulesen reicht nicht.
+
+Steht in der alten Zeile kein Programm (`ac_programme` leer), nimmt der Lauf den
+Dateinamen des Gerüsts. So heißt die Vorlage hinterher nach dem Programm, für
+das sie gilt, und nicht „—".
+
 ### Danach prüfen
 
 ```bash
@@ -152,6 +171,8 @@ docker compose exec db psql -U postgres -d postgres -c \
   "select kind, count(*) from upload_batches group by kind;"
 docker compose exec db psql -U postgres -d postgres -c \
   "select count(*) as personen from auth.users;"
+docker compose exec db psql -U postgres -d postgres -c \
+  "select count(*) as teile from atr_teile;"
 ```
 
 Verifiziert am 2026-09-09 gegen eine echte Alt-Datenbank (Schema aus 125 Alembic-Revisionen, Directus 11.17.2 mit `directus_users` und `directus_roles`): Sorten- und Statusabbildung, Umschreiben der Fremdschlüssel, übersprungene Protokollsorten, gesperrte Konten, Gruppenzuordnung, Anmeldung einer übernommenen Person mit dem ausgegebenen Passwort. Beide Läufe zweimal hintereinander ausgeführt, ohne Dubletten.

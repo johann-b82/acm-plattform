@@ -376,3 +376,70 @@ export const lieferungApi = {
     });
   },
 };
+
+export interface ScanEinstellung {
+  aktiv: boolean;
+  modus: "entwurf" | "automatisch";
+  rechner: string | null;
+  freigabe: string | null;
+  domaene: string | null;
+  benutzer: string | null;
+  eingang: string | null;
+  ausgang: string | null;
+  archiv: string | null;
+  zuletzt_am: string | null;
+  zuletzt_text: string | null;
+}
+
+export interface ScanProbe {
+  erreichbar: boolean;
+  dateien: number | null;
+  meldung: string | null;
+}
+
+export interface ScanLauf {
+  gelesen: number;
+  angelegt: number;
+  erzeugt: number;
+  liegen_geblieben: string[];
+  hinweise: string[];
+}
+
+const SCAN_FELDER =
+  "aktiv,modus,rechner,freigabe,domaene,benutzer,eingang,ausgang,archiv," +
+  "zuletzt_am,zuletzt_text";
+
+export const scanKeys = { einstellung: () => ["atr", "scan"] as const };
+
+export const scanApi = {
+  einstellung: async (): Promise<ScanEinstellung | null> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_scan")
+      .select(SCAN_FELDER)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return (data as unknown as ScanEinstellung) ?? null;
+  },
+
+  aendern: async (felder: Partial<ScanEinstellung>): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_scan")
+      .update(felder)
+      .eq("id", true)
+      .select("aktiv");
+    if (error) throw new Error(error.message);
+    if (!data?.length) {
+      throw new Error(
+        "Nicht gespeichert — das ändert nur die Plattform-Verwaltung.",
+      );
+    }
+  },
+
+  /** Prüft die Verbindung, ohne etwas zu verändern. */
+  probe: async (): Promise<ScanProbe> =>
+    computeJson<ScanProbe>("/api/atr/scan/probe", { method: "POST" }),
+
+  /** Sieht den Eingangsordner jetzt durch. */
+  lauf: async (): Promise<ScanLauf> =>
+    computeJson<ScanLauf>("/api/atr/scan", { method: "POST" }),
+};

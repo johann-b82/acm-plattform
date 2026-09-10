@@ -22,6 +22,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Eingangsordner } from "./eingangsordner";
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
@@ -30,7 +31,13 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
  * freigegebene Lieferung ist fertig — und ihre Positionen lassen sich dann
  * nicht mehr ändern (das hält die Datenbank, nicht diese Seite).
  */
-export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
+export function Lieferungsliste({
+  darfSchreiben,
+  darfEinrichten,
+}: {
+  darfSchreiben: boolean;
+  darfEinrichten: boolean;
+}) {
   const queryClient = useQueryClient();
   const [bericht, setBericht] = useState<LieferscheinErgebnis | null>(null);
 
@@ -191,6 +198,8 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           </Table>
         </TableWrap>
       )}
+
+      <Eingangsordner darfSchreiben={darfSchreiben} darfEinrichten={darfEinrichten} />
     </div>
   );
 }

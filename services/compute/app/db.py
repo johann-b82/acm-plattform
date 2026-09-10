@@ -428,6 +428,24 @@ atr_positionen = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+atr_scan = sa.Table(
+    "atr_scan",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+    sa.Column("modus", sa.String(16), nullable=False),
+    sa.Column("rechner", sa.String(255)),
+    sa.Column("freigabe", sa.String(255)),
+    sa.Column("domaene", sa.String(64)),
+    sa.Column("benutzer", sa.String(128)),
+    sa.Column("eingang", sa.String(500)),
+    sa.Column("ausgang", sa.String(500)),
+    sa.Column("archiv", sa.String(500)),
+    sa.Column("zuletzt_am", sa.DateTime(timezone=True)),
+    sa.Column("zuletzt_text", sa.Text),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -450,4 +468,5 @@ TABLES = {
     "atr_vorlagen": atr_vorlagen,
     "atr_lieferungen": atr_lieferungen,
     "atr_positionen": atr_positionen,
+    "atr_scan": atr_scan,
 }

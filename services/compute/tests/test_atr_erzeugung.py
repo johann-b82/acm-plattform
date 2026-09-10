@@ -168,6 +168,30 @@ class TestInhalt:
         ws = blatt(baue_atr(geruest(13), LIEFERUNG, POSITIONEN))
         zeile = finde(ws, 6, "Max. Guaranteed weight")
         assert ws.cell(zeile, 8).value == pytest.approx(12.5)
+        assert ws.cell(zeile, 8).number_format == "[$-407]0.00"
+
+    def test_hoechstgewicht_aus_der_vorlage_wird_umformatiert(self):
+        """Sonst steht auf demselben Blatt „211.00" neben „4,63" — an einem
+        echten Dokument aufgefallen."""
+        with_wert = geruest(13)
+        from openpyxl import load_workbook as _laden
+
+        # Die Vorlage bringt einen eigenen Wert mit, die Lieferung keinen.
+        mappe = _laden(BytesIO(with_wert))
+        ws0 = mappe.active
+        zeile = next(
+            z for z in range(1, ws0.max_row + 1)
+            if str(ws0.cell(z, 6).value or "").startswith("Max.")
+        )
+        ws0.cell(zeile, 8, 211.0)
+        puffer = BytesIO()
+        mappe.save(puffer)
+
+        ws = blatt(baue_atr(puffer.getvalue(),
+                            {**LIEFERUNG, "max_gewicht_kg": None}, POSITIONEN))
+        z = finde(ws, 6, "Max. Guaranteed weight")
+        assert ws.cell(z, 8).value == pytest.approx(211.0)  # Wert bleibt
+        assert ws.cell(z, 8).number_format == "[$-407]0.00"  # Format angeglichen
 
     def test_bestellposition_wird_normiert(self):
         ws = blatt(baue_atr(geruest(13), LIEFERUNG, POSITIONEN))
