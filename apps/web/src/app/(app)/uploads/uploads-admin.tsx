@@ -96,6 +96,27 @@ const ARTEN: readonly Art[] = [
     beschreibung:
       "Speist die OTD-Quote im Einkauf. Eine Zeile je Lieferposition; das Ist-Lieferdatum bestimmt den Zeitraum.",
   },
+  {
+    kind: "kontakte",
+    titel: "Kontakte (Vertrieb)",
+    datei: "Kontakte.txt",
+    beschreibung:
+      "Erstkontakte und Besuche je Woche. Ersetzt alle Zeilen im Datumsbereich der Datei — ein zweiter Upload desselben Zeitraums verdoppelt nichts.",
+  },
+  {
+    kind: "angebote",
+    titel: "Angebote",
+    datei: "AswKpf_ANG.txt",
+    beschreibung:
+      "Angebotsvolumen je Woche und Vertriebler. Angebote ohne Erfasser erscheinen in keinem Balken.",
+  },
+  {
+    kind: "interessenten",
+    titel: "Interessenten",
+    datei: "dev_excel_INT.txt",
+    beschreibung:
+      "Stammdaten der Interessenten. Ein erneut gespeicherter Interessent wandert mit seinem neuen Datum in eine andere Woche.",
+  },
 ];
 
 interface UploadErgebnis {

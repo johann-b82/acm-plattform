@@ -174,6 +174,33 @@ Gemeinsame Regeln:
 - **Ziel**: `target_sales_orders_per_rep_eur`, Fallback 50.000 €.
 - **Code**: `SalesActivityCard.tsx` (`buildPerRepSeries`, `buildBesucheStackedSeries`).
 
+#### Im neuen Stack
+
+Portiert in Migration `0012_vertriebsaktivitaet`: eine SQL-Funktion
+`kpi_vertrieb_aktivitaet(von, bis)` mit einer Zeile je ISO-Woche und
+Vertriebler, dazu `kpi_vertrieb_interessenten(von, bis)`. Die Oberfläche
+summiert für den Balken und zeigt die Aufteilung im Tooltip — eine Abfrage
+statt der vier, die die Python-Fassung absetzte.
+
+Drei bewusste Abweichungen von der Fassung oben:
+
+- **Bei „Alles" bleibt die Karte nicht leer.** Ohne gesetzten Zeitraum zeigt
+  sie die letzten zwölf ISO-Wochen bis zum Sonntag der laufenden Woche.
+  Das Abschalten im Altprojekt war eine Notlösung für eine unbegrenzte
+  Abfrage; die Funktion hier bekommt immer ein Fenster.
+- **Die Ziellinie bleibt sichtbar, auch wenn kein Balken sie erreicht.**
+  Recharts skaliert sonst nur nach den Daten und blendet sie genau dann aus,
+  wenn sie gebraucht wird (`ifOverflow="extendDomain"`).
+- **Die Zielwerte stehen in `zielwerte`**, nicht in `app_settings`:
+  `vertrieb_erstkontakte` (50), `vertrieb_besuche` (3),
+  `vertrieb_interessenten` (5), `vertrieb_angebote_eur` (25.000),
+  `vertrieb_auftraege_eur` (50.000) — dieselben Werte wie die Fallbacks oben,
+  jetzt in der Oberfläche pflegbar.
+
+Unverändert übernommen: der Status-1-Filter, die drei Kontaktarten, der
+fehlende `> 0`-Filter beim Auftragseingang, das Herausfallen von Zeilen ohne
+Erfasser und das ersetzende Laden der Kontaktdatei.
+
 ### € / Woche / Vertriebler und Top-3-Kundenanteil (Endpoint ohne UI)
 
 - **Anzeige**: Komponente `OrdersDistributionCard` existiert, wird aber auf keiner Seite gerendert (siehe Auffälligkeiten). `GET /api/data/sales/orders-distribution`.

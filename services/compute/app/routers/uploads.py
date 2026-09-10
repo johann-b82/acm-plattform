@@ -32,12 +32,16 @@ from app.db import (
     delivery_reliability,
     goods_receipt_records,
     inspection_records,
+    interessenten,
     material_movements,
+    offers,
     quality_records,
+    sales_contacts,
     stock_article_prices,
     revenues,
     upload_batches,
 )
+from app.parsing.aktivitaet import parse_angebote, parse_interessenten, parse_kontakte
 from app.parsing.einkauf import parse_liefertreue
 from app.parsing.lagerpreise import parse_lagerpreise
 from app.parsing.material import parse_lagerbewegungen
@@ -69,6 +73,9 @@ ARTEN = (
     "pruefungen",
     "lagerbewegungen",
     "lagerpreise",
+    "kontakte",
+    "angebote",
+    "interessenten",
 )
 
 
@@ -269,7 +276,9 @@ async def _import_ersetzend(
             for r in rows:
                 r["upload_batch_id"] = batch_id
                 r["imported_at"] = now
-                r.setdefault("excluded", False)
+                # Nicht jede ersetzend geladene Tabelle kennt die Spalte.
+                if "excluded" in tabelle.c:
+                    r.setdefault("excluded", False)
             for start in range(0, len(rows), 1000):
                 await session.execute(sa.insert(tabelle), rows[start : start + 1000])
 
@@ -516,4 +525,63 @@ async def upload_lagerpreise(
             Fehlerdetail(row=f.get("row", 0), field=f.get("field", ""), message=f.get("message", ""))
             for f in fehler
         ],
+    )
+
+
+@router.post("/kontakte", response_model=UploadErgebnis)
+async def upload_kontakte(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """Kontaktprotokoll des Vertriebs — Erstkontakte, Besuche vor Ort und online.
+
+    Ersetzend statt aktualisierend: die Datei hat keinen Geschäftsschlüssel,
+    eine Zeile ist ein Ereignis. Alles im Datumsbereich der neuen Datei wird
+    ersetzt, damit ein zweiter Upload desselben Zeitraums die Zahlen nicht
+    verdoppelt.
+    """
+    return await _import_ersetzend(
+        file=file,
+        kind="kontakte",
+        tabelle=sales_contacts,
+        parser=parse_kontakte,
+        claims=claims,
+        datumsspalte="contact_date",
+    )
+
+
+@router.post("/angebote", response_model=UploadErgebnis)
+async def upload_angebote(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_ANG.txt — geschriebene Angebote mit Wert und Erfasser."""
+    return await _import(
+        file=file,
+        kind="angebote",
+        tabelle=offers,
+        parser=parse_angebote,
+        claims=claims,
+    )
+
+
+@router.post("/interessenten", response_model=UploadErgebnis)
+async def upload_interessenten(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """dev_excel_INT.txt — Stammdaten der Interessenten.
+
+    Aktualisierend auf die Adressnummer: die Datei ist eine Momentaufnahme.
+    Wird ein Interessent erneut gespeichert, wandert er mit seinem neuen
+    `Datum Save` rückwirkend in eine andere Woche — so war es im Altprojekt
+    und so bleibt es.
+    """
+    return await _import(
+        file=file,
+        kind="interessenten",
+        tabelle=interessenten,
+        parser=parse_interessenten,
+        claims=claims,
+        schluessel=("adress_nr",),
     )

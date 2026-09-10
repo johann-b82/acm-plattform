@@ -24,6 +24,7 @@ import {
 } from "@/lib/kpi/gemeinsam";
 import { vertriebApi } from "@/lib/kpi/vertrieb";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { AktivitaetKarte } from "./aktivitaet-karte";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
@@ -208,6 +209,8 @@ export function VertriebDashboard() {
           )}
         </div>
       </Card>
+
+      <AktivitaetKarte von={von} bis={bis} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
