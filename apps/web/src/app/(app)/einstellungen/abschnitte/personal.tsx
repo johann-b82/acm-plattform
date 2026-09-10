@@ -14,7 +14,6 @@ import {
   type HrEinstellung,
 } from "@/lib/hr-einstellungen";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
-import { Hinweis } from "@/components/ui/hinweis";
 
 /**
  * Listen statt Zahlen — deshalb ein eigener Abschnitt und nicht noch eine
@@ -67,10 +66,7 @@ export function Personal() {
         <div className="mt-4 space-y-4">
           {einstellungen.data.map((e) => (
             <div key={e.schluessel} className="flex flex-col gap-1">
-              <Label htmlFor={e.schluessel} className="flex items-center gap-1.5">
-                {HR_LABEL[e.schluessel] ?? e.schluessel}
-                <Hinweis text={e.beschreibung} />
-              </Label>
+              <Label htmlFor={e.schluessel}>{HR_LABEL[e.schluessel] ?? e.schluessel}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   id={e.schluessel}
@@ -104,6 +100,7 @@ export function Personal() {
                   </Button>
                 )}
               </div>
+              <p className="text-xs text-[var(--fg-muted)]">{e.beschreibung}</p>
             </div>
           ))}
         </div>
