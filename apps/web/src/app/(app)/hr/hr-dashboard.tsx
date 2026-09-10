@@ -27,6 +27,7 @@ import {
 import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { ladeZielwerte, nachSchluessel, verfehlt, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
+import { Wochenbericht } from "./wochenbericht";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr"];
@@ -280,6 +281,8 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
           </p>
         </Card>
       )}
+
+      {darfAbgleichen && <Wochenbericht />}
 
       <Card className="p-4">
         <h2 className="text-base font-semibold">Verlauf</h2>

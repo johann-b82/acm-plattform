@@ -358,6 +358,33 @@ Personen mit `max(0, netto) > 0.01`, absteigend, Top 5. Wer unter dem Wochensoll
 - **Sonderfälle**: Verteilung über **Kalendertage**, während die entschuldigten Stunden über **Solltage** verteilt werden (siehe Auffälligkeiten).
 - **Code**: `_krankheit_woche`, `_krank_tage_gesamt` in `hr_weekly.py`; `WeeklyReportSection.tsx`.
 
+#### Im neuen Stack
+
+Portiert in Migration `0015_wochenbericht` als `kpi_hr_wochenbericht(jahr,
+woche)`, eine Zeile je Person, dazu `kpi_hr_wochen_mit_daten` für die Auswahl.
+Angezeigt als eigener Abschnitt auf `/hr`.
+
+**Das Recht steht in der Funktion.** Der Bericht trägt Namen neben Stunden;
+die Zugriffsregeln an den Tabellen kennen aber nur „darf HR sehen", nicht
+„darf Namen neben Stunden sehen". Ohne `hr:admin` gibt die Funktion deshalb
+keine Zeilen zurück — kein Fehler, keine Zeilen. Zwei Tests halten beide
+Richtungen fest.
+
+Alle vier Regeln unverändert übernommen: erst je Tag summieren, entschuldigte
+Stunden über die Solltage der ganzen Spanne verteilen, effektives Wochensoll
+als `max(0, Tagessoll − entschuldigt)`, und die Kappung der laufenden Woche
+beim letzten gestempelten Tag je Person. Auch die Inkonsequenz bleibt: die
+Krankheitszahlen verteilen sich über **Kalendertage**, die entschuldigten
+Stunden über **Solltage**. Die Zahl „Krankheitstage der Woche" meint
+Kalendertage; das zu ändern wäre eine fachliche Entscheidung, keine
+technische.
+
+Eine Abweichung im Ersatz-Tagessoll: fehlt ein Arbeitszeitmodell, verteilt
+das Altprojekt `weekly_working_hours / 5` auf **alle sieben** Tage — ein
+40-Stunden-Vertrag käme damit auf 56 Wochenstunden Soll. `hr_tagessoll` legt
+den Ersatz auf die Werktage. Der Fall tritt bei der aktuellen Datenlage nicht
+ein (alle 75 aktiven Personen haben ein Modell), aber falsch bleibt falsch.
+
 #### KW-Auswahl (Meta)
 
 `GET /api/hr/weekly-report/meta`: verfügbare Wochen aus allen Anwesenheits- **und** Abwesenheitsdaten (Abwesenheiten sind aktueller), gefiltert auf ≤ aktuelle KW; erste = Default-Auswahl.
