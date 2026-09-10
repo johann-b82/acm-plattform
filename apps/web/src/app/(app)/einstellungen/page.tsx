@@ -1,15 +1,14 @@
-import { requireSession } from "@/lib/auth";
+import { requireApp } from "@/lib/auth";
 import { Einstellungen } from "./einstellungen";
 
 export const metadata = { title: "Einstellungen · ACM-Plattform" };
 
 /**
- * Die Seite selbst ist für jede angemeldete Person offen — die Gruppen darin
- * nicht. Ein Tor auf die App `settings` wäre falsch: dann käme eine
- * ATR-Bearbeiterin nicht an ihren Eingangsordner, obwohl die Datenbank ihn ihr
- * gibt.
+ * Die Einstellungen gehören der Plattform-Verwaltung. Was hier steht, gilt für
+ * alle — ein Zielwert, eine Vorlage je Programm, ein Eingangsordner. Deshalb
+ * ein Tor für die ganze Seite und keine Rechteprüfung je Abschnitt.
  */
 export default async function EinstellungenPage() {
-  const session = await requireSession();
-  return <Einstellungen apps={session.apps} eigeneId={session.userId} />;
+  const session = await requireApp("platform", "admin");
+  return <Einstellungen eigeneId={session.userId} />;
 }

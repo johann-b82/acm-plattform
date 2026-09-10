@@ -4,16 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileUp } from "lucide-react";
+import { FileUp, FolderSearch } from "lucide-react";
 
 import {
   lieferungApi,
   lieferungKeys,
+  scanApi,
   type Lieferung,
   type LieferscheinErgebnis,
 } from "@/lib/atr";
 import {
   Badge,
+  Button,
   Card,
   EmptyState,
   Table,
@@ -41,6 +43,23 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const liste = lieferungen.data ?? [];
 
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["atr"] });
+
+  // Derselbe Lauf wie der zeitgesteuerte, nur von Hand. Er steht hier und
+  // nicht in den Einstellungen: einen liegen gebliebenen Lieferschein löst
+  // aus, wer mit Lieferungen arbeitet, nicht die Plattform-Verwaltung.
+  const durchsehen = useMutation({
+    mutationFn: scanApi.lauf,
+    onSuccess: (e) => {
+      toast.success(
+        e.gelesen === 0
+          ? "Nichts im Eingang."
+          : `${e.gelesen} gelesen, ${e.angelegt} angelegt.`,
+      );
+      for (const hinweis of e.hinweise) toast.error(hinweis);
+      return neuLaden();
+    },
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
 
   const einlesen = useMutation({
     mutationFn: (datei: File) => lieferungApi.einlesen(datei),
@@ -71,40 +90,46 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             freigegeben.
           </p>
         </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/atr" className="underline-offset-4 hover:underline">
-            Zum Teilekatalog
-          </Link>
-          <Link href="/einstellungen#atr" className="underline-offset-4 hover:underline">
-            Eingangsordner
-          </Link>
-        </div>
+        <Link href="/atr" className="text-sm underline-offset-4 hover:underline">
+          Zum Teilekatalog
+        </Link>
       </div>
 
       {darfSchreiben && (
         <Card className="space-y-3 p-4">
-          <label
-            className={
-              "inline-flex h-9 cursor-pointer items-center rounded-md bg-[var(--fg)] " +
-              "px-4 text-sm font-medium text-[var(--bg)] hover:opacity-90 " +
-              "focus-within:outline-2 focus-within:outline-[var(--ring)]"
-            }
-          >
-            <FileUp className="mr-2 h-4 w-4" aria-hidden />
-            {einlesen.isPending ? "Wird gelesen …" : "Lieferschein einlesen"}
-            <input
-              type="file"
-              accept="application/pdf,.pdf"
-              className="sr-only"
-              aria-label="Lieferschein einlesen"
-              disabled={einlesen.isPending}
-              onChange={(e) => {
-                const datei = e.target.files?.[0];
-                e.target.value = "";
-                if (datei) einlesen.mutate(datei);
-              }}
-            />
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label
+              className={
+                "inline-flex h-9 cursor-pointer items-center rounded-md bg-[var(--fg)] " +
+                "px-4 text-sm font-medium text-[var(--bg)] hover:opacity-90 " +
+                "focus-within:outline-2 focus-within:outline-[var(--ring)]"
+              }
+            >
+              <FileUp className="mr-2 h-4 w-4" aria-hidden />
+              {einlesen.isPending ? "Wird gelesen …" : "Lieferschein einlesen"}
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                className="sr-only"
+                aria-label="Lieferschein einlesen"
+                disabled={einlesen.isPending}
+                onChange={(e) => {
+                  const datei = e.target.files?.[0];
+                  e.target.value = "";
+                  if (datei) einlesen.mutate(datei);
+                }}
+              />
+            </label>
+
+            <Button
+              variant="outline"
+              onClick={() => durchsehen.mutate()}
+              disabled={durchsehen.isPending}
+            >
+              <FolderSearch className="mr-2 h-4 w-4" aria-hidden />
+              {durchsehen.isPending ? "Läuft …" : "Eingang durchsehen"}
+            </Button>
+          </div>
 
           {bericht && (
             <div className="rounded-md bg-[var(--muted)] p-3 text-sm">

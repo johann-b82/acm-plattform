@@ -113,14 +113,12 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
           Teilenummer ohne Beiwerk — nur die Ziffern zählen.
         </p>
         </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/atr/lieferungen" className="underline-offset-4 hover:underline">
-            Zu den Lieferungen
-          </Link>
-          <Link href="/einstellungen#atr" className="underline-offset-4 hover:underline">
-            Vorlagen und Eingangsordner
-          </Link>
-        </div>
+        <Link
+          href="/atr/lieferungen"
+          className="text-sm underline-offset-4 hover:underline"
+        >
+          Zu den Lieferungen
+        </Link>
       </div>
 
       {darfSchreiben && (

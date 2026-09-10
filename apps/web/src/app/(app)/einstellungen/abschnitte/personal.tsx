@@ -14,7 +14,7 @@ import {
   type HrEinstellung,
 } from "@/lib/hr-einstellungen";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
-import { NurLesend } from "../nur-lesend";
+import { Hinweis } from "@/components/ui/hinweis";
 
 /**
  * Listen statt Zahlen — deshalb ein eigener Abschnitt und nicht noch eine
@@ -22,7 +22,7 @@ import { NurLesend } from "../nur-lesend";
  * Krankheitsquote im Personal-Dashboard leer; das ist absichtlich sichtbar
  * und nicht still null.
  */
-export function Personal({ darfAendern }: { darfAendern: boolean }) {
+export function Personal() {
   const queryClient = useQueryClient();
   const [entwurf, setEntwurf] = useState<Record<string, string>>({});
 
@@ -62,18 +62,19 @@ export function Personal({ darfAendern }: { darfAendern: boolean }) {
 
   return (
     <div className="space-y-4">
-      {!darfAendern && <NurLesend recht="Einstellungen bearbeiten" />}
       <Card className="p-5">
         <p className="text-sm text-[var(--fg-muted)]">Mehrere Angaben mit Komma trennen.</p>
         <div className="mt-4 space-y-4">
           {einstellungen.data.map((e) => (
             <div key={e.schluessel} className="flex flex-col gap-1">
-              <Label htmlFor={e.schluessel}>{HR_LABEL[e.schluessel] ?? e.schluessel}</Label>
+              <Label htmlFor={e.schluessel} className="flex items-center gap-1.5">
+                {HR_LABEL[e.schluessel] ?? e.schluessel}
+                <Hinweis text={e.beschreibung} />
+              </Label>
               <div className="flex items-center gap-2">
                 <Input
                   id={e.schluessel}
                   value={wert(e)}
-                  disabled={!darfAendern}
                   placeholder={
                     e.schluessel === "krank_typ_ids" ? "568234, 3270500" : "Fertigung, Montage"
                   }
@@ -103,7 +104,6 @@ export function Personal({ darfAendern }: { darfAendern: boolean }) {
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-[var(--fg-muted)]">{e.beschreibung}</p>
             </div>
           ))}
         </div>

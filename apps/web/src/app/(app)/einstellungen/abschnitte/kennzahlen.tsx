@@ -14,16 +14,16 @@ import {
   type Zielwert,
 } from "@/lib/zielwerte";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
-import { NurLesend } from "../nur-lesend";
+import { Hinweis } from "@/components/ui/hinweis";
 
 /**
  * Zielwerte der Kennzahlen pflegen.
  *
- * Ändern darf, wer die Einstellungen bearbeiten darf. Das entscheidet die
- * Policy an der Tabelle; die Oberfläche blendet nur aus, was die Datenbank
- * ohnehin abweist.
+ * Wer bis hierher kommt, darf ändern — das Tor sitzt an der Seite. Die Policy
+ * an der Tabelle prüft es trotzdem noch einmal: die Oberfläche ist die
+ * Bequemlichkeit, nicht der Riegel.
  */
-export function Kennzahlen({ darfAendern }: { darfAendern: boolean }) {
+export function Kennzahlen() {
   const queryClient = useQueryClient();
   const [entwurf, setEntwurf] = useState<Record<string, string>>({});
 
@@ -84,20 +84,21 @@ export function Kennzahlen({ darfAendern }: { darfAendern: boolean }) {
 
   return (
     <div className="space-y-4">
-      {!darfAendern && <NurLesend recht="Einstellungen bearbeiten" />}
       {nachBereich.map(([bereich, werte]) => (
         <Card key={bereich} className="p-5">
           <h3 className="font-medium">{BEREICH_LABEL[bereich] ?? bereich}</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {werte.map((z) => (
               <div key={z.schluessel} className="flex flex-col gap-1">
-                <Label htmlFor={z.schluessel}>{z.label}</Label>
+                <Label htmlFor={z.schluessel} className="flex items-center gap-1.5">
+                  {z.label}
+                  {z.beschreibung && <Hinweis text={z.beschreibung} />}
+                </Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id={z.schluessel}
                     inputMode="decimal"
                     value={anzeigewert(z)}
-                    disabled={!darfAendern}
                     onChange={(e) =>
                       setEntwurf((v) => ({ ...v, [z.schluessel]: e.target.value }))
                     }
@@ -115,9 +116,6 @@ export function Kennzahlen({ darfAendern }: { darfAendern: boolean }) {
                     </Button>
                   )}
                 </div>
-                {z.beschreibung && (
-                  <p className="text-xs text-[var(--fg-muted)]">{z.beschreibung}</p>
-                )}
               </div>
             ))}
           </div>
