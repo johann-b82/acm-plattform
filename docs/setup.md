@@ -221,6 +221,21 @@ Gelöschte Berichte sind in der Quelle nicht entfernt, sondern mit `gelöscht = 
 
 Die Höchstwerte (0 für Level 1, 5 für Level 2) stehen als Konstanten im Frontend. Sie wandern in die Einstellungen, sobald dieses Modul portiert ist.
 
+### Zielwerte
+
+Drei Kennzahlen trugen ihren Zielwert als Konstante im Frontend, weil die Einstellungen des Altprojekts noch nicht portiert sind. Jede weitere Kennzahl mit Ziellinie wäre die vierte gewesen.
+
+Statt des 67-spaltigen Singletons aus dem Altprojekt gibt es eine Zeile je Zielwert. Der Unterschied ist praktisch: ein neues Modul fügt eine Zeile ein, statt eine Migration mit einer neuen Spalte zu brauchen, und die Oberfläche rendert alle Zielwerte über einen Kamm.
+
+| Eigenschaft | Bedeutung |
+|---|---|
+| `einheit` | `anteil` steht als Bruch in der Spalte (0.98), die Oberfläche zeigt und nimmt Prozent |
+| `richtung` | `min` heißt: weniger als das Ziel ist schlecht (Liefertreue). `max` heißt umgekehrt (Verzug) |
+
+Lesen darf, wer die Kennzahlen sieht — ohne Zielwert fehlt der Kachel die Einordnung. Ändern darf, wer mindestens `editor` auf den Einstellungen hat. Dafür gibt es `public.app_mindestens(app, stufe)`; die bisherigen Policies prüften nur `is not null`, was zum Lesen genügt, zum Schreiben aber nicht.
+
+Neue Zielwerte kommen aus Migrationen, nicht aus der Oberfläche: die Tabelle gibt kein `insert`-Recht. Ein Zielwert gehört zu einer Kennzahl, und die entsteht im Code.
+
 ### Eine Migration nachträglich ändern
 
 Solange eine Revision noch nicht gemerged ist, lässt sie sich bearbeiten. Die Testdatenbank merkt das aber nicht: ihr Container läuft zwischen den Läufen weiter und Alembic überspringt die bereits eingetragene Revision. Vorher zurücksetzen:
