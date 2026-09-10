@@ -216,6 +216,11 @@ export interface Lieferung {
   max_gewicht_kg: string | null;
   status: LieferungStatus;
   hinweise: string[];
+  mappe_pfad: string | null;
+  pdf_pfad: string | null;
+  etikett_pfad: string | null;
+  erzeugt_am: string | null;
+  geaendert_am: string;
   erstellt_am: string;
 }
 
@@ -237,6 +242,13 @@ export interface AtrPosition {
   seriennummern: string[];
 }
 
+export interface ErzeugtErgebnis {
+  mappe_pfad: string;
+  pdf_pfad: string | null;
+  etikett_pfad: string;
+  pdf_hinweis: string | null;
+}
+
 export interface LieferscheinErgebnis {
   lieferung_id: string;
   dateiname: string;
@@ -251,7 +263,8 @@ export interface LieferscheinErgebnis {
 const LIEFERUNG_FELDER =
   "id,quelle_dateiname,lieferschein_nr,datum,ba_auftrag,bestellnummer,programm," +
   "programm_grund,bereich,msn,bettvariante,satz_titel,atr_nummer,containernummer," +
-  "wiegedatum,pruefdatum,qs_unterschrift,max_gewicht_kg,status,hinweise,erstellt_am";
+  "wiegedatum,pruefdatum,qs_unterschrift,max_gewicht_kg,status,hinweise," +
+  "mappe_pfad,pdf_pfad,etikett_pfad,erzeugt_am,geaendert_am,erstellt_am";
 
 const POSITION_FELDER =
   "id,lieferung_id,reihenfolge,pos,lieferantennummer,teilenummer,teilenummer_norm," +
@@ -335,6 +348,22 @@ export const lieferungApi = {
       .select("id");
     if (error) throw new Error(error.message);
     pruefeBetroffen(data);
+  },
+
+  /** Erzeugt Mappe, PDF und Etikett — über `compute`, weil dort openpyxl und
+   *  LibreOffice sitzen. */
+  erzeugen: async (id: string): Promise<ErzeugtErgebnis> =>
+    computeJson<ErzeugtErgebnis>(`/api/atr/lieferungen/${id}/erzeugen`, {
+      method: "POST",
+    }),
+
+  /** Kurzlebige URL auf eine erzeugte Datei im nicht-öffentlichen Eimer. */
+  dateiUrl: async (pfad: string): Promise<string> => {
+    const { data, error } = await supabaseBrowser()
+      .storage.from(EIMER)
+      .createSignedUrl(pfad, 300);
+    if (error) throw new Error(error.message);
+    return data.signedUrl;
   },
 
   /** Liest einen Lieferschein ein — über `compute`, weil das PDF geparst wird. */

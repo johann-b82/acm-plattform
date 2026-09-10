@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Undo2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, FileCog, Undo2 } from "lucide-react";
 
 import {
   lieferungApi,
@@ -32,6 +32,18 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
  * Tabelle, nicht diese Seite. Hier werden die Felder nur ausgegraut, damit
  * niemand gegen eine Wand tippt.
  */
+const ZEIT = new Intl.DateTimeFormat("de-DE", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+/** Die drei erzeugten Dateien. */
+const AUSGABEN = [
+  { feld: "mappe_pfad", name: "Mappe", dateiname: "ATR.xlsx" },
+  { feld: "pdf_pfad", name: "PDF", dateiname: "ATR.pdf" },
+  { feld: "etikett_pfad", name: "Etikett", dateiname: "Etikett.docx" },
+] as const;
+
 const KOPFFELDER: { feld: keyof Lieferung; label: string; typ?: string }[] = [
   { feld: "atr_nummer", label: "ATR-Nummer" },
   { feld: "containernummer", label: "Containernummer" },
@@ -86,6 +98,29 @@ export function Durchsicht({
   const positionLoeschen = useMutation({
     mutationFn: (pid: string) => lieferungApi.positionLoeschen(pid),
     onSuccess: neuLaden,
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  const erzeugen = useMutation({
+    mutationFn: () => lieferungApi.erzeugen(id),
+    onSuccess: (e) => {
+      toast.success(
+        e.pdf_hinweis ? "Mappe und Etikett erzeugt." : "Mappe, PDF und Etikett erzeugt.",
+      );
+      if (e.pdf_hinweis) toast.error(e.pdf_hinweis);
+      return neuLaden();
+    },
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  const herunterladen = useMutation({
+    mutationFn: async ({ pfad, name }: { pfad: string; name: string }) => {
+      const url = await lieferungApi.dateiUrl(pfad);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+    },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
@@ -150,6 +185,49 @@ export function Durchsicht({
       {l.programm_grund && (
         <p className="text-sm text-[var(--fg-muted)]">{l.programm_grund}</p>
       )}
+
+      <Card className="flex flex-wrap items-center gap-2 p-4">
+        {darfSchreiben && (
+          <Button
+            variant="outline"
+            onClick={() => erzeugen.mutate()}
+            disabled={erzeugen.isPending || zeilen.length === 0}
+          >
+            <FileCog className="mr-2 h-4 w-4" aria-hidden />
+            {erzeugen.isPending ? "Wird erzeugt …" : "Dokumente erzeugen"}
+          </Button>
+        )}
+
+        {AUSGABEN.map(({ feld, name, dateiname }) => {
+          const pfad = l[feld] as string | null;
+          return (
+            <Button
+              key={feld}
+              variant="ghost"
+              size="sm"
+              disabled={!pfad}
+              onClick={() =>
+                pfad &&
+                herunterladen.mutate({
+                  pfad,
+                  name: `${l.lieferschein_nr ?? "ATR"}_${dateiname}`,
+                })
+              }
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {name}
+            </Button>
+          );
+        })}
+
+        <span className="ml-auto text-xs text-[var(--fg-muted)]">
+          {!l.erzeugt_am
+            ? "Noch nichts erzeugt."
+            : new Date(l.erzeugt_am) < new Date(l.geaendert_am)
+              ? `Erzeugt am ${ZEIT.format(new Date(l.erzeugt_am))} — die Lieferung wurde danach geändert.`
+              : `Erzeugt am ${ZEIT.format(new Date(l.erzeugt_am))}.`}
+        </span>
+      </Card>
 
       {l.hinweise.length > 0 && (
         <Card className="p-4">

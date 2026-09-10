@@ -21,7 +21,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | KPI-Bewertung | Kommentar und Maßnahme zu jeder Kennzahl mit Zielwert. Die Liste ist `zielwerte` selbst — kein zweites Register, das hinter den Dashboards zurückbleiben kann. Lesen mit `kpi`-Recht, Schreiben ab `settings: editor`. |
 | Newsletter | Eine Ausgabe je Quartal mit Kapiteln, Markdown und Bildern; Leseransicht und PDF unter `/newsletter`, Redaktion unter `/newsletter/redaktion`. Belegschaftszahlen und Neuzugänge werden je Ausgabe eingefroren, nicht live gelesen. |
 | FAIR | Erstmusterprüfung: Zeichnung hochladen, Maße ballonieren, Prüfliste als CSV. Nummerierung gehört der Datenbank — lückenlos, auch über PostgREST. Ohne OCR (siehe `docs/modules/fair.md`). |
-| ATR (Teile 1–2) | Teilekatalog, Vorlage je Programm, Lieferschein einlesen und durchsehen. Die normierte Teilenummer ist eine erzeugte Spalte; eine freigegebene Lieferung ist an der Tabelle gesperrt, nicht in der Oberfläche. Erzeugung und Ordner-Scan folgen. |
+| ATR (Teile 1–3) | Teilekatalog, Vorlage, Lieferschein einlesen und durchsehen, Mappe, PDF und Container-Etikett erzeugen. Gegen die **echten** Vorlagen aus der Produktion geprüft. Der Ordner-Scan folgt. |
 | Seiten-Feedback | Melde-Knopf in jeder Ansicht, Bild des sichtbaren Ausschnitts im Eimer `feedback`. Melden darf jede angemeldete Person, abarbeiten die Plattform-Verwaltung unter `/platform/feedback`. Erster Verbraucher von Supabase Storage. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
@@ -30,7 +30,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh`, zwei Teile: Abzug von `public`, `auth`, `storage` und ein `tar` des Datei-Volumes. 14 Tage Aufbewahrung, nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 540 in `compute`, 82 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 580 in `compute`, 82 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -51,6 +51,7 @@ Tests: 540 in `compute`, 82 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Eine Archiv-Ausgabe sagt, was sie damals sagte.** Belegschaftszahlen und Neuzugänge stehen als eingefrorener Stand am Kapitel, nicht als Verweis auf `personio_employees`. Nachgestellt: Stand eingefroren, danach eine Person eingestellt — die Zahl in der Ausgabe blieb. Das ist nicht nur Archivtreue, sondern auch eine Rechtefrage: die Tabelle ist für Newsletter-Leser nicht lesbar, und die beiden Einfrier-Funktionen prüfen selbst, dass der Einfrierende die Quelle sehen dürfte — Aggregate verlangen `kpi`, Namen verlangen `hr`.
 - **Eine gelöschte Ausgabe lässt keine Datei zurück.** Im Browser durchgespielt: Ausgabe mit drei Bildern angelegt, ein Bild einzeln gelöscht (3 → 2 Dateien), dann die ganze Ausgabe — danach null Zeilen in allen vier Tabellen, null Objekte und null Dateien im Volume. Die Kaskade räumt die Zeilen, die Dateien muss die Oberfläche selbst nehmen.
 - **Ballonnummern können keine Lücke bekommen.** Nummer vergeben, Lücke schließen und Umsortieren hängen an Triggern und einer Funktion, nicht an einem Router — über PostgREST gibt es keinen Weg daran vorbei. Im Browser durchgespielt: drei Ballons gesetzt, die erste gelöscht, aus 2 und 3 wurden 1 und 2, in Zeichnung und Liste gleichzeitig. Möglich wird das einfache `update` durch eine aufgeschobene Eindeutigkeitsbedingung; das Altprojekt braucht dafür zwei Durchgänge mit einem Zwischenwert oberhalb einer Million.
+- **Die ATR-Erzeugung ist an den echten Vorlagen geprüft.** Beide Gerüste aus der Produktion (A350 und A380) gefüllt und nachgesehen: Kopfblock unangetastet, MSN links aufgefüllt in der dreigeteilten Bestellzeile, Bestellpositionen normiert, Gewicht mal Menge, Summe und Höchstgewicht, Zertifizierungsblock samt Unterschrift und Datum. Dabei kamen vier Fehler heraus, die eine nachgebaute Vorlage nicht gezeigt hätte — darunter ein `_x000a_` quer über der Druckkopfzeile und ein amerikanisch gesetztes `=TODAY()` im PDF. Beide behoben, beide mit einem Test festgehalten. Die echten Vorlagen liegen nicht im Repository: sie tragen Kundenspezifikationen, Teilenummern und ein Firmenlogo.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.
 - **Das Altsystem ist abgesichert, solange es noch läuft.** 18 der 21 Befunde aus `docs/security-findings.md` sind in `lumeapps` abgearbeitet (PRs #145–#151): kein Dev-Server und kein root im Betrieb, JWT mit Aussteller und Pflicht-Ablauf, Kiosk-Einbettung ohne Personaldaten, Rumpf- und Archivgrenzen vor pandas, Nutzerdateien nicht mehr inline im eigenen Ursprung, CSRF-Riegel auf der Cookie-Sitzung, Produktionsbild ohne Testsuite. Drei bleiben bewusst offen, mit Begründung in derselben Datei. Zwei verlangen den Host: TLS und die Zertifikatsrotation.
 

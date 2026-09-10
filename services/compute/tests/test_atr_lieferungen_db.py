@@ -184,3 +184,39 @@ class TestRechte:
                 "insert into public.atr_lieferungen (quelle_dateiname, status)"
                 " values ('x.pdf', 'irgendwas')")
         assert "check" in str(fehler.value).lower()
+
+
+class TestErzeugungsstempel:
+    """Das Ablegen der erzeugten Dateien ist keine Änderung an der Lieferung."""
+
+    async def test_ablegen_zieht_geaendert_am_nicht_hoch(self, db):
+        l = await lieferung()
+        vorher = (await anlegen(
+            "select geaendert_am from public.atr_lieferungen"))[0]["geaendert_am"]
+
+        await anlegen(
+            "update public.atr_lieferungen set mappe_pfad = 'erzeugt/a/atr.xlsx',"
+            " pdf_pfad = 'erzeugt/a/atr.pdf', etikett_pfad = 'erzeugt/a/e.docx',"
+            " erzeugt_am = now()")
+
+        zeile = (await anlegen(
+            "select geaendert_am, erzeugt_am from public.atr_lieferungen"))[0]
+        assert zeile["geaendert_am"] == vorher
+        # Und die Mappe gilt damit als frisch, nicht als veraltet.
+        assert zeile["erzeugt_am"] >= zeile["geaendert_am"]
+
+    async def test_eine_echte_aenderung_zaehlt_weiter(self, db):
+        l = await lieferung()
+        await anlegen(
+            "update public.atr_lieferungen set erzeugt_am = now(),"
+            " mappe_pfad = 'erzeugt/a/atr.xlsx'")
+        nach_erzeugung = (await anlegen(
+            "select geaendert_am from public.atr_lieferungen"))[0]["geaendert_am"]
+
+        await anlegen("update public.atr_lieferungen set containernummer = 'C-1'")
+        zeile = (await anlegen(
+            "select geaendert_am, erzeugt_am from public.atr_lieferungen"))[0]
+        assert zeile["geaendert_am"] > nach_erzeugung
+        # Jetzt ist die Mappe älter als ihre Daten — genau das soll die
+        # Oberfläche anzeigen.
+        assert zeile["erzeugt_am"] < zeile["geaendert_am"]

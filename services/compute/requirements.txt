@@ -11,3 +11,5 @@ pandas==3.0.2
 openpyxl==3.1.5
 python-multipart==0.0.26
 httpx==0.28.1
+# ATR: Containerbeschriftung als Word-Dokument (ohne Vorlage, von Grund auf).
+python-docx==1.2.0
