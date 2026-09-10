@@ -11,7 +11,7 @@ fehlt, steht unten.
 | Schritt | Stand |
 |---|---|
 | Teilekatalog und Vorlage | steht (Migration `0022_atr_katalog`) |
-| Lieferschein einlesen und abgleichen | offen |
+| Lieferschein einlesen und abgleichen | steht (Migration `0023_atr_lieferungen`) |
 | Erzeugung von Excel, PDF und Etikett | offen |
 | Scan eines Eingangsordners | offen |
 
@@ -70,10 +70,71 @@ Im Altprojekt hängen ATR und FAIR an einer gemeinsamen Zwischenrolle „QS", we
 es nur Admin und Viewer gab. Mit App-Rechten entfällt sie; ATR und FAIR sind
 getrennt vergebbar.
 
-## Was noch kommt
+## Der Lieferschein
 
-**Lieferschein einlesen.** PDF-Parsen der Diehl-Lieferscheine, Abgleich gegen
-den Katalog, Entwurf zur Freigabe.
+Ein Diehl-Lieferschein wird eingelesen, gegen den Katalog abgeglichen und als
+**Entwurf** abgelegt. Nach der Durchsicht wird er freigegeben.
+
+Der Parser ist zweigeteilt, und das ist der Grund, warum er prüfbar ist:
+`pdftotext -layout` holt den Text, die Auswertung ist eine reine Funktion.
+Zwölf Prüfungen laufen deshalb gegen Text und brauchen kein PDF.
+
+Der Spaltenerhalt (`-layout`) ist nicht Beiwerk: eine Positionszeile wird an
+vier Feldern in fester Reihenfolge erkannt, und eine aus der rechten Spalte
+angeklebte Randnotiz („Freigabe durch AV") wird am ersten Lauf von drei
+Leerzeichen abgeschnitten. Eine Textextraktion ohne Layout liefert eine andere
+Reihenfolge und damit andere Ergebnisse — deshalb `poppler-utils` im Abbild und
+nicht eine reine Python-Bibliothek.
+
+Erkannt werden dabei:
+
+| Zeile im Lieferschein | wird zu |
+|---|---|
+| `Nr. 704511` / `Datum 14.08.2026` | Lieferschein-Nummer und Datum |
+| `10  4711  2  Stk` | Position, Lieferantennummer, Menge |
+| die Zeile danach | Bezeichnung (Randnotiz abgeschnitten) |
+| `Ihre Nr. VR-1234-56` | Teilenummer |
+| `Auftrag Nr. 880231 / 12` | BA-Auftrag und Bestellposition |
+| `Bestelldaten 4500123/CCRC/MSN0815/2-Bett/A350` | Bestellnummer, Bereich, MSN, Bettvariante, Programm |
+| `Seriennr. A…3376, A…3377` | eine Nummer je geliefertem Stück |
+
+Die Merkmale in den Bestelldaten stehen in beliebiger Reihenfolge; erkannt wird
+jedes für sich, und ein unbekanntes stört die anderen nicht.
+
+**Warum das Programm so heißt, steht in der Zeile.** `programm_grund` hält
+fest, ob A350 oder A380 aus den Bestelldaten kam oder ob gar kein Merkmal da
+war. Im Altprojekt ist das ein stiller Zweig, und wer die Ausgabe prüft, sieht
+nur das Ergebnis.
+
+**Ein doppelter Lieferschein wird einmal gezählt.** Manchmal stecken zwei
+Kopien in derselben PDF; der Fließtext liefert dann jede Position doppelt.
+Erkannt an (Position, Teilenummer, Auftrag, Bestellposition), gemeldet als
+Hinweis.
+
+## Eine Position steht auf eigenen Füßen
+
+Was der Katalog liefert, wird in die Position **kopiert**, nicht verlinkt. Der
+Fremdschlüssel auf das Katalogteil ist nur der Hinweis, woher die Werte
+stammen, und steht auf `on delete set null`.
+
+Der Grund: der Katalog ändert sich, ein freigegebener ATR nicht. Wird ein Teil
+später umbenannt oder neu gewogen, bleibt die Lieferung, wie sie freigegeben
+wurde. Ein Test räumt den Katalog ab und prüft, dass Bezeichnung und Gewicht
+in der Position stehen bleiben.
+
+## Freigegeben ist fest
+
+Nach der Freigabe weist ein Trigger jede Änderung an den Positionen ab —
+Einfügen, Ändern und Löschen. Das hängt an der Tabelle, nicht an der
+Oberfläche: über PostgREST gäbe es sonst einen Weg daran vorbei.
+
+Zwei Dinge bleiben absichtlich möglich:
+
+- **Die Freigabe zurücknehmen.** Sonst wäre ein Tippfehler endgültig.
+- **Kopfdaten nachtragen.** Containernummer, Wiegedatum und QS-Unterschrift
+  entstehen oft erst nach der Freigabe der Positionen.
+
+## Was noch kommt
 
 **Erzeugung.** Excel aus der Gerüstdatei, PDF daraus, Container-Etikett als
 Word-Dokument.

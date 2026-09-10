@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileUp, Plus } from "lucide-react";
@@ -104,13 +105,21 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <h1 className="text-2xl font-semibold tracking-tight">ATR</h1>
         <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
           Der Teilekatalog ist die Grundlage: aus ihm holt ein Lieferschein
           Bezeichnung, Zeichnung und Gewicht. Gefunden wird über die
           Teilenummer ohne Beiwerk — nur die Ziffern zählen.
         </p>
+        </div>
+        <Link
+          href="/atr/lieferungen"
+          className="text-sm underline-offset-4 hover:underline"
+        >
+          Zu den Lieferungen
+        </Link>
       </div>
 
       {darfSchreiben && (

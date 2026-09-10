@@ -192,3 +192,158 @@ export const atrApi = {
     });
   },
 };
+
+export type LieferungStatus = "entwurf" | "freigegeben";
+
+export interface Lieferung {
+  id: string;
+  quelle_dateiname: string;
+  lieferschein_nr: string | null;
+  datum: string | null;
+  ba_auftrag: string | null;
+  bestellnummer: string | null;
+  programm: string | null;
+  programm_grund: string | null;
+  bereich: string | null;
+  msn: string | null;
+  bettvariante: string | null;
+  satz_titel: string | null;
+  atr_nummer: string | null;
+  containernummer: string | null;
+  wiegedatum: string | null;
+  pruefdatum: string | null;
+  qs_unterschrift: string | null;
+  max_gewicht_kg: string | null;
+  status: LieferungStatus;
+  hinweise: string[];
+  erstellt_am: string;
+}
+
+export interface AtrPosition {
+  id: string;
+  lieferung_id: string;
+  reihenfolge: number;
+  pos: number | null;
+  lieferantennummer: string | null;
+  teilenummer: string | null;
+  teilenummer_norm: string | null;
+  teil_id: string | null;
+  bezeichnung: string | null;
+  zeichnung: string | null;
+  kategorie: string | null;
+  menge: number;
+  gewicht_kg: string | null;
+  bestellposition: string | null;
+  seriennummern: string[];
+}
+
+export interface LieferscheinErgebnis {
+  lieferung_id: string;
+  dateiname: string;
+  lieferschein_nr: string | null;
+  programm: string | null;
+  programm_grund: string;
+  positionen: number;
+  zugeordnet: number;
+  hinweise: string[];
+}
+
+const LIEFERUNG_FELDER =
+  "id,quelle_dateiname,lieferschein_nr,datum,ba_auftrag,bestellnummer,programm," +
+  "programm_grund,bereich,msn,bettvariante,satz_titel,atr_nummer,containernummer," +
+  "wiegedatum,pruefdatum,qs_unterschrift,max_gewicht_kg,status,hinweise,erstellt_am";
+
+const POSITION_FELDER =
+  "id,lieferung_id,reihenfolge,pos,lieferantennummer,teilenummer,teilenummer_norm," +
+  "teil_id,bezeichnung,zeichnung,kategorie,menge,gewicht_kg,bestellposition,seriennummern";
+
+export const lieferungKeys = {
+  liste: () => ["atr", "lieferungen"] as const,
+  eine: (id: string) => ["atr", "lieferung", id] as const,
+  positionen: (id: string) => ["atr", "positionen", id] as const,
+};
+
+export const lieferungApi = {
+  liste: async (): Promise<Lieferung[]> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_lieferungen")
+      .select(LIEFERUNG_FELDER)
+      .order("erstellt_am", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Lieferung[];
+  },
+
+  eine: async (id: string): Promise<Lieferung | null> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_lieferungen")
+      .select(LIEFERUNG_FELDER)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return (data as unknown as Lieferung) ?? null;
+  },
+
+  positionen: async (id: string): Promise<AtrPosition[]> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_positionen")
+      .select(POSITION_FELDER)
+      .eq("lieferung_id", id)
+      .order("reihenfolge");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as AtrPosition[];
+  },
+
+  aendern: async (id: string, felder: Partial<Lieferung>): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_lieferungen")
+      .update(felder)
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  positionAendern: async (
+    id: string,
+    felder: Partial<AtrPosition>,
+  ): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_positionen")
+      .update(felder)
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  positionLoeschen: async (id: string): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_positionen")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  loeschen: async (id: string): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("atr_lieferungen")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  /** Liest einen Lieferschein ein — über `compute`, weil das PDF geparst wird. */
+  einlesen: async (datei: File): Promise<LieferscheinErgebnis> => {
+    const rumpf = new FormData();
+    rumpf.append("datei", datei);
+    return computeJson<LieferscheinErgebnis>("/api/atr/lieferschein", {
+      method: "POST",
+      body: rumpf,
+    });
+  },
+};

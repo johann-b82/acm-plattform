@@ -360,6 +360,55 @@ atr_vorlagen = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+atr_lieferungen = sa.Table(
+    "atr_lieferungen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column("quelle_dateiname", sa.String(255), nullable=False),
+    sa.Column("lieferschein_nr", sa.String(40)),
+    sa.Column("datum", sa.Date),
+    sa.Column("ba_auftrag", sa.String(40)),
+    sa.Column("bestellnummer", sa.String(60)),
+    sa.Column("programm", sa.String(20)),
+    sa.Column("programm_grund", sa.String(200)),
+    sa.Column("bereich", sa.String(8)),
+    sa.Column("msn", sa.String(20)),
+    sa.Column("bettvariante", sa.String(8)),
+    sa.Column("satz_titel", sa.String(100)),
+    sa.Column("atr_nummer", sa.String(80)),
+    sa.Column("containernummer", sa.String(40)),
+    sa.Column("wiegedatum", sa.Date),
+    sa.Column("pruefdatum", sa.Date),
+    sa.Column("qs_unterschrift", sa.String(100)),
+    sa.Column("max_gewicht_kg", sa.Numeric(8, 3)),
+    sa.Column("status", sa.String(16), nullable=False),
+    sa.Column("hinweise", JSONB, nullable=False),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+atr_positionen = sa.Table(
+    "atr_positionen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column("lieferung_id", UUID(as_uuid=True), nullable=False),
+    sa.Column("reihenfolge", sa.SmallInteger, nullable=False),
+    sa.Column("pos", sa.SmallInteger),
+    sa.Column("lieferantennummer", sa.String(40)),
+    sa.Column("teilenummer", sa.String(60)),
+    sa.Column("teilenummer_norm", sa.Text),
+    sa.Column("teil_id", UUID(as_uuid=True)),
+    sa.Column("bezeichnung", sa.String(200)),
+    sa.Column("zeichnung", sa.String(60)),
+    sa.Column("kategorie", sa.String(40)),
+    sa.Column("menge", sa.SmallInteger, nullable=False),
+    sa.Column("gewicht_kg", sa.Numeric(8, 3)),
+    sa.Column("bestellposition", sa.String(20)),
+    sa.Column("seriennummern", sa.ARRAY(sa.Text), nullable=False),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -380,4 +429,6 @@ TABLES = {
     "personio_absences": personio_absences,
     "atr_teile": atr_teile,
     "atr_vorlagen": atr_vorlagen,
+    "atr_lieferungen": atr_lieferungen,
+    "atr_positionen": atr_positionen,
 }
