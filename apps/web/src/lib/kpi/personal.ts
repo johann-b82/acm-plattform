@@ -52,6 +52,23 @@ export interface Abgleichstand {
   dauer_sekunden: number | null;
 }
 
+/** Eine Zeile des Wochenberichts. Trägt Namen — nur für `hr:admin`. */
+export interface WochenZeile {
+  employee_id: number;
+  name: string | null;
+  ist_stunden: number;
+  soll_stunden: number;
+  netto: number;
+  krank_tage: number;
+  krank_stunden: number;
+}
+
+export interface WocheMitDaten {
+  iso_jahr: number;
+  iso_woche: number;
+  tage: number;
+}
+
 function zahl(v: unknown): number {
   return v == null ? 0 : Number(v);
 }
@@ -117,6 +134,35 @@ export const personalApi = {
     return (data?.[0] as Abgleichstand | undefined) ?? null;
   },
 
+  /**
+   * Wochenbericht. Die Funktion prüft `hr:admin` selbst und gibt sonst keine
+   * Zeilen zurück — die Oberfläche blendet nur aus, was die Datenbank ohnehin
+   * verweigert.
+   */
+  wochenbericht: async (jahr: number, woche: number): Promise<WochenZeile[]> => {
+    const rows = await rpc<WochenZeile[]>("kpi_hr_wochenbericht", {
+      p_jahr: jahr,
+      p_woche: woche,
+    });
+    return rows.map((r) => ({
+      ...r,
+      ist_stunden: zahl(r.ist_stunden),
+      soll_stunden: zahl(r.soll_stunden),
+      netto: zahl(r.netto),
+      krank_tage: zahl(r.krank_tage),
+      krank_stunden: zahl(r.krank_stunden),
+    }));
+  },
+
+  wochenMitDaten: async (grenze = 26): Promise<WocheMitDaten[]> => {
+    const rows = await rpc<WocheMitDaten[]>("kpi_hr_wochen_mit_daten", { p_grenze: grenze });
+    return rows.map((r) => ({
+      iso_jahr: Number(r.iso_jahr),
+      iso_woche: Number(r.iso_woche),
+      tage: zahl(r.tage),
+    }));
+  },
+
   /** Abgleich sofort ausführen. Braucht `hr:admin`; dauert Minuten. */
   abgleichAnstossen: () =>
     computeJson<{ status: string; mitarbeiter: number; anwesenheiten: number; abwesenheiten: number }>(
@@ -129,4 +175,6 @@ export const personalKeys = {
   alle: () => ["kpi", "personal"] as const,
   fenster: (von: string, bis: string) => ["kpi", "personal", von, bis] as const,
   abgleich: () => ["kpi", "personal", "abgleich"] as const,
+  wochen: () => ["kpi", "personal", "wochen"] as const,
+  woche: (jahr: number, w: number) => ["kpi", "personal", "woche", jahr, w] as const,
 };
