@@ -21,6 +21,7 @@ Vier Dinge weichen von dem ab, was hier vorher stand. Jedes einzelne hätte den 
 | **Pfad** | `/home/acm/lumeapps`, **nicht** `/srv/lumeapps` |
 | **Kein Git** | Das Verzeichnis ist kein Repository. Der Stand steht in der Datei `DEPLOYED_COMMIT` — aktuell `ffc9ba0`, also vor allen sieben Sicherheits-PRs. GitHub ist vom Host aus erreichbar (`git ls-remote` liefert `531c5fe`), ein frischer Klon daneben ist also möglich. |
 | **`docker-compose.override.yml`** | Liegt nur auf dem Host, nicht im Repo, und gibt dem `api`-Dienst echte DNS-Server (`192.9.200.1/.2`). Der Host selbst löst über `127.0.0.53` auf — das kann ein Container nicht benutzen. **Ohne diese Datei löst `api.personio.de` im Container nicht mehr auf, und der Personio-Abgleich bricht.** |
+| **Quellbaum ist live** | Der `api`-Container mountet `backend/` **schreibbar** und läuft mit `--reload`. Wer dort Dateien hineinkopiert, deployt sofort — und nicht atomar. Vorbereiten geht nur in einem zweiten Verzeichnis. |
 | **Arbeitsspeicher** | 7,3 GB gesamt, ~5,2 GB frei bei laufendem Stack. Der Frontend-Bau will 6 GB Heap. Auf diesem Host bauen heißt, den laufenden Betrieb gegen die Wand zu fahren. |
 | **`/srv` ist leer und gehört root** | `acm` darf dort nicht schreiben, und `sudo` verlangt ein Passwort. Die neuen Stacks kommen deshalb nach `/home/acm/acm-plattform` und `/home/acm/acm-signage`, nicht nach `/srv/acm` und `/srv/signage`. Docker selbst geht ohne root (`acm` ist in der Gruppe `docker`), und alle Pfade in den Compose-Dateien sind relativ — der Ort ist frei wählbar. Wer `/srv` will, legt es einmalig von Hand an: `sudo mkdir -p /srv/acm && sudo chown acm:acm /srv/acm`. |
 
@@ -83,33 +84,38 @@ Richtig gebunden sind schon jetzt Directus (`:8055`) und Postgres (`:5432`) — 
 
 Das Verzeichnis ist kein Repository (siehe oben). Zwei Wege, beide gangbar:
 
+Frischer Klon **daneben**. Nichts am laufenden Verzeichnis anfassen:
+
 ```bash
-# Weg A — frischer Klon daneben, dann die Betriebsdateien übernehmen.
 cd /home/acm
 git clone https://github.com/johann-b82/lumeapps.git lumeapps-neu
 cd lumeapps-neu
 cp ../lumeapps/.env ../lumeapps/docker-compose.override.yml .
-# Datenverzeichnisse bleiben, wo sie sind:
-for d in postgres_data directus_database directus_extensions directus_uploads \
-         caddy_data caddy_config backups certs frontend_node_modules; do
-  [ -e "../lumeapps/$d" ] && mv "../lumeapps/$d" . 
-done
 git rev-parse --short HEAD > DEPLOYED_COMMIT
 ```
 
-```bash
-# Weg B — nur den Code über das bestehende Verzeichnis legen (rsync vom Mac).
-# Vom Entwicklungsrechner aus, im Repo:
-rsync -a --delete \
-  --exclude '.git' --exclude 'node_modules' --exclude 'frontend/dist' \
-  --exclude 'postgres_data' --exclude 'directus_*' --exclude 'backups' \
-  --exclude 'caddy_data' --exclude 'caddy_config' --exclude '.env' \
-  --exclude 'docker-compose.override.yml' \
-  ./ acm@192.9.201.9:/home/acm/lumeapps/
-```
+Die Datenverzeichnisse (`postgres_data`, `directus_*`, `caddy_*`, `backups`,
+`certs`, `frontend_node_modules`) bleiben vorerst im alten Verzeichnis — sie
+ziehen erst beim Umschalten um, wenn nichts mehr darauf schreibt.
 
-Weg A ist sauberer, Weg B schneller. In beiden Fällen bleiben `.env` und
-`docker-compose.override.yml` unangetastet.
+> **Nicht per rsync über das laufende Verzeichnis.**
+>
+> Am Host nachgesehen: der `api`-Container hat `/home/acm/lumeapps/backend`
+> **schreibbar** unter `/app` gemountet und läuft mit `--reload`:
+>
+> ```
+> /home/acm/lumeapps/backend -> /app (rw)
+> uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --reload
+> ```
+>
+> Jede Datei, die dort landet, startet die laufende Produktion sofort neu — mit
+> dem Code, der in genau diesem Moment im Verzeichnis liegt. Ein rsync ist keine
+> Vorbereitung, sondern ein Deployment, und noch dazu ein nicht atomares: der
+> Reloader kann mitten im Kopieren feuern und einen halb getauschten Baum
+> hochfahren. Also Weg A, daneben klonen, und erst beim Umschalten tauschen.
+
+`.env` und `docker-compose.override.yml` bleiben dabei unangetastet — sie werden
+kopiert, nicht überschrieben.
 
 ### 1b. Oberfläche bauen — **nicht auf dem Host**
 
@@ -122,7 +128,7 @@ Also auf dem Entwicklungsrechner bauen und das Ergebnis kopieren:
 ```bash
 # Mac, im Repo:
 cd frontend && NODE_OPTIONS="--max-old-space-size=6144" npm run build && cd ..
-rsync -a --delete frontend/dist/ acm@192.9.201.9:/home/acm/lumeapps/frontend/dist/
+rsync -a --delete frontend/dist/ acm@192.9.201.9:/home/acm/lumeapps-neu/frontend/dist/
 ```
 
 `npm run build` erzeugt beides: die Admin-Oberfläche nach `frontend/dist` und das
@@ -132,14 +138,28 @@ Prüfen, dass beide Einstiegsseiten angekommen sind — **ohne sie zeigt `/` nac
 Umschalten eine leere Seite**:
 
 ```bash
-ssh acm@192.9.201.9 'ls -l /home/acm/lumeapps/frontend/dist/index.html \
-                        /home/acm/lumeapps/frontend/dist/player/index.html'
+ssh acm@192.9.201.9 'ls -l /home/acm/lumeapps-neu/frontend/dist/index.html \
+                        /home/acm/lumeapps-neu/frontend/dist/player/index.html'
 ```
 
 ### 1c. Umschalten
 
+Der alte Stack geht herunter, der neue kommt aus dem neuen Verzeichnis hoch. Das
+ist der einzige Moment mit Ausfall — Sekunden bis eine Minute.
+
 ```bash
-cd /home/acm/lumeapps
+# 1) alten Stack herunterfahren — down, nicht stop: sonst streiten sich
+#    die Container um Port 80 und die Netzwerke
+cd /home/acm/lumeapps && docker compose down
+
+# 2) Datenverzeichnisse mitnehmen (jetzt schreibt nichts mehr darauf)
+for d in postgres_data directus_database directus_extensions directus_uploads \
+         caddy_data caddy_config backups certs frontend_node_modules; do
+  [ -e "/home/acm/lumeapps/$d" ] && mv "/home/acm/lumeapps/$d" /home/acm/lumeapps-neu/
+done
+
+# 3) neuen Stack hochfahren
+cd /home/acm/lumeapps-neu
 C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
 $C up -d --build
 ```
@@ -176,8 +196,16 @@ Der neue Stand bringt die Sicherheitsarbeit von 2026-09-10 mit: 18 der 21 Befund
 
 Damit sind vier der fünf Hoch-Befunde zu; der fünfte (TLS) folgt im nächsten Schritt.
 
-Zurück geht es jederzeit mit `docker compose up -d` ohne das Overlay — dann greift
-die Override-Datei wieder von selbst, und die Ports 5173 und 8000 sind zurück.
+Zurück geht es symmetrisch — der alte Baum ist unangetastet geblieben:
+
+```bash
+cd /home/acm/lumeapps-neu && $C down
+for d in postgres_data directus_database directus_extensions directus_uploads \
+         caddy_data caddy_config backups certs frontend_node_modules; do
+  [ -e "/home/acm/lumeapps-neu/$d" ] && mv "/home/acm/lumeapps-neu/$d" /home/acm/lumeapps/
+done
+cd /home/acm/lumeapps && docker compose up -d
+```
 
 ---
 
