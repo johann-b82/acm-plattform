@@ -1,0 +1,101 @@
+# Seiten-Feedback
+
+Ein Knopf unten rechts in jeder angemeldeten Ansicht: beschreiben, was auf
+dieser Seite nicht stimmt, mit einem Bild des Ausschnitts, den man gerade vor
+sich hat. Die Plattform-Verwaltung arbeitet die Meldungen ab.
+
+Das Modul ist zugleich **der erste Verbraucher von Supabase Storage** im neuen
+Stack. Was dabei über den Speicher zu lernen war, steht weiter unten — der
+Newsletter wird denselben Weg gehen.
+
+## Datenquelle und Ablage
+
+| Was | Wo |
+|---|---|
+| Meldung | `public.feedback` (Migration `0019_feedback`) |
+| Bild | Eimer `feedback`, nicht öffentlich, 5 MB, `image/png,jpeg,webp` |
+| Objektname | `<Kennung der meldenden Person>/<zufällige UUID>.jpg` |
+
+Die Zeile hält nur den Pfad. Im Altprojekt steckt der Screenshot als `bytea`
+in der Tabelle (`page_feedback.screenshot_data`); jede Liste, jede Sicherung
+und jeder `pg_dump` schleppt ihn mit.
+
+## Rechte
+
+| | Recht |
+|---|---|
+| Melden (Zeile und Bild) | jede angemeldete Person |
+| Lesen, Status ändern, Löschen | `app_mindestens('platform', 'admin')` |
+
+Die Schranke ist mit Absicht schief. Ein Fehlerbericht, den nur Berechtigte
+schreiben dürfen, erreicht die Fehler nicht, die es zu finden gilt. Gelesen
+wird dagegen eng: eine Meldung trägt einen Seitenpfad und ein Bild einer
+Ansicht, die der Lesende womöglich selbst nicht sehen darf.
+
+Wer meldet, liest auch die eigene Meldung nicht zurück. Das ist keine
+Nachlässigkeit, sondern hat eine Folge im Code: `insert ... returning` läuft
+durch die Leseregel und würde scheitern. Deshalb gibt `feedbackApi.melden`
+nichts als die Auskunft zurück, ob das Bild mitging.
+
+## Was der Speicher verlangt
+
+Vier Dinge, die beim Bauen aufgefallen sind und die für jedes weitere Modul
+mit Dateien gelten.
+
+**Der Pfad trägt das Recht.** Die Regel auf `storage.objects` prüft
+`(storage.foldername(name))[1] = auth.uid()::text`. Wer hochlädt, schreibt
+damit in den eigenen Ordner und kann kein fremdes Bild überschreiben. Ein
+Objektname ohne Ordner fällt durch.
+
+**Gelöscht wird über den Dienst, nie über die Tabelle.** `storage.objects`
+trägt einen Trigger, der ein direktes `delete` abweist — auch mit vollem
+Recht. Geht man daran vorbei, bliebe die Datei im Eimer liegen. Die
+Oberfläche löscht deshalb mit `storage.remove()`, und zwar das Bild vor der
+Zeile: bleibt die Zeile stehen, weil der Speicher klemmt, ist nichts verloren
+— umgekehrt bliebe ein Bild ohne Zeile zurück, das niemand mehr findet.
+
+**Die Dateien liegen in einem benannten Volume, nicht im Upstream-Baum.** Der
+Supabase-Upstream hängt `upstream/volumes/storage` als Bind-Mount ein. Dieses
+Verzeichnis gehört `fetch-upstream.sh` und ist nicht eingecheckt — hochgeladene
+Dateien lägen dort, wo ein Werkzeug sie jederzeit wegräumen darf. Der Override
+in `infra/supabase/docker-compose.override.yml` setzt stattdessen das Volume
+`speicher`. Nebeneffekt: der Speicher-Dienst legt Inhaltstyp und
+Cache-Vorgabe als erweiterte Attribute an der Datei ab (`user.supabase.*`),
+und ein Bind-Mount vom Mac kann das nicht — der Upload scheiterte mit
+`ENOTSUP`.
+
+**Die Sicherung braucht beide Teile.** Das Schema `storage` hält nur die
+Zeilen; ein Abzug allein ergäbe Verweise auf Dateien, die es nicht mehr gibt.
+`scripts/backup.sh` zieht deshalb zusätzlich einen `tar` des Volumes — mit
+GNU tar und `--xattrs`, weil das busybox-tar des Speicher-Abbilds die
+erweiterten Attribute nicht mitnimmt.
+
+## Das Bild
+
+Aufgenommen wird mit `html-to-image`, und zwar **der sichtbare Ausschnitt**,
+nicht das ganze Dokument. Auf einer Seite mit langer Tabelle machte die
+Tabelle sonst neunzehn Zwanzigstel des Bildes aus, und das, worauf der Melder
+schaut, war ein unlesbarer Streifen: nachgemessen 1,3 MB gegen 93 KB für
+denselben Bericht.
+
+Zwei weitere Stellschrauben, beide gemessen:
+
+- `skipFonts: true` — das Einbetten der Schriften ist der teuerste Schritt.
+  Ohne ihn dauerte die Aufnahme auf der Einkaufsseite über zehn Sekunden, mit
+  ihm wenige.
+- Über die Leinwand statt `toBlob`: dessen `type` wird nicht beachtet, und ein
+  PNG einer vollen Ansicht wiegt schnell zwei Megabyte.
+
+Der Dialog geht sofort auf, die Aufnahme läuft daneben weiter. Auf einen
+Knopfdruck hin sekundenlang gar nichts zu zeigen, wäre die Meldung nicht wert;
+getippt wird in der Zeit ohnehin. Der Sendeknopf wartet, bis das Bild da ist.
+
+Die Aufnahme ist freiwillig. Misslingt sie, oder ist sie größer als der Eimer
+zulässt, geht der Bericht ohne Bild und sagt es im Hinweis. Ein Bericht ohne
+Bild ist besser als keiner.
+
+## Was es nicht gibt
+
+Keine Antwortfunktion, keine Zuweisung, keine Benachrichtigung. Eine Meldung
+ist entweder offen oder erledigt. Wird daraus eine Aufgabe, gehört sie in die
+KPI-Maßnahmen oder ins Ticketsystem — nicht in ein zweites, halbes davon.

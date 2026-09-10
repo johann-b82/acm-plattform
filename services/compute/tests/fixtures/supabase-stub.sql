@@ -42,3 +42,68 @@ as $$
 $$;
 
 grant execute on function auth.jwt(), auth.uid() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Schema `storage`, so weit die Migrationen es beruehren (ab 0019_feedback).
+-- In einer echten Instanz legt der Storage-Dienst das selbst an; hier steht
+-- nur, worauf die Migrationen und die Policy-Tests zugreifen.
+-- ---------------------------------------------------------------------------
+create role supabase_storage_admin nologin noinherit;
+
+create schema if not exists storage authorization supabase_storage_admin;
+grant usage on schema storage to anon, authenticated;
+
+create table storage.buckets (
+    id                 text primary key,
+    name               text not null,
+    public             boolean not null default false,
+    file_size_limit    bigint,
+    allowed_mime_types text[],
+    created_at         timestamptz not null default now()
+);
+
+create table storage.objects (
+    id         uuid primary key default gen_random_uuid(),
+    bucket_id  text references storage.buckets (id),
+    name       text,
+    owner      uuid,
+    metadata   jsonb,
+    created_at timestamptz not null default now()
+);
+
+-- Wie im Original: der Pfad ohne den Dateinamen. Aus `<kennung>/bild.png`
+-- wird `{<kennung>}`, sodass `[1]` den Ordner nennt.
+create or replace function storage.foldername(name text)
+returns text[]
+language sql
+immutable
+as $$
+    select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1];
+$$;
+
+alter table storage.objects enable row level security;
+
+grant select, insert, update, delete on storage.objects to authenticated;
+grant select on storage.buckets to authenticated;
+grant execute on function storage.foldername(text) to anon, authenticated;
+
+-- Der echte Speicher verbietet ein direktes `delete` auf `storage.objects`;
+-- geloescht wird ueber den Dienst, der auch die Datei wegraeumt. Ohne diesen
+-- Waechter wuerde ein Test durchlaufen, den die echte Instanz abweist.
+create or replace function storage.protect_delete()
+returns trigger
+language plpgsql
+as $$
+begin
+    if coalesce(current_setting('storage.allow_delete_query', true), 'false') <> 'true' then
+        raise exception 'Direct deletion from storage tables is not allowed. Use the Storage API instead.'
+            using hint = 'This prevents accidental data loss from orphaned objects.',
+                  errcode = '42501';
+    end if;
+    return null;
+end;
+$$;
+
+create trigger protect_objects_delete
+    before delete on storage.objects
+    for each statement execute function storage.protect_delete();

@@ -69,7 +69,16 @@ curl -s http://localhost/api/me -H "Authorization: Bearer $TOKEN"
 scripts/backup.sh [zielverzeichnis]     # Standard: ./backups, 14 Tage Aufbewahrung
 ```
 
-Gesichert werden `public`, `auth` und `storage`: die Fachdaten, die Anmeldedaten und die Dateien. Alles andere legt das Supabase-Abbild beim Start selbst an. `pg_dump` läuft im Datenbank-Container, damit Werkzeug und Server dieselbe Version haben; der Abzug wird mit `pg_restore --list` geprüft, bevor er seinen endgültigen Namen bekommt.
+Der Lauf legt **zwei** Dateien an, weil die Plattform an zwei Orten liegt:
+
+| Datei | Inhalt |
+|---|---|
+| `acm-<datum>.dump` | `public`, `auth` und `storage`: Fachdaten, Anmeldedaten, Verzeichnisse der Dateien |
+| `acm-<datum>-dateien.tar.gz` | die Dateien selbst, aus dem Volume `speicher` |
+
+Alles andere legt das Supabase-Abbild beim Start selbst an. `pg_dump` läuft im Datenbank-Container, damit Werkzeug und Server dieselbe Version haben; der Abzug wird mit `pg_restore --list` geprüft, bevor er seinen endgültigen Namen bekommt, der `tar` mit `tar -tzf`.
+
+Der zweite Teil ist nicht optional. Das Schema `storage` hält nur die Zeilen zu den Objekten — ein Abzug allein ergäbe Verweise auf Dateien, die es nicht mehr gibt. Der `tar` läuft mit GNU tar und `--xattrs`, weil der Speicher-Dienst Inhaltstyp und Cache-Vorgabe als erweiterte Attribute an der Datei ablegt; das busybox-tar des Speicher-Abbilds nähme sie nicht mit.
 
 Der Job ist **nicht eingeplant** (Entscheidung F: vorbereiten, nicht anwenden). Auf dem Host zum Beispiel so:
 
@@ -83,6 +92,11 @@ Der Job ist **nicht eingeplant** (Entscheidung F: vorbereiten, nicht anwenden). 
 docker compose up -d db                                  # frischer Stack: Rollen und Schemata entstehen beim Start
 docker compose exec -T db pg_restore -U postgres -d postgres --clean --if-exists < backups/acm-<datum>.dump
 docker compose restart rest                              # PostgREST-Schema-Cache
+
+# Die Dateien zurück ins Volume — ohne sie zeigen die Zeilen ins Leere.
+docker run --rm -i -v acm_speicher:/daten alpine sh -c \
+    'apk add -q tar && tar --xattrs --xattrs-include="user.*" -xzf - -C /daten' \
+    < backups/acm-<datum>-dateien.tar.gz
 ```
 
 Sieben Meldungen sind dabei normal und ohne Folgen: „schema public already exists“ und einige „permission denied to change default privileges“ zu Supabase-eigenen Rollen. Geprüft wurde der Weg gegen eine leere Datenbank: alle Tabellen, alle Zeilen und alle zehn Policies kamen zurück.

@@ -18,6 +18,7 @@ Bias zu Vorsicht vor Tempo. Annahmen benennen, bei Mehrdeutigkeit nachfragen. Mi
 - **`compute` ist zustandslos.** Kein In-Process-Fanout, kein SSE, mehrfach startbar. Retention in `pg_cron`.
 - **Logging nach `docs/logging.md`.** Jeder Compose-Dienst mit `x-logging`-Anker, kein Access-Log auf Erfolg, kein `log.info` in kurzen Schleifen ohne Bedingung.
 - **Tests laufen nie gegen eine DB ohne `test` im Namen.** Der `conftest`-Riegel aus `lumeapps` wird übernommen.
+- **Dateien liegen im Speicher, nicht in der Zeile.** Objektname beginnt mit der Kennung der hochladenden Person (die Regel auf `storage.objects` prüft sie), gelöscht wird über die Storage-API — ein direktes `delete` auf `storage.objects` weist Postgres ab und ließe die Datei liegen. Siehe `docs/modules/feedback.md`.
 - **Kein Host-Pfad wird mit dem Signage-Stack geteilt.**
 
 ## Konventionen

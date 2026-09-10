@@ -68,6 +68,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      # Migration 0019 legt einen Eimer an und schreibt Regeln auf
+      # storage.objects. Beide Tabellen gehoeren dem Storage-Dienst und
+      # entstehen erst, wenn der seine eigenen Migrationen gefahren hat.
+      storage:
+        condition: service_healthy
 
   compute:
     build: ./services/compute

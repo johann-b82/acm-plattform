@@ -19,14 +19,15 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Fachmodul Personal | Personio-Abgleich (Stammdaten, Anwesenheiten, Abwesenheiten aus zwei Quellen), Überstunden-, Krankheits- und Fluktuationsquote als SQL, nächtlich über pg_cron, Vollständig: Dashboard unter `/hr` mit Abgleichstand, drei Quoten, Belegschaft, Kompetenzentwicklung, Mitarbeitertabelle und Wochenbericht. |
 | Zielwerte | Eine Zeile je Ziel statt eines breiten Singletons. Pflegbar unter `/einstellungen`, gelesen von allen Dashboards. Dort auch die Personal-Einstellungen (Krankheitsarten, Produktionsabteilungen) als Listen. |
 | KPI-Bewertung | Kommentar und Maßnahme zu jeder Kennzahl mit Zielwert. Die Liste ist `zielwerte` selbst — kein zweites Register, das hinter den Dashboards zurückbleiben kann. Lesen mit `kpi`-Recht, Schreiben ab `settings: editor`. |
+| Seiten-Feedback | Melde-Knopf in jeder Ansicht, Bild des sichtbaren Ausschnitts im Eimer `feedback`. Melden darf jede angemeldete Person, abarbeiten die Plattform-Verwaltung unter `/platform/feedback`. Erster Verbraucher von Supabase Storage. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
 | Zeitgesteuertes | `pg_cron` stößt an, `pg_net` ruft. Der Dienst bleibt zustandslos — das Altprojekt ist wegen seines Schedulers im Prozess auf `--workers 1` festgenagelt. |
 | Logging | `x-logging`-Anker auf jedem Dienst, Caddy `level ERROR`, uvicorn ohne Access-Log, Guard im CI. |
-| Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
+| Sicherung | `scripts/backup.sh`, zwei Teile: Abzug von `public`, `auth`, `storage` und ein `tar` des Datei-Volumes. 14 Tage Aufbewahrung, nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 439 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 454 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 
@@ -42,13 +43,14 @@ Tests: 439 in `compute`, 59 in `apps/web`. CI prüft Guards, Compute und Web.
 - **Eine abgewiesene Änderung meldet keinen Erfolg mehr.** In der Datenbank nachgestellt: weist eine Policy ein `update` ab, meldet Postgres `UPDATE 0` — keinen Fehler. PostgREST reicht das als Erfolg durch, und die Einstellungsseite sagte „Gespeichert", während sich nichts geändert hatte. Beide Schreibwege holen die geänderten Zeilen jetzt mit `.select()` zurück und werfen bei einer leeren Antwort.
 - **Die HR-Rechenwege sind an echten Daten geprüft.** Aus dem LAN gegen die Produktionsdatenbank gerechnet (nur Aggregate, lesend): das Arbeitszeitmodell steckt bei allen 75 aktiven Personen und ist nicht flach — Mo–Do 8:45, Fr 5:00. Mit dem Modell ergibt die Überstundenquote über 90 Tage 4,93 %, mit einem flachen Tagessoll wären es 9,58 %. Und der Stundenzweig der Krankheitsquote springt im Altprojekt bei keiner der 250 Abwesenheiten an; über 90 Tage sind das 19.106 statt 17.665 Krankstunden.
 - **Die Maßnahmenliste kann nicht auf eine Kennzahl zeigen, die es nicht gibt.** Der Fremdschlüssel geht auf `zielwerte.schluessel`; ein Eintrag auf einen unbekannten Schlüssel scheitert in der Datenbank, und wird ein Ziel gelöscht, gehen Kommentare und Maßnahmen mit. Das Erledigungsdatum setzt ein Trigger, nicht die Oberfläche: über das echte Formular auf „erledigt" gestellt, stand `erledigt_am` in der Zeile, ohne dass der Browser ein Datum geschickt hätte.
+- **Eine gelöschte Meldung lässt kein Byte liegen.** Im Browser durchgespielt: gemeldet, Bild angesehen, auf erledigt gesetzt, gelöscht — danach null Zeilen in `public.feedback`, null in `storage.objects` und null Dateien im Volume. Der Weg dorthin war nicht selbstverständlich: `storage.objects` weist ein direktes `delete` ab, auch mit vollem Recht, damit niemand die Zeile entfernt und die Datei stehen lässt. Gelöscht wird über den Dienst, Bild vor Zeile.
+- **Der Speicher liegt jetzt dort, wo er hingehört.** Der Upstream hängt die Dateien als Bind-Mount in `upstream/volumes/storage` — ein Verzeichnis, das `fetch-upstream.sh` gehört und das nicht eingecheckt ist. Der Override setzt ein benanntes Volume. Aufgefallen ist es an einem harten Fehler: der Dienst legt den Inhaltstyp als erweitertes Attribut an der Datei ab, und ein Bind-Mount vom Mac kann das nicht (`ENOTSUP`). Die Sicherung zieht das Volume seitdem mit, mit GNU tar und `--xattrs` — busybox-tar hätte die Attribute stillschweigend verloren.
 - **Migrationen laufen beim Start.** Der Dienst `migrate` spielt Alembic ein und fordert danach den PostgREST-Schema-Cache neu an.
 - **Das Altsystem ist abgesichert, solange es noch läuft.** 18 der 21 Befunde aus `docs/security-findings.md` sind in `lumeapps` abgearbeitet (PRs #145–#151): kein Dev-Server und kein root im Betrieb, JWT mit Aussteller und Pflicht-Ablauf, Kiosk-Einbettung ohne Personaldaten, Rumpf- und Archivgrenzen vor pandas, Nutzerdateien nicht mehr inline im eigenen Ursprung, CSRF-Riegel auf der Cookie-Sitzung, Produktionsbild ohne Testsuite. Drei bleiben bewusst offen, mit Begründung in derselben Datei. Zwei verlangen den Host: TLS und die Zertifikatsrotation.
 
 ## Was bewusst fehlt
 
 - **Datenübernahme aus `lumeapps` — vorbereitet, nicht ausgeführt.** Die Läufe stehen und sind gegen eine echte Alt-Datenbank geprüft: `uebernahme-vertrieb` und `uebernahme-nutzer` hier (siehe `docs/setup.md`), `python -m app.uebernahme` im Signage-Repo. Alle drei sind wiederholbar und zuerst trocken fahrbar. Ausgeführt wird auf dem Host, mit den echten Daten.
-- **Supabase Storage.** Kein Verbraucher im aktuellen Stack: Uploads landen in Tabellen, Signage hat einen eigenen Medienspeicher. Kommt mit Phase 3.
 - **AD-Anbindung.** Vorbereitet über `groups.source` und `groups.external_id`, bewertet in ADR-0004, nicht gebaut.
 - **TLS.** Lokal läuft alles über HTTP. Der Header-Block und `request_body max_size` stehen bereits im Caddyfile.
 
