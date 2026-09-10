@@ -77,7 +77,23 @@ export function FinanzenDashboard() {
     queryFn: () => finanzenApi.verbrauch(von, bis),
   });
   const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
-  const ziel = nachSchluessel(ziele.data ?? [])["finanzen_materialkostenquote"];
+  const zielNach = nachSchluessel(ziele.data ?? []);
+  const ziel = zielNach["finanzen_materialkostenquote"];
+  const zielPersonal = zielNach["finanzen_personalkostenquote"];
+
+  // Die Personalkostenquote verteilt Monatsbrutto anteilig — ohne Fenster
+  // ergibt das nichts. Beim Zeitraum „Alles" bleibt sie deshalb aus.
+  const hatFenster = von != null && bis != null;
+  const personal = useQuery({
+    queryKey: ["kpi", "finanzen", "personal", von, bis],
+    queryFn: () => finanzenApi.personalkosten(von!, bis!),
+    enabled: hatFenster,
+  });
+  const jeAbteilung = useQuery({
+    queryKey: ["kpi", "finanzen", "personal-abteilung", von, bis],
+    queryFn: () => finanzenApi.personalkostenJeAbteilung(von!, bis!),
+    enabled: hatFenster,
+  });
 
   const verlaufDaten = verlauf.data;
   const chartDaten = useMemo(
@@ -94,7 +110,9 @@ export function FinanzenDashboard() {
   const zeilen = useMemo(() => zeilenDaten ?? [], [zeilenDaten]);
 
   const keineDaten = !summe.isLoading && summe.data?.materialkosten === 0 && summe.data?.umsatz === 0;
-  const fehler = summe.error ?? verlauf.error ?? verbrauch.error ?? ziele.error;
+  const fehler =
+    summe.error ?? verlauf.error ?? verbrauch.error ?? ziele.error ??
+    personal.error ?? jeAbteilung.error;
 
   return (
     <div className="space-y-6">
@@ -108,8 +126,7 @@ export function FinanzenDashboard() {
           </Link>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Finanzen</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Materialkosten im Verhältnis zum Umsatz. Die Personalkostenquote folgt mit dem
-            HR-Modul.
+            Material- und Personalkosten im Verhältnis zum Rechnungsumsatz.
           </p>
         </div>
         <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
@@ -152,7 +169,7 @@ export function FinanzenDashboard() {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Kachel
           titel="Materialkostenquote"
           wert={fmt.prozent(summe.data?.quote)}
@@ -163,6 +180,23 @@ export function FinanzenDashboard() {
         <Kachel titel="Materialkosten" wert={fmt.eur(summe.data?.materialkosten)} laedt={summe.isLoading} />
         <Kachel titel="Umsatz" wert={fmt.eur(summe.data?.umsatz)} laedt={summe.isLoading} />
         <Kachel
+          titel="Personalkostenquote"
+          wert={hatFenster ? fmt.prozent(personal.data?.quote) : "—"}
+          hinweis={
+            !hatFenster
+              ? "braucht einen Zeitraum"
+              : personal.data
+                ? `${fmt.eur(personal.data.personalkosten)} bei ${fmt.zahl(personal.data.personen)} Personen`
+                : undefined
+          }
+          warnung={
+            zielPersonal != null &&
+            personal.data?.quote != null &&
+            personal.data.quote > zielPersonal
+          }
+          laedt={personal.isLoading}
+        />
+        <Kachel
           titel="Artikel ohne Preis"
           wert={fmt.zahl(summe.data?.ohne_preis)}
           hinweis="verbraucht, aber nicht bewertet"
@@ -170,6 +204,44 @@ export function FinanzenDashboard() {
           laedt={summe.isLoading}
         />
       </div>
+
+      {hatFenster && (jeAbteilung.data?.length ?? 0) > 0 && (
+        <Card className="p-5">
+          <h2 className="font-medium">Personalkosten je Abteilung</h2>
+          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+            Abteilungen mit weniger als drei beitragenden Personen stehen unter{" "}
+            {"„Übrige“"} — eine Abteilung mit einer Person wäre sonst deren Gehalt.
+          </p>
+          <TableWrap className="mt-4">
+            <Table>
+              <thead>
+                <tr>
+                  <Th>Abteilung</Th>
+                  <Th className="text-right">Personen</Th>
+                  <Th className="text-right">Kosten</Th>
+                  <Th className="text-right">Anteil</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {(jeAbteilung.data ?? []).map((z) => (
+                  <tr key={z.abteilung}>
+                    <Td className={z.gebuendelt ? "text-[var(--fg-muted)]" : ""}>
+                      {z.abteilung}
+                    </Td>
+                    <Td className="text-right font-mono tabular-nums">{fmt.zahl(z.personen)}</Td>
+                    <Td className="text-right font-mono tabular-nums">{fmt.eur(z.kosten)}</Td>
+                    <Td className="text-right font-mono tabular-nums">
+                      {personal.data && personal.data.personalkosten > 0
+                        ? fmt.prozent(z.kosten / personal.data.personalkosten)
+                        : "—"}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrap>
+        </Card>
+      )}
 
       {chartDaten.length > 0 && (
         <Card className="p-5">

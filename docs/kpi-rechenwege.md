@@ -481,6 +481,30 @@ Dashboard `/finance`, Router `backend/app/routers/finance_kpis.py`, Services `ma
 - **Sonderfälle**: Umsatz ≤ 0 → `None`. Brutto ohne Arbeitgeber-Overhead (bewusst). `break_minutes = NULL` lässt die betroffene Schicht still aus der Summe fallen. Einzelgehälter werden nie ausgegeben, die Tabelle zeigt nur Abteilung, Kopfzahl, Kosten; Abteilung leer → „—".
 - **Code**: `personnel_cost_aggregation.py`; `PersonnelCostRatioCardGrid.tsx`, `PersonnelCostRatioTable.tsx`.
 
+#### Im neuen Stack
+
+Portiert in Migration `0014_personalkosten`, `kpi_finanzen_personalkosten`
+und `kpi_finanzen_personalkosten_abteilung`, Anzeige im Finanz-Dashboard.
+Rechenweg unverändert — auch das Bewerten alter Zeiträume mit heutigen
+Gehältern, weil es keine Gehaltshistorie gibt.
+
+Eine Abweichung, und sie betrifft den Datenschutz: **Abteilungen mit weniger
+als drei beitragenden Personen wandern nach „Übrige".** Das Altprojekt gibt
+jede Abteilung einzeln heraus; eine Abteilung mit einer Person ist damit
+deren Gehalt, sichtbar für jeden mit dem Recht `kpi`. Die Gesamtsumme bleibt
+richtig, die einzelne Person verschwindet in der Sammelzeile. Die Schwelle
+ist ein Aufrufparameter, lässt sich aber nicht unter drei drücken — sonst
+wäre der Schutz mit einem Argument abzuschalten.
+
+Dazu: `hr_personalkosten_je_person` liefert die Zeilen je Person und ist
+**nicht** an `authenticated` freigegeben. Nur die beiden Aggregatfunktionen
+dürfen sie rufen, und die laufen als `security definer`. Ein Test hält fest,
+dass ein direkter Aufruf mit `permission denied` scheitert.
+
+Der Zeitraum „Alles" ruft die Quote nicht: die anteilige Verteilung des
+Monatsbruttos hat ohne Grenzen keinen Sinn. Die Kachel sagt das, statt eine
+Zahl zu zeigen, die nichts bedeutet.
+
 ---
 
 ## Einkauf
