@@ -100,11 +100,15 @@ delivery_reliability = sa.Table(
     sa.Column("raw", JSONB),
 )
 
-def _position_spalten() -> list[sa.Column]:
-    """Die Spalten, die beide Positionstabellen gemeinsam haben.
+def _position_spalten(praefix: str = "customer") -> list[sa.Column]:
+    """Die Spalten, die alle Positionstabellen gemeinsam haben.
 
     Als Funktion, nicht als Liste: ein `Column`-Objekt gehört genau einer
     Tabelle, und `Column.copy()` ist seit SQLAlchemy 1.4 abgekündigt.
+
+    `praefix` benennt die Gegenseite: `customer` bei Aufträgen und
+    Lieferscheinen, `supplier` bei Wareneingängen. Die Quellspalten der
+    Exportdatei sind dieselben, nur die Bedeutung dreht sich um.
     """
     return [
         sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
@@ -113,9 +117,9 @@ def _position_spalten() -> list[sa.Column]:
         sa.Column("upos", sa.Integer, nullable=False),
         sa.Column("typ", sa.String(10)),
         sa.Column("entry_date", sa.Date),
-        sa.Column("customer_id", sa.String(50)),
-        sa.Column("customer_name", sa.String(255)),
-        sa.Column("customer_city", sa.String(255)),
+        sa.Column(f"{praefix}_id", sa.String(50)),
+        sa.Column(f"{praefix}_name", sa.String(255)),
+        sa.Column(f"{praefix}_city", sa.String(255)),
         sa.Column("article_number", sa.String(50)),
         sa.Column("article_version", sa.String(50)),
         sa.Column("article_name", sa.String(255)),
@@ -129,9 +133,9 @@ def _position_spalten() -> list[sa.Column]:
     ]
 
 
-def _position_tabelle(name: str, *eigene: sa.Column) -> sa.Table:
-    """Die beiden Positionstabellen unterscheiden sich nur in drei Spalten."""
-    return sa.Table(name, metadata, *_position_spalten(), *eigene)
+def _position_tabelle(name: str, *eigene: sa.Column, praefix: str = "customer") -> sa.Table:
+    """Die Positionstabellen unterscheiden sich nur in wenigen Spalten."""
+    return sa.Table(name, metadata, *_position_spalten(praefix), *eigene)
 
 
 auftrag_positionen = _position_tabelle(
@@ -145,6 +149,15 @@ delivery_records = _position_tabelle(
     sa.Column("delivery_date", sa.Date),
     sa.Column("external_order_nr", sa.String(100)),
     sa.Column("order_nr", sa.String(100)),
+)
+
+goods_receipt_records = _position_tabelle(
+    "goods_receipt_records",
+    sa.Column("receipt_date", sa.Date),
+    sa.Column("order_nr", sa.String(100)),
+    sa.Column("material_group", sa.String(50)),
+    sa.Column("purchase_account", sa.String(50)),
+    praefix="supplier",
 )
 
 quality_records = sa.Table(
@@ -177,4 +190,5 @@ TABLES = {
     "auftrag_positionen": auftrag_positionen,
     "delivery_records": delivery_records,
     "quality_records": quality_records,
+    "goods_receipt_records": goods_receipt_records,
 }

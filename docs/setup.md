@@ -236,6 +236,25 @@ Lesen darf, wer die Kennzahlen sieht — ohne Zielwert fehlt der Kachel die Eino
 
 Neue Zielwerte kommen aus Migrationen, nicht aus der Oberfläche: die Tabelle gibt kein `insert`-Recht. Ein Zielwert gehört zu einer Kennzahl, und die entsteht im Code.
 
+### Reklamationsquote (On Quality)
+
+Der Zähler steht schon in `quality_records` — die 8D-Datei enthält Audits und Reklamationen. Neu ist der Nenner.
+
+| Art | Bezugsgröße |
+|---|---|
+| Kunde | gelieferte Menge |
+| intern | ebenfalls die **Kunden**lieferungen — eine andere gibt es nicht |
+| Material-Lieferanten | Wareneingänge ohne die Warengruppen DIENST und SERVIC |
+| Werkbänke | Wareneingänge genau dieser beiden Warengruppen |
+
+Eine leere Warengruppe zählt zum Material, nicht zur Dienstleistung.
+
+Zähler und Nenner haben **verschiedene Datumsfelder**: eine Reklamation kann in einem anderen Zeitraum liegen als die Lieferung, auf die sie sich bezieht. Das ist im Altprojekt so und bleibt so. Wird der Nenner dadurch zu klein, meldet die Karte es ausdrücklich, statt eine unsinnige Quote zu zeigen.
+
+Die Datenbank liefert die Fehlerquote, die Oberfläche zeigt `1 − Quote` als „On Quality". Die Umkehrung passiert an einer Stelle.
+
+**Stolperstein bei SQL-Funktionen:** ein Parameter, der wie eine Spalte heißt, wird zur Spalte aufgelöst. `art text` neben `quality_records.art` ließ die Funktion still null zählen. Parameter tragen deshalb ein `p_`.
+
 ### Eine Migration nachträglich ändern
 
 Solange eine Revision noch nicht gemerged ist, lässt sie sich bearbeiten. Die Testdatenbank merkt das aber nicht: ihr Container läuft zwischen den Läufen weiter und Alembic überspringt die bereits eingetragene Revision. Vorher zurücksetzen:
