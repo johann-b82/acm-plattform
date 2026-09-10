@@ -39,6 +39,12 @@ export const GRUPPEN: Gruppe[] = [
       "Was in jedem Dokument eines Programms gleich steht, und woher die Lieferscheine kommen.",
   },
   {
+    id: "qualitaet",
+    titel: "Qualität",
+    beschreibung:
+      "Die Normmatrix, auf die sich ein Audit beruft, und die Phasenvorlagen, die ein neues Audit als Checkliste mitbekommt.",
+  },
+  {
     id: "sensoren",
     titel: "Sensoren",
     beschreibung:
