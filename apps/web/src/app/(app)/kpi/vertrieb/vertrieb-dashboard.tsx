@@ -20,9 +20,9 @@ import {
   fenster,
   fmt,
   takt,
-  vertriebApi,
   type Zeitraum,
-} from "@/lib/kpi/vertrieb";
+} from "@/lib/kpi/gemeinsam";
+import { vertriebApi } from "@/lib/kpi/vertrieb";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 

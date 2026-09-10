@@ -11,14 +11,15 @@ Stand 9. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modu
 | Rechteverwaltung | `/platform`: Personen anlegen, Gruppen, Mitglieder, App-Rechte pflegbar. Schreibt über PostgREST, geprüft von den Policies; nur das Anlegen einer Person läuft über `compute`. |
 | Next.js-Shell | Login, Launcher, Proxy (`src/proxy.ts`), Server Components lesen über die Nutzer-Session. |
 | Compute-Dienst | FastAPI, prüft das Supabase-JWT. Zwei Upload-Routen, zwei Routen für Personen. Zustandslos, kein Scheduler, kein SSE. |
-| Erstes Fachmodul | Vertrieb: zwei ERP-Uploads, vier KPI-Funktionen als SQL, Dashboard mit Recharts. |
+| Fachmodul Vertrieb | Zwei ERP-Uploads, vier KPI-Funktionen als SQL, Dashboard mit Recharts. |
+| Fachmodul Einkauf | Liefertermintreue: ein ERP-Upload, drei KPI-Funktionen als SQL, Dashboard mit Ziellinie und Prüftabelle. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
 | Logging | `x-logging`-Anker auf jedem Dienst, Caddy `level ERROR`, uvicorn ohne Access-Log, Guard im CI. |
 | Sicherung | `scripts/backup.sh` für `public`, `auth` und `storage`, 14 Tage Aufbewahrung. Nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 75 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 104 in `compute`, 26 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 

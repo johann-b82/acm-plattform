@@ -24,7 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import Claims, require_app
 from app.config import settings
-from app.db import SessionLocal, auftraege, revenues, upload_batches
+from app.db import SessionLocal, auftraege, delivery_reliability, revenues, upload_batches
+from app.parsing.einkauf import parse_liefertreue
 from app.parsing.vertrieb import parse_auftraege, parse_umsatz
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depends(require_app("uploads", "admin"))])
@@ -66,11 +67,18 @@ async def _upsert(
     session: AsyncSession,
     tabelle: sa.Table,
     rows: list[dict[str, Any]],
+    schluessel: tuple[str, ...],
 ) -> None:
     """Zeilen einfügen oder aktualisieren, in Blöcken unterhalb des Parameterlimits."""
     if not rows:
         return
-    spalten = [c.name for c in tabelle.columns if c.name != "vorgang_nr"]
+    # Spalten, die die Zeile nicht identifizieren, werden überschrieben.
+    # `id` ist ausgenommen: eine Identitätsspalte vergibt die Datenbank.
+    spalten = [
+        c.name
+        for c in tabelle.columns
+        if c.name not in schluessel and c.name != "id" and c.name in rows[0]
+    ]
     pro_zeile = max(1, len(rows[0]))
     block = max(1, _MAX_PARAMS // pro_zeile)
     for start in range(0, len(rows), block):
@@ -78,7 +86,7 @@ async def _upsert(
         stmt = pg_insert(tabelle).values(teil)
         await session.execute(
             stmt.on_conflict_do_update(
-                index_elements=["vorgang_nr"],
+                index_elements=list(schluessel),
                 set_={c: stmt.excluded[c] for c in spalten},
             )
         )
@@ -91,6 +99,7 @@ async def _import(
     tabelle: sa.Table,
     parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
     claims: Claims,
+    schluessel: tuple[str, ...] = ("vorgang_nr",),
 ) -> UploadErgebnis:
     filename = file.filename or ""
     if not filename.lower().endswith((".txt", ".csv")):
@@ -106,12 +115,19 @@ async def _import(
         async with session.begin():
             vorhanden = 0
             if rows:
-                nummern = [r["vorgang_nr"] for r in rows]
+                # Wie viele Zeilen es schon gibt, entscheidet über „neu" und
+                # „aktualisiert" in der Rückmeldung. Bei einem zusammengesetzten
+                # Schlüssel vergleicht Postgres das Tupel als Ganzes.
+                spalten = [tabelle.c[k] for k in schluessel]
+                werte = [tuple(r[k] for k in schluessel) for r in rows]
+                bedingung = (
+                    spalten[0].in_([w[0] for w in werte])
+                    if len(schluessel) == 1
+                    else sa.tuple_(*spalten).in_(werte)
+                )
                 vorhanden = (
                     await session.execute(
-                        sa.select(sa.func.count())
-                        .select_from(tabelle)
-                        .where(tabelle.c.vorgang_nr.in_(nummern))
+                        sa.select(sa.func.count()).select_from(tabelle).where(bedingung)
                     )
                 ).scalar_one()
 
@@ -134,7 +150,7 @@ async def _import(
             for r in rows:
                 r["upload_batch_id"] = batch_id
                 r["imported_at"] = now
-            await _upsert(session, tabelle, rows)
+            await _upsert(session, tabelle, rows, schluessel)
 
     return UploadErgebnis(
         batch_id=batch_id,
@@ -168,3 +184,23 @@ async def upload_auftraege(
 ) -> UploadErgebnis:
     """AswKpf_AUF.txt — Auftragseingang."""
     return await _import(file=file, kind="auftraege", tabelle=auftraege, parser=parse_auftraege, claims=claims)
+
+
+@router.post("/liefertreue", response_model=UploadErgebnis)
+async def upload_liefertreue(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """dev_excel_Liefertreue_Einkauf.txt — Lieferpositionen der Lieferanten.
+
+    Schlüssel ist die Position, nicht der Auftrag: ein Auftrag hat mehrere
+    Positionen mit eigenen Terminen.
+    """
+    return await _import(
+        file=file,
+        kind="liefertreue",
+        tabelle=delivery_reliability,
+        parser=parse_liefertreue,
+        claims=claims,
+        schluessel=("auftrag", "pos", "upos"),
+    )

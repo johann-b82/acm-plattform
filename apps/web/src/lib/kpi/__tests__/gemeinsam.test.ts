@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bucketLabel, fenster, fmt, takt } from "../vertrieb";
+import { bucketLabel, fenster, fmt, takt } from "../gemeinsam";
 
 describe("Zeitraum in ein Datumsfenster übersetzen", () => {
   const heute = new Date(2026, 4, 17); // 17. Mai 2026

@@ -79,4 +79,30 @@ auftraege = sa.Table(
     sa.Column("raw", JSONB),
 )
 
-TABLES = {"upload_batches": upload_batches, "revenues": revenues, "auftraege": auftraege}
+delivery_reliability = sa.Table(
+    "delivery_reliability",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("auftrag", sa.String(50), nullable=False),
+    sa.Column("pos", sa.Integer, nullable=False),
+    sa.Column("upos", sa.Integer, nullable=False),
+    sa.Column("adr_nr", sa.String(50)),
+    sa.Column("supplier_name", sa.String(255)),
+    sa.Column("delivered_date", sa.Date),
+    sa.Column("target_date", sa.Date),
+    sa.Column("verzug_tage", sa.Integer),
+    sa.Column("quantity", sa.Numeric(15, 3)),
+    sa.Column("unit", sa.String(20)),
+    sa.Column("article_number", sa.String(50)),
+    sa.Column("article_name", sa.String(255)),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
+TABLES = {
+    "upload_batches": upload_batches,
+    "revenues": revenues,
+    "auftraege": auftraege,
+    "delivery_reliability": delivery_reliability,
+}
