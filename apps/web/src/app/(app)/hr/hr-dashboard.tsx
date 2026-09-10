@@ -187,12 +187,14 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
             Aus dem Personio-Abgleich. Das Tagessoll kommt aus dem hinterlegten
             Arbeitszeitmodell je Person, nicht aus einem pauschalen Achtstundentag.
           </p>
-          <Link
-            href="/hr/kompetenzen"
-            className="mt-2 inline-block text-sm underline-offset-4 hover:underline"
-          >
-            Zu den Kompetenzen
-          </Link>
+          <div className="mt-2 flex gap-4 text-sm">
+            <Link href="/hr/kompetenzen" className="underline-offset-4 hover:underline">
+              Kompetenzen
+            </Link>
+            <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
+              Schulungen
+            </Link>
+          </div>
         </div>
         <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
           {ZEITRAEUME.map((z) => (

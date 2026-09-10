@@ -8,7 +8,7 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 
 | # | Modul | Alt (Operationen) | Inhalt |
 |---|---|---|---|
-| 3 | Schulungen | 42 | Das größte Stück: Schulungskatalog, Pflicht- und Wunschschulungen, Teilnahmen, Nachweise, QR-Scan. |
+| 3 | Schulungen: Nachweise | ~20 | Unterlagen je Schulung (Dateien), Schulungsnachweise mit Unterschrift, Zertifikate, das Protokoll-PDF und der QR-Scan. Katalog, Anforderungsmatrix, Teilnahmen und Fälligkeiten stehen (PR #46). |
 | 4 | Onboarding | 16 | Checklisten für neue Personen, Aufgaben je Rolle. |
 | 5 | Einarbeitung | 18 | Einarbeitungsplan mit Stationen und Bestätigungen. |
 | 6 | Zeugnisse | 19 | Arbeitszeugnis auf der ACM-Briefvorlage, Textbausteine, Notenskala. |
