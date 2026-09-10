@@ -64,7 +64,7 @@ und nicht still zu Null.
 |---|---|
 | Katalog, Vorlagen und das Scan-Ziel sehen | ein `atr`-Recht |
 | Pflegen, einlesen, Gerüst hinterlegen, den Eingang durchsehen | `atr: editor` |
-| Eintragen, **worauf** der Scan zeigt | `platform: admin` |
+| Eintragen, **worauf** der Scan zeigt | `platform: admin` (unter `/einstellungen#atr`) |
 
 Im Altprojekt hängen ATR und FAIR an einer gemeinsamen Zwischenrolle „QS", weil
 es nur Admin und Viewer gab. Mit App-Rechten entfällt sie; ATR und FAIR sind
@@ -234,7 +234,10 @@ Ein Lieferschein landet als PDF in einem Ordner auf dem Dateiserver. Der Scan
 liest ihn, legt die Lieferung an und schiebt die Datei ins Archiv — im Modus
 `automatisch` erzeugt er dazu Mappe, PDF und Etikett und legt sie im Ausgang
 ab. Was er tut, steht in der einzeiligen Tabelle `atr_scan`; die Maske dafür
-sitzt unter `/einstellungen#atr`, zusammen mit den Vorlagen.
+sitzt unter `/einstellungen#atr`, zusammen mit den Vorlagen — dort gehört sie
+hin, denn sie gilt für alle. Den Eingang von Hand durchsehen kann dagegen jede
+ATR-Bearbeiterin, mit dem Knopf bei den Lieferungen: einen liegen gebliebenen
+Lieferschein löst aus, wer mit Lieferungen arbeitet.
 
 **Der Takt kommt aus der Datenbank, nicht aus dem Dienst.** Im Altprojekt hielt
 ein Scheduler-Thread in der API den Zeitplan; ein Neustart hätte ihn mitgenommen.

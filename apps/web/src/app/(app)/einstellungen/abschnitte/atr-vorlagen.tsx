@@ -6,6 +6,7 @@ import { FileUp } from "lucide-react";
 
 import { XLSX_TYP, atrApi, atrKeys, type Vorlage } from "@/lib/atr";
 import { Card, EmptyState, Input, Label } from "@/components/ui/primitives";
+import { Hinweis } from "@/components/ui/hinweis";
 
 /**
  * Die Vorlage je Programm: Kopfdaten, die in jedem ATR-Dokument gleich
@@ -29,7 +30,7 @@ const FELDER: { feld: keyof Vorlage; label: string }[] = [
   { feld: "qs_unterschrift", label: "QS-Unterschrift" },
 ];
 
-export function AtrVorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
+export function AtrVorlagen() {
   const queryClient = useQueryClient();
   const vorlagen = useQuery({
     queryKey: atrKeys.vorlagen(),
@@ -59,12 +60,16 @@ export function AtrVorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-3">
-      <h3 className="font-medium">Vorlagen</h3>
-      <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-        Eine Vorlage je Programm. Kopfdaten und Gerüstdatei stehen in jedem
-        ATR-Dokument dieses Programms gleich. Angelegt wird eine Vorlage beim
-        Einlesen einer Referenzmappe im Teilekatalog.
-      </p>
+      <h3 className="flex items-center gap-1.5 font-medium">
+        Vorlagen
+        <Hinweis
+          text={
+            "Eine Vorlage je Programm. Kopfdaten und Gerüstdatei stehen in " +
+            "jedem ATR-Dokument dieses Programms gleich. Angelegt wird eine " +
+            "Vorlage beim Einlesen einer Referenzmappe im Teilekatalog."
+          }
+        />
+      </h3>
 
       {liste.length === 0 ? (
         <EmptyState
@@ -76,29 +81,27 @@ export function AtrVorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
           <Card key={v.programm} className="space-y-4 p-5">
             <div className="flex flex-wrap items-center gap-3">
               <h4 className="font-medium">{v.programm}</h4>
-              {darfSchreiben && (
-                <label
-                  className={
-                    "ml-auto inline-flex h-8 cursor-pointer items-center rounded-md " +
-                    "border border-[var(--border)] px-3 text-xs font-medium " +
-                    "hover:bg-[var(--muted)] focus-within:outline-2 focus-within:outline-[var(--ring)]"
-                  }
-                >
-                  <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                  {v.geruest_dateiname ? "Gerüst ersetzen" : "Gerüst wählen"}
-                  <input
-                    type="file"
-                    accept={`.xlsx,${XLSX_TYP}`}
-                    className="sr-only"
-                    aria-label={`Gerüstdatei für ${v.programm}`}
-                    onChange={(e) => {
-                      const datei = e.target.files?.[0];
-                      e.target.value = "";
-                      if (datei) geruest.mutate({ v, datei });
-                    }}
-                  />
-                </label>
-              )}
+              <label
+                className={
+                  "ml-auto inline-flex h-8 cursor-pointer items-center rounded-md " +
+                  "border border-[var(--border)] px-3 text-xs font-medium " +
+                  "hover:bg-[var(--muted)] focus-within:outline-2 focus-within:outline-[var(--ring)]"
+                }
+              >
+                <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                {v.geruest_dateiname ? "Gerüst ersetzen" : "Gerüst wählen"}
+                <input
+                  type="file"
+                  accept={`.xlsx,${XLSX_TYP}`}
+                  className="sr-only"
+                  aria-label={`Gerüstdatei für ${v.programm}`}
+                  onChange={(e) => {
+                    const datei = e.target.files?.[0];
+                    e.target.value = "";
+                    if (datei) geruest.mutate({ v, datei });
+                  }}
+                />
+              </label>
             </div>
 
             <p className="text-sm text-[var(--fg-muted)]">
@@ -118,7 +121,6 @@ export function AtrVorlagen({ darfSchreiben }: { darfSchreiben: boolean }) {
                     id={`${v.programm}-${feld}`}
                     defaultValue={(v[feld] as string | null) ?? ""}
                     placeholder="—"
-                    disabled={!darfSchreiben}
                     onBlur={(e) => {
                       const wert = e.target.value.trim() || null;
                       if (wert !== ((v[feld] as string | null) ?? null)) {

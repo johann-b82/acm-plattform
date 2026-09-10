@@ -13,7 +13,7 @@ docker compose up -d --build                                                  # 
 bash scripts/bootstrap-admin.sh admin@example.com '<sicheres Passwort>'       # Break-Glass-Admin in "Plattform-Admins"
 ```
 
-Danach: http://localhost → Login → Launcher. Der Admin sieht alle Apps; alles Einstellbare liegt unter `/einstellungen`, nach Bereich gruppiert.
+Danach: http://localhost → Login → Launcher. Der Admin sieht alle Apps; alles Einstellbare liegt unter `/einstellungen`, nach Bereich gruppiert — die Seite gehört der Plattform-Verwaltung.
 
 `SITE_URL`, `SUPABASE_PUBLIC_URL` und `API_EXTERNAL_URL` in `.env` auf den echten Hostnamen setzen, bevor der Stack auf dem Host läuft. `API_EXTERNAL_URL` ist der JWT-Issuer; `compute` prüft ihn.
 
