@@ -12,7 +12,7 @@ fehlt, steht unten.
 |---|---|
 | Teilekatalog und Vorlage | steht (Migration `0022_atr_katalog`) |
 | Lieferschein einlesen und abgleichen | steht (Migration `0023_atr_lieferungen`) |
-| Erzeugung von Excel, PDF und Etikett | offen |
+| Erzeugung von Excel, PDF und Etikett | steht (Migration `0024_atr_ausgaben`) |
 | Scan eines Eingangsordners | offen |
 
 ## Der Schlüssel ist die Teilenummer ohne Beiwerk
@@ -134,10 +134,99 @@ Zwei Dinge bleiben absichtlich möglich:
 - **Kopfdaten nachtragen.** Containernummer, Wiegedatum und QS-Unterschrift
   entstehen oft erst nach der Freigabe der Positionen.
 
-## Was noch kommt
+## Die Erzeugung
 
-**Erzeugung.** Excel aus der Gerüstdatei, PDF daraus, Container-Etikett als
-Word-Dokument.
+Drei Ausgaben je Lieferung: die ATR-Mappe, das PDF daraus und das
+Container-Etikett. Sie liegen im Eimer `atr` unter `erzeugt/<lieferung>/`; die
+Zeile hält nur die Pfade. Im Altprojekt stecken alle drei als `bytea` in der
+Zeile.
+
+### Die Vorlage ist der Rahmen
+
+Kopfblock, Tabellenüberschrift, Summenzeile und Zertifizierungsblock bleiben,
+wie sie sind — samt Formaten, verbundenen Zellen und Druckkopfzeile. Ersetzt
+wird nur der Bereich zwischen Tabellenüberschrift und Summenzeile.
+
+**Zeilen werden über Beschriftungen gefunden, nicht über Nummern.** An den
+echten Vorlagen aus der Produktion nachgesehen:
+
+| | A350 | A380 |
+|---|---|---|
+| `PO Pos` | Zeile 13 | Zeile 10 |
+| `Total weight` | Zeile 80 | Zeile 14 |
+
+Feste Zeilennummern gingen bei der zweiten Vorlage sofort daneben. Dieselbe
+Suche gilt für „Supplier:", „Manufacturing Process Reference",
+„Purchase Order No", „MSN:" und „Weighing date"; die Satzbezeichnung steht als
+Banner direkt über der Wiegezeile.
+
+### Was beim Bauen aufgefallen ist
+
+Vier Dinge, jedes an einer erzeugten Datei nachgemessen:
+
+**Die Programmangabe steht in drei Schreibweisen.** Die Referenzmappe sagt
+`A350 XWB` und `A380 - 800`, der Lieferschein `A350`. Als Schlüssel taugt nur
+die Familie — sonst fände eine Lieferung ihre Vorlage nie
+(`programmfamilie()`).
+
+**Die Kopfdatenspalten der Vorlage sind in der Produktion leer.** Der Kopf
+steckt in der Gerüstdatei selbst; die Erzeugung überschreibt deshalb nur die
+Felder, die aus der Lieferung kommen, und lässt den Rest stehen. Die Spalten
+in `atr_vorlagen` machen den Kopf sichtbar und pflegbar, sind aber nicht die
+Quelle.
+
+**openpyxl schreibt Zeilenumbrüche der Druckkopfzeile als `_x000a_`.** Excel
+versteht das noch, LibreOffice nicht — im PDF stand wörtlich
+„…Issue: 01_x000a_Date: 10.09.2026" quer über der Seite. Die Nachbehandlung
+setzt sie auf `&#10;` zurück. Das hing hier einmal am Logo-Zweig; ein Gerüst
+ohne Kopfbild bekam dann weiterhin die kaputte Kopfzeile — ein Test hält
+beides fest.
+
+**`=TODAY()` in der Vorlage wird amerikanisch gesetzt.** Im PDF stand
+„9/10/2026". Wiege- und Prüfdatum werden deshalb immer geschrieben, auch wenn
+sie nicht gesetzt sind: ein heute erzeugtes Dokument darf heute tragen, es
+muss nur deutsch lesbar sein.
+
+### Das Kopfbild
+
+openpyxl behält den Kopfzeilen-Code `&G`, wirft die Bildteile beim Speichern
+aber weg. Sie kommen aus der Vorlage zurück, und die Dateien des Ergebnisses
+werden dabei **ergänzt**, nicht durch die der Vorlage ersetzt: openpyxl
+schreibt eine andere Menge von Teilen als Excel (etwa ohne
+`sharedStrings.xml`), und ein `[Content_Types].xml` aus der Vorlage verspräche
+Teile, die es nicht gibt — die Datei ließe sich nicht mehr öffnen. Auch das
+ist einmal passiert.
+
+### Das PDF
+
+`soffice --headless --convert-to pdf`, ein Lauf zur Zeit (LibreOffice verträgt
+keine zwei im selben Profil). Im Abbild steckt bewusst nur `libreoffice-calc`,
+ohne Writer, Impress und Java: 207 MB statt weit über einem halben Gigabyte.
+
+**Ein Unterschied zum Altprojekt:** im PDF fehlt das Logo in der Kopfzeile.
+LibreOffice rendert die VML-Grafik der Druckkopfzeile nicht — nachgemessen.
+Das Altprojekt löst das, indem es LibreOffice über **UNO** fernsteuert und das
+Logo als schwebende Form in das Kopfband setzt (`atr_uno_header.py`). Das
+kostet `python3-uno` im Abbild und ein zweites Verfahren neben dem einfachen
+Umwandeln. Die Mappe selbst trägt das Logo; das PDF nicht. Wer es dort braucht,
+holt den UNO-Weg nach.
+
+Das PDF ist der einzige Schritt, der scheitern darf, ohne den Rest
+mitzunehmen: LibreOffice ist ein fremder Prozess. Mappe und Etikett stehen
+dann trotzdem, und ein Hinweis sagt, was fehlt.
+
+### Frisch oder veraltet
+
+`erzeugt_am` sagt, wann die Dateien entstanden. Steht dort ein Zeitpunkt vor
+`geaendert_am`, ist die Lieferung seither angefasst worden — die Oberfläche
+sagt das, statt es zu verschweigen.
+
+Damit das trägt, zählt das Ablegen der Dateien nicht als Änderung: ohne diese
+Unterscheidung zöge derselbe Schreibvorgang, der `erzeugt_am` setzt, auch
+`geaendert_am` hoch, und jede frisch erzeugte Mappe wäre sofort „veraltet".
+Die Lieferungen haben dafür eine eigene Triggerfunktion — die gemeinsame hängt
+auch an `atr_positionen`, und plpgsql löst die Feldverweise einer Bedingung
+vorab auf.
 
 **Eingangsordner.** Im Altprojekt scannt ein Scheduler-Job einen SMB-Ordner.
 Hier stößt `pg_cron` über `pg_net` eine Route in `compute` an — der Dienst

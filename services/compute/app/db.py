@@ -323,7 +323,12 @@ personio_absences = sa.Table(
 atr_teile = sa.Table(
     "atr_teile",
     metadata,
-    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("teilenummer", sa.String(60), nullable=False),
     # Erzeugte Spalte — wird nie geschrieben, siehe Migration 0022.
     sa.Column("teilenummer_norm", sa.Text),
@@ -363,7 +368,12 @@ atr_vorlagen = sa.Table(
 atr_lieferungen = sa.Table(
     "atr_lieferungen",
     metadata,
-    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("quelle_dateiname", sa.String(255), nullable=False),
     sa.Column("lieferschein_nr", sa.String(40)),
     sa.Column("datum", sa.Date),
@@ -383,6 +393,10 @@ atr_lieferungen = sa.Table(
     sa.Column("max_gewicht_kg", sa.Numeric(8, 3)),
     sa.Column("status", sa.String(16), nullable=False),
     sa.Column("hinweise", JSONB, nullable=False),
+    sa.Column("mappe_pfad", sa.Text),
+    sa.Column("pdf_pfad", sa.Text),
+    sa.Column("etikett_pfad", sa.Text),
+    sa.Column("erzeugt_am", sa.DateTime(timezone=True)),
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
@@ -390,7 +404,12 @@ atr_lieferungen = sa.Table(
 atr_positionen = sa.Table(
     "atr_positionen",
     metadata,
-    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("lieferung_id", UUID(as_uuid=True), nullable=False),
     sa.Column("reihenfolge", sa.SmallInteger, nullable=False),
     sa.Column("pos", sa.SmallInteger),

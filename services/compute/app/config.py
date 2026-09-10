@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     # der Guard scripts/ci/check_service_role.sh haelt ihn aus dem Web-Bundle.
     SERVICE_ROLE_KEY: str
     GOTRUE_URL: str = "http://auth:9999"
+    # Storage-API im selben Netz. compute legt dort die erzeugten ATR-Dateien
+    # ab — mit dem Service-Schlüssel, weil ein Hintergrundlauf (pg_cron) kein
+    # Nutzertoken hat und die Regeln auf `storage.objects` einen eigenen Ordner
+    # je Person verlangen.
+    STORAGE_URL: str = "http://storage:5000"
 
     # Postgres (Superuser für Alembic; App-Zugriff folgt mit eigener Rolle in Phase 4)
     POSTGRES_HOST: str = "db"

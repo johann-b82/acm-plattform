@@ -10,13 +10,14 @@ PostgREST — auch das Pflegen einzelner Teile.
 
     POST /api/atr/referenz       Mappe einlesen und in den Katalog übernehmen
     POST /api/atr/lieferschein   Lieferschein einlesen, abgleichen, als Entwurf ablegen
+    POST /api/atr/lieferungen/{id}/erzeugen   Mappe, PDF und Etikett erzeugen
 """
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -36,6 +37,11 @@ from app.parsing.atr_lieferschein import (
     TextNichtLesbar,
     lies_pdf,
 )
+from app.atr.excel import VorlageUnbrauchbar, baue_atr
+from app.atr.format import programmfamilie
+from app.atr.etikett import baue_etikett
+from app.atr.pdf import PdfFehlgeschlagen, nach_pdf
+from app.atr.speicher import SpeicherFehler, ablegen
 from app.parsing.atr_referenz import MappeUnbrauchbar, lies_referenzmappe
 
 router = APIRouter(
@@ -87,7 +93,9 @@ async def referenz_einlesen(datei: UploadFile) -> ImportErgebnis:
         raise HTTPException(422, str(fehler)) from fehler
 
     jetzt = datetime.now(timezone.utc)
-    programm = mappe.kopf.get("programm")
+    # Die Mappe schreibt „A350 XWB", der Lieferschein „A350". Als Schlüssel
+    # dient die Familie, sonst fände eine Lieferung ihre Vorlage nie.
+    programm = programmfamilie(mappe.kopf.get("programm"))
     hinweise = list(mappe.hinweise)
 
     zeilen = [
@@ -352,3 +360,130 @@ async def lieferschein_einlesen(datei: UploadFile) -> LieferscheinErgebnis:
         zugeordnet=zugeordnet,
         hinweise=schein.hinweise,
     )
+
+
+
+class ErzeugtErgebnis(BaseModel):
+    mappe_pfad: str
+    pdf_pfad: str | None
+    etikett_pfad: str
+    pdf_hinweis: str | None
+
+
+@router.post("/lieferungen/{lieferung_id}/erzeugen", response_model=ErzeugtErgebnis)
+async def erzeugen(lieferung_id: str = Path(...)) -> ErzeugtErgebnis:
+    """Erzeugt Mappe, PDF und Etikett und legt sie im Eimer `atr` ab.
+
+    Die Mappe entsteht aus dem Gerüst der Vorlage des Programms. Fehlt das
+    Gerüst, gibt es nichts zu füllen — dann bricht der Vorgang ab, statt eine
+    Mappe ohne Rahmen zu erzeugen.
+
+    Das PDF ist der einzige Schritt, der scheitern darf, ohne den Rest
+    mitzunehmen: LibreOffice ist ein fremder Prozess. Mappe und Etikett stehen
+    dann trotzdem, und der Hinweis sagt, was fehlt.
+    """
+    async with SessionLocal() as sitzung:
+        lieferung = (
+            await sitzung.execute(
+                sa.select(atr_lieferungen).where(atr_lieferungen.c.id == lieferung_id)
+            )
+        ).mappings().first()
+        if lieferung is None:
+            raise HTTPException(404, "Lieferung nicht gefunden.")
+
+        positionen = [
+            dict(z)
+            for z in (
+                await sitzung.execute(
+                    sa.select(atr_positionen)
+                    .where(atr_positionen.c.lieferung_id == lieferung_id)
+                    .order_by(atr_positionen.c.reihenfolge)
+                )
+            ).mappings()
+        ]
+        if not positionen:
+            raise HTTPException(422, "Die Lieferung hat keine Positionen.")
+
+        vorlage = (
+            await sitzung.execute(
+                sa.select(atr_vorlagen).where(
+                    atr_vorlagen.c.programm
+                    == (programmfamilie(lieferung["programm"]) or "")
+                )
+            )
+        ).mappings().first()
+
+    if vorlage is None or not vorlage["geruest_pfad"]:
+        raise HTTPException(
+            422,
+            f"Für das Programm {lieferung['programm'] or '—'} ist keine "
+            "Gerüstdatei hinterlegt.",
+        )
+
+    gerüst = await _hole_geruest(vorlage["geruest_pfad"])
+
+    daten = dict(lieferung)
+    try:
+        mappe = await run_in_threadpool(baue_atr, gerüst, daten, positionen)
+    except VorlageUnbrauchbar as fehler:
+        raise HTTPException(422, str(fehler)) from fehler
+    etikett = await run_in_threadpool(baue_etikett, daten, positionen)
+
+    stamm = f"erzeugt/{lieferung_id}"
+    mappe_pfad = await ablegen(
+        f"{stamm}/atr.xlsx",
+        mappe,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    etikett_pfad = await ablegen(
+        f"{stamm}/etikett.docx",
+        etikett,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+    pdf_pfad: str | None = None
+    hinweis: str | None = None
+    try:
+        pdf = await nach_pdf(mappe)
+        pdf_pfad = await ablegen(f"{stamm}/atr.pdf", pdf, "application/pdf")
+    except (PdfFehlgeschlagen, SpeicherFehler) as fehler:
+        hinweis = f"Das PDF ist nicht entstanden: {fehler}"
+
+    jetzt = datetime.now(timezone.utc)
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            await sitzung.execute(
+                atr_lieferungen.update()
+                .where(atr_lieferungen.c.id == lieferung_id)
+                .values(
+                    mappe_pfad=mappe_pfad,
+                    pdf_pfad=pdf_pfad,
+                    etikett_pfad=etikett_pfad,
+                    erzeugt_am=jetzt,
+                )
+            )
+
+    return ErzeugtErgebnis(
+        mappe_pfad=mappe_pfad,
+        pdf_pfad=pdf_pfad,
+        etikett_pfad=etikett_pfad,
+        pdf_hinweis=hinweis,
+    )
+
+
+async def _hole_geruest(pfad: str) -> bytes:
+    """Holt die Gerüstdatei mit dem Service-Schlüssel aus dem Eimer."""
+    import httpx
+
+    from app.atr.speicher import EIMER, _kopfzeilen
+
+    async with httpx.AsyncClient(timeout=60) as klient:
+        antwort = await klient.get(
+            f"{settings.STORAGE_URL}/object/{EIMER}/{pfad}",
+            headers=_kopfzeilen(),
+        )
+    if antwort.status_code >= 400:
+        raise HTTPException(
+            502, f"Die Gerüstdatei ließ sich nicht laden ({antwort.status_code})."
+        )
+    return antwort.content
