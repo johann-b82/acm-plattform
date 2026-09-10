@@ -21,7 +21,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | KPI-Bewertung | Kommentar und Maßnahme zu jeder Kennzahl mit Zielwert. Die Liste ist `zielwerte` selbst — kein zweites Register, das hinter den Dashboards zurückbleiben kann. Lesen mit `kpi`-Recht, Schreiben ab `settings: editor`. |
 | Newsletter | Eine Ausgabe je Quartal mit Kapiteln, Markdown und Bildern; Leseransicht und PDF unter `/newsletter`, Redaktion unter `/newsletter/redaktion`. Belegschaftszahlen und Neuzugänge werden je Ausgabe eingefroren, nicht live gelesen. |
 | FAIR | Erstmusterprüfung: Zeichnung hochladen, Maße ballonieren, Prüfliste als CSV. Nummerierung gehört der Datenbank — lückenlos, auch über PostgREST. Ohne OCR (siehe `docs/modules/fair.md`). |
-| ATR (Teil 1) | Teilekatalog und Vorlage je Programm; Referenzmappe einlesen. Die normierte Teilenummer ist eine erzeugte Spalte — sie kann von der Nummer, aus der sie stammt, nicht abweichen. Lieferschein, Erzeugung und Ordner-Scan folgen. |
+| ATR (Teile 1–2) | Teilekatalog, Vorlage je Programm, Lieferschein einlesen und durchsehen. Die normierte Teilenummer ist eine erzeugte Spalte; eine freigegebene Lieferung ist an der Tabelle gesperrt, nicht in der Oberfläche. Erzeugung und Ordner-Scan folgen. |
 | Seiten-Feedback | Melde-Knopf in jeder Ansicht, Bild des sichtbaren Ausschnitts im Eimer `feedback`. Melden darf jede angemeldete Person, abarbeiten die Plattform-Verwaltung unter `/platform/feedback`. Erster Verbraucher von Supabase Storage. |
 | Signage | Eigenes Repo `acm-signage`, eigener Compose-Stack, eigene Datenbank, eigener Caddy. Die Verwaltung hängt als App-Kachel in der Plattform. |
 | Aufräumen | `pg_cron`, täglich 3:30 Uhr, Upload-Protokolle 365 Tage. |
@@ -30,7 +30,7 @@ Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Mod
 | Sicherung | `scripts/backup.sh`, zwei Teile: Abzug von `public`, `auth`, `storage` und ein `tar` des Datei-Volumes. 14 Tage Aufbewahrung, nicht eingeplant (Entscheidung F). |
 | Datenübernahme | Läufe für Vertriebsdaten, Personen und Signage stehen bereit, gegen eine echte Alt-Datenbank geprüft. |
 
-Tests: 514 in `compute`, 82 in `apps/web`. CI prüft Guards, Compute und Web.
+Tests: 540 in `compute`, 82 in `apps/web`. CI prüft Guards, Compute und Web.
 
 ## Was bewiesen ist
 

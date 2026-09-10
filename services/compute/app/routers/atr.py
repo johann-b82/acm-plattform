@@ -8,11 +8,12 @@ PostgREST lesen.
 Alles danach ist gewöhnliches Lesen und Schreiben und geht direkt über
 PostgREST — auch das Pflegen einzelner Teile.
 
-    POST /api/atr/referenz    Mappe einlesen und in den Katalog übernehmen
+    POST /api/atr/referenz       Mappe einlesen und in den Katalog übernehmen
+    POST /api/atr/lieferschein   Lieferschein einlesen, abgleichen, als Entwurf ablegen
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -22,7 +23,19 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.auth import require_app
 from app.config import settings
-from app.db import SessionLocal, atr_teile, atr_vorlagen
+from app.db import (
+    SessionLocal,
+    atr_lieferungen,
+    atr_positionen,
+    atr_teile,
+    atr_vorlagen,
+)
+from app.parsing.atr_lieferschein import (
+    Lieferschein,
+    Position,
+    TextNichtLesbar,
+    lies_pdf,
+)
 from app.parsing.atr_referenz import MappeUnbrauchbar, lies_referenzmappe
 
 router = APIRouter(
@@ -177,4 +190,165 @@ async def referenz_einlesen(datei: UploadFile) -> ImportErgebnis:
         teile_aktualisiert=aktualisiert,
         vorlage_uebernommen=vorlage,
         hinweise=hinweise,
+    )
+
+
+class LieferscheinErgebnis(BaseModel):
+    lieferung_id: str
+    dateiname: str
+    lieferschein_nr: str | None
+    programm: str | None
+    programm_grund: str
+    positionen: int
+    zugeordnet: int
+    hinweise: list[str]
+
+
+def _datum(deutsch: str | None) -> date | None:
+    if not deutsch:
+        return None
+    try:
+        tag, monat, jahr = deutsch.split(".")
+        return date(int(jahr), int(monat), int(tag))
+    except (ValueError, AttributeError):
+        return None
+
+
+def _programm_und_grund(schein: Lieferschein) -> tuple[str | None, str, str | None]:
+    """Programm, Begründung und Satztitel aus der ersten Position.
+
+    Die Begründung steht mit in der Zeile, damit später nachvollziehbar ist,
+    warum ein ATR unter A350 oder A380 läuft — im Altprojekt ist das ein
+    stiller Zweig, und wer die Ausgabe prüft, sieht nur das Ergebnis.
+    """
+    kopf: Position | None = schein.positionen[0] if schein.positionen else None
+    programm = kopf.programm if kopf else None
+    bereich = kopf.bereich if kopf else None
+    bett = kopf.bettvariante if kopf else None
+    titel = f"SET {bett} BED {bereich}" if bett and bereich else None
+
+    if programm == "A380":
+        return programm, "A380 aus den Bestelldaten erkannt.", titel or "SET MSN UAE"
+    if programm == "A350":
+        return programm, "A350 aus den Bestelldaten erkannt.", titel
+    return (
+        None,
+        "Kein A350- oder A380-Merkmal im Lieferschein — Programm bitte prüfen.",
+        titel,
+    )
+
+
+@router.post("/lieferschein", response_model=LieferscheinErgebnis)
+async def lieferschein_einlesen(datei: UploadFile) -> LieferscheinErgebnis:
+    """Liest einen Lieferschein, gleicht gegen den Katalog ab und legt einen
+    Entwurf an.
+
+    Was der Katalog liefert, wird in die Position **kopiert**, nicht verlinkt.
+    Der Katalog ändert sich; ein freigegebener ATR nicht.
+    """
+    daten = await _lies_begrenzt(datei)
+    try:
+        schein = await lies_pdf(daten)
+    except TextNichtLesbar as fehler:
+        raise HTTPException(422, str(fehler)) from fehler
+
+    programm, grund, titel = _programm_und_grund(schein)
+    kopf: Position | None = schein.positionen[0] if schein.positionen else None
+    jetzt = datetime.now(timezone.utc)
+
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            nummern = [
+                p.teilenummer for p in schein.positionen if p.teilenummer
+            ]
+            katalog: dict[str, dict] = {}
+            if nummern:
+                treffer = await sitzung.execute(
+                    sa.select(
+                        atr_teile.c.id,
+                        atr_teile.c.teilenummer_norm,
+                        atr_teile.c.bezeichnung,
+                        atr_teile.c.zeichnung,
+                        atr_teile.c.kategorie,
+                        atr_teile.c.gewicht_kg,
+                    ).where(
+                        atr_teile.c.teilenummer_norm.in_(
+                            sa.select(
+                                sa.func.public.atr_teilenummer_norm(
+                                    sa.func.unnest(sa.literal(nummern, sa.ARRAY(sa.Text)))
+                                )
+                            )
+                        )
+                    )
+                )
+                katalog = {
+                    zeile.teilenummer_norm: dict(zeile._mapping)
+                    for zeile in treffer
+                    if zeile.teilenummer_norm
+                }
+
+            lieferung = (
+                await sitzung.execute(
+                    atr_lieferungen.insert()
+                    .values(
+                        quelle_dateiname=datei.filename or "unbekannt",
+                        lieferschein_nr=schein.lieferschein_nr,
+                        datum=_datum(schein.datum),
+                        ba_auftrag=kopf.ba_auftrag if kopf else None,
+                        bestellnummer=kopf.bestellnummer if kopf else None,
+                        programm=programm,
+                        programm_grund=grund,
+                        bereich=kopf.bereich if kopf else None,
+                        msn=kopf.msn if kopf else None,
+                        bettvariante=kopf.bettvariante if kopf else None,
+                        satz_titel=titel,
+                        status="entwurf",
+                        hinweise=schein.hinweise,
+                        erstellt_am=jetzt,
+                        geaendert_am=jetzt,
+                    )
+                    .returning(atr_lieferungen.c.id)
+                )
+            ).scalar_one()
+
+            zugeordnet = 0
+            zeilen = []
+            for reihe, p in enumerate(schein.positionen, start=1):
+                norm = "".join(c for c in (p.teilenummer or "") if c.isdigit())
+                teil = katalog.get(norm)
+                if teil:
+                    zugeordnet += 1
+                zeilen.append(
+                    {
+                        "lieferung_id": lieferung,
+                        "reihenfolge": reihe,
+                        "pos": p.pos,
+                        "lieferantennummer": p.lieferantennummer,
+                        "teilenummer": p.teilenummer,
+                        "teil_id": teil["id"] if teil else None,
+                        # Aus dem Katalog kopiert, wo es ihn gibt; sonst das,
+                        # was auf dem Lieferschein stand.
+                        "bezeichnung": (teil or {}).get("bezeichnung") or p.bezeichnung,
+                        "zeichnung": (teil or {}).get("zeichnung"),
+                        "kategorie": (teil or {}).get("kategorie"),
+                        "menge": p.menge,
+                        "gewicht_kg": (teil or {}).get("gewicht_kg"),
+                        "bestellposition": p.bestellposition,
+                        "seriennummern": p.seriennummern,
+                        "erstellt_am": jetzt,
+                        "geaendert_am": jetzt,
+                    }
+                )
+            if zeilen:
+                await sitzung.execute(atr_positionen.insert(), zeilen)
+
+    return LieferscheinErgebnis(
+        lieferung_id=str(lieferung),
+        dateiname=datei.filename or "unbekannt",
+        lieferschein_nr=schein.lieferschein_nr,
+        programm=programm,
+        programm_grund=grund,
+        positionen=len(schein.positionen),
+        zugeordnet=zugeordnet,
+        hinweise=schein.hinweise,
     )

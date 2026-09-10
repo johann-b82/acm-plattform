@@ -6,6 +6,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app
 
 FROM base AS deps
+# poppler-utils: `pdftotext -layout` liest die Diehl-Lieferscheine (ATR). Der
+# Spaltenerhalt ist dabei nicht Beiwerk, sondern das, woran der Parser die
+# Felder erkennt — eine reine Textextraktion in Python liefert eine andere
+# Reihenfolge und damit andere Ergebnisse.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 

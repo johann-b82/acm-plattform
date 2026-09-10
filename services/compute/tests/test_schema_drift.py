@@ -25,6 +25,9 @@ TYP_FAMILIE = {
     "numeric": "numeric",
     "jsonb": "jsonb",
     "uuid": "uuid",
+    # Postgres meldet jede Array-Spalte als "ARRAY", ohne den Elementtyp. Der
+    # Wächter vergleicht deshalb nur, dass beide Seiten ein Array meinen.
+    "ARRAY": "array",
 }
 
 
@@ -46,6 +49,8 @@ def familie_aus_core(typ: sa.types.TypeEngine) -> str:
         return "jsonb"
     if "uuid" in name:
         return "uuid"
+    if "array" in name:
+        return "array"
     return name
 
 
