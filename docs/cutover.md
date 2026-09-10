@@ -1,22 +1,64 @@
 # Ablauf vor Ort
 
-Stand 9. September 2026. Reihenfolge ist Absicht: jeder Schritt lässt sich einzeln abbrechen, ohne den nächsten zu blockieren.
+Stand 10. September 2026. Reihenfolge ist Absicht: jeder Schritt lässt sich einzeln abbrechen, ohne den nächsten zu blockieren.
 
 Was hier steht, ist entweder lokal nachgestellt oder ausdrücklich als ungeprüft markiert. Die Marke sagt, worauf Verlass ist.
 
 | Marke | Bedeutung |
 |---|---|
 | **geprüft** | lokal gegen den vollständigen Stack gefahren |
+| **am Host geprüft** | auf `acm@192.9.201.9` selbst nachgesehen |
 | **ungeprüft** | braucht den Host, ist hier nur beschrieben |
+
+## Der Host, wie er wirklich aussieht
+
+**am Host geprüft** (2026-09-10, aus dem LAN)
+
+Vier Dinge weichen von dem ab, was hier vorher stand. Jedes einzelne hätte den Ablauf gekostet.
+
+| | |
+|---|---|
+| **Pfad** | `/home/acm/lumeapps`, **nicht** `/srv/lumeapps` |
+| **Kein Git** | Das Verzeichnis ist kein Repository. Der Stand steht in der Datei `DEPLOYED_COMMIT` — aktuell `ffc9ba0`, also vor allen sieben Sicherheits-PRs. GitHub ist vom Host aus erreichbar (`git ls-remote` liefert `531c5fe`), ein frischer Klon daneben ist also möglich. |
+| **`docker-compose.override.yml`** | Liegt nur auf dem Host, nicht im Repo, und gibt dem `api`-Dienst echte DNS-Server (`192.9.200.1/.2`). Der Host selbst löst über `127.0.0.53` auf — das kann ein Container nicht benutzen. **Ohne diese Datei löst `api.personio.de` im Container nicht mehr auf, und der Personio-Abgleich bricht.** |
+| **Arbeitsspeicher** | 7,3 GB gesamt, ~5,2 GB frei bei laufendem Stack. Der Frontend-Bau will 6 GB Heap. Auf diesem Host bauen heißt, den laufenden Betrieb gegen die Wand zu fahren. |
+| **`/srv` ist leer und gehört root** | `acm` darf dort nicht schreiben, und `sudo` verlangt ein Passwort. Die neuen Stacks kommen deshalb nach `/home/acm/acm-plattform` und `/home/acm/acm-signage`, nicht nach `/srv/acm` und `/srv/signage`. Docker selbst geht ohne root (`acm` ist in der Gruppe `docker`), und alle Pfade in den Compose-Dateien sind relativ — der Ort ist frei wählbar. Wer `/srv` will, legt es einmalig von Hand an: `sudo mkdir -p /srv/acm && sudo chown acm:acm /srv/acm`. |
+
+### Die Falle mit dem Override
+
+`docker compose` lädt `docker-compose.override.yml` **nur automatisch, solange kein `-f` angegeben ist**. Sobald der Aufruf `-f docker-compose.yml -f docker-compose.prod.yml` lautet, ist der Override weg. Am Host belegt:
+
+```bash
+docker compose -f docker-compose.yml config | grep -c dns:   # 0
+docker compose config | grep -c dns:                          # 1
+```
+
+Jeder Aufruf mit dem Prod-Overlay nennt die Override-Datei deshalb **mit**:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml <befehl>
+```
+
+Der Kürze halber steht unten `$C` dafür:
+
+```bash
+cd /home/acm/lumeapps
+C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+```
 
 ---
 
 ## 0. Vorher: Sicherung der alten Datenbank
 
-**ungeprüft** (das Skript liegt im Altprojekt, der Lauf auf dem Host steht aus)
+**am Host geprüft** — der nächtliche Lauf funktioniert wieder: `kpi-2026-09-09.sql.gz` (31 MB) und `kpi-2026-09-10.sql.gz` (33 MB) liegen in `backups/`.
+
+Die 0 Byte großen `.tmp`-Dateien vom 7. und 8. September stammen aus den Tagen, an denen die Platte voll war; seit der Vergrößerung des Logical Volume läuft es. Sie können weg.
+
+Vor dem Umschalten trotzdem einen frischen Abzug ziehen — der nächtliche ist bis zu 24 Stunden alt:
 
 ```bash
-cd /srv/lumeapps && ./backup/dump.sh
+cd /home/acm/lumeapps && docker compose exec -T backup /usr/local/bin/dump.sh
+ls -la backups/ | tail -3
 ```
 
 Ohne diesen Schritt gibt es keinen Weg zurück. Erst danach weitermachen.
@@ -27,31 +69,115 @@ Ohne diesen Schritt gibt es keinen Weg zurück. Erst danach weitermachen.
 
 **geprüft** — lokal gegen den vollständigen Stack: keine Host-Ports außer `:80`, API als `uid 10001`, kein `--reload`, gebaute Oberfläche unter `/`, Anmeldung mit echtem Directus-Token erfolgreich.
 
+**Vorher am Host gemessen** (2026-09-10, aus dem LAN), damit hinterher vergleichbar ist, was sich geändert hat:
+
+| Befund | Zustand heute |
+|---|---|
+| 1 Vite-Dev-Server | `:5173` offen, liefert `/@vite/client` |
+| 2 API direkt im LAN | `:8000` offen, `/docs` gibt die vollständige Routenliste her |
+| 4 Personaldaten | `/api/hr/embed/birthdays/this-week` liefert ohne Anmeldung Name, Abteilung, **Geburtsdatum mit Jahrgang** und Alter |
+
+Richtig gebunden sind schon jetzt Directus (`:8055`) und Postgres (`:5432`) — beide nur auf 127.0.0.1.
+
+### 1a. Neuen Stand holen
+
+Das Verzeichnis ist kein Repository (siehe oben). Zwei Wege, beide gangbar:
+
 ```bash
-cd /srv/lumeapps
-git pull
-docker compose run --rm --no-deps --entrypoint sh frontend -c 'npm run build'
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Weg A — frischer Klon daneben, dann die Betriebsdateien übernehmen.
+cd /home/acm
+git clone https://github.com/johann-b82/lumeapps.git lumeapps-neu
+cd lumeapps-neu
+cp ../lumeapps/.env ../lumeapps/docker-compose.override.yml .
+# Datenverzeichnisse bleiben, wo sie sind:
+for d in postgres_data directus_database directus_extensions directus_uploads \
+         caddy_data caddy_config backups certs frontend_node_modules; do
+  [ -e "../lumeapps/$d" ] && mv "../lumeapps/$d" . 
+done
+git rev-parse --short HEAD > DEPLOYED_COMMIT
+```
+
+```bash
+# Weg B — nur den Code über das bestehende Verzeichnis legen (rsync vom Mac).
+# Vom Entwicklungsrechner aus, im Repo:
+rsync -a --delete \
+  --exclude '.git' --exclude 'node_modules' --exclude 'frontend/dist' \
+  --exclude 'postgres_data' --exclude 'directus_*' --exclude 'backups' \
+  --exclude 'caddy_data' --exclude 'caddy_config' --exclude '.env' \
+  --exclude 'docker-compose.override.yml' \
+  ./ acm@192.9.201.9:/home/acm/lumeapps/
+```
+
+Weg A ist sauberer, Weg B schneller. In beiden Fällen bleiben `.env` und
+`docker-compose.override.yml` unangetastet.
+
+### 1b. Oberfläche bauen — **nicht auf dem Host**
+
+Der Host hat 7,3 GB RAM, bei laufendem Stack sind ~5,2 GB frei. Der Bau will 6 GB
+Heap (`NODE_OPTIONS=--max-old-space-size=6144`, siehe CI). Ein Bau auf dem Host
+riskiert, dem laufenden Betrieb den Speicher wegzunehmen.
+
+Also auf dem Entwicklungsrechner bauen und das Ergebnis kopieren:
+
+```bash
+# Mac, im Repo:
+cd frontend && NODE_OPTIONS="--max-old-space-size=6144" npm run build && cd ..
+rsync -a --delete frontend/dist/ acm@192.9.201.9:/home/acm/lumeapps/frontend/dist/
+```
+
+`npm run build` erzeugt beides: die Admin-Oberfläche nach `frontend/dist` und das
+Player-Bundle nach `frontend/dist/player`. Zusammen rund 110 MB.
+
+Prüfen, dass beide Einstiegsseiten angekommen sind — **ohne sie zeigt `/` nach dem
+Umschalten eine leere Seite**:
+
+```bash
+ssh acm@192.9.201.9 'ls -l /home/acm/lumeapps/frontend/dist/index.html \
+                        /home/acm/lumeapps/frontend/dist/player/index.html'
+```
+
+### 1c. Umschalten
+
+```bash
+cd /home/acm/lumeapps
+C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+$C up -d --build
 ```
 
 Prüfen:
 
 ```bash
-docker compose ps --format '{{.Service}}\t{{.Ports}}'   # nur caddy auf :80
-docker compose exec api id                              # uid=10001
-docker compose exec api ls /app/tests                   # darf es nicht geben
-docker compose exec api python -c 'import pytest'       # ModuleNotFoundError
-curl -sI http://127.0.0.1/ | grep -i x-content-type     # nosniff
+$C ps --format '{{.Service}}\t{{.Ports}}'          # nur caddy auf :80
+$C exec api id                                     # uid=10001
+$C exec api ls /app/tests                          # darf es nicht geben
+$C exec api python -c 'import pytest'              # ModuleNotFoundError
+$C exec api python -c 'import socket; print(socket.gethostbyname("api.personio.de"))'
+curl -sI http://127.0.0.1/ | grep -i x-content-type # nosniff
+curl -s http://127.0.0.1/api/hr/embed/birthdays/this-week | head -c 200
 ```
 
-Der `git pull` bringt die Sicherheitsarbeit von 2026-09-10 mit: 18 der 21 Befunde sind zu (PRs #145–#151, Stand in `docs/security-findings.md`). Zwei Punkte ändern das Verhalten spürbar und gehören deshalb in die Beobachtung der ersten Stunde:
+Die DNS-Zeile ist die wichtigste: löst sie nicht auf, fehlt die Override-Datei im
+Aufruf, und der nächtliche Personio-Abgleich bricht in der kommenden Nacht.
+Die letzte Zeile darf **kein** `birthday` und **kein** `age_turning` mehr zeigen.
+
+Von außen gegenprüfen, dass die zwei offenen Ports zu sind:
+
+```bash
+# vom Mac aus
+for p in 80 5173 8000; do nc -z -G 2 192.9.201.9 $p && echo "$p OFFEN" || echo "$p zu"; done
+```
+
+Erwartet: `80 OFFEN`, `5173 zu`, `8000 zu`.
+
+Der neue Stand bringt die Sicherheitsarbeit von 2026-09-10 mit: 18 der 21 Befunde sind zu (PRs #145–#151, Stand in `docs/security-findings.md`). Zwei Punkte ändern das Verhalten spürbar und gehören deshalb in die Beobachtung der ersten Stunde:
 
 - **Die Sitzung läuft nach 8 statt 24 Stunden ab.** Die Oberfläche erneuert sie stillschweigend; sollten Nutzer trotzdem unerwartet auf der Anmeldeseite landen, ist `SESSION_COOKIE_TTL` in `docker-compose.yml` die Stellschraube.
 - **Der Kiosk-Foto-Weg antwortet nur noch für Personen, die gerade auf einem Board stehen.** Wer ein leeres Bild auf einem Bildschirm sieht, sollte prüfen, ob die Person überhaupt Geburtstag hat oder in den letzten 52 Wochen eingetreten ist — 404 ist dort die richtige Antwort, keine Störung.
 
 Damit sind vier der fünf Hoch-Befunde zu; der fünfte (TLS) folgt im nächsten Schritt.
 
-Zurück geht es jederzeit mit `docker compose up -d` ohne das Overlay.
+Zurück geht es jederzeit mit `docker compose up -d` ohne das Overlay — dann greift
+die Override-Datei wieder von selbst, und die Ports 5173 und 8000 sind zurück.
 
 ---
 
@@ -61,7 +187,7 @@ Zurück geht es jederzeit mit `docker compose up -d` ohne das Overlay.
 
 Der private Schlüssel aus `certs/internal.key` lag seit dem ersten Commit im Repo und steht weiter in der Historie. Er ist entfernt, aber falls er je ausgeliefert wurde, gilt er als kompromittiert.
 
-Neues Material erzeugen, unter `/srv/acm/certs` ablegen (außerhalb des Repos, das Verzeichnis ist in `.gitignore`) und in Caddy per Pfad einbinden. Details in `lumeapps/certs/README.md`.
+Neues Material erzeugen, unter `/home/acm/certs` ablegen (außerhalb des Repos, das Verzeichnis ist in `.gitignore`) und in Caddy per Pfad einbinden. Details in `lumeapps/certs/README.md`.
 
 ---
 
@@ -70,12 +196,31 @@ Neues Material erzeugen, unter `/srv/acm/certs` ablegen (außerhalb des Repos, d
 **teilweise geprüft** — der Kaltstart ist lokal gefahren, die Adressen sind es nicht.
 
 ```bash
-cd /srv/acm
+cd /home/acm/acm-plattform
 bash infra/supabase/fetch-upstream.sh "$(cat infra/supabase/UPSTREAM_TAG)"
 bash scripts/init-env.sh
 ```
 
-Vor dem ersten Start in `.env` auf den echten Hostnamen setzen: `SITE_URL`, `SUPABASE_PUBLIC_URL`, `API_EXTERNAL_URL`. **`API_EXTERNAL_URL` ist der Aussteller im Token**; `compute` prüft ihn, und ein späterer Wechsel macht alle ausgegebenen Token ungültig.
+### Port 80 gehört noch dem Altprojekt
+
+**am Host geprüft** — `lumeapps-caddy-1` hält `0.0.0.0:80`. Beide Stacks können ihn
+nicht gleichzeitig haben. Beide Compose-Dateien sind dafür vorbereitet:
+
+| Stack | Variable | Vorgabe | Im Parallelbetrieb |
+|---|---|---|---|
+| Altprojekt | — | 80 | bleibt auf 80, bis es abgeschaltet wird |
+| `acm-plattform` | `CADDY_HTTP_PORT` | 80 | **8081** |
+| `acm-signage` | `SIGNAGE_HTTP_PORT` | 8080 | 8080, kollidiert mit nichts |
+
+Vor dem ersten Start in `.env` auf die Adresse setzen, unter der der Browser den
+Stack **jetzt** erreicht — also mit Port: `SITE_URL`, `SUPABASE_PUBLIC_URL`,
+`API_EXTERNAL_URL` auf `http://192.9.201.9:8081`.
+
+**`API_EXTERNAL_URL` ist der Aussteller im Token**; `compute` prüft ihn. Wenn die
+Plattform später auf Port 80 umzieht, ändert sich der Aussteller und alle
+ausgegebenen Token werden ungültig — jede angemeldete Person muss sich einmal neu
+anmelden. Das ist verkraftbar, aber es soll niemanden überraschen. Wer es vermeiden
+will, schaltet das Altprojekt in einem Zug ab und startet die Plattform gleich auf 80.
 
 ```bash
 docker compose up -d --build
