@@ -9,7 +9,7 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 | # | Modul | Alt (Operationen) | Inhalt |
 |---|---|---|---|
 | 3 | Schulungen: Nachweise | ~20 | Unterlagen je Schulung (Dateien), Schulungsnachweise mit Unterschrift, Zertifikate, das Protokoll-PDF und der QR-Scan. Katalog, Anforderungsmatrix, Teilnahmen und Fälligkeiten stehen (PR #46). |
-| 4 | Onboarding | 16 | Checklisten für neue Personen, Aufgaben je Rolle. |
+| 4 | Onboarding: Dokumente | ~4 | Das Onboarding-Paket als PDF (Formblatt 71, Dokumentmappe). Eintritte, Schulungsplan, Abteilungs-Übersteuerung und Rollenzuordnung stehen (PR #47). |
 | 5 | Einarbeitung | 18 | Einarbeitungsplan mit Stationen und Bestätigungen. |
 | 6 | Zeugnisse | 19 | Arbeitszeugnis auf der ACM-Briefvorlage, Textbausteine, Notenskala. |
 | 7 | HR-Embeds | 3 | Geburtstage und Neuzugänge für die Bildschirme. **Nicht 1:1**: signierter Token statt offener Route, kein Geburtsdatum (Befund 4). |
