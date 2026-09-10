@@ -28,6 +28,8 @@ TYP_FAMILIE = {
     # Postgres meldet jede Array-Spalte als "ARRAY", ohne den Elementtyp. Der
     # Wächter vergleicht deshalb nur, dass beide Seiten ein Array meinen.
     "ARRAY": "array",
+    # SQLAlchemy nennt es LargeBinary und meldet es als BLOB, Postgres bytea.
+    "bytea": "binaer",
 }
 
 
@@ -51,6 +53,8 @@ def familie_aus_core(typ: sa.types.TypeEngine) -> str:
         return "uuid"
     if "array" in name:
         return "array"
+    if "binary" in name or name == "blob":
+        return "binaer"
     return name
 
 

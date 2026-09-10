@@ -46,6 +46,16 @@ class Settings(BaseSettings):
     # Personio-Abgleich.
     ATR_SCAN_TOKEN: str = ""
 
+    # Sensoren (SNMP). Der Schlüssel verschlüsselt die Community je Gerät;
+    # ohne ihn lässt sich kein Sensor anlegen. Erzeugen mit:
+    #   python -c "from cryptography.fernet import Fernet; \
+    #              print(Fernet.generate_key().decode())"
+    SENSOR_SCHLUESSEL: str = ""
+    # Befund 16, zweiter Fall: welche Geräte der Dienst ansprechen darf.
+    SNMP_ERLAUBT: str = ""
+    # Gemeinsames Geheimnis für den Anstoss aus pg_cron.
+    SENSOR_TOKEN: str = ""
+
     COMPUTE_LOG_LEVEL: str = "warning"
     # Größte angenommene Upload-Datei. Wird beim Lesen geprüft, nicht danach.
     MAX_UPLOAD_BYTES: int = 60 * 1024 * 1024

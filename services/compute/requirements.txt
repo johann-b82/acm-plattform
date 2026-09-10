@@ -15,3 +15,7 @@ httpx==0.28.1
 python-docx==1.2.0
 # ATR: Zugriff auf den Eingangsordner (SMB), ohne Einhaengen im Betriebssystem.
 smbprotocol==1.15.0
+# Sensoren: SNMP v2c abfragen. pysnmp 7 hat die asyncio-API unter v3arch.
+pysnmp==7.1.23
+# Sensoren: die SNMP-Community verschluesselt ablegen (Fernet).
+cryptography==46.0.7

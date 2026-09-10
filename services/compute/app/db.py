@@ -446,6 +446,48 @@ atr_scan = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+sensoren = sa.Table(
+    "sensoren",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("name", sa.String(100), nullable=False, unique=True),
+    sa.Column("rechner", sa.String(255), nullable=False),
+    sa.Column("port", sa.Integer, nullable=False),
+    sa.Column("community", sa.LargeBinary, nullable=False),
+    sa.Column("temperatur_oid", sa.String(255)),
+    sa.Column("feuchte_oid", sa.String(255)),
+    sa.Column("temperatur_faktor", sa.Numeric(10, 4), nullable=False),
+    sa.Column("feuchte_faktor", sa.Numeric(10, 4), nullable=False),
+    sa.Column("temperatur_min", sa.Numeric(8, 3)),
+    sa.Column("temperatur_max", sa.Numeric(8, 3)),
+    sa.Column("feuchte_min", sa.Numeric(8, 3)),
+    sa.Column("feuchte_max", sa.Numeric(8, 3)),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+    sa.Column("farbe", sa.String(7)),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+sensor_messungen = sa.Table(
+    "sensor_messungen",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True),
+    sa.Column("sensor_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("gemessen_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("temperatur", sa.Numeric(8, 3)),
+    sa.Column("feuchte", sa.Numeric(8, 3)),
+)
+
+sensor_versuche = sa.Table(
+    "sensor_versuche",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True),
+    sa.Column("sensor_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("versucht_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("erfolg", sa.Boolean, nullable=False),
+    sa.Column("fehler", sa.String(200)),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -469,4 +511,7 @@ TABLES = {
     "atr_lieferungen": atr_lieferungen,
     "atr_positionen": atr_positionen,
     "atr_scan": atr_scan,
+    "sensoren": sensoren,
+    "sensor_messungen": sensor_messungen,
+    "sensor_versuche": sensor_versuche,
 }

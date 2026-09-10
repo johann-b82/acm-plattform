@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
+from app import netz
 from app.atr import dateiserver, scan as scan_modul
 from app.atr.dateiserver import DateiserverFehler, ZielNichtErlaubt, Ziel, unc
 
@@ -44,7 +45,7 @@ class TestAllowlist:
     def test_netz_wird_aufgeloest(self):
         with patch.object(dateiserver.settings, "ATR_SMB_ERLAUBT", "192.9.200.0/24"):
             with patch.object(
-                dateiserver.socket,
+                netz.socket,
                 "getaddrinfo",
                 return_value=[(0, 0, 0, "", ("192.9.200.18", 445))],
             ):
@@ -53,7 +54,7 @@ class TestAllowlist:
     def test_ausserhalb_des_netzes_faellt_durch(self):
         with patch.object(dateiserver.settings, "ATR_SMB_ERLAUBT", "192.9.200.0/24"):
             with patch.object(
-                dateiserver.socket,
+                netz.socket,
                 "getaddrinfo",
                 return_value=[(0, 0, 0, "", ("10.1.2.3", 445))],
             ):
@@ -65,7 +66,7 @@ class TestAllowlist:
         hinein und über die andere hinaus."""
         with patch.object(dateiserver.settings, "ATR_SMB_ERLAUBT", "192.9.200.0/24"):
             with patch.object(
-                dateiserver.socket,
+                netz.socket,
                 "getaddrinfo",
                 return_value=[
                     (0, 0, 0, "", ("192.9.200.18", 445)),
@@ -78,7 +79,7 @@ class TestAllowlist:
     def test_unaufloesbarer_name_faellt_durch(self):
         with patch.object(dateiserver.settings, "ATR_SMB_ERLAUBT", "192.9.200.0/24"):
             with patch.object(
-                dateiserver.socket, "getaddrinfo", side_effect=OSError("kein DNS")
+                netz.socket, "getaddrinfo", side_effect=OSError("kein DNS")
             ):
                 with pytest.raises(ZielNichtErlaubt, match="nicht auflösen"):
                     dateiserver.pruefe_ziel("weg.example")
