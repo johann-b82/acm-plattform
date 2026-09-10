@@ -319,4 +319,4 @@ Ein Gerät zuerst, dann den Rest.
 
 ## Was danach noch offen bleibt
 
-Der Port der übrigen Fachmodule — HR, Qualität, Produktion, ATR, FAIR, Newsletter. Bis dahin läuft das Altprojekt weiter, gehärtet. Reihenfolge und Rezept in `docs/status.md` und `docs/plan.md`.
+Der Port von **ATR und FAIR**. Alles andere steht: Vertrieb, Einkauf, Produktion, Qualität, Finanzen, Personal, Newsletter, KPI-Bewertung und Seiten-Feedback. Bis ATR und FAIR portiert sind, läuft das Altprojekt für diese beiden weiter — gehärtet, und beide sind ohnehin nur für Admin und QS erreichbar. Rezept in `docs/status.md`, Reihenfolge in `docs/plan.md`.
