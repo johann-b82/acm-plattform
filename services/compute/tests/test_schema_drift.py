@@ -16,6 +16,7 @@ from app.db import SessionLocal, TABLES
 TYP_FAMILIE = {
     "integer": "int",
     "bigint": "int",
+    "smallint": "int",
     "character varying": "text",
     "text": "text",
     "date": "date",

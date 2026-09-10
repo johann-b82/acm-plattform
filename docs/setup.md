@@ -211,6 +211,24 @@ Der Rechenweg liegt in der Sicht `auftrag_verzug`, damit ihn die drei Funktionen
 
 Zwei bewusste Abweichungen vom Altprojekt: „Alles" rechnet hier wirklich über alles, statt still auf den laufenden Monat zurückzufallen. Und der wirkungslose Seriengeschäft-Filter ist nicht mitgekommen; die Spalte `pos_typ_2` schon, damit er später ohne Migration nachrüstbar ist.
 
+### Qualität (viertes Modul, erster Teil)
+
+Audit-Findings aus den 8D-Berichten. Die Datei enthält Audits **und** Reklamationen; beide werden übernommen, denn die Reklamationsquote kommt als nächster Teil und soll nicht denselben Upload noch einmal verlangen.
+
+Die eine Stelle, an der die Quelle überrascht: das Level eines Befunds steht nicht in einer Spalte, sondern im Freitext „Artikel" — „Audit Major Level 1" oder „Audit Minor Level 2". Der Parser leitet es ab. Steht dort etwas anderes, bleibt das Level leer, der Befund zählt in keiner Kachel und erscheint in der Diagnoseliste. Ohne diese Liste bliebe unsichtbar, dass ein Bericht falsch beschriftet ist.
+
+Gelöschte Berichte sind in der Quelle nicht entfernt, sondern mit `gelöscht = J` markiert; sie kommen nicht mit.
+
+Die Höchstwerte (0 für Level 1, 5 für Level 2) stehen als Konstanten im Frontend. Sie wandern in die Einstellungen, sobald dieses Modul portiert ist.
+
+### Eine Migration nachträglich ändern
+
+Solange eine Revision noch nicht gemerged ist, lässt sie sich bearbeiten. Die Testdatenbank merkt das aber nicht: ihr Container läuft zwischen den Läufen weiter und Alembic überspringt die bereits eingetragene Revision. Vorher zurücksetzen:
+
+```bash
+docker compose -f docker-compose.test.yml down -v
+```
+
 ### Zugriff vom Browser aus
 
 - **Lesen** geht direkt über PostgREST (`supabaseBrowser()`), die Zeilen-Policies filtern.

@@ -1,0 +1,276 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+import {
+  ZEITRAUM_LABEL,
+  bucketLabel,
+  fenster,
+  fmt,
+  takt,
+  type Zeitraum,
+} from "@/lib/kpi/gemeinsam";
+import {
+  AUDIT_ARTEN,
+  AUDIT_LABEL,
+  AUDIT_ZIEL,
+  qualitaetApi,
+  verlaufJeBucket,
+} from "@/lib/kpi/qualitaet";
+import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { cn } from "@/lib/cn";
+
+const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
+
+function Kachel({
+  titel,
+  wert,
+  hinweis,
+  warnung,
+  laedt,
+}: {
+  titel: string;
+  wert: string;
+  hinweis?: string;
+  warnung?: boolean;
+  laedt: boolean;
+}) {
+  return (
+    <Card className="p-4">
+      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
+      <div
+        className={cn(
+          "mt-1 font-mono text-2xl font-medium tabular-nums",
+          warnung && "text-[var(--danger)]",
+        )}
+      >
+        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
+      </div>
+      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
+    </Card>
+  );
+}
+
+export function QualitaetDashboard() {
+  const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
+  const [arten, setArten] = useState<string[]>([...AUDIT_ARTEN]);
+  const { von, bis } = useMemo(() => fenster(zeitraum), [zeitraum]);
+  const t = takt(von, bis);
+
+  // Alle vier ausgewählt heißt „kein Filter" — dann rechnet die Datenbank mit
+  // ihrer eigenen Liste, und ein fünfter Code dort wirkt sofort.
+  const filter = arten.length === AUDIT_ARTEN.length ? null : arten;
+
+  const summe = useQuery({
+    queryKey: ["kpi", "qualitaet", "audits", von, bis, filter],
+    queryFn: () => qualitaetApi.audits(von, bis, filter),
+  });
+  const verlauf = useQuery({
+    queryKey: ["kpi", "qualitaet", "verlauf", von, bis, filter],
+    queryFn: () => qualitaetApi.verlauf(von, bis, filter),
+  });
+  const ohneLevel = useQuery({
+    queryKey: ["kpi", "qualitaet", "ohneLevel", von, bis, filter],
+    queryFn: () => qualitaetApi.ohneLevel(von, bis, filter),
+  });
+
+  const verlaufDaten = verlauf.data;
+  const chartDaten = useMemo(
+    () =>
+      verlaufJeBucket(verlaufDaten ?? []).map((p) => ({
+        label: bucketLabel(p.bucket, t),
+        "Level 1": p.level_1,
+        "Level 2": p.level_2,
+      })),
+    [verlaufDaten, t],
+  );
+
+  const diagnoseDaten = ohneLevel.data;
+  const diagnose = useMemo(() => diagnoseDaten ?? [], [diagnoseDaten]);
+
+  const keineDaten =
+    !summe.isLoading &&
+    summe.data?.level_1 === 0 &&
+    summe.data?.level_2 === 0 &&
+    summe.data?.ohne_level === 0;
+  const fehler = summe.error ?? verlauf.error ?? ohneLevel.error;
+
+  function umschalten(art: string) {
+    setArten((vorher) =>
+      vorher.includes(art) ? vorher.filter((a) => a !== art) : [...vorher, art],
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <Link
+            href="/kpi"
+            className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
+          >
+            <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+          </Link>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Qualität</h1>
+          <p className="mt-1 text-sm text-[var(--fg-muted)]">
+            Audit-Findings aus den 8D-Berichten. Gezählt werden Befunde, nicht Mengen.
+          </p>
+        </div>
+        <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
+          {ZEITRAEUME.map((z) => (
+            <button
+              key={z}
+              type="button"
+              onClick={() => setZeitraum(z)}
+              aria-pressed={zeitraum === z}
+              className={cn(
+                "rounded px-3 py-1 text-sm transition-colors",
+                zeitraum === z
+                  ? "bg-[var(--fg)] text-[var(--bg)]"
+                  : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+              )}
+            >
+              {ZEITRAUM_LABEL[z]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-[var(--fg-muted)]">Auditart:</span>
+        {AUDIT_ARTEN.map((art) => (
+          <button
+            key={art}
+            type="button"
+            onClick={() => umschalten(art)}
+            aria-pressed={arten.includes(art)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-sm transition-colors",
+              arten.includes(art)
+                ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
+                : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
+            )}
+          >
+            {AUDIT_LABEL[art]}
+          </button>
+        ))}
+      </div>
+
+      {fehler && (
+        <Card className="p-4 text-sm text-[var(--danger)]">
+          Kennzahlen konnten nicht geladen werden: {(fehler as Error).message}
+        </Card>
+      )}
+
+      {arten.length === 0 && (
+        <Card className="p-4 text-sm text-[var(--fg-muted)]">
+          Keine Auditart ausgewählt. Wähle mindestens eine, sonst gibt es nichts zu zählen.
+        </Card>
+      )}
+
+      {keineDaten && arten.length > 0 && (
+        <Card className="p-8 text-center">
+          <p className="font-medium">Für diesen Zeitraum liegen keine Audit-Befunde vor</p>
+          <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--fg-muted)]">
+            Lade den 8D-Export unter{" "}
+            <Link href="/uploads" className="underline underline-offset-4">
+              Uploads
+            </Link>{" "}
+            hoch.
+          </p>
+        </Card>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Kachel
+          titel="Audit-Findings Level 1"
+          wert={fmt.zahl(summe.data?.level_1)}
+          hinweis={`Höchstens ${AUDIT_ZIEL.level_1}`}
+          warnung={(summe.data?.level_1 ?? 0) > AUDIT_ZIEL.level_1}
+          laedt={summe.isLoading}
+        />
+        <Kachel
+          titel="Audit-Findings Level 2"
+          wert={fmt.zahl(summe.data?.level_2)}
+          hinweis={`Höchstens ${AUDIT_ZIEL.level_2}`}
+          warnung={(summe.data?.level_2 ?? 0) > AUDIT_ZIEL.level_2}
+          laedt={summe.isLoading}
+        />
+        <Kachel
+          titel="Ohne erkennbares Level"
+          wert={fmt.zahl(summe.data?.ohne_level)}
+          hinweis="zählt in keiner Kachel"
+          laedt={summe.isLoading}
+        />
+      </div>
+
+      {chartDaten.length > 0 && (
+        <Card className="p-5">
+          <h2 className="font-medium">Audit-Findings im Zeitverlauf</h2>
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartDaten} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--fg-muted)" />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--fg-muted)" width={40} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Level 1" fill="var(--danger, #b4443c)" isAnimationActive={false} maxBarSize={48} />
+                <Bar dataKey="Level 2" fill="var(--accent, #2f6f8f)" isAnimationActive={false} maxBarSize={48} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {diagnose.length > 0 && (
+        <Card className="p-5">
+          <h2 className="font-medium">Befunde ohne erkennbares Level</h2>
+          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+            Das Level steht in der Quelldatei im Freitext. Steht dort weder {"„Major … Level 1“"} noch{" "}
+            {"„Minor … Level 2“"}, zählt der Befund nirgends. Diese Liste zeigt, wo nachzubessern ist.
+          </p>
+          <TableWrap className="mt-4">
+            <Table>
+              <thead>
+                <tr>
+                  <Th>Bericht</Th>
+                  <Th>Datum</Th>
+                  <Th>Art</Th>
+                  <Th>Adresse</Th>
+                  <Th>Bezeichnung</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {diagnose.map((z) => (
+                  <tr key={z.report_nr}>
+                    <Td className="font-mono text-xs">{z.report_nr}</Td>
+                    <Td className="tabular-nums">
+                      {new Date(z.report_date).toLocaleDateString("de-DE")}
+                    </Td>
+                    <Td>{z.art ? (AUDIT_LABEL[z.art] ?? z.art) : "—"}</Td>
+                    <Td>{z.customer_name ?? "—"}</Td>
+                    <Td className="max-w-md truncate">{z.designation ?? "—"}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrap>
+        </Card>
+      )}
+    </div>
+  );
+}
