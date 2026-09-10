@@ -69,6 +69,13 @@ const ARTEN: readonly Art[] = [
       "Audit-Befunde und Reklamationen in einer Datei. Das Level eines Befunds steht im Freitext und wird beim Einlesen abgeleitet.",
   },
   {
+    kind: "lagerbewegungen",
+    titel: "Lagerbewegungen",
+    datei: "AswLagBew.txt",
+    beschreibung:
+      "Verbrauch je Artikel für die Materialkostenquote. Ersetzt alle Zeilen im Datumsbereich der Datei.",
+  },
+  {
     kind: "pruefungen",
     titel: "Qualitätsprüfung",
     datei: "AswQs2151.txt",

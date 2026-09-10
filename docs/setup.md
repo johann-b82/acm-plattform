@@ -268,6 +268,17 @@ Die Größenklasse steht nicht in den Daten, sondern folgt einer Regel über Pro
 
 **Dieser Upload ersetzt, statt zu aktualisieren.** Die Quelle hat keinen Geschäftsschlüssel — zwei gleiche Buchungszeilen sind erlaubt. Alle Zeilen im Datumsbereich der Datei werden gelöscht, dann kommen die neuen. Von Hand abgewählte Buchungen in diesem Bereich zählen danach wieder mit; ohne Schlüssel lässt sich das nicht sauber vermeiden, und die Upload-Karte sagt es.
 
+### Materialkostenquote
+
+Vier Entscheidungen des Rechenwegs, alle aus dem Altprojekt übernommen:
+
+- **Die Preisliste ist fensterunabhängig.** Auch eine Auswertung über den Januar rechnet mit dem jüngsten bekannten Preis.
+- **Der Preis kommt aus Wert geteilt durch Menge**, nicht aus der Preisspalte der Datei. Die kann sich je nach Artikel auf 100 oder 1000 Stück beziehen.
+- **Ein Artikel ohne Preis wird nicht mit null bewertet**, sondern ausgelassen und gezählt. Sonst sähe die Quote besser aus, als sie ist. Die Kachel „Artikel ohne Preis" macht das sichtbar.
+- **Mehr Storno als Entnahme ergibt negative Kosten.** Kein Schutzgriff: das Vorzeichen ist eine Aussage über die Daten.
+
+Eine Vereinfachung gegenüber dem Altprojekt: dort wird `AswKpf_WE.txt` **zweimal** hochgeladen, einmal als Wareneingang und einmal als Preisliste in eine eigene Tabelle. Es sind dieselben Zeilen. Hier ist die Preisliste die Sicht `artikel_preise` auf die Wareneingänge, die es schon gibt.
+
 ### Eine Migration nachträglich ändern
 
 Solange eine Revision noch nicht gemerged ist, lässt sie sich bearbeiten. Die Testdatenbank merkt das aber nicht: ihr Container läuft zwischen den Läufen weiter und Alembic überspringt die bereits eingetragene Revision. Vorher zurücksetzen:

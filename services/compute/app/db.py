@@ -204,6 +204,21 @@ inspection_records = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+material_movements = sa.Table(
+    "material_movements",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("artikelnr", sa.String(50), nullable=False),
+    sa.Column("article_name", sa.String(255)),
+    sa.Column("buch_datum", sa.Date),
+    sa.Column("bewegungsmenge", sa.Numeric(15, 3)),
+    sa.Column("buchtyp", sa.String(10)),
+    sa.Column("kommentar", sa.Text),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -214,4 +229,5 @@ TABLES = {
     "quality_records": quality_records,
     "goods_receipt_records": goods_receipt_records,
     "inspection_records": inspection_records,
+    "material_movements": material_movements,
 }
