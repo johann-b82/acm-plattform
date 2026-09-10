@@ -229,6 +229,52 @@ stock_article_prices = sa.Table(
     sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
 )
 
+# Die drei Quellen der Vertriebsaktivität. Getrennte Tabellen, weil die
+# Exporte aus verschiedenen Ecken des ERP kommen und verschieden oft
+# geliefert werden. Siehe Migration 0012.
+sales_contacts = sa.Table(
+    "sales_contacts",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("contact_date", sa.Date, nullable=False),
+    sa.Column("employee_token", sa.String(64), nullable=False),
+    sa.Column("contact_type", sa.String(16)),
+    sa.Column("customer_group", sa.String(64)),
+    sa.Column("status", sa.SmallInteger, nullable=False, server_default="0"),
+    sa.Column("customer_name", sa.String(255)),
+    sa.Column("comment", sa.Text),
+    sa.Column("external_id", sa.String(50)),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
+offers = sa.Table(
+    "offers",
+    metadata,
+    sa.Column("vorgang_nr", sa.String(50), primary_key=True),
+    sa.Column("datum", sa.Date, nullable=False),
+    sa.Column("adr_nr", sa.String(50)),
+    sa.Column("customer_name", sa.String(255)),
+    sa.Column("ort", sa.String(128)),
+    sa.Column("erfasser", sa.String(64)),
+    sa.Column("wert_eur", sa.Numeric(15, 2), nullable=False),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
+interessenten = sa.Table(
+    "interessenten",
+    metadata,
+    sa.Column("adress_nr", sa.String(50), primary_key=True),
+    sa.Column("customer_name", sa.String(255)),
+    sa.Column("datum_save", sa.Date),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -241,4 +287,7 @@ TABLES = {
     "inspection_records": inspection_records,
     "material_movements": material_movements,
     "stock_article_prices": stock_article_prices,
+    "sales_contacts": sales_contacts,
+    "offers": offers,
+    "interessenten": interessenten,
 }
