@@ -21,7 +21,7 @@ Grundlage für die saubere Codebasis (Plan, Entscheidung G). Pfade beziehen sich
 | ATR | `atr.py`, `atr_delivery.py`, 9 Services, SMB | Übernehmen | `compute`. Nur `atr_part`-Katalog nach PostgREST. `_unc()` lehnt `..` ab. |
 | FAIR | `fair.py`, `fair_files.py`, Frontend-Canvas mit tesseract/pdf-lib | Übernehmen | CRUD nach PostgREST; Dateien nach Storage; Frontend als Client-only-Insel. |
 | E-Mail (MS Graph) | `email.py`, `email_service.py`, `graph_client.py` | Übernehmen | `compute`. |
-| World Cup / Tippspiel | `worldcup.py`, `worldcup_feed.py`, `tippspiel_*` | Übernehmen, prüfen | `compute` (Upstream-Proxy mit Cache). Embed-Routen bekommen signierte Tokens. Relevanz nach Turnierende prüfen. |
+| World Cup / Tippspiel | `worldcup.py`, `worldcup_feed.py`, `tippspiel_*` | **Kommt nicht mit** (Entscheidung 2026-09-10) | Das Turnier ist vorbei; ein Upstream-Proxy samt sieben Embed-Seiten für ein einmaliges Ereignis wandert nicht mit. Bleibt im Altrepo lesbar. |
 | HR-Embeds (Geburtstage, Neueinsteiger) | `hr_embed.py` | Umbau | Signierter Embed-Token, Geburtsdatum raus, Foto-Proxy cachen. |
 | Signage | `signage_admin/*`, `signage_player.py`, `signage_pair.py`, 6 Services, `frontend/src/signage`, `frontend/src/player`, `pi-sidecar/`, `scripts/{provision-pi.sh,lib,systemd,polkit,labwc}` | Auslagern | Eigenes Repo `acm-signage`. Nicht Teil von `acm-plattform`. |
 

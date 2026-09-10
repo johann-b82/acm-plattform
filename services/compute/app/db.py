@@ -488,6 +488,47 @@ sensor_versuche = sa.Table(
     sa.Column("fehler", sa.String(200)),
 )
 
+maschinen = sa.Table(
+    "maschinen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("name", sa.String(255), nullable=False),
+    sa.Column("inventarnummer", sa.String(64)),
+    sa.Column("standort", sa.String(255)),
+    sa.Column("hersteller", sa.String(255)),
+    sa.Column("modell", sa.String(255)),
+    sa.Column("verantwortlich", sa.String(255)),
+    sa.Column("status", sa.String(16), nullable=False),
+    sa.Column("notizen", sa.Text, nullable=False),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+wartungsaufgaben = sa.Table(
+    "wartungsaufgaben",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("maschine_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("titel", sa.String(255), nullable=False),
+    sa.Column("anleitung", sa.Text, nullable=False),
+    sa.Column("intervall", sa.String(16), nullable=False),
+    sa.Column("wochen", sa.Integer),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+wartungsdateien = sa.Table(
+    "wartungsdateien",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("maschine_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("art", sa.String(16), nullable=False),
+    sa.Column("pfad", sa.Text, nullable=False),
+    sa.Column("dateiname", sa.String(255), nullable=False),
+    sa.Column("mime", sa.String(127)),
+    sa.Column("hochgeladen_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -514,4 +555,7 @@ TABLES = {
     "sensoren": sensoren,
     "sensor_messungen": sensor_messungen,
     "sensor_versuche": sensor_versuche,
+    "maschinen": maschinen,
+    "wartungsaufgaben": wartungsaufgaben,
+    "wartungsdateien": wartungsdateien,
 }
