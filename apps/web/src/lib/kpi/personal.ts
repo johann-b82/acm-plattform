@@ -52,6 +52,59 @@ export interface Abgleichstand {
   dauer_sekunden: number | null;
 }
 
+export interface Belegschaft {
+  stichtag: string;
+  gesamt: number;
+  neu: number;
+  bestand: number;
+}
+
+export interface VerteilungZeile {
+  art: "geschlecht" | "beschaeftigung" | "abteilung";
+  kategorie: string;
+  anzahl: number;
+}
+
+export interface Kompetenz {
+  mit_kompetenz: number;
+  aktive: number;
+  quote: number | null;
+  eingerichtet: boolean;
+}
+
+/**
+ * Ganzzahlige Prozente, die sich zu genau 100 addieren (größter Rest).
+ *
+ * Ohne das zeigt eine Verteilung aus drei Dritteln 33 + 33 + 33 = 99 — und
+ * jemand fragt, wo das eine Prozent geblieben ist.
+ */
+export function prozente<T extends { anzahl: number }>(
+  werte: readonly T[],
+): (T & { prozent: number })[] {
+  const gesamt = werte.reduce((s, w) => s + w.anzahl, 0);
+  if (gesamt <= 0) return werte.map((w) => ({ ...w, prozent: 0 }));
+
+  const mitRest = werte.map((w) => {
+    const exakt = (w.anzahl * 100) / gesamt;
+    return { ...w, prozent: Math.floor(exakt), rest: exakt - Math.floor(exakt) };
+  });
+
+  let offen = 100 - mitRest.reduce((s, w) => s + w.prozent, 0);
+  // Größte Nachkommareste zuerst; bei Gleichstand die größere Zahl.
+  const reihenfolge = [...mitRest].sort((a, b) => b.rest - a.rest || b.anzahl - a.anzahl);
+  for (const eintrag of reihenfolge) {
+    if (offen <= 0) break;
+    eintrag.prozent += 1;
+    offen -= 1;
+  }
+  // `rest` war nur Hilfsgroesse fuer die Reihenfolge und gehoert nicht ins Ergebnis.
+  return mitRest.map((w) => {
+    const kopie = { ...w } as T & { prozent: number; rest?: number };
+    delete kopie.rest;
+    return kopie as T & { prozent: number };
+  });
+}
+
 /** Eine Zeile der Mitarbeitertabelle. Trägt Namen — braucht `hr`. */
 export interface MitarbeiterZeile {
   employee_id: number;
@@ -144,6 +197,39 @@ export const personalApi = {
     return (data?.[0] as Abgleichstand | undefined) ?? null;
   },
 
+  belegschaft: async (jahr?: number, quartal?: number): Promise<Belegschaft> => {
+    const rows = await rpc<Belegschaft[]>("kpi_hr_belegschaft", {
+      p_jahr: jahr ?? null,
+      p_quartal: quartal ?? null,
+    });
+    const r = rows[0];
+    return {
+      stichtag: r?.stichtag ?? "",
+      gesamt: zahl(r?.gesamt),
+      neu: zahl(r?.neu),
+      bestand: zahl(r?.bestand),
+    };
+  },
+
+  verteilung: async (jahr?: number, quartal?: number): Promise<VerteilungZeile[]> => {
+    const rows = await rpc<VerteilungZeile[]>("kpi_hr_belegschaft_verteilung", {
+      p_jahr: jahr ?? null,
+      p_quartal: quartal ?? null,
+    });
+    return rows.map((r) => ({ ...r, anzahl: zahl(r.anzahl) }));
+  },
+
+  kompetenz: async (stichtag?: string): Promise<Kompetenz> => {
+    const rows = await rpc<Kompetenz[]>("kpi_hr_kompetenz", { p_stichtag: stichtag ?? null });
+    const r = rows[0];
+    return {
+      mit_kompetenz: zahl(r?.mit_kompetenz),
+      aktive: zahl(r?.aktive),
+      quote: r?.quote == null ? null : Number(r.quote),
+      eingerichtet: Boolean(r?.eingerichtet),
+    };
+  },
+
   /**
    * Ist-Stunden und Überstunden je Person.
    *
@@ -207,6 +293,8 @@ export const personalKeys = {
   abgleich: () => ["kpi", "personal", "abgleich"] as const,
   wochen: () => ["kpi", "personal", "wochen"] as const,
   woche: (jahr: number, w: number) => ["kpi", "personal", "woche", jahr, w] as const,
+  belegschaft: () => ["kpi", "personal", "belegschaft"] as const,
+  kompetenz: (bis: string) => ["kpi", "personal", "kompetenz", bis] as const,
   mitarbeiter: (von: string, bis: string) =>
     ["kpi", "personal", "mitarbeiter", von, bis] as const,
 };
