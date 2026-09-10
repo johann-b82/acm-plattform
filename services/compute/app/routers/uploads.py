@@ -30,11 +30,13 @@ from app.db import (
     auftraege,
     delivery_records,
     delivery_reliability,
+    quality_records,
     revenues,
     upload_batches,
 )
 from app.parsing.einkauf import parse_liefertreue
 from app.parsing.positionen import parse_auftrag_positionen, parse_lieferscheine
+from app.parsing.qualitaet import parse_8d
 from app.parsing.vertrieb import parse_auftraege, parse_umsatz
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depends(require_app("uploads", "admin"))])
@@ -45,7 +47,14 @@ _MAX_PARAMS = 32767
 # Die Art eines Uploads ist zugleich sein Pfad. Beides getrennt zu pflegen ging
 # einmal schief: die Route hiess `/auftrag-positionen`, die Oberfläche schickte
 # `auftrag_positionen`, und der Upload endete in einem 404.
-ARTEN = ("umsatz", "auftraege", "liefertreue", "auftragspositionen", "lieferscheine")
+ARTEN = (
+    "umsatz",
+    "auftraege",
+    "liefertreue",
+    "auftragspositionen",
+    "lieferscheine",
+    "acht_d",
+)
 
 
 class Fehlerdetail(BaseModel):
@@ -258,4 +267,24 @@ async def upload_lieferscheine(
         claims=claims,
         schluessel=("vorgang_nr", "pos", "upos"),
         endungen=(".xlsx", ".xls"),
+    )
+
+
+@router.post("/acht_d", response_model=UploadErgebnis)
+async def upload_8d(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """8D.txt — Audit-Befunde und Reklamationen in einer Datei.
+
+    Beide Sorten kommen mit; welche eine Kennzahl zählt, entscheidet der Code
+    in `art` bei der Auswertung.
+    """
+    return await _import(
+        file=file,
+        kind="acht_d",
+        tabelle=quality_records,
+        parser=parse_8d,
+        claims=claims,
+        schluessel=("report_nr",),
     )

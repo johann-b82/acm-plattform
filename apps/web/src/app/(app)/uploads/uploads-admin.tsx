@@ -55,6 +55,13 @@ const ARTEN: readonly Art[] = [
     endungen: ".xlsx,.xls",
   },
   {
+    kind: "acht_d",
+    titel: "8D-Berichte",
+    datei: "8D.txt",
+    beschreibung:
+      "Audit-Befunde und Reklamationen in einer Datei. Das Level eines Befunds steht im Freitext und wird beim Einlesen abgeleitet.",
+  },
+  {
     kind: "liefertreue",
     titel: "Liefertermintreue (Einkauf)",
     datei: "dev_excel_Liefertreue_Einkauf.txt",

@@ -147,6 +147,28 @@ delivery_records = _position_tabelle(
     sa.Column("order_nr", sa.String(100)),
 )
 
+quality_records = sa.Table(
+    "quality_records",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("report_nr", sa.String(50), nullable=False),
+    sa.Column("report_date", sa.Date),
+    sa.Column("art", sa.String(20)),
+    sa.Column("level", sa.SmallInteger),
+    sa.Column("issuer", sa.String(255)),
+    sa.Column("customer_name", sa.String(255)),
+    sa.Column("customer_id", sa.String(50)),
+    sa.Column("designation", sa.Text),
+    sa.Column("status_code", sa.String(50)),
+    sa.Column("problem_description", sa.Text),
+    sa.Column("root_cause", sa.Text),
+    sa.Column("quantity", sa.Numeric(15, 3)),
+    sa.Column("accepted_quantity", sa.Numeric(15, 3)),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("raw", JSONB),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -154,4 +176,5 @@ TABLES = {
     "delivery_reliability": delivery_reliability,
     "auftrag_positionen": auftrag_positionen,
     "delivery_records": delivery_records,
+    "quality_records": quality_records,
 }
