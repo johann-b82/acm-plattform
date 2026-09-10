@@ -28,6 +28,8 @@ export const BEREICH_LABEL: Record<string, string> = {
   einkauf: "Einkauf",
   produktion: "Produktion",
   qualitaet: "Qualität",
+  finanzen: "Finanzen",
+  personal: "Personal",
 };
 
 export const zielwerteKeys = {
@@ -43,12 +45,25 @@ export async function ladeZielwerte(): Promise<Zielwert[]> {
   return ((data ?? []) as Zielwert[]).map((z) => ({ ...z, wert: Number(z.wert) }));
 }
 
+/**
+ * Zielwert setzen.
+ *
+ * Das `.select()` ist nicht schmückendes Beiwerk: weist die Policy die
+ * Änderung ab, meldet Postgres `UPDATE 0` — kein Fehler, nur null Zeilen.
+ * PostgREST reicht das als Erfolg durch, und die Oberfläche sagte
+ * „Gespeichert", während sich nichts geändert hat. Mit `.select()` kommen
+ * die geänderten Zeilen zurück, und eine leere Antwort ist die Absage.
+ */
 export async function setzeZielwert(schluessel: string, wert: number): Promise<void> {
-  const { error } = await supabaseBrowser()
+  const { data, error } = await supabaseBrowser()
     .from("zielwerte")
     .update({ wert, geaendert_am: new Date().toISOString() })
-    .eq("schluessel", schluessel);
+    .eq("schluessel", schluessel)
+    .select("schluessel");
   if (error) throw new Error(error.message);
+  if (!data?.length) {
+    throw new Error("Nicht gespeichert — fehlt das Recht, Einstellungen zu bearbeiten?");
+  }
 }
 
 /** Aus einer Liste eine Nachschlagetabelle machen. */
