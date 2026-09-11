@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Gruppen, Mitglieder und App-Rechte pflegen.
@@ -42,6 +43,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
  * dem Verzeichnis. Die App-Rechte bleiben in jedem Fall hier.
  */
 export function Zugaenge({ eigeneId }: { eigeneId: string }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [neueGruppe, setNeueGruppe] = useState("");
   const [umbenennen, setUmbenennen] = useState<{ gruppe: Gruppe; name: string } | null>(null);
@@ -110,12 +112,12 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     onSuccess: () => {
       setNeueGruppe("");
       neuLaden(verwaltungKeys.gruppen());
-      toast.success("Gruppe angelegt.");
+      toast.success(worte.zugaenge.gruppeAngelegt);
     },
     onError: (err: Error) =>
       toast.error(
         /duplicate|unique/i.test(err.message)
-          ? "Diesen Gruppennamen gibt es schon."
+          ? worte.zugaenge.gruppeGibtEsSchon
           : `Anlegen fehlgeschlagen: ${err.message}`,
       ),
   });
@@ -124,7 +126,11 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     mutationFn: () => verwaltungApi.nutzerAnlegen(neueEmail.trim()),
     onSuccess: (nutzer) => {
       setNeueEmail("");
-      setZugang({ titel: "Person angelegt", email: nutzer.email, passwort: nutzer.passwort });
+      setZugang({
+        titel: worte.zugaenge.personAngelegt,
+        email: nutzer.email,
+        passwort: nutzer.passwort,
+      });
       neuLaden(verwaltungKeys.nutzer());
     },
     onError: (err: Error) => toast.error(`Anlegen fehlgeschlagen: ${err.message}`),
@@ -136,7 +142,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     onSuccess: () => {
       setUmbenennen(null);
       neuLaden(verwaltungKeys.gruppen());
-      toast.success("Gruppe umbenannt.");
+      toast.success(worte.zugaenge.gruppeUmbenannt);
     },
     onError: (err: Error) => toast.error(`Umbenennen fehlgeschlagen: ${err.message}`),
   });
@@ -145,7 +151,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     mutationFn: (id: string) => verwaltungApi.gruppeLoeschen(id),
     onSuccess: () => {
       neuLaden(verwaltungKeys.gruppen(), verwaltungKeys.rechte(), verwaltungKeys.mitgliedschaften());
-      toast.success("Gruppe gelöscht.");
+      toast.success(worte.zugaenge.gruppeGeloescht);
     },
     onError: (err: Error) => toast.error(`Löschen fehlgeschlagen: ${err.message}`),
   });
@@ -166,12 +172,12 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     onSuccess: () => {
       setNeuesMitglied("");
       neuLaden(verwaltungKeys.mitgliedschaften());
-      toast.success("Mitglied hinzugefügt. Es wirkt nach der nächsten Anmeldung.");
+      toast.success(worte.zugaenge.mitgliedHinzu);
     },
     onError: (err: Error) =>
       toast.error(
         /duplicate|unique/i.test(err.message)
-          ? "Diese Person ist schon in der Gruppe."
+          ? worte.zugaenge.schonInGruppe
           : `Hinzufügen fehlgeschlagen: ${err.message}`,
       ),
   });
@@ -180,7 +186,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     mutationFn: (user_id: string) => verwaltungApi.passwortZuruecksetzen(user_id),
     onSuccess: (antwort, user_id) =>
       setZugang({
-        titel: "Neues Passwort",
+        titel: worte.zugaenge.neuesPasswort,
         email: nutzerNach.get(user_id)?.email ?? user_id,
         passwort: antwort.passwort,
       }),
@@ -192,7 +198,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
       verwaltungApi.mitgliedEntfernen(group_id, user_id),
     onSuccess: () => {
       neuLaden(verwaltungKeys.mitgliedschaften());
-      toast.success("Mitglied entfernt. Es wirkt nach der nächsten Anmeldung.");
+      toast.success(worte.zugaenge.mitgliedEntfernt);
     },
     onError: (err: Error) => toast.error(`Entfernen fehlgeschlagen: ${err.message}`),
   });
@@ -209,7 +215,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
         href="/platform/feedback"
         className="inline-flex items-center gap-2 text-sm underline-offset-4 hover:underline"
       >
-        Gemeldete Seiten ansehen
+        {worte.zugaenge.gemeldeteSeiten}
         {ungesehene > 0 && <Badge>{ungesehene}</Badge>}
       </Link>
 
@@ -222,31 +228,31 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-1 flex-col gap-1">
-            <Label htmlFor="neue-gruppe">Neue Gruppe</Label>
+            <Label htmlFor="neue-gruppe">{worte.zugaenge.neueGruppe}</Label>
             <Input
               id="neue-gruppe"
               value={neueGruppe}
               onChange={(e) => setNeueGruppe(e.target.value)}
-              placeholder="z. B. Vertrieb Innendienst"
+              placeholder={worte.zugaenge.gruppeBeispiel}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && neueGruppe.trim()) anlegen.mutate();
               }}
             />
           </div>
           <Button disabled={!neueGruppe.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
-            Anlegen
+            {worte.zugaenge.anlegen}
           </Button>
         </Card>
 
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-1 flex-col gap-1">
-            <Label htmlFor="neue-person">Neue Person</Label>
+            <Label htmlFor="neue-person">{worte.zugaenge.neuePerson}</Label>
             <Input
               id="neue-person"
               type="email"
               value={neueEmail}
               onChange={(e) => setNeueEmail(e.target.value)}
-              placeholder="vorname.nachname@acm.local"
+              placeholder={worte.zugaenge.personBeispiel}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && neueEmail.trim()) nutzerAnlegen.mutate();
               }}
@@ -256,7 +262,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
             disabled={!neueEmail.trim() || nutzerAnlegen.isPending}
             onClick={() => nutzerAnlegen.mutate()}
           >
-            Anlegen
+            {worte.zugaenge.anlegen}
           </Button>
         </Card>
       </div>
@@ -265,8 +271,8 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
         <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
       ) : gruppenListe.length === 0 ? (
         <EmptyState
-          title="Noch keine Gruppe"
-          body="Lege eine Gruppe an, weise ihr App-Rechte zu und nimm Personen auf."
+          title={worte.zugaenge.keineGruppe}
+          body={worte.zugaenge.keineGruppeText}
         />
       ) : (
         <div className="grid gap-4">
@@ -276,8 +282,8 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{g.name}</span>
                   {g.source === "ad" && (
-                    <Badge variant="secondary" title="Kommt aus dem Verzeichnis">
-                      Verzeichnis
+                    <Badge variant="secondary" title={worte.zugaenge.ausVerzeichnis}>
+                      {worte.zugaenge.verzeichnis}
                     </Badge>
                   )}
                 </div>
@@ -291,7 +297,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                     size="icon"
                     onClick={() => setUmbenennen({ gruppe: g, name: g.name })}
                     aria-label={`${g.name} umbenennen`}
-                    title="Umbenennen"
+                    title={worte.zugaenge.umbenennen}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -323,7 +329,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                         }
                         className="h-8 text-xs"
                       >
-                        <option value="">kein Zugriff</option>
+                        <option value="">{worte.zugaenge.keinZugriff}</option>
                         {LEVELS.map((l) => (
                           <option key={l} value={l}>
                             {LEVEL_LABEL[l]}
@@ -340,33 +346,33 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
       )}
 
       <p className="text-xs text-[var(--fg-muted)]">
-        „Verwalten“ auf der Plattform-Kachel schließt jedes andere Recht ein.
+        {worte.einstellungenText.verwaltenSchliesstEin}
       </p>
 
       <Dialog
         open={zugang !== null}
         onOpenChange={(o) => !o && setZugang(null)}
         title={zugang?.titel ?? ""}
-        description="Das Passwort steht nur jetzt hier. Danach lässt es sich nur zurücksetzen, nicht anzeigen."
+        description={worte.zugaenge.passwortNurJetzt}
         footer={
-          <Button onClick={() => setZugang(null)}>Fertig</Button>
+          <Button onClick={() => setZugang(null)}>{worte.zugaenge.fertig}</Button>
         }
       >
         <div className="flex flex-col gap-3 text-sm">
           <div className="flex flex-col gap-1">
-            <Label>Anmeldung</Label>
+            <Label>{worte.zugaenge.anmeldung}</Label>
             <code className="rounded-md border border-[var(--border)] px-3 py-2">
               {zugang?.email}
             </code>
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Passwort</Label>
+            <Label>{worte.zugaenge.passwort}</Label>
             <code className="rounded-md border border-[var(--border)] px-3 py-2 tracking-wider">
               {zugang?.passwort}
             </code>
           </div>
           <p className="text-[var(--fg-muted)]">
-            Rechte hängen an der Gruppe, nicht an der Person.
+            {worte.zugaenge.rechteAnGruppe}
           </p>
         </div>
       </Dialog>
@@ -374,11 +380,11 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
       <Dialog
         open={umbenennen !== null}
         onOpenChange={(o) => !o && setUmbenennen(null)}
-        title="Gruppe umbenennen"
+        title={worte.zugaenge.gruppeUmbenennen}
         footer={
           <>
             <Button variant="outline" onClick={() => setUmbenennen(null)}>
-              Abbrechen
+              {worte.zugaenge.abbrechen}
             </Button>
             <Button
               disabled={!umbenennen?.name.trim() || umbenennenMutation.isPending}
@@ -387,14 +393,14 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                 umbenennenMutation.mutate({ id: umbenennen.gruppe.id, name: umbenennen.name.trim() })
               }
             >
-              Speichern
+              {worte.zugaenge.speichern}
             </Button>
           </>
         }
       >
         <Input
           value={umbenennen?.name ?? ""}
-          aria-label="Gruppenname"
+          aria-label={worte.zugaenge.gruppenname}
           onChange={(e) => setUmbenennen((v) => (v ? { ...v, name: e.target.value } : v))}
           autoFocus
         />
@@ -408,25 +414,25 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
             setNeuesMitglied("");
           }
         }}
-        title={`Mitglieder von „${mitglieder?.name ?? ""}“`}
-        description="Änderungen wirken, sobald sich die Person das nächste Mal anmeldet."
+        title={worte.zugaenge.mitgliederVon(mitglieder?.name ?? "")}
+        description={worte.zugaenge.wirktNachAnmeldung}
         className="w-[min(36rem,calc(100vw-2rem))]"
         footer={
           <Button variant="outline" onClick={() => setMitglieder(null)}>
-            Schließen
+            {worte.zugaenge.schliessen}
           </Button>
         }
       >
         <div className="flex flex-col gap-4">
           <div className="flex items-end gap-2">
             <div className="flex flex-1 flex-col gap-1">
-              <Label htmlFor="mitglied-waehlen">Person hinzufügen</Label>
+              <Label htmlFor="mitglied-waehlen">{worte.zugaenge.personHinzufuegen}</Label>
               <Select
                 id="mitglied-waehlen"
                 value={neuesMitglied}
                 onChange={(e) => setNeuesMitglied(e.target.value)}
               >
-                <option value="">— auswählen —</option>
+                <option value="">{worte.zugaenge.auswaehlen}</option>
                 {nochNichtMitglied.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.email ?? n.id}
@@ -441,12 +447,12 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                 mitgliedHinzu.mutate({ group_id: mitglieder.id, user_id: neuesMitglied })
               }
             >
-              <Check className="h-4 w-4" /> Hinzufügen
+              <Check className="h-4 w-4" /> {worte.zugaenge.hinzufuegen}
             </Button>
           </div>
 
           {mitgliederDerGruppe.length === 0 ? (
-            <p className="text-sm text-[var(--fg-muted)]">Diese Gruppe hat noch keine Mitglieder.</p>
+            <p className="text-sm text-[var(--fg-muted)]">{worte.zugaenge.keineMitglieder}</p>
           ) : (
             <ul className="flex flex-col gap-1">
               {mitgliederDerGruppe.map((id) => (
@@ -464,8 +470,8 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Passwort zurücksetzen"
-                      title="Passwort zurücksetzen"
+                      aria-label={worte.zugaenge.passwortZuruecksetzen}
+                      title={worte.zugaenge.passwortZuruecksetzen}
                       disabled={passwortNeu.isPending}
                       onClick={() => passwortNeu.mutate(id)}
                     >
@@ -474,8 +480,8 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Mitglied entfernen"
-                      title="Entfernen"
+                      aria-label={worte.zugaenge.mitgliedEntfernen}
+                      title={worte.zugaenge.entfernen}
                       disabled={mitgliedWeg.isPending}
                       onClick={() =>
                         mitglieder && mitgliedWeg.mutate({ group_id: mitglieder.id, user_id: id })

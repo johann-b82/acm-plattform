@@ -14,6 +14,7 @@ import {
   type Zielwert,
 } from "@/lib/zielwerte";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Zielwerte der Kennzahlen pflegen.
@@ -23,6 +24,7 @@ import { Button, Card, Input, Label } from "@/components/ui/primitives";
  * Bequemlichkeit, nicht der Riegel.
  */
 export function Kennzahlen() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [entwurf, setEntwurf] = useState<Record<string, string>>({});
 
@@ -41,9 +43,9 @@ export function Kennzahlen() {
         return rest;
       });
       queryClient.invalidateQueries({ queryKey: zielwerteKeys.alle() });
-      toast.success("Zielwert gespeichert. Die Dashboards zeigen ihn nach dem Neuladen.");
+      toast.success(worte.einstellungenText.zielwertGespeichert);
     },
-    onError: (err: Error) => toast.error(`Speichern fehlgeschlagen: ${err.message}`),
+    onError: (err: Error) => toast.error(worte.einstellungenText.speichernFehler(err.message)),
   });
 
   const daten = zielwerte.data;
@@ -64,7 +66,7 @@ export function Kennzahlen() {
     if (roh === undefined) return;
     const zahl = Number(roh.replace(",", "."));
     if (!Number.isFinite(zahl) || zahl < 0) {
-      toast.error("Bitte eine Zahl ab 0 eingeben.");
+      toast.error(worte.einstellungenText.zahlAbNull);
       return;
     }
     speichern.mutate({ schluessel: z.schluessel, wert: ausAnzeige(zahl, z.einheit) });
@@ -78,7 +80,7 @@ export function Kennzahlen() {
     );
   }
   if (zielwerte.isLoading) {
-    return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
+    return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>;
   }
 
   return (

@@ -14,6 +14,7 @@ import { Qualitaet } from "./abschnitte/qualitaet";
 import { Sensoren } from "./abschnitte/sensoren";
 import { Zugaenge } from "./abschnitte/zugaenge";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Alle Einstellungen an einer Stelle, nach Bereich gruppiert.
@@ -28,16 +29,18 @@ import { Seitenkopf } from "@/components/seitenkopf";
  * gilt ohnehin für alle.
  */
 export function Einstellungen({ eigeneId }: { eigeneId: string }) {
+  const worte = useTexte();
+  const gruppen = worte.einstellungen.gruppen as Record<string, string>;
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel="Einstellungen"
-        untertitel="Was die Plattform rechnet, holt und zeigt — für alle gleich."
+        titel={worte.einstellungen.titel}
+        untertitel={worte.einstellungen.einleitung}
       />
 
       <div className="grid gap-8 lg:grid-cols-[11rem_minmax(0,1fr)]">
         <nav
-          aria-label="Bereiche"
+          aria-label={worte.einstellungen.bereiche}
           className="self-start lg:sticky lg:top-6 lg:border-l lg:border-[var(--border)]"
         >
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:flex-col lg:gap-0">
@@ -47,7 +50,7 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
                   href={`#${g.id}`}
                   className="block py-1 text-[var(--fg-muted)] underline-offset-4 hover:text-[var(--fg)] hover:underline lg:-ml-px lg:border-l lg:border-transparent lg:pl-3 lg:hover:border-[var(--fg-muted)]"
                 >
-                  {g.titel}
+                  {gruppen[g.id]}
                 </a>
               </li>
             ))}
@@ -58,8 +61,8 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
           {GRUPPEN.map((g) => (
             <section key={g.id} id={g.id} className="scroll-mt-6 space-y-3">
               <h2 className="flex items-center gap-1.5 text-lg font-medium tracking-tight">
-                {g.titel}
-                <Hinweis text={g.beschreibung} />
+                {gruppen[g.id]}
+                <Hinweis text={gruppen[`${g.id}Text`]} />
               </h2>
               <Inhalt gruppe={g} eigeneId={eigeneId} />
             </section>
