@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
 import { Teilekatalog } from "./teilekatalog";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "ATR · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/atr"]);
 
 export default async function AtrPage() {
   const session = await requireApp("atr");

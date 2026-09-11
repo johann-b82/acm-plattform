@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
 import { BewertungSeite } from "./bewertung";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "KPI-Bewertung · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.titel.kpiBewertung);
 
 export default async function BewertungPage() {
   const session = await requireApp("kpi");

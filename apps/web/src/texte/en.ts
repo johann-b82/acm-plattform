@@ -445,6 +445,20 @@ export const en: Texte = {
       "without notice is in the minus. In the current week the target only counts up to the " +
       "last day clocked.",
   },
+  titel: {
+    schulung: "Training",
+    zeugnis: "Reference",
+    qualifikationsmatrix: "Qualification matrix",
+    maschine: "Machine",
+    audit: "Audit",
+    zeichnung: "Drawing",
+    lieferung: "Delivery",
+    offeneSchulungen: "Outstanding training",
+    schulungsmatrix: "Training matrix",
+    atrLieferungen: "ATR deliveries",
+    kpiBewertung: "KPI review",
+    anmelden: "Sign in",
+  },
   kennzahlenHub: {
     titel: "KPI dashboard",
     einleitung: "Metrics by department. The data comes from the ERP exports under Uploads.",

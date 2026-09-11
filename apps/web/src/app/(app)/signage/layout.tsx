@@ -1,7 +1,8 @@
 import { requireApp } from "@/lib/auth";
 import { SignageTabs } from "./tabs";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Digital Signage · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/signage"]);
 
 /**
  * Alle Signage-Seiten verlangen `signage: admin` (oder `platform: admin`).

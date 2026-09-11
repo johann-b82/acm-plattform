@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { requireApp } from "@/lib/auth";
-import { texte } from "@/lib/sprache-server";
+import { seitentitel, texte } from "@/lib/sprache-server";
 import { Card } from "@/components/ui/primitives";
 import { Seitenkopf } from "@/components/seitenkopf";
 
-export const metadata = { title: "KPI-Dashboard · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.kennzahlenHub.titel);
 
 /** Die Fachbereiche des KPI-Dashboards. Name und Beschreibung stehen im
  *  Wörterbuch: der Name ist derselbe wie im Pfad, damit ein Verweis und die

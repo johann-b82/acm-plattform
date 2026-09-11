@@ -1,7 +1,7 @@
 import { LoginForm } from "./login-form";
-import { texte } from "@/lib/sprache-server";
+import { seitentitel, texte } from "@/lib/sprache-server";
 
-export const metadata = { title: "Anmelden · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.titel.anmelden);
 
 export default async function LoginPage() {
   const t = await texte();

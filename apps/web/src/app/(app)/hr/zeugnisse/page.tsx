@@ -1,7 +1,8 @@
 import { requireApp } from "@/lib/auth";
 import { Zeugnisliste } from "./zeugnisliste";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Zeugnisse · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hr/zeugnisse"]);
 
 export default async function ZeugnissePage() {
   // Personenbezogene Leistungsdaten — keine reine Lesestufe.

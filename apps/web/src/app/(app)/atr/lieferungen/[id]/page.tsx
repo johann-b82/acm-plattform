@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
 import { Durchsicht } from "./durchsicht";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Lieferung · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.titel.lieferung);
 
 export default async function LieferungPage({
   params,

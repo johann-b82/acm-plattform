@@ -4,8 +4,9 @@ import { requireSession } from "@/lib/auth";
 import { GRUPPEN } from "@/hilfe/registry";
 import { Card } from "@/components/ui/primitives";
 import { Suche } from "./suche";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Hilfe · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hilfe"]);
 
 /**
  * Die Übersicht der Hilfe.

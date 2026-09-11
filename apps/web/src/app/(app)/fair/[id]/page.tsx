@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
 import { Editor } from "./editor";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Zeichnung · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.titel.zeichnung);
 
 export default async function ZeichnungPage({
   params,
