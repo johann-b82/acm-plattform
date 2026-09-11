@@ -20,9 +20,9 @@ from typing import Any
 
 import sqlalchemy as sa
 
-from app.config import settings
 from app.db import SessionLocal, personio_absences, personio_employees
-from app.personio.client import PersonioClient, PersonioFehler
+from app.personio import zugang
+from app.personio.client import PersonioFehler
 
 log = logging.getLogger(__name__)
 
@@ -144,7 +144,8 @@ async def sammeln() -> Listen:
     abteilungen, felder, aus_bestand = await _aus_dem_bestand()
     listen = Listen(abteilungen=abteilungen, felder=felder)
 
-    if not settings.PERSONIO_CLIENT_ID or not settings.PERSONIO_CLIENT_SECRET:
+    klient = await zugang.klient()
+    if klient is None:
         listen.abwesenheitsarten = aus_bestand
         listen.arten_aus_bestand = True
         listen.hinweis = (
@@ -153,7 +154,6 @@ async def sammeln() -> Listen:
         )
         return listen
 
-    klient = PersonioClient(settings.PERSONIO_CLIENT_ID, settings.PERSONIO_CLIENT_SECRET)
     try:
         roh = await klient.abwesenheitsarten()
     except PersonioFehler as fehler:

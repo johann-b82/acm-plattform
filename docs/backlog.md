@@ -80,8 +80,8 @@ docker compose exec compute python -m app.cli personio-sprachen
 
 Er liest die Mitarbeiter-Rohdaten des Abgleichs — ohne Netz, denn das Feld
 steht dort schon — und listet Feld, Wert und Anzahl. Liegt kein Abgleich vor,
-fragt er Personio direkt; dafür braucht er `PERSONIO_CLIENT_ID` und
-`PERSONIO_CLIENT_SECRET`.
+fragt er Personio direkt; dafür braucht er Zugangsdaten, entweder aus
+Einstellungen → Personal oder aus der Umgebung.
 
 Auf dem lokalen Stand gibt es kein Ergebnis: die Demodaten führen kein
 Sprachfeld (41 Personen, kein Treffer). Die Antwort kann nur auf einem Stand

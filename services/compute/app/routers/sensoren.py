@@ -29,7 +29,8 @@ from app import netz
 from app.auth import require_app
 from app.config import settings
 from app.db import SessionLocal, sensoren
-from app.sensoren import geheim, messen, snmp
+from app import geheim
+from app.sensoren import messen, snmp
 
 router = APIRouter(
     prefix="/api/sensoren",

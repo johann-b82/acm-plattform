@@ -28,7 +28,8 @@ from app.auth import require_app
 from app.config import settings
 from app.db import SessionLocal, personio_employees
 from app.embed import TokenUngueltig, baue_token, pruefe_token
-from app.personio.client import PersonioClient, PersonioFehler
+from app.personio import zugang
+from app.personio.client import PersonioFehler
 from app.ratsperre import Sperre
 
 ARTEN = ("geburtstage", "neuzugaenge")
@@ -255,9 +256,9 @@ async def foto(employee_id: int, token: str = Query(...)) -> Response:
     if gemerkt and jetzt - gemerkt[0] < FOTO_FRIST_S:
         return _bild(gemerkt[1], gemerkt[2])
 
-    if not settings.PERSONIO_CLIENT_ID or not settings.PERSONIO_CLIENT_SECRET:
+    klient = await zugang.klient()
+    if klient is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein Bild.")
-    klient = PersonioClient(settings.PERSONIO_CLIENT_ID, settings.PERSONIO_CLIENT_SECRET)
     try:
         bild = await klient.profilbild(employee_id)
     except PersonioFehler as fehler:

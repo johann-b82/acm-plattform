@@ -19,7 +19,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app import netz
 from app.config import settings
 from app.db import SessionLocal, sensor_messungen, sensor_versuche, sensoren
-from app.sensoren import geheim, snmp
+from app import geheim
+from app.sensoren import snmp
 
 
 @dataclass

@@ -20,10 +20,9 @@ hier so, wie sie dort stehen:
   300 heißt fünf Stunden. Ohne die Division landete der Wert sechzigfach zu
   groß in der Datenbank.
 
-Die Zugangsdaten kommen aus der Umgebung, nicht aus der Datenbank. Das
-Altprojekt verschlüsselt sie mit Fernet in `app_settings` und braucht dafür
-einen weiteren Schlüssel, der auch verloren gehen kann; hier stehen sie in
-derselben `.env` wie alles andere.
+Woher die Zugangsdaten kommen, entscheidet `app.personio.zugang`: aus der
+Tabelle `geheimnisse`, wenn sie jemand über die Einstellungen eingetragen hat,
+sonst aus der Umgebung.
 """
 from __future__ import annotations
 
@@ -35,9 +34,9 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.config import settings
 from app.db import SessionLocal, personio_absences, personio_attendance, personio_employees
-from app.personio.client import PersonioClient, PersonioFehler
+from app.personio import zugang
+from app.personio.client import PersonioFehler
 
 log = logging.getLogger(__name__)
 
@@ -275,15 +274,13 @@ async def _protokollieren(session, e: Ergebnis) -> None:
 async def abgleichen() -> Ergebnis:
     """Einmal alles holen und schreiben. Wirft nur, wenn die Stammdaten
     scheitern — alles andere landet als Teilfehler im Protokoll."""
-    if not settings.PERSONIO_CLIENT_ID or not settings.PERSONIO_CLIENT_SECRET:
-        raise NichtEingerichtet(
-            "PERSONIO_CLIENT_ID und PERSONIO_CLIENT_SECRET sind nicht gesetzt"
-        )
+    client = await zugang.klient()
+    if client is None:
+        raise NichtEingerichtet("Personio-Zugangsdaten sind nicht hinterlegt")
 
     begonnen = datetime.now(timezone.utc)
     jetzt = begonnen
     e = Ergebnis()
-    client = PersonioClient(settings.PERSONIO_CLIENT_ID, settings.PERSONIO_CLIENT_SECRET)
 
     try:
         # 1) Stammdaten — Pflicht, und zuerst: die anderen Tabellen verweisen darauf.

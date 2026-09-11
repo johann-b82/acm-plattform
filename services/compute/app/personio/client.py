@@ -72,6 +72,10 @@ class PersonioClient:
 
     # --- Anmeldung ----------------------------------------------------------
 
+    async def anmelden(self) -> None:
+        """Nur anmelden — für die Probe aus den Einstellungen."""
+        await self._anmelden()
+
     async def _gueltiger_token(self) -> str:
         if self._token is None or time.monotonic() > self._laeuft_ab - TOKEN_PUFFER_S:
             await self._anmelden()

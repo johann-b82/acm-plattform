@@ -12,31 +12,61 @@ from unittest.mock import patch
 import pytest
 
 from app import netz
-from app.sensoren import geheim, messen, snmp
+from app import geheim
+from app.sensoren import messen, snmp
 
 
 class TestGeheimnis:
     def test_hin_und_zurueck(self):
-        schluessel = "0" * 43 + "="  # 32 Byte base64 — Fernet-Format
         from cryptography.fernet import Fernet
 
         echt = Fernet.generate_key().decode()
-        with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", echt):
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", echt):
             assert geheim.entschluesseln(geheim.verschluesseln("geheim123")) == "geheim123"
-        assert schluessel  # nur zur Erinnerung an das Format
+
+    def test_der_alte_name_gilt_weiter(self):
+        # `SENSOR_SCHLUESSEL` steht in laufenden Umgebungen. Ein Namenswechsel,
+        # der beim Ausrollen die Sensoren stumm schaltet, wäre ein schlechter
+        # Tausch für ein hübscheres Wort.
+        from cryptography.fernet import Fernet
+
+        alt = Fernet.generate_key().decode()
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", ""):
+            with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", alt):
+                assert geheim.entschluesseln(geheim.verschluesseln("geheim123")) == "geheim123"
+
+    def test_der_neue_name_gewinnt(self):
+        from cryptography.fernet import Fernet
+
+        neu, alt = Fernet.generate_key().decode(), Fernet.generate_key().decode()
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", neu):
+            with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", alt):
+                text = geheim.verschluesseln("geheim123")
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", neu):
+            with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", ""):
+                assert geheim.entschluesseln(text) == "geheim123"
 
     def test_ohne_schluessel_geht_nichts(self):
-        with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", ""):
-            with pytest.raises(geheim.KeinSchluessel, match="SENSOR_SCHLUESSEL"):
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", ""):
+            with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", ""):
+                with pytest.raises(geheim.KeinSchluessel, match="GEHEIM_SCHLUESSEL"):
+                    geheim.verschluesseln("egal")
+                assert geheim.einsatzbereit() is False
+
+    def test_unbrauchbarer_schluessel_faellt_beim_ersten_griff_auf(self):
+        # Nicht erst, wenn jemand etwas ablegen will: die Maske fragt vorher.
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", "kein-fernet-schluessel"):
+            assert geheim.einsatzbereit() is False
+            with pytest.raises(geheim.KeinSchluessel):
                 geheim.verschluesseln("egal")
 
     def test_falscher_schluessel_faellt_auf(self):
         from cryptography.fernet import Fernet
 
         einer, anderer = Fernet.generate_key().decode(), Fernet.generate_key().decode()
-        with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", einer):
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", einer):
             text = geheim.verschluesseln("geheim123")
-        with patch.object(geheim.settings, "SENSOR_SCHLUESSEL", anderer):
+        with patch.object(geheim.settings, "GEHEIM_SCHLUESSEL", anderer):
             with pytest.raises(geheim.NichtLesbar):
                 geheim.entschluesseln(text)
 

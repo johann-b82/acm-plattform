@@ -836,6 +836,15 @@ zeugnis_bausteine = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+geheimnisse = sa.Table(
+    "geheimnisse",
+    metadata,
+    sa.Column("schluessel", sa.String(64), primary_key=True),
+    sa.Column("geheimtext", sa.LargeBinary, nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_von", UUID(as_uuid=False)),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -889,4 +898,5 @@ TABLES = {
     "zeugnis_bewertungen": zeugnis_bewertungen,
     "zeugnis_notenvorlagen": zeugnis_notenvorlagen,
     "zeugnis_bausteine": zeugnis_bausteine,
+    "geheimnisse": geheimnisse,
 }
