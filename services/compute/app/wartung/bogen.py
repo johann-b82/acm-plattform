@@ -24,6 +24,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.properties import PageSetupProperties
 
+from app.dokumente.blatt import auf_a4
 from app.dokumente.pdf import nach_pdf
 
 #: Reihenfolge der Gruppen auf dem periodischen Bogen.
@@ -156,7 +157,7 @@ def _raster(
         blatt.column_dimensions[get_column_letter(beschriftungsspalten + 1 + j)].width = 4.2
 
     blatt.print_area = f"A1:{get_column_letter(spalten)}{z}"
-    blatt.page_setup.orientation = "landscape"
+    auf_a4(blatt, quer=True)
     blatt.page_setup.fitToWidth = 1
     blatt.page_setup.fitToHeight = 0
     blatt.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)

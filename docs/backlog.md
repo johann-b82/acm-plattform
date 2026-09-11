@@ -9,7 +9,6 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 | # | Modul | Alt (Operationen) | Inhalt |
 |---|---|---|---|
 | 3 | Dokumentenlauf (Schulungsnachweis **und** Einarbeitungsbogen) | ~30 | Dieselbe Mechanik für beide: QR-Code zur Zuordnung, Laufweg (erstellt → übergeben → zurück → geprüft), Scan-Upload, halbautomatische Vollständigkeitsprüfung. Dazu Unterlagen je Schulung und die Zertifikate. Einmal bauen, zweimal benutzen. |
-| 4 | Onboarding: Dokumente | ~4 | Das Onboarding-Paket als PDF (Formblatt 71, Dokumentmappe). Eintritte, Schulungsplan, Abteilungs-Übersteuerung und Rollenzuordnung stehen (PR #47). |
 | 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. **Beim Abgleich aufgefallen: im Altsystem ruft ihn niemand auf** — `send_email` hat dort außerhalb des eigenen Routers keinen Aufrufer. Portiert würde ein delegierter OAuth-Ablauf samt Token-Ablage und Einstellungsmaske für etwas, das nichts benutzt. Empfehlung: bauen, wenn der erste Verbraucher da ist (Schulungserinnerungen sind der naheliegende). |
 | 10 | In-App-Dokumentation | — | 22 Markdown-Seiten aus `frontend/src/docs/`. Zuletzt, weil sie den fertigen Stand beschreibt. |
 

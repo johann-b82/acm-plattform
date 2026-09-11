@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Plus } from "lucide-react";
+import { Check, FileDown, Plus } from "lucide-react";
 
 import {
   istNeu,
@@ -87,6 +87,19 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
       toast.success("Übergabe vermerkt.");
       return neuLaden();
     },
+    onError: melde,
+  });
+
+  // Das Paket zu erzeugen **ist** die Übergabe: die Route vermerkt sie selbst.
+  // Deshalb danach neu laden — die „neu"-Markierung verschwindet dabei.
+  const paketDrucken = useMutation({
+    mutationFn: (e: Eintritt) => onboardingApi.paket(e),
+    onSuccess: neuLaden,
+    onError: melde,
+  });
+
+  const uebersichtDrucken = useMutation({
+    mutationFn: (e: Eintritt) => onboardingApi.uebersicht(e),
     onError: melde,
   });
 
@@ -242,24 +255,47 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                     )}
                   </Td>
                   <Td className="text-right">
-                    {e.employee_id !== null ? (
+                    <div className="flex flex-wrap justify-end gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setOffen(offen === e.employee_id ? null : e.employee_id)}
+                        title="Einarbeitungsplan und Schulungsübersicht als ein PDF"
+                        disabled={paketDrucken.isPending}
+                        onClick={() => paketDrucken.mutate(e)}
                       >
-                        {offen === e.employee_id ? "Plan zu" : "Plan"}
+                        <FileDown className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        Paket
                       </Button>
-                    ) : (
-                      darfSchreiben && (
-                        <ConfirmDeleteButton
-                          itemLabel={e.name}
-                          onConfirm={() =>
-                            externWeg.mutateAsync(e.extern_id!).then(() => undefined)
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Nur die Schulungsübersicht (Formblatt 71)"
+                        disabled={uebersichtDrucken.isPending}
+                        onClick={() => uebersichtDrucken.mutate(e)}
+                      >
+                        Übersicht
+                      </Button>
+                      {e.employee_id !== null ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setOffen(offen === e.employee_id ? null : e.employee_id)
                           }
-                        />
-                      )
-                    )}
+                        >
+                          {offen === e.employee_id ? "Plan zu" : "Plan"}
+                        </Button>
+                      ) : (
+                        darfSchreiben && (
+                          <ConfirmDeleteButton
+                            itemLabel={e.name}
+                            onConfirm={() =>
+                              externWeg.mutateAsync(e.extern_id!).then(() => undefined)
+                            }
+                          />
+                        )
+                      )}
+                    </div>
                   </Td>
                 </tr>
               ))}
