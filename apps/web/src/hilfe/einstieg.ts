@@ -29,9 +29,20 @@ du ein Recht hast.** Fehlt eine Kachel, die du brauchst, fehlt dir das Recht —
 nicht die Anwendung. Sag der Plattform-Verwaltung, welche Kachel du erwartest.
 
 Oben links steht das Firmenlogo; ein Klick darauf bringt dich immer hierher
-zurück. Oben rechts steht deine Anmeldung und daneben drei Zeichen: **Hilfe**
-(Fragezeichen), **Einstellungen** (Zahnrad, nur für Plattform-Admins) und
-**Abmelden**. Wer die Maus darüber hält, bekommt die Beschriftung.
+zurück. Oben rechts steht deine Anmeldung, daneben die Wahl des
+Erscheinungsbilds und drei Zeichen: **Hilfe** (Fragezeichen),
+**Einstellungen** (Zahnrad, nur für Plattform-Admins) und **Abmelden**. Wer
+die Maus darüber hält, bekommt die Beschriftung.
+
+## Hell oder dunkel
+
+Drei Felder oben rechts: **hell**, **dunkel** und **wie das System**.
+Vorgewählt ist das letzte — dann folgt die Plattform der Einstellung deines
+Rechners und wechselt mit, wenn der abends umschaltet.
+
+Die Wahl gehört zum **Gerät**, nicht zum Konto: am Arbeitsplatz hell und am
+Laptop dunkel ist damit möglich. Sie überlebt das Abmelden und gilt sofort,
+auch in anderen offenen Tabs.
 
 ## Wo liegt was
 

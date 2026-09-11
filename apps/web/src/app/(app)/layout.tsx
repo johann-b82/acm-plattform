@@ -6,6 +6,7 @@ import { logoAdresse } from "@/lib/logo-server";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/providers";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
+import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umschalter";
 
 /** Ein Zeichen in der Kopfzeile: quadratische Fläche, sichtbarer Tastaturfokus. */
 const KNOPF =
@@ -52,6 +53,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <span className="mr-2 hidden text-sm text-[var(--fg-muted)] sm:inline">
               {session.email}
             </span>
+            <ErscheinungsbildUmschalter />
             <Link href="/hilfe" aria-label="Hilfe" title="Hilfe" className={KNOPF}>
               <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
             </Link>

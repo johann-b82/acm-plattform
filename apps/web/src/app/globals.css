@@ -16,8 +16,15 @@
   color-scheme: light;
 }
 
+/* Die dunklen Werte stehen einmal und werden an zwei Stellen eingesetzt:
+   für „richte dich nach dem Betriebssystem" und für „ich will es dunkel".
+
+   Der Umschalter setzt `data-theme` auf dem Wurzelelement. Der Zusatz
+   `:not([data-theme="light"])` sorgt dafür, dass eine ausdrückliche Wahl
+   gewinnt — sonst bliebe es unter einem dunklen Betriebssystem dunkel, obwohl
+   jemand hell gewählt hat. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #101418;
     --surface: #171c21;
     --muted: #1f262d;
@@ -30,6 +37,20 @@
     --warn: #e0a24a;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #101418;
+  --surface: #171c21;
+  --muted: #1f262d;
+  --border: #2b333b;
+  --fg: #e8ebee;
+  --fg-muted: #9aa4ae;
+  --ring: #5cb4d2;
+  --danger: #ef7a72;
+  --ok: #6cc08f;
+  --warn: #e0a24a;
+  color-scheme: dark;
 }
 
 body {
