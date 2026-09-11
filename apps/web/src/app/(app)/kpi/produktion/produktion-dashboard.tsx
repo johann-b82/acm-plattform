@@ -26,31 +26,13 @@ import {
 import { ART_LABEL, produktionApi } from "@/lib/kpi/produktion";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Badge, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Vergleiche } from "@/components/kpi/vergleich";
+import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
-function Kachel({
-  titel,
-  wert,
-  hinweis,
-  laedt,
-}: {
-  titel: string;
-  wert: string;
-  hinweis?: string;
-  laedt: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
-      <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
-      </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-    </Card>
-  );
-}
 
 function datum(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("de-DE") : "—";
@@ -65,6 +47,13 @@ export function ProduktionDashboard() {
     queryKey: ["kpi", "produktion", "verzug", von, bis],
     queryFn: () => produktionApi.verzug(von, bis),
   });
+  const vgl = useVergleich(
+    ["kpi", "produktion", "verzug"],
+    zeitraum,
+    von,
+    bis,
+    produktionApi.verzug,
+  );
   const verlauf = useQuery({
     queryKey: ["kpi", "produktion", "verlauf", von, bis],
     queryFn: () => produktionApi.verlauf(von, bis),
@@ -150,25 +139,43 @@ export function ProduktionDashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kachel
+        <Kennzahl
           titel="Verzugsquote"
           wert={fmt.prozent(verzug.data?.quote == null ? null : Number(verzug.data.quote))}
           hinweis={`Höchstens ${fmt.prozent(ziel)}`}
           laedt={verzug.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={verzug.data?.quote == null ? null : Number(verzug.data.quote)}
+              vorperiode={vgl.vorperiode?.quote == null ? null : Number(vgl.vorperiode.quote)}
+              vorjahr={vgl.vorjahr?.quote == null ? null : Number(vgl.vorjahr.quote)}
+              vorperiodeLabel={vgl.label}
+              richtung="weniger_ist_besser"
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Aufträge in Verzug"
           wert={fmt.zahl(verzug.data?.in_verzug)}
           hinweis={offene > 0 ? `davon ${offene} offen und überfällig` : undefined}
           laedt={verzug.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={verzug.data?.in_verzug}
+              vorperiode={vgl.vorperiode?.in_verzug}
+              vorjahr={vgl.vorjahr?.in_verzug}
+              vorperiodeLabel={vgl.label}
+              richtung="weniger_ist_besser"
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Aufträge gesamt"
           wert={fmt.zahl(verzug.data?.gesamt)}
           hinweis="ohne noch nicht fällige offene Aufträge"
           laedt={verzug.isLoading}
         />
-        <Kachel
+        <Kennzahl
           titel="Ø Verzug"
           wert={
             verzug.data?.verzug_schnitt == null

@@ -44,38 +44,13 @@ import {
 } from "@/lib/kpi/qualitaet";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Vergleiche } from "@/components/kpi/vergleich";
+import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
-function Kachel({
-  titel,
-  wert,
-  hinweis,
-  warnung,
-  laedt,
-}: {
-  titel: string;
-  wert: string;
-  hinweis?: string;
-  warnung?: boolean;
-  laedt: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
-      <div
-        className={cn(
-          "mt-1 font-mono text-2xl font-medium tabular-nums",
-          warnung && "text-[var(--danger)]",
-        )}
-      >
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
-      </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-    </Card>
-  );
-}
 
 export function QualitaetDashboard() {
   const queryClient = useQueryClient();
@@ -107,6 +82,17 @@ export function QualitaetDashboard() {
     queryKey: ["kpi", "qualitaet", "rekl", reklArt, mengenart, von, bis],
     queryFn: () => reklamationApi.quote(reklArt, mengenart, von, bis),
   });
+  // Die Reklamationsquote hängt zusätzlich an Art und Mengenart. Der Haken
+  // bekommt sie über den Abschluss mit — sie gehören in den Abfrageschlüssel,
+  // sonst zeigte ein Wechsel der Art alte Vergleichswerte.
+  const vglRekl = useVergleich(
+    ["kpi", "qualitaet", "rekl", reklArt, mengenart],
+    zeitraum,
+    von,
+    bis,
+    (v, b) => reklamationApi.quote(reklArt, mengenart, v, b),
+  );
+
   const reklVerlauf = useQuery({
     queryKey: ["kpi", "qualitaet", "reklVerlauf", reklArt, mengenart, von, bis],
     queryFn: () => reklamationApi.verlauf(reklArt, mengenart, von, bis),
@@ -269,21 +255,21 @@ export function QualitaetDashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Kachel
+        <Kennzahl
           titel="Audit-Findings Level 1"
           wert={fmt.zahl(summe.data?.level_1)}
           hinweis={zielL1 == null ? undefined : `Höchstens ${zielL1}`}
           warnung={zielL1 != null && (summe.data?.level_1 ?? 0) > zielL1}
           laedt={summe.isLoading}
         />
-        <Kachel
+        <Kennzahl
           titel="Audit-Findings Level 2"
           wert={fmt.zahl(summe.data?.level_2)}
           hinweis={zielL2 == null ? undefined : `Höchstens ${zielL2}`}
           warnung={zielL2 != null && (summe.data?.level_2 ?? 0) > zielL2}
           laedt={summe.isLoading}
         />
-        <Kachel
+        <Kennzahl
           titel="Ohne erkennbares Level"
           wert={fmt.zahl(summe.data?.ohne_level)}
           hinweis="zählt in keiner Kachel"
@@ -360,7 +346,7 @@ export function QualitaetDashboard() {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <Kachel
+          <Kennzahl
             titel="On Quality"
             wert={fmt.prozent(onQuality(rekl.data?.quote ?? null))}
             hinweis={
@@ -374,13 +360,21 @@ export function QualitaetDashboard() {
               rekl.data.quote > zielFehlerquote
             }
             laedt={rekl.isLoading}
+            vergleich={
+              <Vergleiche
+                aktuell={onQuality(rekl.data?.quote ?? null)}
+                vorperiode={onQuality(vglRekl.vorperiode?.quote ?? null)}
+                vorjahr={onQuality(vglRekl.vorjahr?.quote ?? null)}
+                vorperiodeLabel={vglRekl.label}
+              />
+            }
           />
-          <Kachel
+          <Kennzahl
             titel="Reklamierte Menge"
             wert={fmt.zahl(rekl.data?.reklamiert)}
             laedt={rekl.isLoading}
           />
-          <Kachel
+          <Kennzahl
             titel="Bezugsmenge"
             wert={fmt.zahl(rekl.data?.bezugsmenge)}
             hinweis={rekl.data?.bezugsmenge === 0 ? "ohne sie gibt es keine Quote" : undefined}
@@ -455,14 +449,14 @@ export function QualitaetDashboard() {
           {mengen.data?.pruefer ?? 0} Prüfer an {mengen.data?.prueftage ?? 0} Tagen.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Kachel
+          <Kennzahl
             titel="Große Produkte"
             wert={fmt.zahl(mengen.data?.gross)}
             hinweis={zielGross == null ? undefined : `Mindestens ${zielGross} je Tag und Prüfer`}
             warnung={zielGross != null && (mengen.data?.gross ?? 0) < zielGross}
             laedt={mengen.isLoading}
           />
-          <Kachel
+          <Kennzahl
             titel="Kleine Produkte"
             wert={fmt.zahl(mengen.data?.klein)}
             hinweis={zielKlein == null ? undefined : `Mindestens ${zielKlein} je Tag und Prüfer`}
