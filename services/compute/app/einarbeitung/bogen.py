@@ -21,6 +21,7 @@ from openpyxl.styles import Alignment, Border, Font, Side
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import PageSetupProperties
 
+from app.dokumente import qr as qr_mod
 from app.dokumente.blatt import auf_a4
 from app.dokumente.logo import Logo
 from app.dokumente.pdf import nach_pdf
@@ -51,6 +52,12 @@ FREIGABE = [
 #: Spalten wie in der Vorlage: A ist eine schmale Randspalte.
 SP_ABTEILUNG, SP_PARTNER, SP_INHALT, SP_WANN, SP_ERLEDIGT = 2, 3, 4, 7, 8
 SPALTENBREITEN = (3, 13, 17, 13, 13, 13, 8, 14)
+
+#: Wo QR und Passermarken sitzen, wenn der Bogen Teil eines Vorgangs ist.
+#: Zeile 4 ist frei — die Kopfzeilentabelle endet bei 3, die Angaben beginnen
+#: bei 5.
+QR_SPALTE, QR_ZEILE = 8, 4
+GEOMETRIE = qr_mod.Geometrie(spaltenbreiten=SPALTENBREITEN, rand_links_px=48.0, rand_oben_pt=36.0)
 
 _DUENN = Side(style="thin", color="000000")
 _RAHMEN = Border(left=_DUENN, right=_DUENN, top=_DUENN, bottom=_DUENN)
@@ -173,7 +180,7 @@ def _einleitung(blatt, zeile: int) -> int:
     return zeile + 3
 
 
-def _tabelle(blatt, zeile: int, inhalte: list[Inhalt]) -> int:
+def _tabelle(blatt, zeile: int, inhalte: list[Inhalt], felder: list | None = None) -> int:
     kopf = [
         (SP_ABTEILUNG, "Abteilung"),
         (SP_PARTNER, "Ansprechpartner"),
@@ -207,6 +214,14 @@ def _tabelle(blatt, zeile: int, inhalte: list[Inhalt]) -> int:
             _zeilen(eintrag.inhalt, _ZEICHEN_INHALT),
         )
         blatt.row_dimensions[zeile].height = hoehe * _ZEILE_PT + _POLSTER
+        if felder is not None:
+            # Zwei Pflichtfelder je Zeile: wann es stattfand und wer es
+            # abgezeichnet hat. Sie sind der eigentliche Nachweis.
+            kurz = eintrag.inhalt[:40]
+            felder.append((f"wann_{len(felder)}", f"Wann? — {kurz}", zeile, SP_WANN, SP_WANN))
+            felder.append(
+                (f"erledigt_{len(felder)}", f"Erledigt — {kurz}", zeile, SP_ERLEDIGT, SP_ERLEDIGT)
+            )
         zeile += 1
 
     if not inhalte:
@@ -238,6 +253,9 @@ def fuelle_blatt(
     beginn: date | None,
     inhalte: list[Inhalt],
     logo: Logo | None = None,
+    *,
+    doc_uid: str | None = None,
+    layout_raus: dict | None = None,
 ) -> None:
     """Das Formblatt in ein vorhandenes Arbeitsblatt schreiben.
 
@@ -250,11 +268,25 @@ def fuelle_blatt(
     for i, breite in enumerate(SPALTENBREITEN, start=1):
         blatt.column_dimensions[chr(64 + i)].width = breite
 
+    felder: list | None = [] if layout_raus is not None else None
+
     zeile = _kopftabelle(blatt, logo)
     zeile = _kopf(blatt, zeile, name, stelle, beginn)
     zeile = _einleitung(blatt, zeile)
-    zeile = _tabelle(blatt, zeile, inhalte)
+    zeile = _tabelle(blatt, zeile, inhalte, felder)
     zeile = _freigabe(blatt, zeile + 1)
+    letzte = zeile - 1
+
+    # Vor dem QR: erst wenn jede Zeile eine Höhe hat, stimmt die Feldliste.
+    qr_mod.hoehen_festschreiben(blatt, letzte)
+
+    if doc_uid:
+        # Der QR sitzt oben rechts unter dem Logo, die Marken in der leeren
+        # Randspalte oben und unten — drei über die Seite verteilte Passer.
+        blatt.row_dimensions[QR_ZEILE].height = 36
+        qr_mod.qr_einsetzen(blatt, doc_uid, f"H{QR_ZEILE}")
+        qr_mod.marke_einsetzen(blatt, "A1")
+        qr_mod.marke_einsetzen(blatt, f"A{letzte}")
 
     blatt.print_area = f"A1:H{zeile}"
     auf_a4(blatt)
@@ -276,6 +308,21 @@ def fuelle_blatt(
     blatt.page_setup.fitToHeight = 0
     blatt.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
 
+    if layout_raus is not None:
+        # Erst jetzt stehen die Zeilenhöhen endgültig fest — vorher gerechnete
+        # Rechtecke wären falsch.
+        layout_raus.update(
+            qr_mod.layout(
+                blatt,
+                GEOMETRIE,
+                doc_uid=doc_uid or "",
+                felder=felder or [],
+                qr_spalte=QR_SPALTE,
+                qr_zeile=QR_ZEILE,
+                marken=[(1, 1), (1, letzte)],
+            )
+        )
+
 
 def baue_xlsx(
     name: str,
@@ -283,9 +330,15 @@ def baue_xlsx(
     beginn: date | None,
     inhalte: list[Inhalt],
     logo: Logo | None = None,
+    *,
+    doc_uid: str | None = None,
+    layout_raus: dict | None = None,
 ) -> bytes:
     mappe = Workbook()
-    fuelle_blatt(mappe.active, name, stelle, beginn, inhalte, logo)
+    fuelle_blatt(
+        mappe.active, name, stelle, beginn, inhalte, logo,
+        doc_uid=doc_uid, layout_raus=layout_raus,
+    )
     puffer = BytesIO()
     mappe.save(puffer)
     return puffer.getvalue()
@@ -297,7 +350,14 @@ async def baue_pdf(
     beginn: date | None,
     inhalte: list[Inhalt],
     logo: Logo | None = None,
+    *,
+    doc_uid: str | None = None,
+    layout_raus: dict | None = None,
 ) -> bytes:
     return await nach_pdf(
-        baue_xlsx(name, stelle, beginn, inhalte, logo), name="einarbeitung"
+        baue_xlsx(
+            name, stelle, beginn, inhalte, logo,
+            doc_uid=doc_uid, layout_raus=layout_raus,
+        ),
+        name="einarbeitung",
     )

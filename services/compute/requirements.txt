@@ -23,3 +23,10 @@ cryptography==46.0.7
 pillow==11.3.0
 # Zeugnisse: die KI-Textbildung. Ohne API-Schluessel bleibt sie inaktiv.
 anthropic==1.0.0
+# Dokumentenlauf: QR-Code aufs Formblatt und aus dem Scan wieder heraus.
+# pyzbar braucht zusaetzlich das Systempaket libzbar0 (Dockerfile).
+qrcode==7.4.2
+pyzbar==0.1.9
+# Die Tintenmessung im Scan rechnet auf dem Bild als Feld. numpy kommt ohnehin
+# mit pandas, steht hier aber, weil es direkt benutzt wird.
+numpy>=2.0,<3

@@ -675,6 +675,68 @@ onboarding_paket = sa.Table(
     sa.Column("heruntergeladen_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+# Der Dokumentenlauf: ein Blatt, sein Weg und das Prüfergebnis.
+dokumentvorgaenge = sa.Table(
+    "dokumentvorgaenge",
+    metadata,
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("art", sa.String(20), nullable=False),
+    sa.Column("doc_uid", sa.String(32), nullable=False),
+    sa.Column("employee_id", sa.Integer),
+    sa.Column("extern_id", UUID(as_uuid=False)),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("funktion", sa.Text),
+    sa.Column("beginn", sa.Date),
+    sa.Column("inhalt", JSONB),
+    sa.Column("pdf_pfad", sa.Text),
+    sa.Column("scan_pfad", sa.Text),
+    sa.Column("feld_layout", JSONB),
+    sa.Column("status", sa.String(20), nullable=False),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("uebergeben_am", sa.DateTime(timezone=True)),
+    sa.Column("zurueck_am", sa.DateTime(timezone=True)),
+    sa.Column("geprueft_am", sa.DateTime(timezone=True)),
+    sa.Column("pruef_ergebnis", JSONB),
+    sa.Column("vollstaendig", sa.Boolean),
+    sa.Column("kommentar", sa.Text),
+)
+
+dokument_nachweise = sa.Table(
+    "dokument_nachweise",
+    metadata,
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("vorgang_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("zeile", sa.Text),
+    sa.Column("pfad", sa.Text, nullable=False),
+    sa.Column("dateiname", sa.Text, nullable=False),
+    sa.Column("hochgeladen_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+schulung_unterlagen = sa.Table(
+    "schulung_unterlagen",
+    metadata,
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("schulung_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("pfad", sa.Text, nullable=False),
+    sa.Column("dateiname", sa.Text, nullable=False),
+    sa.Column("hochgeladen_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 einarbeitung_katalog = sa.Table(
     "einarbeitung_katalog",
     metadata,
@@ -819,6 +881,9 @@ TABLES = {
     "plattform_logo": plattform_logo,
     "onboarding_abteilung": onboarding_abteilung,
     "onboarding_paket": onboarding_paket,
+    "dokumentvorgaenge": dokumentvorgaenge,
+    "dokument_nachweise": dokument_nachweise,
+    "schulung_unterlagen": schulung_unterlagen,
     "zeugnis_aussteller": zeugnis_aussteller,
     "zeugnisse": zeugnisse,
     "zeugnis_bewertungen": zeugnis_bewertungen,

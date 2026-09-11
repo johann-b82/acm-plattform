@@ -12,12 +12,15 @@ FROM base AS deps
 # Reihenfolge und damit andere Ergebnisse.
 # libreoffice-calc: wandelt die Mappen nach PDF (ATR, Wartungsnachweis,
 # Einarbeitungsplan).
+# libzbar0: liest den QR-Code aus einem eingescannten Formblatt (pyzbar ist nur
+# die Bindung, der Decoder steckt in der Bibliothek).
 # libreoffice-writer: dasselbe für das Zeugnis — das entsteht als .docx auf der
 # echten Briefvorlage, und Calc kann eine .docx nicht öffnen („source file
 # could not be loaded"). Impress und Java bleiben draußen.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         poppler-utils \
+        libzbar0 \
         libreoffice-calc \
         libreoffice-writer \
         fonts-dejavu-core \

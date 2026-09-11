@@ -96,8 +96,10 @@ Die Spaltenüberschriften stehen senkrecht, nicht schräg: eine schräg gestellt
 Beschriftung ragt aus ihrer Zelle heraus und wird vom Rollbereich
 abgeschnitten — beim ersten Versuch fehlte der Anfang jedes langen Namens.
 
-## Was noch fehlt
+## Nachweise und der Weg des Blattes
 
-Unterlagen je Schulung, Nachweise und Zertifikate, das Schulungsprotokoll als
-PDF und der QR-Scan sind im Altprojekt vorhanden und hier noch nicht portiert.
-Sie stehen in `docs/backlog.md`.
+Der Schulungsnachweis läuft über den gemeinsamen Dokumentenlauf: Blatt mit
+QR erzeugen, aushändigen, ausgefüllt zurücknehmen, Scan prüfen, Zertifikate
+anhängen. Siehe `docs/modules/dokumentenlauf.md`. Unterlagen je Schulung
+(Präsentation, Handout) liegen in `schulung_unterlagen` — sie hängen am
+Katalog, nicht am Vorgang, weil sie für jede Durchführung gelten.

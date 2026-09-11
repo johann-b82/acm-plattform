@@ -21,6 +21,7 @@ from openpyxl.drawing.image import Image as ExcelBild
 from openpyxl.styles import Alignment, Border, Font, Side
 from openpyxl.worksheet.page import PageMargins
 
+from app.dokumente import qr as qr_mod
 from app.dokumente.blatt import auf_a4
 from app.dokumente.logo import Logo
 from app.dokumente.pdf import nach_pdf
@@ -38,6 +39,13 @@ TITEL = "Schulungsübersicht"
 #: das Blatt wird gedruckt und von Hand abgehakt.
 SP_IN, SP_EX, SP_JA, SP_NEIN = 4, 5, 6, 7
 SPALTENBREITEN = (11, 16, 58, 5, 5, 5, 6)
+
+#: Wo QR und Passermarken sitzen, wenn das Blatt Teil eines Vorgangs ist.
+#: Spalte A ist breit genug für eine Marke, Spalte G trägt den QR.
+QR_SPALTE = 7
+GEOMETRIE = qr_mod.Geometrie(
+    spaltenbreiten=SPALTENBREITEN, rand_links_px=48.0, rand_oben_pt=43.2
+)
 
 _DUENN = Side(style="thin", color="000000")
 _RAHMEN = Border(left=_DUENN, right=_DUENN, top=_DUENN, bottom=_DUENN)
@@ -182,19 +190,37 @@ def fuelle_blatt(
     freigegeben_von: str = "",
     erstellt_von: str = "",
     logo: Logo | None = None,
+    doc_uid: str | None = None,
+    layout_raus: dict | None = None,
 ) -> None:
     """Formblatt 71 in ein vorhandenes Arbeitsblatt schreiben."""
     blatt.title = "Schulungsübersicht"
     for spalte, breite in zip("ABCDEFG", SPALTENBREITEN):
         blatt.column_dimensions[spalte].width = breite
 
+    felder: list | None = [] if layout_raus is not None else None
+
     r = _kopf(blatt, name, funktion, logo)
     kopfzeile = r
+    qr_zeile = kopfzeile
     r = _tabellenkopf(blatt, r)
     for i, z in enumerate(zeilen, start=1):
         _zeile_schreiben(blatt, r, i, z)
+        if felder is not None:
+            # Ein Pflichtfeld je Zeile: der Zeitraum. Er sagt, dass die
+            # Schulung stattgefunden hat; die Kreuze daneben sagen nur, wie.
+            felder.append((f"zeitraum_{i}", f"Zeitraum — {z.bezeichnung[:40]}", r, 2, 2))
         r += 1
+    letzte = r - 1
     _fuss(blatt, freigegeben_von, erstellt_von)
+
+    qr_mod.hoehen_festschreiben(blatt, max(letzte, kopfzeile + 2))
+
+    if doc_uid:
+        blatt.row_dimensions[qr_zeile].height = 36
+        qr_mod.qr_einsetzen(blatt, doc_uid, f"G{qr_zeile}")
+        qr_mod.marke_einsetzen(blatt, "A1")
+        qr_mod.marke_einsetzen(blatt, f"A{max(letzte, kopfzeile + 2)}")
 
     blatt.print_area = f"A1:G{max(r - 1, kopfzeile)}"
     auf_a4(blatt)
@@ -208,6 +234,19 @@ def fuelle_blatt(
     # Läuft die Liste auf eine zweite Seite, wiederholt sich der Tabellenkopf.
     blatt.print_title_rows = f"{kopfzeile}:{kopfzeile + 1}"
 
+    if layout_raus is not None:
+        layout_raus.update(
+            qr_mod.layout(
+                blatt,
+                GEOMETRIE,
+                doc_uid=doc_uid or "",
+                felder=felder or [],
+                qr_spalte=QR_SPALTE,
+                qr_zeile=qr_zeile,
+                marken=[(1, 1), (1, max(letzte, kopfzeile + 2))],
+            )
+        )
+
 
 def baue_xlsx(
     name: str,
@@ -217,6 +256,8 @@ def baue_xlsx(
     freigegeben_von: str = "",
     erstellt_von: str = "",
     logo: Logo | None = None,
+    doc_uid: str | None = None,
+    layout_raus: dict | None = None,
 ) -> bytes:
     mappe = Workbook()
     fuelle_blatt(
@@ -227,6 +268,8 @@ def baue_xlsx(
         freigegeben_von=freigegeben_von,
         erstellt_von=erstellt_von,
         logo=logo,
+        doc_uid=doc_uid,
+        layout_raus=layout_raus,
     )
     puffer = BytesIO()
     mappe.save(puffer)
@@ -241,6 +284,8 @@ async def baue_pdf(
     freigegeben_von: str = "",
     erstellt_von: str = "",
     logo: Logo | None = None,
+    doc_uid: str | None = None,
+    layout_raus: dict | None = None,
 ) -> bytes:
     return await nach_pdf(
         baue_xlsx(
@@ -250,6 +295,8 @@ async def baue_pdf(
             freigegeben_von=freigegeben_von,
             erstellt_von=erstellt_von,
             logo=logo,
+            doc_uid=doc_uid,
+            layout_raus=layout_raus,
         ),
         name="schulungsuebersicht",
     )
