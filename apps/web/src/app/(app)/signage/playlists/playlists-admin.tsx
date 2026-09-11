@@ -24,8 +24,10 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { TagPicker } from "@/components/signage/tag-picker";
+import { useTexte } from "@/components/sprache/anbieter";
 
 export function PlaylistsAdmin() {
+  const worte = useTexte();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [newOpen, setNewOpen] = useState(false);
@@ -72,7 +74,7 @@ export function PlaylistsAdmin() {
       }),
     onSuccess: () => {
       invalidate();
-      toast.success("Playlist kopiert. Die Einträge werden nicht mitkopiert.");
+      toast.success(worte.signage.playlistKopiert);
     },
     onError: (err: Error) => toast.error(`Kopieren fehlgeschlagen: ${err.message}`),
   });
@@ -91,13 +93,13 @@ export function PlaylistsAdmin() {
     mutationFn: (id: string) => signageApi.deletePlaylist(id),
     onSuccess: () => {
       invalidate();
-      toast.success("Playlist gelöscht.");
+      toast.success(worte.signage.playlistGeloescht);
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError && err.status === 409) {
         const body = err.body as { schedule_ids?: string[] } | null;
         const count = body?.schedule_ids?.length ?? 0;
-        toast.error("Playlist hat aktive Zeitpläne", {
+        toast.error(worte.signage.playlistInPlan, {
           description: `${count} Zeitplan/Zeitpläne verweisen darauf. Lösche sie zuerst.`,
           action: { label: "Zu den Zeitplänen", onClick: () => router.push("/signage/schedules") },
         });
@@ -120,8 +122,8 @@ export function PlaylistsAdmin() {
           setTags([]);
         }
       }}
-      title="Neue Playlist"
-      description="Name und Ziel-Tags festlegen. Die Einträge kommen im nächsten Schritt."
+      title={worte.signage.neuePlaylist}
+      description={worte.signage.neuePlaylistText}
       footer={
         <>
           <Button variant="outline" onClick={() => setNewOpen(false)}>
@@ -138,17 +140,17 @@ export function PlaylistsAdmin() {
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="pl-name">Name</Label>
+          <Label htmlFor="pl-name">{worte.signage.name}</Label>
           <Input
             id="pl-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Empfang"
+            placeholder={worte.signage.namensbeispiel}
             autoFocus
           />
         </div>
         <div className="flex flex-col gap-1">
-          <Label>Tags</Label>
+          <Label>{worte.signage.tags}</Label>
           <TagPicker value={tags} onChange={setTags} />
           <p className="text-xs text-[var(--fg-muted)]">
             Ein Gerät zeigt die Playlist, wenn sich mindestens ein Tag überschneidet.
@@ -172,9 +174,9 @@ export function PlaylistsAdmin() {
     return (
       <>
         <EmptyState
-          title="Noch keine Playlist"
-          body="Eine Playlist bündelt Medien in einer Reihenfolge und wird über Tags an Geräte verteilt."
-          action={<Button onClick={() => setNewOpen(true)}>Playlist anlegen</Button>}
+          title={worte.signage.keinePlaylist}
+          body={worte.signage.keinePlaylistText}
+          action={<Button onClick={() => setNewOpen(true)}>{worte.signage.playlistAnlegen}</Button>}
         />
         {newDialog}
       </>
@@ -187,11 +189,11 @@ export function PlaylistsAdmin() {
         <Table>
           <thead>
             <tr>
-              <Th>Name</Th>
-              <Th>Tags</Th>
+              <Th>{worte.signage.name}</Th>
+              <Th>{worte.signage.tags}</Th>
               <Th className="text-right">Priorität</Th>
-              <Th>Aktiv</Th>
-              <Th>Erstellt</Th>
+              <Th>{worte.signage.aktiv}</Th>
+              <Th>{worte.signage.erstellt}</Th>
               <Th className="text-right">Aktionen</Th>
             </tr>
           </thead>
@@ -229,7 +231,7 @@ export function PlaylistsAdmin() {
                       size="icon"
                       onClick={() => router.push(`/signage/playlists/${p.id}`)}
                       aria-label={`${p.name} bearbeiten`}
-                      title="Bearbeiten"
+                      title={worte.signage.bearbeiten}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -239,7 +241,7 @@ export function PlaylistsAdmin() {
                       onClick={() => duplicateMutation.mutate(p)}
                       disabled={duplicateMutation.isPending}
                       aria-label={`${p.name} kopieren`}
-                      title="Kopieren"
+                      title={worte.signage.kopieren}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -262,7 +264,7 @@ export function PlaylistsAdmin() {
       </TableWrap>
 
       <div className="flex justify-end">
-        <Button onClick={() => setNewOpen(true)}>Neue Playlist</Button>
+        <Button onClick={() => setNewOpen(true)}>{worte.signage.neuePlaylist}</Button>
       </div>
       {newDialog}
     </div>

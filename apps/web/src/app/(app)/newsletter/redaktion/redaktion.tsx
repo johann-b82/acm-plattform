@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Snowflake } from "lucide-react";
 
 import {
-  ART_LABEL,
   newsletterApi,
   newsletterKeys,
   type Ausgabe,
@@ -24,6 +23,9 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenkopf } from "@/components/seitenkopf";
+import { useKapitelart } from "@/lib/tafeln";
 
 /**
  * Die Redaktion: Ausgaben anlegen, Kapitel ordnen, Einträge und Bilder
@@ -41,6 +43,8 @@ export function Redaktion({
   darfKpi: boolean;
   darfHr: boolean;
 }) {
+  const worte = useTexte();
+  const kapitelart = useKapitelart();
   const queryClient = useQueryClient();
   const jetzt = new Date();
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
@@ -84,14 +88,14 @@ export function Redaktion({
 
   const ausgabeAnlegen = useSchreiben(
     () => newsletterApi.ausgabeAnlegen(Number(neuJahr), Number(neuQuartal)),
-    "Ausgabe angelegt.",
+    worte.newsletter.ausgabeAngelegt,
   );
   const ausgabeAendern = useSchreiben((f: Partial<Ausgabe>) =>
     newsletterApi.ausgabeAendern(aktiv!.id, f),
   );
   const ausgabeLoeschen = useSchreiben(
     () => newsletterApi.ausgabeLoeschen(aktiv!.id),
-    "Ausgabe gelöscht.",
+    worte.newsletter.ausgabeGeloescht,
   );
   const kapitelAnlegen = useSchreiben(() => {
     const hoechste = kapitelListe.reduce((m, k) => Math.max(m, k.sortierung), -1);
@@ -101,7 +105,7 @@ export function Redaktion({
       neueArt,
       hoechste + 1,
     );
-  }, "Kapitel angelegt.");
+  }, worte.newsletter.kapitelAngelegt);
   const kapitelAendern = useSchreiben(
     ({ id, felder }: { id: string; felder: Partial<Kapitel> }) =>
       newsletterApi.kapitelAendern(id, felder),
@@ -109,7 +113,7 @@ export function Redaktion({
   const kapitelLoeschen = useSchreiben((k: Kapitel) => newsletterApi.kapitelLoeschen(k));
   const einfrieren = useSchreiben(
     (k: Kapitel) => newsletterApi.einfrieren(k),
-    "Stand eingefroren.",
+    worte.newsletter.standEingefroren,
   );
   const eintragAnlegen = useSchreiben((k: Kapitel) =>
     newsletterApi.eintragAnlegen(
@@ -148,22 +152,21 @@ export function Redaktion({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Redaktion</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Eine Ausgabe je Quartal. Kapitel bestimmen die Reihenfolge im Heft;
-            veröffentlicht wird sie erst, wenn sie fertig ist.
-          </p>
-        </div>
-        <Link href="/newsletter" className="text-sm underline-offset-4 hover:underline">
-          Zur Leseransicht
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/newsletter/redaktion"]}
+        untertitel={worte.newsletter.redaktionEinleitung}
+        unter={
+          <div className="mt-2 flex justify-center text-sm">
+            <Link href="/newsletter" className="underline-offset-4 hover:underline">
+              {worte.newsletter.zurLeseransicht}
+            </Link>
+          </div>
+        }
+      />
 
       <Card className="flex flex-wrap items-end gap-3 p-4">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="jahr">Jahr</Label>
+          <Label htmlFor="jahr">{worte.newsletter.jahr}</Label>
           <Input
             id="jahr"
             className="w-24"
@@ -172,7 +175,7 @@ export function Redaktion({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="quartal">Quartal</Label>
+          <Label htmlFor="quartal">{worte.newsletter.quartal}</Label>
           <Select
             id="quartal"
             className="w-20"
@@ -188,18 +191,19 @@ export function Redaktion({
         </div>
         <Button onClick={() => ausgabeAnlegen.mutate(undefined as never)}>
           <Plus className="mr-2 h-4 w-4" aria-hidden />
-          Ausgabe anlegen
+          {worte.newsletter.ausgabeAnlegen}
         </Button>
         {liste.length > 0 && (
           <Select
-            aria-label="Ausgabe bearbeiten"
+            aria-label={worte.newsletter.ausgabeBearbeiten}
             className="ml-auto w-56"
             value={aktiv?.id ?? ""}
             onChange={(e) => setGewaehlt(e.target.value)}
           >
             {liste.map((a) => (
               <option key={a.id} value={a.id}>
-                Q{a.quartal} {a.jahr} · {a.status === "entwurf" ? "Entwurf" : "veröffentlicht"}
+                {worte.newsletter.quartalKurz(a.quartal, a.jahr)} ·{" "}
+                {a.status === "entwurf" ? worte.newsletter.entwurf : worte.newsletter.veroeffentlicht}
               </option>
             ))}
           </Select>
@@ -208,19 +212,19 @@ export function Redaktion({
 
       {!aktiv ? (
         <EmptyState
-          title="Noch keine Ausgabe"
-          body="Jahr und Quartal wählen und anlegen — danach entstehen hier die Kapitel."
+          title={worte.newsletter.keineAusgabe}
+          body={worte.newsletter.keineAusgabeRedaktion}
         />
       ) : (
         <>
           <Card className="space-y-4 p-5">
             <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
               <div className="flex flex-col gap-1">
-                <Label htmlFor="titel">Titel der Ausgabe</Label>
+                <Label htmlFor="titel">{worte.newsletter.titelDerAusgabe}</Label>
                 <Input
                   id="titel"
                   defaultValue={aktiv.titel ?? ""}
-                  placeholder={`Quartal ${aktiv.quartal} · ${aktiv.jahr}`}
+                  placeholder={worte.newsletter.quartalJahr(aktiv.quartal, aktiv.jahr)}
                   onBlur={(e) => {
                     if (e.target.value !== (aktiv.titel ?? "")) {
                       ausgabeAendern.mutate({ titel: e.target.value || null });
@@ -229,7 +233,7 @@ export function Redaktion({
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{worte.newsletter.status}</Label>
                 <Select
                   id="status"
                   value={aktiv.status}
@@ -237,8 +241,8 @@ export function Redaktion({
                     ausgabeAendern.mutate({ status: e.target.value as Ausgabe["status"] })
                   }
                 >
-                  <option value="entwurf">Entwurf</option>
-                  <option value="veroeffentlicht">veröffentlicht</option>
+                  <option value="entwurf">{worte.newsletter.entwurf}</option>
+                  <option value="veroeffentlicht">{worte.newsletter.veroeffentlicht}</option>
                 </Select>
               </div>
             </div>
@@ -247,7 +251,7 @@ export function Redaktion({
               {(["titelbild", "rueckseite"] as const).map((feld) => (
                 <BildKnopf
                   key={feld}
-                  beschriftung={`${feld === "titelbild" ? "Titelbild" : "Rückseite"}${
+                  beschriftung={`${feld === "titelbild" ? worte.newsletter.titelbild : worte.newsletter.rueckseite}${
                     aktiv[feld] ? " ersetzen" : " wählen"
                   }`}
                   onDatei={(datei) => deckblatt.mutate({ feld, datei })}
@@ -255,7 +259,7 @@ export function Redaktion({
               ))}
               <div className="ml-auto">
                 <ConfirmDeleteButton
-                  itemLabel={`Ausgabe Q${aktiv.quartal} ${aktiv.jahr}`}
+                  itemLabel={worte.newsletter.ausgabeLoeschen(aktiv.quartal, aktiv.jahr)}
                   onConfirm={() =>
                     ausgabeLoeschen.mutateAsync(undefined as never).then(() => undefined)
                   }
@@ -266,25 +270,25 @@ export function Redaktion({
 
           <Card className="flex flex-wrap items-end gap-3 p-4">
             <div className="flex flex-1 flex-col gap-1">
-              <Label htmlFor="kapitelTitel">Neues Kapitel</Label>
+              <Label htmlFor="kapitelTitel">{worte.newsletter.neuesKapitel}</Label>
               <Input
                 id="kapitelTitel"
                 value={neuesKapitel}
-                placeholder="z. B. Aus der Fertigung"
+                placeholder={worte.newsletter.kapitelBeispiel}
                 onChange={(e) => setNeuesKapitel(e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="kapitelArt">Art</Label>
+              <Label htmlFor="kapitelArt">{worte.newsletter.art}</Label>
               <Select
                 id="kapitelArt"
                 className="w-56"
                 value={neueArt}
                 onChange={(e) => setNeueArt(e.target.value as KapitelArt)}
               >
-                {(Object.keys(ART_LABEL) as KapitelArt[]).map((a) => (
+                {(Object.keys(kapitelart) as KapitelArt[]).map((a) => (
                   <option key={a} value={a}>
-                    {ART_LABEL[a]}
+                    {kapitelart[a]}
                   </option>
                 ))}
               </Select>
@@ -296,7 +300,7 @@ export function Redaktion({
                 setNeuesKapitel("");
               }}
             >
-              Hinzufügen
+              {worte.newsletter.hinzufuegen}
             </Button>
           </Card>
 
@@ -306,7 +310,7 @@ export function Redaktion({
                 <Input
                   className="max-w-xs"
                   defaultValue={k.titel}
-                  aria-label="Kapiteltitel"
+                  aria-label={worte.newsletter.kapiteltitel}
                   onBlur={(e) => {
                     if (e.target.value.trim() && e.target.value !== k.titel) {
                       kapitelAendern.mutate({
@@ -316,12 +320,12 @@ export function Redaktion({
                     }
                   }}
                 />
-                <span className="text-xs text-[var(--fg-muted)]">{ART_LABEL[k.art]}</span>
+                <span className="text-xs text-[var(--fg-muted)]">{kapitelart[k.art]}</span>
                 <div className="ml-auto flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Kapitel nach oben"
+                    aria-label={worte.newsletter.kapitelHoch}
                     disabled={i === 0}
                     onClick={() => verschieben(i, -1)}
                   >
@@ -330,7 +334,7 @@ export function Redaktion({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Kapitel nach unten"
+                    aria-label={worte.newsletter.kapitelRunter}
                     disabled={i === kapitelListe.length - 1}
                     onClick={() => verschieben(i, 1)}
                   >
@@ -353,8 +357,8 @@ export function Redaktion({
                       <div className="flex items-center gap-2">
                         <Input
                           defaultValue={e.untertitel}
-                          placeholder="Überschrift"
-                          aria-label="Überschrift"
+                          placeholder={worte.newsletter.ueberschrift}
+                          aria-label={worte.newsletter.ueberschrift}
                           onBlur={(ev) => {
                             if (ev.target.value !== e.untertitel) {
                               eintragAendern.mutate({
@@ -365,7 +369,7 @@ export function Redaktion({
                           }}
                         />
                         <ConfirmDeleteButton
-                          itemLabel="Eintrag"
+                          itemLabel={worte.newsletter.eintrag}
                           onConfirm={() =>
                             eintragLoeschen.mutateAsync(e).then(() => undefined)
                           }
@@ -374,8 +378,8 @@ export function Redaktion({
                       <Textarea
                         rows={5}
                         defaultValue={e.inhalt_md}
-                        placeholder="Text. Markdown ist erlaubt — **fett**, Listen, Tabellen."
-                        aria-label="Text"
+                        placeholder={worte.newsletter.textMarkdown}
+                        aria-label={worte.newsletter.text}
                         onBlur={(ev) => {
                           if (ev.target.value !== e.inhalt_md) {
                             eintragAendern.mutate({
@@ -387,7 +391,7 @@ export function Redaktion({
                       />
                       <div className="flex flex-wrap items-center gap-2">
                         <BildKnopf
-                          beschriftung="Bild"
+                          beschriftung={worte.newsletter.bild}
                           onDatei={(datei) =>
                             bildHinzufuegen.mutate({
                               id: e.id,
@@ -403,7 +407,7 @@ export function Redaktion({
                           >
                             Bild {nr + 1}
                             <Select
-                              aria-label={`Größe Bild ${nr + 1}`}
+                              aria-label={worte.newsletter.bildGroesse(nr + 1)}
                               className="h-6 w-24 text-xs"
                               value={`${b.spalten}x${b.zeilen}`}
                               onChange={(ev) => {
@@ -433,7 +437,7 @@ export function Redaktion({
                   ))}
                   <Button variant="outline" size="sm" onClick={() => eintragAnlegen.mutate(k)}>
                     <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                    Eintrag
+                    {worte.newsletter.eintrag}
                   </Button>
                 </>
               ) : (
@@ -500,6 +504,7 @@ function EingefrorenerStand({
   darf: boolean;
   onEinfrieren: () => void;
 }) {
+  const worte = useTexte();
   // `null` heisst nie eingefroren; eine leere Liste heisst eingefroren, und im
   // Quartal kam niemand dazu. Beides gleich zu behandeln hiesse, die Redaktion
   // klickte weiter auf „Einfrieren" und fragte sich, warum nichts passiert.
@@ -508,13 +513,13 @@ function EingefrorenerStand({
 
   let stand: string;
   if (nieEingefroren) {
-    stand = "Noch nichts eingefroren — das Kapitel bleibt im Heft leer.";
+    stand = worte.newsletter.nieEingefroren;
   } else if (kapitel.art === "kpi") {
-    stand = "Belegschaftszahlen des Quartals sind eingefroren.";
+    stand = worte.newsletter.kpiEingefroren;
   } else if (anzahl === 0) {
-    stand = "Eingefroren — in diesem Quartal ist niemand dazugekommen.";
+    stand = worte.newsletter.niemandEingefroren;
   } else {
-    stand = `Eingefroren: ${anzahl} ${anzahl === 1 ? "Neuzugang" : "Neuzugänge"} im Quartal.`;
+    stand = worte.newsletter.zugaengeEingefroren(anzahl ?? 0);
   }
 
   return (
@@ -522,12 +527,13 @@ function EingefrorenerStand({
       <p className="text-sm text-[var(--fg-muted)]">{stand}</p>
       <Button variant="outline" size="sm" onClick={onEinfrieren} disabled={!darf}>
         <Snowflake className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-        {nieEingefroren ? "Einfrieren" : "Neu einfrieren"}
+        {nieEingefroren ? worte.newsletter.einfrieren : worte.newsletter.neuEinfrieren}
       </Button>
       {!darf && (
         <p className="text-xs text-[var(--fg-muted)]">
-          Dafür fehlt das Recht an der Quelle:{" "}
-          {kapitel.art === "kpi" ? "Kennzahlen" : "Personal"} sehen.
+          {worte.newsletter.rechtFehlt(
+            kapitel.art === "kpi" ? worte.newsletter.quelleKpi : worte.newsletter.quellePersonal,
+          )}
         </p>
       )}
     </div>

@@ -28,6 +28,7 @@ import type { SignageMedia, SignagePlaylist, SignagePlaylistItem, SignageTag } f
 import { Button, Card, Input, Label, Select } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { TagPicker } from "@/components/signage/tag-picker";
+import { useTexte } from "@/components/sprache/anbieter";
 
 type Transition = "fade" | "cut";
 
@@ -82,10 +83,11 @@ function SortableRow({
   onChange: (next: ItemDraft) => void;
   onRemove: () => void;
 }) {
+  const worte = useTexte();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.key,
   });
-  const title = media?.title ?? "unbekanntes Medium";
+  const title = media?.title ?? worte.signage.unbekanntesMedium;
   return (
     <div
       ref={setNodeRef}
@@ -97,7 +99,7 @@ function SortableRow({
         {...attributes}
         {...listeners}
         aria-label={`${title} verschieben`}
-        aria-roledescription="Ziehpunkt"
+        aria-roledescription={worte.signage.ziehpunkt}
         className="cursor-grab touch-none rounded p-1 text-[var(--fg-muted)] hover:bg-[var(--muted)]"
       >
         <GripVertical className="h-4 w-4" />
@@ -124,8 +126,8 @@ function SortableRow({
         aria-label={`Übergang für ${title}`}
         className="w-32"
       >
-        <option value="fade">Überblenden</option>
-        <option value="cut">Harter Schnitt</option>
+        <option value="fade">{worte.signage.ueberblenden}</option>
+        <option value="cut">{worte.signage.harterSchnitt}</option>
       </Select>
       <Button variant="ghost" size="icon" onClick={onRemove} aria-label={`${title} entfernen`}>
         <X className="h-4 w-4" />
@@ -169,6 +171,7 @@ export function PlaylistEditor({ playlistId }: { playlistId: string }) {
 }
 
 function EditorForm({ data }: { data: EditorData }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const playlistId = data.playlist.id;
   const tagById = useMemo(
@@ -225,7 +228,7 @@ function EditorForm({ data }: { data: EditorData }) {
       queryClient.invalidateQueries({ queryKey: signageKeys.playlists() });
       queryClient.invalidateQueries({ queryKey: signageKeys.tags() });
       queryClient.invalidateQueries({ queryKey: signageKeys.devices() });
-      toast.success("Playlist gespeichert. Die Geräte laden sofort neu.");
+      toast.success(worte.signage.playlistGespeichert);
     },
     onError: (err: Error) => toast.error(`Speichern fehlgeschlagen: ${err.message}`),
   });
@@ -284,7 +287,7 @@ function EditorForm({ data }: { data: EditorData }) {
 
       <Card className="flex flex-col gap-4 p-5 lg:flex-row lg:items-end">
         <div className="flex flex-1 flex-col gap-1">
-          <Label htmlFor="editor-name">Name</Label>
+          <Label htmlFor="editor-name">{worte.signage.name}</Label>
           <Input
             id="editor-name"
             value={name}
@@ -296,7 +299,7 @@ function EditorForm({ data }: { data: EditorData }) {
           />
         </div>
         <div className="flex flex-1 flex-col gap-1">
-          <Label>Ziel-Tags</Label>
+          <Label>{worte.signage.zielTags}</Label>
           <TagPicker
             value={tags}
             onChange={(next) => {
@@ -307,14 +310,14 @@ function EditorForm({ data }: { data: EditorData }) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" disabled={!dirty || saveMutation.isPending} onClick={reset}>
-            Verwerfen
+            {worte.signage.verwerfen}
           </Button>
           <Button
             disabled={!dirty || !name.trim() || saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
             {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Speichern
+            {worte.signage.speichern}
           </Button>
         </div>
       </Card>
@@ -332,7 +335,7 @@ function EditorForm({ data }: { data: EditorData }) {
           <Card className="p-8 text-center">
             <p className="text-sm font-medium">Noch keine Einträge</p>
             <p className="mt-1 text-sm text-[var(--fg-muted)]">
-              Füge Medien hinzu und ordne sie per Ziehpunkt.
+              {worte.signage.medienHinzufuegen}
             </p>
           </Card>
         ) : (
@@ -354,26 +357,26 @@ function EditorForm({ data }: { data: EditorData }) {
         )}
 
         <Button variant="outline" className="w-full" onClick={() => setPickerOpen(true)}>
-          <Plus className="h-4 w-4" /> Medium hinzufügen
+          <Plus className="h-4 w-4" /> {worte.signage.mediumHinzufuegen}
         </Button>
       </section>
 
       <Dialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        title="Medium auswählen"
-        description="Das gewählte Medium wird am Ende der Playlist angefügt."
+        title={worte.signage.mediumWaehlen}
+        description={worte.signage.mediumWaehlenText}
         className="w-[min(40rem,calc(100vw-2rem))]"
         footer={
           <Button variant="outline" onClick={() => setPickerOpen(false)}>
-            Schließen
+            {worte.signage.schliessen}
           </Button>
         }
       >
         <div className="max-h-80 overflow-y-auto">
           {data.media.length === 0 ? (
             <p className="text-sm text-[var(--fg-muted)]">
-              Es gibt noch keine Medien. Lege zuerst welche im Bereich Medien an.
+              {worte.signage.keineMedienAnlegen}
             </p>
           ) : (
             <ul className="flex flex-col gap-1">

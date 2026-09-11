@@ -13,6 +13,7 @@ import type {
   KpiStand,
   Neuzugang,
 } from "@/lib/newsletter";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Eine Ausgabe als Folge von A4-Seiten.
@@ -189,12 +190,13 @@ function NeuzugangsSeite({
   titel: string;
   leute: Neuzugang[];
 }) {
+  const worte = useTexte();
   return (
     <Seite className="p-[15mm]">
       <h2 className="text-2xl font-semibold">{titel}</h2>
       {leute.length === 0 ? (
         <p className="mt-4 text-sm text-neutral-500">
-          In diesem Quartal ist niemand dazugekommen.
+          {worte.newsletter.niemandDazu}
         </p>
       ) : (
         <ul className="mt-6 grid grid-cols-2 gap-3">

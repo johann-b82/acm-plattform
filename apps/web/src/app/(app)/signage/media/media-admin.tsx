@@ -12,6 +12,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { ConversionBadge } from "@/components/signage/status";
 import { cn } from "@/lib/cn";
+import { useTexte } from "@/components/sprache/anbieter";
 
 const ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.pdf,.pptx";
 
@@ -24,6 +25,7 @@ function KindIcon({ kind }: { kind: SignageMedia["kind"] }) {
 }
 
 export function MediaAdmin() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -104,7 +106,7 @@ export function MediaAdmin() {
   return (
     <div className="space-y-6">
       <Card className="p-5">
-        <h2 className="text-base font-semibold">Medien hinzufügen</h2>
+        <h2 className="text-base font-semibold">{worte.signage.medienHinzu}</h2>
         <div className="mt-4 grid gap-6 md:grid-cols-2">
           {/* Datei-Ablage */}
           <div
@@ -139,14 +141,14 @@ export function MediaAdmin() {
             {uploadMutation.isPending ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-[var(--fg-muted)]" />
-                <span className="text-xs text-[var(--fg-muted)]">wird übertragen …</span>
+                <span className="text-xs text-[var(--fg-muted)]">{worte.signage.wirdUebertragen}</span>
               </>
             ) : (
               <>
-                <p className="text-sm font-medium">Datei hierher ziehen</p>
-                <Button onClick={() => fileInput.current?.click()}>Datei auswählen</Button>
+                <p className="text-sm font-medium">{worte.signage.dateiZiehen}</p>
+                <Button onClick={() => fileInput.current?.click()}>{worte.signage.dateiWaehlen}</Button>
                 <p className="text-xs text-[var(--fg-muted)]">
-                  Bild, Video, PDF oder PPTX, bis 50 MB
+                  {worte.signage.dateiHinweis}
                 </p>
               </>
             )}
@@ -162,23 +164,23 @@ export function MediaAdmin() {
             }}
           >
             <div className="flex flex-col gap-1">
-              <Label htmlFor="media-kind">Art</Label>
+              <Label htmlFor="media-kind">{worte.signage.art}</Label>
               <Select
                 id="media-kind"
                 value={urlKind}
                 onChange={(e) => setUrlKind(e.target.value as "url" | "html")}
               >
-                <option value="url">Webseite (URL)</option>
-                <option value="html">HTML-Schnipsel</option>
+                <option value="url">{worte.signage.webseite}</option>
+                <option value="html">{worte.signage.htmlSchnipsel}</option>
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="media-title">Titel</Label>
+              <Label htmlFor="media-title">{worte.signage.titel}</Label>
               <Input
                 id="media-title"
                 value={urlTitle}
                 onChange={(e) => setUrlTitle(e.target.value)}
-                placeholder="Geburtstage"
+                placeholder={worte.signage.titelBeispiel}
                 required
               />
             </div>
@@ -195,13 +197,12 @@ export function MediaAdmin() {
               />
               {urlKind === "url" && (
                 <p className="text-xs text-[var(--fg-muted)]">
-                  Vollständige Adresse angeben. Der Player läuft auf einem eigenen Port, relative
-                  Pfade funktionieren dort nicht.
+                  {worte.signage.urlHinweis}
                 </p>
               )}
             </div>
             <Button type="submit" disabled={createUrlMutation.isPending}>
-              Aufnehmen
+              {worte.signage.aufnehmen}
             </Button>
           </form>
         </div>
@@ -217,14 +218,14 @@ export function MediaAdmin() {
 
       {mediaQuery.isError && (
         <Card className="p-5 text-sm text-[var(--danger)]">
-          Medien konnten nicht geladen werden.
+          {worte.signage.medienFehler}
         </Card>
       )}
 
       {mediaQuery.data && media.length === 0 && (
         <EmptyState
-          title="Noch keine Medien"
-          body="Lade eine Datei hoch oder nimm eine URL auf. Anschließend lassen sich die Medien in Playlists zusammenstellen."
+          title={worte.signage.keineMedien}
+          body={worte.signage.keineMedienText}
         />
       )}
 
@@ -272,7 +273,7 @@ export function MediaAdmin() {
                           onClick={() => reconvertMutation.mutate(item.id)}
                           disabled={reconvertMutation.isPending}
                         >
-                          <RotateCcw className="h-3 w-3" /> erneut
+                          <RotateCcw className="h-3 w-3" /> {worte.signage.erneut}
                         </Button>
                       )}
                     </div>
@@ -304,9 +305,9 @@ export function MediaAdmin() {
       <Dialog
         open={inUse !== null}
         onOpenChange={(o) => !o && setInUse(null)}
-        title="Medium wird verwendet"
-        description={`„${inUse?.title ?? ""}“ ist noch in ${inUse?.playlistIds.length ?? 0} Playlist(s) eingebunden. Entferne es dort zuerst.`}
-        footer={<Button onClick={() => setInUse(null)}>Verstanden</Button>}
+        title={worte.signage.inVerwendung}
+        description={worte.signage.inVerwendungText(inUse?.title ?? "", inUse?.playlistIds.length ?? 0)}
+        footer={<Button onClick={() => setInUse(null)}>{worte.signage.verstanden}</Button>}
       >
         {inUse && inUse.playlistIds.length > 0 && (
           <ul className="list-inside list-disc font-mono text-xs text-[var(--fg-muted)]">

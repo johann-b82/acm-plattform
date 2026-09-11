@@ -3,6 +3,7 @@
 import { useTexte } from "@/components/sprache/anbieter";
 import type { Art, Stand } from "@/lib/dokumente";
 import type { Intervall } from "@/lib/wartung";
+import type { KapitelArt } from "@/lib/newsletter";
 import type { Dringlichkeit, Person } from "@/lib/schulungen";
 
 /**
@@ -150,5 +151,15 @@ export function useIntervall(): Record<Intervall, string> {
     monatlich: t.maschine.monatlich,
     quartalsweise: t.maschine.quartalsweise,
     alle_n_wochen: t.maschine.alleNWochen,
+  };
+}
+
+/** Die drei Kapitelarten des Newsletters. */
+export function useKapitelart(): Record<KapitelArt, string> {
+  const t = useTexte();
+  return {
+    eintraege: t.newsletter.beitraege,
+    kpi: t.newsletter.belegschaftInZahlen,
+    neuzugaenge: t.newsletter.neuBeiUns,
   };
 }

@@ -1,6 +1,7 @@
 import { requireApp } from "@/lib/auth";
 import { SignageTabs } from "./tabs";
-import { seitentitel } from "@/lib/sprache-server";
+import { seitentitel, texte } from "@/lib/sprache-server";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/signage"]);
 
@@ -11,14 +12,10 @@ export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/signage
  */
 export default async function SignageLayout({ children }: { children: React.ReactNode }) {
   await requireApp("signage", "admin");
+  const t = await texte();
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Digital Signage</h1>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          Medien, Playlists, Zeitpläne und Geräte der Bildschirme.
-        </p>
-      </div>
+      <Seitenkopf titel={t.pfad.seiten["/signage"]} untertitel={t.signage.einleitung} />
       <SignageTabs />
       {children}
     </div>
