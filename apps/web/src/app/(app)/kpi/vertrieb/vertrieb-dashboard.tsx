@@ -24,32 +24,14 @@ import {
 } from "@/lib/kpi/gemeinsam";
 import { vertriebApi } from "@/lib/kpi/vertrieb";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Vergleiche } from "@/components/kpi/vergleich";
+import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { AktivitaetKarte } from "./aktivitaet-karte";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
-function Kachel({
-  titel,
-  wert,
-  hinweis,
-  laedt,
-}: {
-  titel: string;
-  wert: string;
-  hinweis?: string;
-  laedt: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
-      <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
-      </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-    </Card>
-  );
-}
 
 export function VertriebDashboard() {
   const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
@@ -60,6 +42,14 @@ export function VertriebDashboard() {
     queryKey: ["kpi", "vertrieb", "summe", von, bis],
     queryFn: () => vertriebApi.summe(von, bis),
   });
+
+  const vgl = useVergleich(
+    ["kpi", "vertrieb", "summe"],
+    zeitraum,
+    von,
+    bis,
+    vertriebApi.summe,
+  );
   const verlauf = useQuery({
     queryKey: ["kpi", "vertrieb", "verlauf", von, bis],
     queryFn: () => vertriebApi.verlauf(von, bis),
@@ -135,23 +125,47 @@ export function VertriebDashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Kachel
+        <Kennzahl
           titel="Umsatz"
           wert={fmt.eur(summe.data?.umsatz)}
           hinweis="Rechnungen abzüglich Gutschriften"
           laedt={summe.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={summe.data?.umsatz}
+              vorperiode={vgl.vorperiode?.umsatz}
+              vorjahr={vgl.vorjahr?.umsatz}
+              vorperiodeLabel={vgl.label}
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Ø Auftragswert"
           wert={fmt.eur(summe.data?.auftragswert_avg)}
           hinweis="Aufträge über 0 €"
           laedt={summe.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={summe.data?.auftragswert_avg}
+              vorperiode={vgl.vorperiode?.auftragswert_avg}
+              vorjahr={vgl.vorjahr?.auftragswert_avg}
+              vorperiodeLabel={vgl.label}
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Aufträge gesamt"
           wert={fmt.zahl(summe.data?.auftraege_anzahl)}
           hinweis="Aufträge über 0 €"
           laedt={summe.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={summe.data?.auftraege_anzahl}
+              vorperiode={vgl.vorperiode?.auftraege_anzahl}
+              vorjahr={vgl.vorjahr?.auftraege_anzahl}
+              vorperiodeLabel={vgl.label}
+            />
+          }
         />
       </div>
 

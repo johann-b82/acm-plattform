@@ -27,6 +27,9 @@ import {
 import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { ladeZielwerte, nachSchluessel, verfehlt, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Vergleiche } from "@/components/kpi/vergleich";
+import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { Belegschaft } from "./belegschaft";
 import { Mitarbeitertabelle } from "./mitarbeitertabelle";
 import { Wochenbericht } from "./wochenbericht";
@@ -41,34 +44,6 @@ function personalFenster(zeitraum: Zeitraum): { von: string; bis: string } {
   return { von: von!, bis: bis! };
 }
 
-function Kachel({
-  titel,
-  wert,
-  hinweis,
-  warnung,
-  laedt,
-}: {
-  titel: string;
-  wert: string;
-  hinweis?: string;
-  warnung?: boolean;
-  laedt: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
-      <div
-        className={cn(
-          "mt-1 font-mono text-2xl font-medium tabular-nums",
-          warnung && "text-[var(--danger)]",
-        )}
-      >
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
-      </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-    </Card>
-  );
-}
 
 function Abgleichzeile({ darfAbgleichen }: { darfAbgleichen: boolean }) {
   const qc = useQueryClient();
@@ -150,6 +125,16 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
     queryKey: [...personalKeys.fenster(von, bis), "fluktuation"],
     queryFn: () => personalApi.fluktuation(von, bis),
   });
+  const vglUeber = useVergleich(
+    ["hr", "ueberstunden"],
+    zeitraum,
+    von,
+    bis,
+    personalApi.ueberstunden,
+  );
+  const vglKrank = useVergleich(["hr", "krankheit"], zeitraum, von, bis, personalApi.krankheit);
+  const vglFluk = useVergleich(["hr", "fluktuation"], zeitraum, von, bis, personalApi.fluktuation);
+
   const verlauf = useQuery({
     queryKey: [...personalKeys.fenster(von, bis), "verlauf"],
     queryFn: () => personalApi.verlauf(von, bis),
@@ -241,7 +226,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kachel
+        <Kennzahl
           titel="Überstunden-Quote"
           wert={fmt.prozent(ueber.data?.quote)}
           hinweis={
@@ -250,9 +235,18 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               : undefined
           }
           warnung={verfehlt(ueber.data?.quote ?? null, ziel["hr_ueberstunden"], "max")}
+          vergleich={
+            <Vergleiche
+              aktuell={ueber.data?.quote}
+              vorperiode={vglUeber.vorperiode?.quote}
+              vorjahr={vglUeber.vorjahr?.quote}
+              vorperiodeLabel={vglUeber.label}
+              richtung="weniger_ist_besser"
+            />
+          }
           laedt={laedt}
         />
-        <Kachel
+        <Kennzahl
           titel="Krankheitsquote"
           wert={krank.data?.eingerichtet === false ? "—" : fmt.prozent(krank.data?.quote)}
           hinweis={
@@ -264,8 +258,17 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
           }
           warnung={verfehlt(krank.data?.quote ?? null, ziel["hr_krankheit"], "max")}
           laedt={laedt}
+          vergleich={
+            <Vergleiche
+              aktuell={krank.data?.quote}
+              vorperiode={vglKrank.vorperiode?.quote}
+              vorjahr={vglKrank.vorjahr?.quote}
+              vorperiodeLabel={vglKrank.label}
+              richtung="weniger_ist_besser"
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Fluktuation"
           wert={fmt.prozent(fluk.data?.quote)}
           hinweis={
@@ -274,9 +277,18 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               : undefined
           }
           warnung={verfehlt(fluk.data?.quote ?? null, ziel["hr_fluktuation"], "max")}
+          vergleich={
+            <Vergleiche
+              aktuell={fluk.data?.quote}
+              vorperiode={vglFluk.vorperiode?.quote}
+              vorjahr={vglFluk.vorjahr?.quote}
+              vorperiodeLabel={vglFluk.label}
+              richtung="weniger_ist_besser"
+            />
+          }
           laedt={laedt}
         />
-        <Kachel
+        <Kennzahl
           titel="Erfasste Personen"
           wert={fmt.zahl(ueber.data?.personen)}
           hinweis="mit Anwesenheit im Zeitraum"

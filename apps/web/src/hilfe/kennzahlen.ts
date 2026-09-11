@@ -33,11 +33,22 @@ Zeitraum endet — und beim Vorjahr mit demselben Fenster 365 Tage früher.
 das um einen Tag. Das ist bewusst so: ein Vergleich „gleich viele Tage" ist für
 Mengen ehrlicher als einer, der mal 365 und mal 366 Tage umfasst.
 
-Gibt es keinen Vergleichszeitraum oder war er null, steht dort ein Strich —
-keine Zahl. Eine Steigerung von null auf irgendetwas ist keine Prozentangabe.
+Gibt es keinen Vergleichswert oder war er null, erscheint **gar kein**
+Abzeichen — kein Strich, kein Platzhalter. Eine Steigerung von null auf
+irgendetwas ist keine Prozentangabe, und eine Kachel soll nicht nach Fehler
+aussehen, nur weil der Vorjahreszeitraum vor dem ersten Upload liegt.
 
-Die Farbe folgt der **Bedeutung**, nicht dem Vorzeichen. Bei Verzugsquote und
-Reklamationsquote ist weniger besser; dort ist ein Rückgang grün.
+Die Farbe folgt der **Bedeutung**, nicht dem Vorzeichen. Bei Verzugsquote,
+Reklamationen, Überstunden und Krankheit ist weniger besser; dort ist ein
+Rückgang grün.
+
+Bei **„Dieses Jahr"** steht nur der Vorjahresvergleich. Die Vorperiode wäre das
+Fenster unmittelbar davor — ein Stück des Vorjahres gleicher Länge, also eine
+Zahl, die niemand erwartet. Bei **„Alles"** gibt es kein Fenster und damit
+keinen Vergleich.
+
+Nicht jede Kachel trägt eines. „Positionen gesamt" neben einer Quote braucht
+keinen Trend; ein Abzeichen an jeder Zahl wäre Rauschen.
 
 ## Zielwerte
 

@@ -26,38 +26,13 @@ import {
 import { finanzenApi } from "@/lib/kpi/finanzen";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Vergleiche } from "@/components/kpi/vergleich";
+import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
-function Kachel({
-  titel,
-  wert,
-  hinweis,
-  warnung,
-  laedt,
-}: {
-  titel: string;
-  wert: string;
-  hinweis?: string;
-  warnung?: boolean;
-  laedt: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
-      <div
-        className={cn(
-          "mt-1 font-mono text-2xl font-medium tabular-nums",
-          warnung && "text-[var(--danger)]",
-        )}
-      >
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
-      </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-    </Card>
-  );
-}
 
 export function FinanzenDashboard() {
   const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
@@ -76,6 +51,21 @@ export function FinanzenDashboard() {
     queryKey: ["kpi", "finanzen", "verbrauch", von, bis],
     queryFn: () => finanzenApi.verbrauch(von, bis),
   });
+  const vglMaterial = useVergleich(
+    ["kpi", "finanzen", "material"],
+    zeitraum,
+    von,
+    bis,
+    finanzenApi.materialkosten,
+  );
+  const vglPersonal = useVergleich(
+    ["kpi", "finanzen", "personal"],
+    zeitraum,
+    von,
+    bis,
+    finanzenApi.personalkosten,
+  );
+
   const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
   const zielNach = nachSchluessel(ziele.data ?? []);
   const ziel = zielNach["finanzen_materialkostenquote"];
@@ -170,16 +160,37 @@ export function FinanzenDashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Kachel
+        <Kennzahl
           titel="Materialkostenquote"
           wert={fmt.prozent(summe.data?.quote)}
           hinweis={ziel == null ? "Materialkosten / Umsatz" : `Höchstens ${fmt.prozent(ziel)}`}
           warnung={ziel != null && summe.data?.quote != null && summe.data.quote > ziel}
+          vergleich={
+            <Vergleiche
+              aktuell={summe.data?.quote}
+              vorperiode={vglMaterial.vorperiode?.quote}
+              vorjahr={vglMaterial.vorjahr?.quote}
+              vorperiodeLabel={vglMaterial.label}
+              richtung="weniger_ist_besser"
+            />
+          }
           laedt={summe.isLoading}
         />
-        <Kachel titel="Materialkosten" wert={fmt.eur(summe.data?.materialkosten)} laedt={summe.isLoading} />
-        <Kachel titel="Umsatz" wert={fmt.eur(summe.data?.umsatz)} laedt={summe.isLoading} />
-        <Kachel
+        <Kennzahl titel="Materialkosten" wert={fmt.eur(summe.data?.materialkosten)} laedt={summe.isLoading} />
+        <Kennzahl
+          titel="Umsatz"
+          wert={fmt.eur(summe.data?.umsatz)}
+          laedt={summe.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={summe.data?.umsatz}
+              vorperiode={vglMaterial.vorperiode?.umsatz}
+              vorjahr={vglMaterial.vorjahr?.umsatz}
+              vorperiodeLabel={vglMaterial.label}
+            />
+          }
+        />
+        <Kennzahl
           titel="Personalkostenquote"
           wert={hatFenster ? fmt.prozent(personal.data?.quote) : "—"}
           hinweis={
@@ -195,8 +206,17 @@ export function FinanzenDashboard() {
             personal.data.quote > zielPersonal
           }
           laedt={personal.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={personal.data?.quote}
+              vorperiode={vglPersonal.vorperiode?.quote}
+              vorjahr={vglPersonal.vorjahr?.quote}
+              vorperiodeLabel={vglPersonal.label}
+              richtung="weniger_ist_besser"
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Artikel ohne Preis"
           wert={fmt.zahl(summe.data?.ohne_preis)}
           hinweis="verbraucht, aber nicht bewertet"

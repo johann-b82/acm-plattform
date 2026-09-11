@@ -32,31 +32,13 @@ import {
 } from "@/lib/kpi/einkauf";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Vergleiche } from "@/components/kpi/vergleich";
+import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
 const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
-function Kachel({
-  titel,
-  wert,
-  hinweis,
-  laedt,
-}: {
-  titel: string;
-  wert: string;
-  hinweis?: string;
-  laedt: boolean;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
-      <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
-      </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-    </Card>
-  );
-}
 
 function datum(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("de-DE") : "—";
@@ -71,6 +53,7 @@ export function EinkaufDashboard() {
     queryKey: ["kpi", "einkauf", "otd", von, bis],
     queryFn: () => einkaufApi.otd(von, bis),
   });
+  const vgl = useVergleich(["kpi", "einkauf", "otd"], zeitraum, von, bis, einkaufApi.otd);
   const verlauf = useQuery({
     queryKey: ["kpi", "einkauf", "verlauf", von, bis],
     queryFn: () => einkaufApi.verlauf(von, bis),
@@ -163,27 +146,46 @@ export function EinkaufDashboard() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kachel
+        <Kennzahl
           titel="OTD-Quote"
           wert={fmt.prozent(otd.data?.quote == null ? null : Number(otd.data.quote))}
           hinweis={`Ziel ${fmt.prozent(ziel)} · pünktlich heißt Verzug ≤ 0`}
           laedt={otd.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={otd.data?.quote == null ? null : Number(otd.data.quote)}
+              vorperiode={vgl.vorperiode?.quote == null ? null : Number(vgl.vorperiode.quote)}
+              vorjahr={vgl.vorjahr?.quote == null ? null : Number(vgl.vorjahr.quote)}
+              vorperiodeLabel={vgl.label}
+            />
+          }
         />
-        <Kachel
+        <Kennzahl
           titel="Pünktliche Positionen"
           wert={fmt.zahl(otd.data?.puenktlich)}
           laedt={otd.isLoading}
         />
-        <Kachel
+        <Kennzahl
           titel="Positionen gesamt"
           wert={fmt.zahl(otd.data?.gesamt)}
           laedt={otd.isLoading}
         />
-        <Kachel
+        <Kennzahl
           titel="Ø Verzug"
           wert={verzugText(otd.data?.verzug_schnitt == null ? null : Number(otd.data.verzug_schnitt))}
           hinweis="Positionen ohne Verzugswert zählen hier nicht mit"
           laedt={otd.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={otd.data?.verzug_schnitt == null ? null : Number(otd.data.verzug_schnitt)}
+              vorperiode={
+                vgl.vorperiode?.verzug_schnitt == null ? null : Number(vgl.vorperiode.verzug_schnitt)
+              }
+              vorjahr={vgl.vorjahr?.verzug_schnitt == null ? null : Number(vgl.vorjahr.verzug_schnitt)}
+              vorperiodeLabel={vgl.label}
+              richtung="weniger_ist_besser"
+            />
+          }
         />
       </div>
 
