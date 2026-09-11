@@ -1235,6 +1235,8 @@ export const vi: Texte = {
       "đổi — có thể thu hồi phát hành ở trên.",
   },
   fair: {
+    dateiFehlt: (meldung: string) =>
+      `Không tải được bản vẽ (${meldung}). Các kích thước vẫn được liệt kê bên dưới.`,
     einleitung:
       "Kiểm tra mẫu đầu: tải lên một bản vẽ và đặt một bong bóng đánh số lên mỗi kích " +
       "thước cần kiểm. Số do cơ sở dữ liệu cấp và giữ liền mạch.",

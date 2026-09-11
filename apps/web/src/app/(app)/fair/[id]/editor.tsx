@@ -312,6 +312,15 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         onContextMenu={(e) => e.preventDefault()}
         style={{ cursor: schiebt ? "grabbing" : darfSchreiben ? "crosshair" : "default" }}
       >
+        {datei.isError && (
+          // Ohne diesen Hinweis bliebe die Fläche einfach weiß, und niemand
+          // wüsste, ob die Zeichnung fehlt oder das Laden noch läuft.
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <p className="max-w-prose text-center text-sm text-[var(--fg-muted)]">
+              {worte.fair.dateiFehlt((datei.error as Error).message)}
+            </p>
+          </div>
+        )}
         {datei.data && (
           <div
             className="absolute left-0 top-0 origin-top-left"

@@ -1199,6 +1199,9 @@ export const de = {
       "Änderung ab — die Freigabe lässt sich oben zurücknehmen.",
   },
   fair: {
+    dateiFehlt: (meldung: string) =>
+      `Die Zeichnung selbst lässt sich nicht laden (${meldung}). Die Maße stehen ` +
+      "trotzdem darunter.",
     einleitung:
       "Erstmusterprüfung: eine Zeichnung hochladen und zu jedem zu prüfenden Maß einen " +
       "nummerierten Ballon setzen. Die Nummern vergibt die Datenbank und hält sie lückenlos.",
