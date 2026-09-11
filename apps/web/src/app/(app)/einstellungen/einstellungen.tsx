@@ -13,6 +13,7 @@ import { Zeugnisse } from "./abschnitte/zeugnisse";
 import { Qualitaet } from "./abschnitte/qualitaet";
 import { Sensoren } from "./abschnitte/sensoren";
 import { Zugaenge } from "./abschnitte/zugaenge";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
  * Alle Einstellungen an einer Stelle, nach Bereich gruppiert.
@@ -29,12 +30,10 @@ import { Zugaenge } from "./abschnitte/zugaenge";
 export function Einstellungen({ eigeneId }: { eigeneId: string }) {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Einstellungen</h1>
-        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-          Was die Plattform rechnet, holt und zeigt — für alle gleich.
-        </p>
-      </div>
+      <Seitenkopf
+        titel="Einstellungen"
+        untertitel="Was die Plattform rechnet, holt und zeigt — für alle gleich."
+      />
 
       <div className="grid gap-8 lg:grid-cols-[11rem_minmax(0,1fr)]">
         <nav
