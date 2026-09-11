@@ -8,7 +8,6 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 
 | # | Modul | Alt (Operationen) | Inhalt |
 |---|---|---|---|
-| 3 | Dokumentenlauf (Schulungsnachweis **und** Einarbeitungsbogen) | ~30 | Dieselbe Mechanik für beide: QR-Code zur Zuordnung, Laufweg (erstellt → übergeben → zurück → geprüft), Scan-Upload, halbautomatische Vollständigkeitsprüfung. Dazu Unterlagen je Schulung und die Zertifikate. Einmal bauen, zweimal benutzen. |
 | 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. **Beim Abgleich aufgefallen: im Altsystem ruft ihn niemand auf** — `send_email` hat dort außerhalb des eigenen Routers keinen Aufrufer. Portiert würde ein delegierter OAuth-Ablauf samt Token-Ablage und Einstellungsmaske für etwas, das nichts benutzt. Empfehlung: bauen, wenn der erste Verbraucher da ist (Schulungserinnerungen sind der naheliegende). |
 | 10 | In-App-Dokumentation | — | 22 Markdown-Seiten aus `frontend/src/docs/`. Zuletzt, weil sie den fertigen Stand beschreibt. |
 
@@ -36,7 +35,8 @@ Vertrieb, Einkauf, Produktion (Kennzahlen), Qualität (Kennzahlen), Finanzen,
 Personal (Kennzahlen, Belegschaft, Wochenbericht), Newsletter, KPI-Bewertung,
 Seiten-Feedback, FAIR, ATR (vier Teile), Uploads (13 Routen; die 16 alten minus
 Tippspiel, minus der abgelösten Sammelroute, minus zweier zusammengelegter
-Preisdateien), Personio-Abgleich, Rechteverwaltung, Sensoren, Wartung, Schulungsmatrix.
+Preisdateien), Personio-Abgleich, Rechteverwaltung, Sensoren, Wartung, Schulungsmatrix,
+Dokumentenlauf (Einarbeitungsplan und Schulungsnachweis).
 Anzeigen für die Bildschirme (Geburtstage, Neuzugänge) — nicht 1:1, sondern
 mit signiertem Token statt offener Route, siehe `docs/modules/anzeigen.md`.
 Signage liegt im eigenen Repo `acm-signage`.

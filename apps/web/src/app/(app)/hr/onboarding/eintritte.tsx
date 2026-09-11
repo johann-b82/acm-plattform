@@ -157,6 +157,9 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
           </p>
         </div>
         <div className="flex gap-4 text-sm">
+          <Link href="/hr/dokumente" className="underline-offset-4 hover:underline">
+            Dokumentenlauf
+          </Link>
           <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
             Schulungen
           </Link>

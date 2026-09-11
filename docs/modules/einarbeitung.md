@@ -63,10 +63,10 @@ an der Spalte hält es fest.
 
 Fehlt das Logo, entsteht das Blatt trotzdem — ohne Bild, aber vollständig.
 
-## Was noch fehlt
+## Der Vorgang um den Bogen herum
 
-Der Vorgang um den Bogen herum: QR-Code zur Zuordnung, Laufweg (erstellt →
-übergeben → zurück → geprüft), Scan-Upload und die halbautomatische
-Vollständigkeitsprüfung. Dieselbe Mechanik gibt es im Altprojekt auch für den
-Schulungsnachweis; sie gehört einmal gebaut und zweimal benutzt. Steht als ein
-Punkt in `docs/backlog.md`.
+QR-Code zur Zuordnung, Laufweg, Scan-Upload und die halbautomatische
+Vollständigkeitsprüfung stehen — einmal gebaut, für beide Formblätter benutzt.
+Siehe `docs/modules/dokumentenlauf.md`. Der gewöhnliche Ausdruck über
+`/api/einarbeitung/bogen.pdf` bleibt daneben: nicht jeder Bogen braucht einen
+Vorgang.
