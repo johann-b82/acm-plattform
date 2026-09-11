@@ -30,12 +30,19 @@ export const INTERVALL_LABEL: Record<Intervall, string> = Object.fromEntries(
   INTERVALLE.map((i) => [i.wert, i.label]),
 ) as Record<Intervall, string>;
 
-/** Wie das Intervall auf dem Bogen steht — mit Zahl, wo eine dazugehört. */
-export function intervallText(aufgabe: Pick<Aufgabe, "intervall" | "wochen">): string {
+/** Wie das Intervall dasteht — mit Zahl, wo eine dazugehört.
+ *
+ *  Die Namen kommen von außen: sie hängen an der Sprache. `alleN` baut die
+ *  Zahl ein, weil „Alle 6 Wochen" und „Every 6 weeks" sie verschieden setzen. */
+export function intervallText(
+  aufgabe: Pick<Aufgabe, "intervall" | "wochen">,
+  namen: Record<string, string> = INTERVALL_LABEL,
+  alleN: (wochen: number) => string = (w) => `Alle ${w} Wochen`,
+): string {
   if (aufgabe.intervall === "alle_n_wochen" && aufgabe.wochen) {
-    return `Alle ${aufgabe.wochen} Wochen`;
+    return alleN(aufgabe.wochen);
   }
-  return INTERVALL_LABEL[aufgabe.intervall] ?? aufgabe.intervall;
+  return namen[aufgabe.intervall] ?? aufgabe.intervall;
 }
 
 export type Status = "aktiv" | "stillgelegt";

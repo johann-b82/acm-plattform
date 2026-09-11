@@ -8,11 +8,8 @@ import { Plus } from "lucide-react";
 
 import {
   AUDIT_STATUS,
-  AUDIT_STATUS_LABEL,
   KATEGORIEN,
   PHASEN_STATUS,
-  PHASEN_STATUS_LABEL,
-  PRIORITAET_LABEL,
   auditApi,
   auditKeys,
   fortschritt,
@@ -35,26 +32,22 @@ import {
   Textarea,
   Th,
 } from "@/components/ui/primitives";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { useAuditworte } from "@/lib/tafeln";
+import type { Texte } from "@/texte";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
-const ZEIT = new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" });
 
-const STAMM: { feld: keyof Audit; label: string; art?: "date" }[] = [
-  { feld: "titel", label: "Titel" },
-  { feld: "bereich", label: "Bereich" },
-  { feld: "leitender_auditor", label: "Leitender Auditor" },
-  { feld: "team", label: "Auditteam" },
-  { feld: "geplant_von", label: "Geplant von", art: "date" },
-  { feld: "geplant_bis", label: "Geplant bis", art: "date" },
+
+
+const STAMM: { feld: keyof Audit; wort: keyof Texte["auditAnsicht"]; art?: "date" }[] = [
+  { feld: "titel", wort: "titel" },
+  { feld: "bereich", wort: "bereich" },
+  { feld: "leitender_auditor", wort: "leitenderAuditor" },
+  { feld: "team", wort: "auditteam" },
+  { feld: "geplant_von", wort: "geplantVon", art: "date" },
+  { feld: "geplant_bis", wort: "geplantBis", art: "date" },
 ];
-
-const AKTION_LABEL: Record<string, string> = {
-  angelegt: "angelegt",
-  geaendert: "geändert",
-  geloescht: "gelöscht",
-  status: "Status",
-  uebersprungen: "übersprungen",
-};
 
 export function AuditAnsicht({
   id,
@@ -63,6 +56,22 @@ export function AuditAnsicht({
   id: string;
   darfSchreiben: boolean;
 }) {
+  const worte = useTexte();
+  const auditworte = useAuditworte();
+  const tag = SPRACHE_TAG[useSprache()];
+  const ZEIT = new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" });
+  const prioritaet: Record<number, string> = {
+    1: worte.auditAnsicht.niedrig,
+    2: worte.auditAnsicht.mittel,
+    3: worte.auditAnsicht.hoch,
+  };
+  const aktion: Record<string, string> = {
+    angelegt: worte.auditAnsicht.angelegt,
+    geaendert: worte.auditAnsicht.geaendert,
+    geloescht: worte.auditAnsicht.geloescht,
+    status: worte.auditAnsicht.status,
+    uebersprungen: worte.auditAnsicht.uebersprungen,
+  };
   const queryClient = useQueryClient();
   const [neuePhase, setNeuePhase] = useState("");
 
@@ -150,7 +159,7 @@ export function AuditAnsicht({
     return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
   }
   if (!a) {
-    return <EmptyState title="Dieses Audit gibt es nicht" body="Vermutlich wurde es entfernt." />;
+    return <EmptyState title={worte.auditAnsicht.gibtEsNicht} body={worte.auditAnsicht.gibtEsNichtText} />;
   }
 
   return (
@@ -161,22 +170,22 @@ export function AuditAnsicht({
             <span className="tabular-nums">{a.nummer}</span> · {a.titel}
           </h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            {a.art === "intern" ? "Internes Audit" : "Externes Audit"} ·{" "}
-            Priorität {PRIORITAET_LABEL[a.prioritaet]}
-            {prozent !== null && ` · ${prozent} % erledigt`}
+            {a.art === "intern" ? worte.auditAnsicht.internesAudit : worte.auditAnsicht.externesAudit}
+            {worte.auditAnsicht.prioritaet(prioritaet[a.prioritaet])}
+            {prozent !== null && worte.auditAnsicht.erledigt(prozent)}
             {meinStand && meinStand.ueberfaellig > 0 && (
               <span className="text-[var(--danger)]">
-                {" "}· {meinStand.ueberfaellig} überfällig
+                {worte.auditAnsicht.ueberfaellig(meinStand.ueberfaellig)}
               </span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/qualitaet" className="text-sm underline-offset-4 hover:underline">
-            Zur Übersicht
+            {worte.auditAnsicht.zurUebersicht}
           </Link>
           <Select
-            aria-label="Status"
+            aria-label={worte.auditAnsicht.status}
             value={a.status}
             disabled={!darfSchreiben}
             onChange={(e) =>
@@ -185,7 +194,7 @@ export function AuditAnsicht({
           >
             {AUDIT_STATUS.map((s) => (
               <option key={s.wert} value={s.wert}>
-                {s.label}
+                {auditworte[s.wert]}
               </option>
             ))}
           </Select>
@@ -193,11 +202,11 @@ export function AuditAnsicht({
       </div>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">Stammdaten</h2>
+        <h2 className="font-medium">{worte.auditAnsicht.stammdaten}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {STAMM.map(({ feld, label, art }) => (
+          {STAMM.map(({ feld, wort, art }) => (
             <div key={feld} className="flex flex-col gap-1">
-              <Label htmlFor={feld}>{label}</Label>
+              <Label htmlFor={feld}>{worte.auditAnsicht[wort] as string}</Label>
               <Input
                 id={feld}
                 type={art === "date" ? "date" : "text"}
@@ -214,21 +223,21 @@ export function AuditAnsicht({
             </div>
           ))}
           <div className="flex flex-col gap-1">
-            <Label htmlFor="prioritaet">Priorität</Label>
+            <Label htmlFor="prioritaet">{worte.auditAnsicht.prioritaetFeld}</Label>
             <Select
               id="prioritaet"
               value={String(a.prioritaet)}
               disabled={!darfSchreiben}
               onChange={(e) => aendern.mutate({ prioritaet: Number(e.target.value) })}
             >
-              <option value="1">niedrig</option>
-              <option value="2">mittel</option>
-              <option value="3">hoch</option>
+              <option value="1">{worte.auditAnsicht.niedrig}</option>
+              <option value="2">{worte.auditAnsicht.mittel}</option>
+              <option value="3">{worte.auditAnsicht.hoch}</option>
             </Select>
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="ziel">Auditziel</Label>
+          <Label htmlFor="ziel">{worte.auditAnsicht.auditziel}</Label>
           <Textarea
             id="ziel"
             rows={3}
@@ -242,7 +251,7 @@ export function AuditAnsicht({
       </Card>
 
       <Card className="space-y-3 p-5">
-        <h2 className="font-medium">Kategorien</h2>
+        <h2 className="font-medium">{worte.auditAnsicht.kategorien}</h2>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
           Ein Audit ist oft mehreres zugleich — das interne Programm fährt
           Prozess- und Produktaudit in derselben Sitzung. Deshalb eine Auswahl,
@@ -259,7 +268,7 @@ export function AuditAnsicht({
                 disabled={!darfSchreiben}
                 onClick={() => kategorie.mutate({ k: k.wert, an: !an })}
               >
-                {k.label}
+                {auditworte[k.wert]}
               </Button>
             );
           })}
@@ -267,10 +276,10 @@ export function AuditAnsicht({
       </Card>
 
       <Card className="space-y-3 p-5">
-        <h2 className="font-medium">Normbezug</h2>
+        <h2 className="font-medium">{worte.auditAnsicht.normbezug}</h2>
         {(normen.data ?? []).filter((n) => n.aktiv).length === 0 ? (
           <p className="text-sm text-[var(--fg-muted)]">
-            Die Normmatrix ist leer — sie wird in den Einstellungen gepflegt.
+            {worte.auditAnsicht.normmatrixLeer}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -295,15 +304,15 @@ export function AuditAnsicht({
           </div>
         )}
         <p className="text-xs text-[var(--fg-muted)]">
-          * noch nicht gegen den konsolidierten Normtext geprüft.
+          {worte.auditAnsicht.nichtGeprueft}
         </p>
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">Phasen</h2>
+        <h2 className="font-medium">{worte.auditAnsicht.phasen}</h2>
         {(phasen.data ?? []).length === 0 ? (
           <p className="text-sm text-[var(--fg-muted)]">
-            Keine Phasen — dieses Audit wurde ohne Vorlage angelegt.
+            {worte.auditAnsicht.keinePhasen}
           </p>
         ) : (
           <TableWrap>
@@ -311,11 +320,11 @@ export function AuditAnsicht({
               <thead>
                 <tr>
                   <Th>#</Th>
-                  <Th>Phase</Th>
-                  <Th>Status</Th>
-                  <Th>Verantwortlich</Th>
-                  <Th>Fällig</Th>
-                  <Th>Erledigt am</Th>
+                  <Th>{worte.auditAnsicht.phase}</Th>
+                  <Th>{worte.auditAnsicht.status}</Th>
+                  <Th>{worte.auditAnsicht.verantwortlich}</Th>
+                  <Th>{worte.auditAnsicht.faellig}</Th>
+                  <Th>{worte.auditAnsicht.erledigtAm}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -335,11 +344,11 @@ export function AuditAnsicht({
         {darfSchreiben && (
           <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border)] pt-4">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="neue-phase">Phase ergänzen</Label>
+              <Label htmlFor="neue-phase">{worte.auditAnsicht.phaseErgaenzen}</Label>
               <Input
                 id="neue-phase"
                 value={neuePhase}
-                placeholder="z. B. Nachaudit"
+                placeholder={worte.auditAnsicht.phaseBeispiel}
                 onChange={(e) => setNeuePhase(e.target.value)}
               />
             </div>
@@ -355,13 +364,12 @@ export function AuditAnsicht({
       </Card>
 
       <Card className="space-y-3 p-5">
-        <h2 className="font-medium">Verlauf</h2>
+        <h2 className="font-medium">{worte.auditAnsicht.verlauf}</h2>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Geschrieben von der Datenbank, nicht von dieser Maske — und danach
-          weder änderbar noch löschbar.
+          {worte.auditAnsicht.verlaufHinweis}
         </p>
         {(verlauf.data ?? []).length === 0 ? (
-          <p className="text-sm text-[var(--fg-muted)]">Noch nichts geschehen.</p>
+          <p className="text-sm text-[var(--fg-muted)]">{worte.auditAnsicht.nichtsGeschehen}</p>
         ) : (
           <ul className="divide-y divide-[var(--border)] text-sm">
             {(verlauf.data ?? []).map((z) => (
@@ -370,13 +378,12 @@ export function AuditAnsicht({
                   {ZEIT.format(new Date(z.wann))}
                 </span>
                 <span className="font-medium">
-                  {z.entitaet === "audits" ? "Audit" : "Phase"}{" "}
-                  {AKTION_LABEL[z.aktion] ?? z.aktion}
+                  {z.entitaet === "audits" ? "Audit" : worte.auditAnsicht.phase}{" "}
+                  {aktion[z.aktion] ?? z.aktion}
                 </span>
                 {z.alt && z.neu && (
                   <span className="text-[var(--fg-muted)]">
-                    {AUDIT_STATUS_LABEL[z.alt] ?? PHASEN_STATUS_LABEL[z.alt] ?? z.alt} →{" "}
-                    {AUDIT_STATUS_LABEL[z.neu] ?? PHASEN_STATUS_LABEL[z.neu] ?? z.neu}
+                    {auditworte[z.alt] ?? z.alt} → {auditworte[z.neu] ?? z.neu}
                   </span>
                 )}
                 {z.grund && (
@@ -409,6 +416,9 @@ function PhasenZeile({
   darfSchreiben: boolean;
   aendern: (felder: Partial<Phase>) => void;
 }) {
+  const worte = useTexte();
+  const auditworte = useAuditworte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const [grund, setGrund] = useState(false);
   const [text, setText] = useState("");
 
@@ -448,7 +458,7 @@ function PhasenZeile({
           >
             {PHASEN_STATUS.map((s) => (
               <option key={s.wert} value={s.wert}>
-                {s.label}
+                {auditworte[s.wert]}
               </option>
             ))}
           </Select>
@@ -483,9 +493,7 @@ function PhasenZeile({
           <Td colSpan={5}>
             <div className="flex flex-wrap items-end gap-2 py-2">
               <div className="flex min-w-64 flex-1 flex-col gap-1">
-                <Label htmlFor={`grund-${phase.id}`}>
-                  Warum entfällt diese Pflichtphase?
-                </Label>
+                <Label htmlFor={`grund-${phase.id}`}>{worte.auditAnsicht.warumEntfaellt}</Label>
                 <Input
                   id={`grund-${phase.id}`}
                   value={text}
@@ -505,10 +513,10 @@ function PhasenZeile({
                   setText("");
                 }}
               >
-                Übernehmen
+                {worte.auditAnsicht.uebernehmen}
               </Button>
               <Button variant="outline" onClick={() => setGrund(false)}>
-                Abbrechen
+                {worte.auditAnsicht.abbrechen}
               </Button>
             </div>
           </Td>

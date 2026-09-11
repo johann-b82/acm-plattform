@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import {
-  AUDIT_STATUS_LABEL,
   auditApi,
   auditKeys,
   fortschritt,
@@ -28,13 +27,20 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitives";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
+import { useAuditworte } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 /** Ein Audit gilt als laufend, solange es nicht abgeschlossen oder abgesagt ist. */
 const LAEUFT = new Set(["geplant", "in_vorbereitung", "in_durchfuehrung", "berichtet", "massnahmen_offen"]);
 
 export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const auditworte = useAuditworte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const router = useRouter();
   const [neu, setNeu] = useState({ nummer: "", titel: "", art: "intern", vorlage: "" });
@@ -75,60 +81,58 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Qualität</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Audits von der Planung bis zum Abschluss. Jede Statusänderung steht
-            im Verlauf — geschrieben von der Datenbank, nicht von der Maske,
-            und danach unveränderlich.
-          </p>
-        </div>
-        <Link href="/kpi/qualitaet" className="text-sm underline-offset-4 hover:underline">
-          Zu den Kennzahlen
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/qualitaet"]}
+        untertitel={worte.audit.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center text-sm">
+            <Link href="/kpi/qualitaet" className="underline-offset-4 hover:underline">
+              {worte.audit.zuKennzahlen}
+            </Link>
+          </div>
+        }
+      />
 
       {darfSchreiben && (
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="nummer">Nummer</Label>
+            <Label htmlFor="nummer">{worte.audit.nummer}</Label>
             <Input
               id="nummer"
               className="w-36"
               value={neu.nummer}
-              placeholder="A-2026-01"
+              placeholder={worte.audit.nummerBeispiel}
               onChange={(e) => setNeu({ ...neu, nummer: e.target.value })}
             />
           </div>
           <div className="flex min-w-48 flex-1 flex-col gap-1">
-            <Label htmlFor="titel">Titel</Label>
+            <Label htmlFor="titel">{worte.audit.titel}</Label>
             <Input
               id="titel"
               value={neu.titel}
-              placeholder="EN 9100 Systemaudit"
+              placeholder={worte.audit.titelBeispiel}
               onChange={(e) => setNeu({ ...neu, titel: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="art">Art</Label>
+            <Label htmlFor="art">{worte.audit.art}</Label>
             <Select
               id="art"
               value={neu.art}
               onChange={(e) => setNeu({ ...neu, art: e.target.value })}
             >
-              <option value="intern">intern</option>
-              <option value="extern">extern</option>
+              <option value="intern">{worte.audit.intern}</option>
+              <option value="extern">{worte.audit.extern}</option>
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="vorlage">Phasenvorlage</Label>
+            <Label htmlFor="vorlage">{worte.audit.phasenvorlage}</Label>
             <Select
               id="vorlage"
               value={neu.vorlage}
               onChange={(e) => setNeu({ ...neu, vorlage: e.target.value })}
             >
-              <option value="">ohne</option>
+              <option value="">{worte.audit.ohne}</option>
               {(vorlagen.data ?? [])
                 .filter((v) => v.aktiv)
                 .map((v) => (
@@ -143,7 +147,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             onClick={() => anlegen.mutate()}
           >
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Anlegen
+            {worte.audit.anlegen}
           </Button>
         </Card>
       )}
@@ -152,24 +156,24 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
         <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Noch kein Audit"
-          body="Leg eines an — mit einer Phasenvorlage bringt es seine Checkliste gleich mit."
+          title={worte.audit.keinAudit}
+          body={worte.audit.keinAuditText}
         />
       ) : (
         <>
           <p className="text-sm text-[var(--fg-muted)]">
-            {laufend.length} von {liste.length} laufen noch.
+            {worte.audit.laufen(laufend.length, liste.length)}
           </p>
           <TableWrap>
             <Table>
               <thead>
                 <tr>
-                  <Th>Nummer</Th>
-                  <Th>Titel</Th>
-                  <Th>Art</Th>
-                  <Th>Status</Th>
-                  <Th>Fortschritt</Th>
-                  <Th>Nächster Termin</Th>
+                  <Th>{worte.audit.nummer}</Th>
+                  <Th>{worte.audit.titel}</Th>
+                  <Th>{worte.audit.art}</Th>
+                  <Th>{worte.audit.status}</Th>
+                  <Th>{worte.audit.fortschritt}</Th>
+                  <Th>{worte.audit.naechsterTermin}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -187,17 +191,17 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                         </Link>
                       </Td>
                       <Td>{a.titel}</Td>
-                      <Td>{a.art}</Td>
+                      <Td>{auditworte[a.art] ?? a.art}</Td>
                       <Td>
                         <Badge variant={a.status === "abgeschlossen" ? "secondary" : "outline"}>
-                          {AUDIT_STATUS_LABEL[a.status]}
+                          {auditworte[a.status]}
                         </Badge>
                       </Td>
                       <Td className="tabular-nums">
                         {prozent === null ? "—" : `${prozent} %`}
                         {s && s.ueberfaellig > 0 && (
                           <span className="ml-2 text-[var(--danger)]">
-                            {s.ueberfaellig} überfällig
+                            {worte.audit.ueberfaellig(s.ueberfaellig)}
                           </span>
                         )}
                       </Td>

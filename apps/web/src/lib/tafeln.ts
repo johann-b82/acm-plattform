@@ -2,6 +2,7 @@
 
 import { useTexte } from "@/components/sprache/anbieter";
 import type { Art, Stand } from "@/lib/dokumente";
+import type { Intervall } from "@/lib/wartung";
 import type { Dringlichkeit, Person } from "@/lib/schulungen";
 
 /**
@@ -112,5 +113,42 @@ export function useDokumentworte(): { stand: Record<Stand, string>; art: Record<
       einarbeitung: t.dokumentenlauf.einarbeitungsplan,
       schulung: t.dokumentenlauf.schulungsnachweis,
     },
+  };
+}
+
+/** Auditstatus, Phasenstatus und Kategorien. */
+export function useAuditworte(): Record<string, string> {
+  const t = useTexte();
+  return {
+    geplant: t.audit.geplant,
+    in_vorbereitung: t.audit.inVorbereitung,
+    in_durchfuehrung: t.audit.inDurchfuehrung,
+    berichtet: t.audit.berichtet,
+    massnahmen_offen: t.audit.massnahmenOffen,
+    abgeschlossen: t.audit.abgeschlossen,
+    verschoben: t.audit.verschoben,
+    abgesagt: t.audit.abgesagt,
+    offen: t.audit.phaseOffen,
+    in_arbeit: t.audit.phaseInArbeit,
+    erledigt: t.audit.phaseErledigt,
+    nicht_zutreffend: t.audit.phaseNichtZutreffend,
+    system: t.audit.system,
+    prozess: t.audit.prozess,
+    produkt: t.audit.produkt,
+    lieferant: t.audit.lieferant,
+    intern: t.audit.intern,
+    extern: t.audit.extern,
+  };
+}
+
+/** Die Wartungsintervalle. */
+export function useIntervall(): Record<Intervall, string> {
+  const t = useTexte();
+  return {
+    taeglich: t.maschine.taeglich,
+    woechentlich: t.maschine.woechentlich,
+    monatlich: t.maschine.monatlich,
+    quartalsweise: t.maschine.quartalsweise,
+    alle_n_wochen: t.maschine.alleNWochen,
   };
 }

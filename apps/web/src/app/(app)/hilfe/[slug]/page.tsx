@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 
 import { requireSession } from "@/lib/auth";
 import { ALLE, finde } from "@/hilfe/registry";
+import { texte } from "@/lib/sprache-server";
 
 export function generateStaticParams() {
   return ALLE.map((s) => ({ slug: s.slug }));
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  */
 export default async function HilfeSeite({ params }: { params: Promise<{ slug: string }> }) {
   await requireSession();
+  const t = await texte();
   const { slug } = await params;
   const treffer = finde(slug);
   if (!treffer) notFound();
@@ -63,7 +65,7 @@ export default async function HilfeSeite({ params }: { params: Promise<{ slug: s
           href="/hilfe"
           className="mt-3 block py-1 text-[var(--fg-muted)] underline-offset-4 hover:underline lg:pl-3"
         >
-          ← Alle Themen
+          {t.hilfe.alleThemen}
         </Link>
       </nav>
 

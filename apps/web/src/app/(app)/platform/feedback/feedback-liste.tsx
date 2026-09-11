@@ -14,11 +14,10 @@ import {
 import { Button, Card, EmptyState, Select } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 /**
  * Was aus den Ansichten gemeldet wurde.
@@ -28,6 +27,11 @@ const DATUM = new Intl.DateTimeFormat("de-DE", {
  * Minuten verfällt.
  */
 export function FeedbackListe() {
+  const t = useTexte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
   const queryClient = useQueryClient();
   const [bild, setBild] = useState<{ url: string; seite: string } | null>(null);
 
@@ -90,20 +94,22 @@ export function FeedbackListe() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Meldungen</h1>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          Was aus den Ansichten gemeldet wurde. {offen} offen
-          {ungesehen > 0 && ` · ${ungesehen} neu seit dem letzten Aufruf`}
-        </p>
-      </div>
+      <Seitenkopf
+        titel={t.pfad.seiten["/platform/feedback"]}
+        untertitel={
+          <>
+            {t.meldungen.stand(offen)}
+            {ungesehen > 0 && t.meldungen.neuSeit(ungesehen)}
+          </>
+        }
+      />
 
-      {liste.isLoading && <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>}
+      {liste.isLoading && <p className="text-sm text-[var(--fg-muted)]">{t.allgemein.laedt}</p>}
 
       {!liste.isLoading && meldungen.length === 0 && (
         <EmptyState
-          title="Nichts gemeldet"
-          body="Über den Knopf unten rechts kann jede angemeldete Person melden, was auf einer Seite nicht stimmt."
+          title={t.meldungen.nichtsGemeldet}
+          body={t.meldungen.nichtsGemeldetText}
         />
       )}
 
@@ -117,7 +123,7 @@ export function FeedbackListe() {
                 <div className="min-w-0">
                   <p className="whitespace-pre-wrap text-sm">{m.beschreibung}</p>
                   <p className="mt-2 text-xs text-[var(--fg-muted)]">
-                    {m.melder_email ?? "unbekannt"} · {m.seite} ·{" "}
+                    {m.melder_email ?? t.meldungen.unbekannt} · {m.seite} ·{" "}
                     {DATUM.format(new Date(m.erstellt_am))}
                     {m.ansicht && ` · ${m.ansicht}`}
                   </p>
@@ -130,12 +136,12 @@ export function FeedbackListe() {
                       onClick={() => zeigeBild.mutate(m)}
                     >
                       <BildIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                      Bild
+                      {t.meldungen.bild}
                     </Button>
                   )}
                   <Select
                     value={m.status}
-                    aria-label="Status"
+                    aria-label={t.meldungen.status}
                     className="h-8 w-32 text-xs"
                     onChange={(e) =>
                       setzeStatus.mutate({
@@ -144,11 +150,11 @@ export function FeedbackListe() {
                       })
                     }
                   >
-                    <option value="neu">offen</option>
-                    <option value="erledigt">erledigt</option>
+                    <option value="neu">{t.meldungen.offen}</option>
+                    <option value="erledigt">{t.meldungen.erledigt}</option>
                   </Select>
                   <ConfirmDeleteButton
-                    itemLabel="Meldung"
+                    itemLabel={t.meldungen.meldung}
                     onConfirm={() => loeschen.mutateAsync(m).then(() => undefined)}
                   />
                 </div>
@@ -161,7 +167,7 @@ export function FeedbackListe() {
       <Dialog
         open={bild !== null}
         onOpenChange={(o) => !o && setBild(null)}
-        title="Aufnahme der Seite"
+        title={t.meldungen.aufnahme}
         description={bild?.seite}
         className="w-[min(72rem,calc(100vw-2rem))]"
       >
