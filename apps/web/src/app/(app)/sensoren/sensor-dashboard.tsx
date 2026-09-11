@@ -29,21 +29,13 @@ import {
 } from "@/lib/sensoren";
 import { Badge, Button, Card, EmptyState } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
 
-const ZEIT = new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" });
-const UHR = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
-const TAG_UHR = new Intl.DateTimeFormat("de-DE", {
-  weekday: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
-const ZUSTAND_TEXT: Record<Zustand, string> = {
-  frisch: "aktuell",
-  verzoegert: "verzögert",
-  offline: "offline",
-  unbekannt: "noch nichts gemessen",
-};
+
+
 
 function zahl(wert: string | null): number | null {
   if (wert === null) return null;
@@ -60,6 +52,7 @@ function zahl(wert: string | null): number | null {
  * weg" — ohne den zweiten Teil sieht ein stiller Ausfall aus wie Ruhe.
  */
 export function SensorDashboard() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [stunden, setStunden] = useState<number>(24);
 
@@ -102,33 +95,26 @@ export function SensorDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Sensoren</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Temperatur und Luftfeuchte, alle fünf Minuten abgefragt. Ein Wert
-            außerhalb der eingestellten Grenzen steht in Warnfarbe.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => messen.mutate()}
-          disabled={messen.isPending}
-        >
-          <RefreshCw
-            className={cn("mr-2 h-4 w-4", messen.isPending && "animate-spin")}
-            aria-hidden
-          />
-          {messen.isPending ? "Misst …" : "Jetzt messen"}
-        </Button>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/sensoren"]}
+        untertitel={worte.sensoren.einleitung}
+        bedienung={
+          <Button variant="outline" onClick={() => messen.mutate()} disabled={messen.isPending}>
+            <RefreshCw
+              className={cn("mr-2 h-4 w-4", messen.isPending && "animate-spin")}
+              aria-hidden
+            />
+            {messen.isPending ? worte.sensoren.misst : worte.sensoren.jetztMessen}
+          </Button>
+        }
+      />
 
       {sensoren.isLoading ? (
-        <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
+        <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Kein Gerät eingerichtet"
-          body="Sensoren werden in den Einstellungen angelegt — Rechner, Kennung und Community."
+          title={worte.sensoren.keinGeraet}
+          body={worte.sensoren.keinGeraetText}
         />
       ) : (
         <>
@@ -145,7 +131,7 @@ export function SensorDashboard() {
 
           <Card className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-medium">Verlauf</h2>
+              <h2 className="font-medium">{worte.sensoren.verlauf}</h2>
               <div className="flex gap-1">
                 {FENSTER.map((f) => (
                   <Button
@@ -154,7 +140,9 @@ export function SensorDashboard() {
                     variant={f.stunden === stunden ? "default" : "outline"}
                     onClick={() => setStunden(f.stunden)}
                   >
-                    {f.label}
+                    {f.stunden < 72
+                      ? worte.sensoren.stunden(f.stunden)
+                      : worte.sensoren.tage(f.stunden / 24)}
                   </Button>
                 ))}
               </div>
@@ -181,6 +169,15 @@ function Kachel({
   stand: Stand | undefined;
   farbe: string;
 }) {
+  const worte = useTexte();
+  const tag = SPRACHE_TAG[useSprache()];
+  const ZEIT = new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" });
+  const zustandText: Record<Zustand, string> = {
+    frisch: worte.sensoren.frisch,
+    verzoegert: worte.sensoren.verzoegert,
+    offline: worte.sensoren.offline,
+    unbekannt: worte.sensoren.unbekannt,
+  };
   const zust = zustand(stand);
   const temperatur = zahl(stand?.temperatur ?? null);
   const feuchte = zahl(stand?.feuchte ?? null);
@@ -198,14 +195,14 @@ function Kachel({
           variant={zust === "frisch" ? "secondary" : "outline"}
           className="ml-auto"
         >
-          {ZUSTAND_TEXT[zust]}
+          {zustandText[zust]}
         </Badge>
       </div>
 
       <div className="flex gap-6">
         {sensor.temperatur_oid && (
           <Wert
-            label="Temperatur"
+            label={worte.sensoren.temperatur}
             wert={temperatur}
             einheit="°C"
             warnt={ausserhalb(temperatur, sensor.temperatur_min, sensor.temperatur_max)}
@@ -213,7 +210,7 @@ function Kachel({
         )}
         {sensor.feuchte_oid && (
           <Wert
-            label="Luftfeuchte"
+            label={worte.sensoren.luftfeuchte}
             wert={feuchte}
             einheit="%"
             warnt={ausserhalb(feuchte, sensor.feuchte_min, sensor.feuchte_max)}
@@ -223,8 +220,8 @@ function Kachel({
 
       <p className="text-xs text-[var(--fg-muted)]">
         {stand?.gemessen_am
-          ? `Zuletzt ${ZEIT.format(new Date(stand.gemessen_am))}`
-          : "Noch kein Messwert."}
+          ? worte.sensoren.zuletzt(ZEIT.format(new Date(stand.gemessen_am)))
+          : worte.sensoren.keinMesswert}
         {stand?.erfolg === false && stand.fehler && ` · ${stand.fehler}`}
       </p>
     </Card>
@@ -275,6 +272,16 @@ function Verlauf({
   stunden: number;
   laedt: boolean;
 }) {
+  const worte = useTexte();
+  const tag = SPRACHE_TAG[useSprache()];
+  const UHR = new Intl.DateTimeFormat(tag, { hour: "2-digit", minute: "2-digit" });
+  const TAG_UHR = new Intl.DateTimeFormat(tag, {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const ZEIT = new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" });
   const daten = useMemo(() => {
     const zeilen = new Map<number, Record<string, number | null>>();
     for (const m of messungen) {
@@ -295,12 +302,12 @@ function Verlauf({
   }, [sensoren]);
 
   if (laedt) {
-    return <p className="mt-4 text-sm text-[var(--fg-muted)]">wird geladen …</p>;
+    return <p className="mt-4 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</p>;
   }
   if (daten.length === 0) {
     return (
       <p className="mt-4 text-sm text-[var(--fg-muted)]">
-        In diesem Zeitraum wurde nichts gemessen.
+        {worte.sensoren.nichtsGemessen}
       </p>
     );
   }

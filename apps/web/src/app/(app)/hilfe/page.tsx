@@ -4,7 +4,8 @@ import { requireSession } from "@/lib/auth";
 import { GRUPPEN } from "@/hilfe/registry";
 import { Card } from "@/components/ui/primitives";
 import { Suche } from "./suche";
-import { seitentitel } from "@/lib/sprache-server";
+import { seitentitel, texte } from "@/lib/sprache-server";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hilfe"]);
 
@@ -17,15 +18,25 @@ export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hilfe"]
  */
 export default async function HilfePage() {
   await requireSession();
+  const t = await texte();
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Hilfe</h1>
-        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-          Was die Plattform kann, wie die Zahlen zustande kommen und was zu tun
-          ist, wenn etwas nicht stimmt.
-        </p>
-      </div>
+      <Seitenkopf
+        titel={t.pfad.seiten["/hilfe"]}
+        untertitel={
+          <>
+            {t.hilfe.einleitung}
+            {/* Nur in Sprachen, in denen die Hilfe nicht geschrieben ist:
+                besser man weiß es vorher als nach dem ersten Klick. */}
+            {t.hilfe.nurDeutsch && (
+              <>
+                {" "}
+                <span className="text-[var(--warn)]">{t.hilfe.nurDeutsch}</span>
+              </>
+            )}
+          </>
+        }
+      />
 
       <Suche />
 

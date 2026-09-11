@@ -34,16 +34,20 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { useIntervall } from "@/lib/tafeln";
+import type { Texte } from "@/texte";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
-const STAMMDATEN: { feld: keyof Maschine; label: string }[] = [
-  { feld: "name", label: "Name" },
-  { feld: "inventarnummer", label: "Inventar-Nr." },
-  { feld: "standort", label: "Standort" },
-  { feld: "hersteller", label: "Hersteller" },
-  { feld: "modell", label: "Modell" },
-  { feld: "verantwortlich", label: "Verantwortlich" },
+
+const STAMMDATEN: { feld: keyof Maschine; wort: keyof Texte["maschine"] }[] = [
+  { feld: "name", wort: "name" },
+  { feld: "inventarnummer", wort: "inventarnummer" },
+  { feld: "standort", wort: "standort" },
+  { feld: "hersteller", wort: "hersteller" },
+  { feld: "modell", wort: "modell" },
+  { feld: "verantwortlich", wort: "verantwortlich" },
 ];
 
 export function MaschineAnsicht({
@@ -53,6 +57,9 @@ export function MaschineAnsicht({
   id: string;
   darfSchreiben: boolean;
 }) {
+  const worte = useTexte();
+  const intervall = useIntervall();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const router = useRouter();
   const jetzt = laufendesHalbjahr();
@@ -158,7 +165,7 @@ export function MaschineAnsicht({
     return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
   }
   if (!m) {
-    return <EmptyState title="Diese Maschine gibt es nicht" body="Sie wurde vermutlich gelöscht." />;
+    return <EmptyState title={worte.maschine.gibtEsNicht} body={worte.maschine.gibtEsNichtText} />;
   }
 
   const liste = aufgaben.data ?? [];
@@ -174,7 +181,7 @@ export function MaschineAnsicht({
         </div>
         <div className="flex items-center gap-3">
           <Link href="/produktion" className="text-sm underline-offset-4 hover:underline">
-            Zur Übersicht
+            {worte.maschine.zurUebersicht}
           </Link>
           {darfSchreiben && (
             <ConfirmDeleteButton
@@ -186,11 +193,11 @@ export function MaschineAnsicht({
       </div>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">Stammdaten</h2>
+        <h2 className="font-medium">{worte.maschine.stammdaten}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {STAMMDATEN.map(({ feld, label }) => (
+          {STAMMDATEN.map(({ feld, wort }) => (
             <div key={feld} className="flex flex-col gap-1">
-              <Label htmlFor={feld}>{label}</Label>
+              <Label htmlFor={feld}>{worte.maschine[wort] as string}</Label>
               <Input
                 id={feld}
                 defaultValue={(m[feld] as string | null) ?? ""}
@@ -211,7 +218,7 @@ export function MaschineAnsicht({
             </div>
           ))}
           <div className="flex flex-col gap-1">
-            <Label htmlFor="status">Status</Label>
+            <Label htmlFor="status">{worte.maschine.status}</Label>
             <Select
               id="status"
               value={m.status}
@@ -220,13 +227,13 @@ export function MaschineAnsicht({
                 aendern.mutate({ status: e.target.value as Maschine["status"] })
               }
             >
-              <option value="aktiv">aktiv</option>
-              <option value="stillgelegt">stillgelegt</option>
+              <option value="aktiv">{worte.maschine.aktiv}</option>
+              <option value="stillgelegt">{worte.maschine.stillgelegt}</option>
             </Select>
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="notizen">Notizen</Label>
+          <Label htmlFor="notizen">{worte.maschine.notizen}</Label>
           <Textarea
             id="notizen"
             defaultValue={m.notizen}
@@ -241,10 +248,10 @@ export function MaschineAnsicht({
 
       <Card className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-medium">Wartungsaufgaben</h2>
+          <h2 className="font-medium">{worte.maschine.wartungsaufgaben}</h2>
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex flex-col gap-1">
-              <Label htmlFor="jahr">Jahr</Label>
+              <Label htmlFor="jahr">{worte.maschine.jahr}</Label>
               <Input
                 id="jahr"
                 className="w-24 tabular-nums"
@@ -254,19 +261,19 @@ export function MaschineAnsicht({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="halbjahr">Halbjahr</Label>
+              <Label htmlFor="halbjahr">{worte.maschine.halbjahr}</Label>
               <Select
                 id="halbjahr"
                 value={String(halbjahr)}
                 onChange={(e) => setHalbjahr(Number(e.target.value) as 1 | 2)}
               >
-                <option value="1">KW 1–26</option>
-                <option value="2">KW 27–52</option>
+                <option value="1">{worte.maschine.erstesHalbjahr}</option>
+                <option value="2">{worte.maschine.zweitesHalbjahr}</option>
               </Select>
             </div>
             <Button onClick={() => bogen.mutate()} disabled={bogen.isPending}>
               <FileDown className="mr-1.5 h-4 w-4" aria-hidden />
-              {bogen.isPending ? "Wird gebaut …" : "Nachweisbogen"}
+              {bogen.isPending ? worte.maschine.wirdGebaut : worte.maschine.nachweisbogen}
             </Button>
           </div>
         </div>
@@ -274,11 +281,11 @@ export function MaschineAnsicht({
         {darfSchreiben && (
           <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border)] pt-4">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="neue-aufgabe">Neue Aufgabe</Label>
+              <Label htmlFor="neue-aufgabe">{worte.maschine.neueAufgabe}</Label>
               <Input
                 id="neue-aufgabe"
                 value={neu.titel}
-                placeholder="z. B. Ölstand prüfen"
+                placeholder={worte.maschine.aufgabeBeispiel}
                 onChange={(e) => setNeu({ ...neu, titel: e.target.value })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && neu.titel.trim()) anlegen.mutate();
@@ -286,7 +293,7 @@ export function MaschineAnsicht({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="intervall">Intervall</Label>
+              <Label htmlFor="intervall">{worte.maschine.intervall}</Label>
               <Select
                 id="intervall"
                 value={neu.intervall}
@@ -296,7 +303,7 @@ export function MaschineAnsicht({
               >
                 {INTERVALLE.map((i) => (
                   <option key={i.wert} value={i.wert}>
-                    {i.label}
+                    {intervall[i.wert]}
                   </option>
                 ))}
               </Select>
@@ -325,15 +332,15 @@ export function MaschineAnsicht({
 
         {liste.length === 0 ? (
           <p className="text-sm text-[var(--fg-muted)]">
-            Noch keine Aufgabe — der Bogen bliebe leer.
+            {worte.maschine.keineAufgabe}
           </p>
         ) : (
           <TableWrap>
             <Table>
               <thead>
                 <tr>
-                  <Th>Aufgabe</Th>
-                  <Th>Intervall</Th>
+                  <Th>{worte.maschine.aufgabe}</Th>
+                  <Th>{worte.maschine.intervall}</Th>
                   <Th className="text-right" />
                 </tr>
               </thead>
@@ -355,7 +362,7 @@ export function MaschineAnsicht({
                         }}
                       />
                     </Td>
-                    <Td>{intervallText(a)}</Td>
+                    <Td>{intervallText(a, intervall, worte.maschine.alleNWochenZahl)}</Td>
                     <Td className="text-right">
                       {darfSchreiben && (
                         <ConfirmDeleteButton
@@ -374,25 +381,25 @@ export function MaschineAnsicht({
 
       <Card className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-medium">Dateien</h2>
+          <h2 className="font-medium">{worte.maschine.dateien}</h2>
           {darfSchreiben && (
             <div className="flex gap-2">
-              <DateiWahl art="plan" label="Plan hinterlegen" hochladen={hochladen} />
-              <DateiWahl art="nachweis" label="Nachweis ablegen" hochladen={hochladen} />
+              <DateiWahl art="plan" label={worte.maschine.planHinterlegen} hochladen={hochladen} />
+              <DateiWahl art="nachweis" label={worte.maschine.nachweisAblegen} hochladen={hochladen} />
             </div>
           )}
         </div>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Der Herstellerplan und die zurückgescannten, unterschriebenen Bögen.
+          {worte.maschine.dateienHinweis}
         </p>
         {(dateien.data ?? []).length === 0 ? (
-          <p className="text-sm text-[var(--fg-muted)]">Noch keine Datei.</p>
+          <p className="text-sm text-[var(--fg-muted)]">{worte.maschine.keineDatei}</p>
         ) : (
           <ul className="divide-y divide-[var(--border)]">
             {(dateien.data ?? []).map((d) => (
               <li key={d.id} className="flex flex-wrap items-center gap-3 py-2">
                 <Badge variant={d.art === "plan" ? "secondary" : "outline"}>
-                  {d.art === "plan" ? "Plan" : "Nachweis"}
+                  {d.art === "plan" ? worte.maschine.plan : worte.maschine.nachweis}
                 </Badge>
                 <button
                   type="button"
@@ -435,6 +442,7 @@ function DateiWahl({
   label: string;
   hochladen: { mutate: (v: { art: Datei["art"]; datei: File }) => void; isPending: boolean };
 }) {
+  const worte = useTexte();
   return (
     <label
       className={
@@ -444,7 +452,7 @@ function DateiWahl({
       }
     >
       <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
-      {hochladen.isPending ? "Lädt …" : label}
+      {hochladen.isPending ? worte.maschine.laedt : label}
       <input
         type="file"
         className="sr-only"

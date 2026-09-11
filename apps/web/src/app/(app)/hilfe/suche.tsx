@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 
 import { suche } from "@/hilfe/registry";
 import { Card, Input } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Volltextsuche über die Hilfe.
@@ -14,6 +15,7 @@ import { Card, Input } from "@/components/ui/primitives";
  * Hilfe ist rund 1.200 Zeilen, dafür braucht es keinen Index und keine Abfrage.
  */
 export function Suche() {
+  const t = useTexte();
   const [begriff, setBegriff] = useState("");
   const treffer = useMemo(() => suche(begriff), [begriff]);
   const gesucht = begriff.trim().length >= 2;
@@ -27,8 +29,8 @@ export function Suche() {
         />
         <Input
           value={begriff}
-          placeholder="In der Hilfe suchen"
-          aria-label="In der Hilfe suchen"
+          placeholder={t.hilfe.suchen}
+          aria-label={t.hilfe.suchen}
           className="pl-9"
           onChange={(e) => setBegriff(e.target.value)}
         />
@@ -38,8 +40,7 @@ export function Suche() {
         <Card className="p-4">
           {treffer.length === 0 ? (
             <p className="text-sm text-[var(--fg-muted)]">
-              Nichts gefunden. Steht etwas nicht in der Hilfe, sag es über den
-              Melden-Knopf unten rechts.
+              {t.hilfe.nichtsGefunden}
             </p>
           ) : (
             <ul className="space-y-2">

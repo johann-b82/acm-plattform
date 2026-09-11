@@ -19,6 +19,8 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
  * Die Maschinen und ihre Wartung.
@@ -28,6 +30,7 @@ import {
  * wird. Alles andere wäre eine Terminliste, die niemand pflegt.
  */
 export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState("");
 
@@ -49,28 +52,26 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Produktion</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Maschinen und ihre wiederkehrenden Wartungsaufgaben. Der Nachweis
-            entsteht als Bogen zum Aushängen — je Halbjahr, mit einer Spalte
-            pro Kalenderwoche.
-          </p>
-        </div>
-        <Link href="/kpi/produktion" className="text-sm underline-offset-4 hover:underline">
-          Zu den Kennzahlen
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/produktion"]}
+        untertitel={worte.wartung.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center text-sm">
+            <Link href="/kpi/produktion" className="underline-offset-4 hover:underline">
+              {worte.wartung.zuKennzahlen}
+            </Link>
+          </div>
+        }
+      />
 
       {darfSchreiben && (
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-1 flex-col gap-1">
-            <Label htmlFor="neue-maschine">Neue Maschine</Label>
+            <Label htmlFor="neue-maschine">{worte.wartung.neueMaschine}</Label>
             <Input
               id="neue-maschine"
               value={neu}
-              placeholder="z. B. Fräse 3"
+              placeholder={worte.wartung.beispiel}
               onChange={(e) => setNeu(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && neu.trim()) anlegen.mutate();
@@ -79,7 +80,7 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           </div>
           <Button disabled={!neu.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Anlegen
+            {worte.wartung.anlegen}
           </Button>
         </Card>
       )}
@@ -88,19 +89,19 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
         <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Noch keine Maschine"
-          body="Leg eine Maschine an und hinterlege ihre Wartungsaufgaben."
+          title={worte.wartung.keineMaschine}
+          body={worte.wartung.keineMaschineText}
         />
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Maschine</Th>
-                <Th>Inventar-Nr.</Th>
-                <Th>Standort</Th>
-                <Th>Verantwortlich</Th>
-                <Th>Status</Th>
+                <Th>{worte.wartung.maschine}</Th>
+                <Th>{worte.wartung.inventarnummer}</Th>
+                <Th>{worte.wartung.standort}</Th>
+                <Th>{worte.wartung.verantwortlich}</Th>
+                <Th>{worte.wartung.status}</Th>
               </tr>
             </thead>
             <tbody>
@@ -119,9 +120,9 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                   <Td>{m.verantwortlich ?? "—"}</Td>
                   <Td>
                     {m.status === "aktiv" ? (
-                      <Badge>aktiv</Badge>
+                      <Badge>{worte.wartung.aktiv}</Badge>
                     ) : (
-                      <Badge variant="outline">stillgelegt</Badge>
+                      <Badge variant="outline">{worte.wartung.stillgelegt}</Badge>
                     )}
                   </Td>
                 </tr>
