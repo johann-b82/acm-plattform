@@ -24,6 +24,7 @@ export const TITEL = {
   "/hr": "Personal",
   "/hr/dokumente": "Dokumentenlauf",
   "/hr/einarbeitung": "Einarbeitung",
+  "/hr/kennzahlen": "Kennzahlen",
   "/hr/kompetenzen": "Kompetenzen",
   "/hr/onboarding": "Onboarding",
   "/hr/organigramm": "Organigramm",
