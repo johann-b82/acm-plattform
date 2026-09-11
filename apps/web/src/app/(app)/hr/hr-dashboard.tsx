@@ -178,6 +178,9 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
             Arbeitszeitmodell je Person, nicht aus einem pauschalen Achtstundentag.
           </p>
           <div className="mt-2 flex gap-4 text-sm">
+            <Link href="/hr/organigramm" className="underline-offset-4 hover:underline">
+              Organigramm
+            </Link>
             <Link href="/hr/kompetenzen" className="underline-offset-4 hover:underline">
               Kompetenzen
             </Link>

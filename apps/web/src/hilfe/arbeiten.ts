@@ -198,6 +198,47 @@ von derselben Person gemacht.
 `.trim(),
     },
     {
+      slug: "organigramm",
+      titel: "Organigramm",
+      kurz: "Wer wem berichtet — aus Personio.",
+      text: `
+# Organigramm
+
+Unter **Personal → Organigramm**.
+
+## Woher es kommt
+
+Aus Personio. Dort steht an jeder Person, wer ihr Vorgesetzter ist; der
+nächtliche Abgleich bringt das mit, und die Seite macht daraus den Baum. Es
+gibt nichts zu pflegen — wird in Personio umgehängt, stimmt hier das Bild nach
+dem nächsten Abgleich.
+
+## Was oben steht
+
+Wer in Personio **keinen** Vorgesetzten hinterlegt hat. Bei der
+Geschäftsführung ist das richtig. Stehen viele oben, ist das ein Hinweis auf
+eine Lücke in den Stammdaten — die Zeile über der Liste sagt, wie viele es
+sind.
+
+Auch wer an eine **ausgetretene** Person berichtet, steht oben: die Liste führt
+nur Aktive. Sonst verschwände der ganze Ast.
+
+## Suchen
+
+Gesucht wird in Name, Position und Abteilung. Ein Treffer erscheint **samt
+seiner Vorgesetztenkette** — „Meier" allein sagt nicht, wo Meier im Haus
+sitzt.
+
+Gibt es mehrere Standorte, lässt sich darauf einschränken.
+
+## Warum eine Liste und kein gezeichnetes Schaubild
+
+Ein Organigramm mit vierzig Leuten wird als Grafik entweder winzig oder breiter
+als jeder Bildschirm. Eine eingerückte Liste lässt sich lesen, durchsuchen und
+vorlesen — und ausdrucken, ohne dass etwas abgeschnitten wird.
+`.trim(),
+    },
+    {
       slug: "dokumentenlauf",
       titel: "Dokumentenlauf",
       kurz: "Blätter mit QR erzeugen, aushändigen, zurücknehmen und prüfen.",
