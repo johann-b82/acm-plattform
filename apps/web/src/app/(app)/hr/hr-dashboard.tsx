@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import {
   CartesianGrid,
   Legend,
@@ -25,6 +25,7 @@ import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { ladeZielwerte, nachSchluessel, verfehlt, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Seitenkopf } from "@/components/seitenkopf";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { SPRACHE_TAG } from "@/lib/sprache";
@@ -173,38 +174,30 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
-          >
-            <ArrowLeft className="h-4 w-4" /> {worte.personal.uebersicht}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/hr"]}</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            {worte.personal.einleitung}
-          </p>
-          <div className="mt-2 flex gap-4 text-sm">
-            <Link href="/hr/organigramm" className="underline-offset-4 hover:underline">
-              {worte.pfad.seiten["/hr/organigramm"]}
-            </Link>
-            <Link href="/hr/kompetenzen" className="underline-offset-4 hover:underline">
-              {worte.pfad.seiten["/hr/kompetenzen"]}
-            </Link>
-            <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
-              {worte.pfad.seiten["/hr/schulungen"]}
-            </Link>
-            <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
-              {worte.pfad.seiten["/hr/onboarding"]}
-            </Link>
-            <Link href="/hr/einarbeitung" className="underline-offset-4 hover:underline">
-              {worte.pfad.seiten["/hr/einarbeitung"]}
-            </Link>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr"]}
+        untertitel={worte.personal.einleitung}
+        unter={
+          <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm">
+              <Link href="/hr/organigramm" className="underline-offset-4 hover:underline">
+                {worte.pfad.seiten["/hr/organigramm"]}
+              </Link>
+              <Link href="/hr/kompetenzen" className="underline-offset-4 hover:underline">
+                {worte.pfad.seiten["/hr/kompetenzen"]}
+              </Link>
+              <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
+                {worte.pfad.seiten["/hr/schulungen"]}
+              </Link>
+              <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
+                {worte.pfad.seiten["/hr/onboarding"]}
+              </Link>
+              <Link href="/hr/einarbeitung" className="underline-offset-4 hover:underline">
+                {worte.pfad.seiten["/hr/einarbeitung"]}
+              </Link>
           </div>
-        </div>
-        <Zeitraumwahl wahl={wahl} stufen={STUFEN_MIT_FENSTER} />
-      </div>
+        }
+        bedienung={<Zeitraumwahl wahl={wahl} stufen={STUFEN_MIT_FENSTER} />}
+      />
 
       <Abgleichzeile darfAbgleichen={darfAbgleichen} />
 

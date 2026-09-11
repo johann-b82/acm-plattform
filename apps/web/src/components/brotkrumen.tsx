@@ -8,8 +8,12 @@ import { useTexte } from "@/components/sprache/anbieter";
 import { krumen } from "@/lib/brotkrumen";
 
 /**
- * Der Pfad über dem Seiteninhalt. Zeigt nichts auf der Übersicht und auf
- * Adressen ohne Titel — eine Kette aus einem Glied ist keine Hilfe.
+ * Der Pfad in der Kopfzeile, rechts neben dem Logo. Zeigt nichts auf der
+ * Übersicht und auf Adressen ohne Titel — eine Kette aus einem Glied ist keine
+ * Hilfe, und neben dem Logo stünde sie doppelt.
+ *
+ * Auf schmalen Fenstern fällt er weg: dort ist die Kopfzeile für Logo und
+ * Zeichen gerade breit genug, und der Pfad drängte beides zusammen.
  */
 export function Brotkrumen() {
   const t = useTexte();
@@ -18,8 +22,8 @@ export function Brotkrumen() {
   if (kette.length === 0) return null;
 
   return (
-    <nav aria-label={t.pfad.aria} className="mb-4">
-      <ol className="flex flex-wrap items-center gap-1.5 text-sm">
+    <nav aria-label={t.pfad.aria} className="hidden min-w-0 md:block">
+      <ol className="flex items-center gap-1.5 text-sm">
         {kette.map((krume, i) => {
           // Die letzte Krume ist nur dann die aktuelle Seite, wenn die Adresse
           // auch stimmt: auf einer Detailseite endet die Kette bei der Liste,

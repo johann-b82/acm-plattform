@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireApp } from "@/lib/auth";
 import { texte } from "@/lib/sprache-server";
 import { Card } from "@/components/ui/primitives";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 export const metadata = { title: "KPI-Dashboard · ACM-Plattform" };
 
@@ -32,12 +33,7 @@ export default async function KpiHubPage() {
   };
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.kennzahlenHub.titel}</h1>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          {t.kennzahlenHub.einleitung}
-        </p>
-      </div>
+      <Seitenkopf titel={t.kennzahlenHub.titel} untertitel={t.kennzahlenHub.einleitung} />
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {BEREICHE.map((b) =>
           b.bereit ? (

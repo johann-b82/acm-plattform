@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -38,6 +37,7 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { Seitenkopf } from "@/components/seitenkopf";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { SPRACHE_TAG } from "@/lib/sprache";
@@ -200,22 +200,12 @@ export function QualitaetDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Link
-            href="/kpi"
-            className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
-          >
-            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/qualitaet"]}</h1>
-          <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            {worte.qualitaet.einleitung}
-          </p>
-          <Datenstand bereich="qualitaet" />
-        </div>
-        <Zeitraumwahl wahl={wahl} />
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/kpi/qualitaet"]}
+        untertitel={worte.qualitaet.einleitung}
+        unter={<Datenstand bereich="qualitaet" />}
+        bedienung={<Zeitraumwahl wahl={wahl} />}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-[var(--fg-muted)]">{worte.qualitaet.auditart}</span>

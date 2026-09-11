@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -31,6 +30,7 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { Seitenkopf } from "@/components/seitenkopf";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
@@ -93,22 +93,12 @@ export function EinkaufDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Link
-            href="/kpi"
-            className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
-          >
-            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/einkauf"]}</h1>
-          <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            {worte.einkauf.einleitung}
-          </p>
-          <Datenstand bereich="einkauf" />
-        </div>
-        <Zeitraumwahl wahl={wahl} />
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/kpi/einkauf"]}
+        untertitel={worte.einkauf.einleitung}
+        unter={<Datenstand bereich="einkauf" />}
+        bedienung={<Zeitraumwahl wahl={wahl} />}
+      />
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
