@@ -411,6 +411,22 @@ export const de = {
       "unentschuldigt fehlt steht im Minus. In der laufenden Woche zählt das Soll nur bis zum " +
       "letzten gestempelten Tag.",
   },
+  titel: {
+    /** Detailseiten und Seiten, deren Tab-Titel ausführlicher heißt als die
+     *  Krume im Pfad. Alles andere holt seinen Titel von dort. */
+    schulung: "Schulung",
+    zeugnis: "Zeugnis",
+    qualifikationsmatrix: "Qualifikationsmatrix",
+    maschine: "Maschine",
+    audit: "Audit",
+    zeichnung: "Zeichnung",
+    lieferung: "Lieferung",
+    offeneSchulungen: "Offene Schulungen",
+    schulungsmatrix: "Schulungsmatrix",
+    atrLieferungen: "ATR-Lieferungen",
+    kpiBewertung: "KPI-Bewertung",
+    anmelden: "Anmelden",
+  },
   kennzahlenHub: {
     titel: "KPI-Dashboard",
     einleitung: "Kennzahlen je Fachbereich. Die Daten kommen aus den ERP-Exporten unter Uploads.",

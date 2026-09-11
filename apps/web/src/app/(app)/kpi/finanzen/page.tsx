@@ -1,7 +1,8 @@
 import { requireApp } from "@/lib/auth";
 import { FinanzenDashboard } from "./finanzen-dashboard";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Finanzen · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/kpi/finanzen"]);
 
 export default async function FinanzenPage() {
   await requireApp("kpi");

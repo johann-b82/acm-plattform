@@ -1,7 +1,8 @@
 import { requireApp } from "@/lib/auth";
 import { Einstellungen } from "./einstellungen";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Einstellungen · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/einstellungen"]);
 
 /**
  * Die Einstellungen gehören der Plattform-Verwaltung. Was hier steht, gilt für

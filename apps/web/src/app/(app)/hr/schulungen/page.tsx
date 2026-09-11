@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
 import { Schulungsuebersicht } from "./schulungsuebersicht";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Schulungen · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hr/schulungen"]);
 
 export default async function SchulungenPage() {
   const session = await requireApp("hr");

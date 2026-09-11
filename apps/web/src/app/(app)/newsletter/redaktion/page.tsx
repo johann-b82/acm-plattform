@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { levelFor } from "@/lib/rechte";
 import { Redaktion } from "./redaktion";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Redaktion · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/newsletter/redaktion"]);
 
 export default async function RedaktionPage() {
   const session = await requireApp("newsletter", "editor");

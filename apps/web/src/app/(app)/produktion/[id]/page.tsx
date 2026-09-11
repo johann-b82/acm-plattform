@@ -1,8 +1,9 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
 import { MaschineAnsicht } from "./maschine-ansicht";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Maschine · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.titel.maschine);
 
 export default async function MaschinePage({
   params,

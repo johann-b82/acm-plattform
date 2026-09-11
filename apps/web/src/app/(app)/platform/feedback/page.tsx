@@ -1,7 +1,8 @@
 import { requireApp } from "@/lib/auth";
 import { FeedbackListe } from "./feedback-liste";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Meldungen · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/platform/feedback"]);
 
 export default async function FeedbackPage() {
   await requireApp("platform", "admin");

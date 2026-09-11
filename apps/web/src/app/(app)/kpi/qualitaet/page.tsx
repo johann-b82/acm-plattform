@@ -1,7 +1,8 @@
 import { requireApp } from "@/lib/auth";
 import { QualitaetDashboard } from "./qualitaet-dashboard";
+import { seitentitel } from "@/lib/sprache-server";
 
-export const metadata = { title: "Qualität · ACM-Plattform" };
+export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/kpi/qualitaet"]);
 
 export default async function QualitaetPage() {
   await requireApp("kpi");
