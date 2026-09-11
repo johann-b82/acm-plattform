@@ -11,6 +11,7 @@ import { alsPdf } from "@/lib/newsletter/pdf";
 import { Button, EmptyState, Select } from "@/components/ui/primitives";
 import { AusgabeAnsicht } from "./ausgabe-ansicht";
 import { useBildUrls } from "./bild-urls";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Newsletter lesen. Die Ausgabe wird als Folge von A4-Seiten gezeigt, und
@@ -18,6 +19,7 @@ import { useBildUrls } from "./bild-urls";
  * ist im PDF eine.
  */
 export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [pdfSeite, setPdfSeite] = useState<{ nr: number; gesamt: number } | null>(null);
   const seiten = useRef<HTMLDivElement>(null);
@@ -56,18 +58,18 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
   };
 
   if (ausgaben.isLoading) {
-    return <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>;
+    return <p className="text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</p>;
   }
 
   if (!aktiv) {
     return (
       <EmptyState
-        title="Noch keine Ausgabe"
-        body="Sobald die Redaktion eine Ausgabe veröffentlicht, steht sie hier."
+        title={worte.newsletter.keineAusgabe}
+        body={worte.newsletter.keineAusgabeText}
         action={
           darfSchreiben ? (
             <Link href="/newsletter/redaktion">
-              <Button>Zur Redaktion</Button>
+              <Button>{worte.newsletter.zurRedaktion}</Button>
             </Link>
           ) : undefined
         }
@@ -79,24 +81,24 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Newsletter</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/newsletter"]}</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            {aktiv.titel || `Quartal ${aktiv.quartal} · ${aktiv.jahr}`}
-            {aktiv.status === "entwurf" && " · Entwurf"}
+            {aktiv.titel || worte.newsletter.quartalJahr(aktiv.quartal, aktiv.jahr)}
+            {aktiv.status === "entwurf" && worte.newsletter.entwurfSuffix}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {liste.length > 1 && (
             <Select
-              aria-label="Ausgabe"
+              aria-label={worte.newsletter.ausgabe}
               className="w-48"
               value={aktiv.id}
               onChange={(e) => setGewaehlt(e.target.value)}
             >
               {liste.map((a) => (
                 <option key={a.id} value={a.id}>
-                  Q{a.quartal} {a.jahr}
-                  {a.status === "entwurf" ? " (Entwurf)" : ""}
+                  {worte.newsletter.quartalKurz(a.quartal, a.jahr)}
+                  {a.status === "entwurf" ? worte.newsletter.entwurfKlammer : ""}
                 </option>
               ))}
             </Select>
@@ -104,16 +106,16 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
           <Button variant="outline" onClick={exportieren} disabled={pdfSeite !== null}>
             <FileDown className="mr-2 h-4 w-4" aria-hidden />
             {pdfSeite === null
-              ? "Als PDF"
+              ? worte.newsletter.alsPdf
               : pdfSeite.gesamt === 0
-                ? "Wird gesetzt …"
-                : `Seite ${pdfSeite.nr} von ${pdfSeite.gesamt} …`}
+                ? worte.newsletter.wirdGesetzt
+                : worte.newsletter.seiteVon(pdfSeite.nr, pdfSeite.gesamt)}
           </Button>
           {darfSchreiben && (
             <Link href="/newsletter/redaktion">
               <Button variant="outline">
                 <PencilLine className="mr-2 h-4 w-4" aria-hidden />
-                Redaktion
+                {worte.newsletter.redaktion}
               </Button>
             </Link>
           )}
