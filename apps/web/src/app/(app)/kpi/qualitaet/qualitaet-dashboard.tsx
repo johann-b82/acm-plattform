@@ -237,6 +237,7 @@ export function QualitaetDashboard() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Kennzahl
           titel="Audit-Findings Level 1"
+          erklaerung={{ seite: "qualitaet", abschnitt: "Audits" }}
           wert={fmt.zahl(summe.data?.level_1)}
           hinweis={zielL1 == null ? undefined : `Höchstens ${zielL1}`}
           warnung={zielL1 != null && (summe.data?.level_1 ?? 0) > zielL1}
@@ -244,6 +245,7 @@ export function QualitaetDashboard() {
         />
         <Kennzahl
           titel="Audit-Findings Level 2"
+          erklaerung={{ seite: "qualitaet", abschnitt: "Audits" }}
           wert={fmt.zahl(summe.data?.level_2)}
           hinweis={zielL2 == null ? undefined : `Höchstens ${zielL2}`}
           warnung={zielL2 != null && (summe.data?.level_2 ?? 0) > zielL2}
@@ -251,6 +253,7 @@ export function QualitaetDashboard() {
         />
         <Kennzahl
           titel="Ohne erkennbares Level"
+          erklaerung={{ seite: "qualitaet", abschnitt: "Audits" }}
           wert={fmt.zahl(summe.data?.ohne_level)}
           hinweis="zählt in keiner Kachel"
           laedt={summe.isLoading}
@@ -328,6 +331,7 @@ export function QualitaetDashboard() {
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <Kennzahl
             titel="On Quality"
+            erklaerung={{ seite: "qualitaet", abschnitt: "Reklamationsquote" }}
             wert={fmt.prozent(onQuality(rekl.data?.quote ?? null))}
             hinweis={
               zielFehlerquote == null
@@ -351,11 +355,13 @@ export function QualitaetDashboard() {
           />
           <Kennzahl
             titel="Reklamierte Menge"
+            erklaerung={{ seite: "qualitaet", abschnitt: "Reklamationsquote" }}
             wert={fmt.zahl(rekl.data?.reklamiert)}
             laedt={rekl.isLoading}
           />
           <Kennzahl
             titel="Bezugsmenge"
+            erklaerung={{ seite: "qualitaet", abschnitt: "Reklamationsquote" }}
             wert={fmt.zahl(rekl.data?.bezugsmenge)}
             hinweis={rekl.data?.bezugsmenge === 0 ? "ohne sie gibt es keine Quote" : undefined}
             laedt={rekl.isLoading}
@@ -431,6 +437,7 @@ export function QualitaetDashboard() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Kennzahl
             titel="Große Produkte"
+            erklaerung={{ seite: "qualitaet", abschnitt: "Prüfmengen und Ausschuss" }}
             wert={fmt.zahl(mengen.data?.gross)}
             hinweis={zielGross == null ? undefined : `Mindestens ${zielGross} je Tag und Prüfer`}
             warnung={zielGross != null && (mengen.data?.gross ?? 0) < zielGross}
@@ -438,6 +445,7 @@ export function QualitaetDashboard() {
           />
           <Kennzahl
             titel="Kleine Produkte"
+            erklaerung={{ seite: "qualitaet", abschnitt: "Prüfmengen und Ausschuss" }}
             wert={fmt.zahl(mengen.data?.klein)}
             hinweis={zielKlein == null ? undefined : `Mindestens ${zielKlein} je Tag und Prüfer`}
             warnung={zielKlein != null && (mengen.data?.klein ?? 0) < zielKlein}

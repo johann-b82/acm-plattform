@@ -141,6 +141,7 @@ export function FinanzenDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Kennzahl
           titel="Materialkostenquote"
+          erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
           wert={fmt.prozent(summe.data?.quote)}
           hinweis={ziel == null ? "Materialkosten / Umsatz" : `Höchstens ${fmt.prozent(ziel)}`}
           warnung={ziel != null && summe.data?.quote != null && summe.data.quote > ziel}
@@ -155,9 +156,15 @@ export function FinanzenDashboard() {
           }
           laedt={summe.isLoading}
         />
-        <Kennzahl titel="Materialkosten" wert={fmt.eur(summe.data?.materialkosten)} laedt={summe.isLoading} />
+        <Kennzahl
+          titel="Materialkosten"
+          erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
+          wert={fmt.eur(summe.data?.materialkosten)}
+          laedt={summe.isLoading}
+        />
         <Kennzahl
           titel="Umsatz"
+          erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
           wert={fmt.eur(summe.data?.umsatz)}
           laedt={summe.isLoading}
           vergleich={
@@ -171,6 +178,7 @@ export function FinanzenDashboard() {
         />
         <Kennzahl
           titel="Personalkostenquote"
+          erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
           wert={hatFenster ? fmt.prozent(personal.data?.quote) : "—"}
           hinweis={
             !hatFenster
@@ -197,6 +205,7 @@ export function FinanzenDashboard() {
         />
         <Kennzahl
           titel="Artikel ohne Preis"
+          erklaerung={{ seite: "finanzen", abschnitt: "Wenn eine Quote leer bleibt" }}
           wert={fmt.zahl(summe.data?.ohne_preis)}
           hinweis="verbraucht, aber nicht bewertet"
           warnung={(summe.data?.ohne_preis ?? 0) > 0}

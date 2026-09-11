@@ -120,6 +120,7 @@ export function ProduktionDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kennzahl
           titel="Verzugsquote"
+          erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.prozent(verzug.data?.quote == null ? null : Number(verzug.data.quote))}
           hinweis={`Höchstens ${fmt.prozent(ziel)}`}
           laedt={verzug.isLoading}
@@ -135,6 +136,7 @@ export function ProduktionDashboard() {
         />
         <Kennzahl
           titel="Aufträge in Verzug"
+          erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.zahl(verzug.data?.in_verzug)}
           hinweis={offene > 0 ? `davon ${offene} offen und überfällig` : undefined}
           laedt={verzug.isLoading}
@@ -150,12 +152,14 @@ export function ProduktionDashboard() {
         />
         <Kennzahl
           titel="Aufträge gesamt"
+          erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.zahl(verzug.data?.gesamt)}
           hinweis="ohne noch nicht fällige offene Aufträge"
           laedt={verzug.isLoading}
         />
         <Kennzahl
           titel="Ø Verzug"
+          erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={
             verzug.data?.verzug_schnitt == null
               ? "—"

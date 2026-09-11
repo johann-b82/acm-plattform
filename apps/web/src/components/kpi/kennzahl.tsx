@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 
 import { Card } from "@/components/ui/primitives";
+import { ErklaerungKnopf } from "@/components/kpi/erklaerung-knopf";
+import type { Erklaerung } from "@/lib/erklaerung";
 import { cn } from "@/lib/cn";
 
 /**
@@ -20,6 +22,7 @@ export function Kennzahl({
   warnung,
   laedt,
   vergleich,
+  erklaerung,
 }: {
   titel: string;
   wert: string;
@@ -29,10 +32,15 @@ export function Kennzahl({
   laedt: boolean;
   /** Die Abzeichen zur Vorperiode und zum Vorjahr, falls es welche gibt. */
   vergleich?: ReactNode;
+  /** Welcher Hilfe-Abschnitt den Rechenweg beschreibt. Ohne ihn kein „i“. */
+  erklaerung?: Erklaerung;
 }) {
   return (
     <Card className="p-4">
-      <div className="text-sm text-[var(--fg-muted)]">{titel}</div>
+      <div className="flex items-start gap-1 text-sm text-[var(--fg-muted)]">
+        <span className="min-w-0">{titel}</span>
+        {erklaerung && <ErklaerungKnopf titel={titel} erklaerung={erklaerung} />}
+      </div>
       <div
         className={cn(
           "mt-1 font-mono text-2xl font-medium tabular-nums",
