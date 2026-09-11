@@ -84,6 +84,13 @@ export const en: Texte = {
   },
   allgemein: {
     laedt: "Loading …",
+    speichern: "Save",
+    abbrechen: "Cancel",
+    loeschen: "Delete",
+    stueck: "pcs",
+    loeschenTitel: "Confirm deletion",
+    loeschenFrage: (was: string) => `“${was}” will be deleted for good.`,
+    loeschenKnopf: (was: string) => `Delete ${was}`,
   },
   zeitraum: {
     monat: "This month",
@@ -1699,6 +1706,11 @@ export const en: Texte = {
     zahlEingeben: "Please enter a number.",
   },
   zugaenge: {
+    stufen: {
+      viewer: "View",
+      editor: "Edit",
+      admin: "Manage",
+    },
     gruppeAngelegt: "Group created.",
     gruppeGibtEsSchon: "A group with this name already exists.",
     personAngelegt: "Person created",
@@ -1774,7 +1786,50 @@ export const en: Texte = {
       "/hr/zeugnisse": "Write and issue references",
     },
   },
+  bewertung: {
+    titel: "KPI review",
+    einleitung:
+      "Say what a figure means and record what follows from it. The list is the metrics with " +
+      "a target — the same list the dashboards are built on.",
+    uebersichtFehler: (meldung: string) => `The overview could not be loaded: ${meldung}`,
+    nurLesen:
+      "You can read reviews but not write them. That needs the „Edit“ right on the settings.",
+    stand: (offen: number, ueberfaellig: number, erledigt: number, kommentare: number) =>
+      `${offen} open, ${ueberfaellig} of them overdue · ${erledigt} done · ` +
+      `${kommentare} ${kommentare === 1 ? "comment" : "comments"}`,
+    offenTitel: (anzahl: number) => `${anzahl} open`,
+    ueberfaelligTitel: (anzahl: number) => `${anzahl} overdue`,
+    massnahmen: "Actions",
+    wasZuTun: "What has to happen",
+    zustaendig: "Owner",
+    faellig: "Due",
+    anlegen: "Add",
+    ohneZustaendigen: "no owner",
+    faelligAm: (datum: string) => `due ${datum}`,
+    erledigtAm: (datum: string) => `done ${datum}`,
+    massnahmeLoeschen: "Delete action",
+    keineMassnahme: "No action on this metric yet.",
+    kommentare: "Comments",
+    kommentarPlatzhalter: "What does this figure say?",
+    kommentarLoeschen: "Delete comment",
+    keinKommentar: "Nothing said about this metric yet.",
+    status: {
+      offen: "open",
+      laeuft: "in progress",
+      erledigt: "done",
+      verworfen: "dropped",
+    },
+    bereiche: {
+      vertrieb: "Sales",
+      einkauf: "Procurement",
+      produktion: "Production",
+      qualitaet: "Quality",
+      finanzen: "Finance",
+      personal: "People",
+    },
+  },
   erklaerung: {
+    hinweis: "Explanation",
     frage: (titel: string) => `How is “${titel}” calculated?`,
     knopf: "Calculation",
     untertitel: "How this is calculated",

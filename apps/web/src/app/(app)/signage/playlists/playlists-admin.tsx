@@ -127,7 +127,7 @@ export function PlaylistsAdmin() {
       footer={
         <>
           <Button variant="outline" onClick={() => setNewOpen(false)}>
-            Abbrechen
+            {worte.allgemein.abbrechen}
           </Button>
           <Button
             disabled={!name.trim() || createMutation.isPending}

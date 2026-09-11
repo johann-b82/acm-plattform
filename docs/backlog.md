@@ -66,7 +66,7 @@ Anzeigen für die Bildschirme (Geburtstage, Neuzugänge) — nicht 1:1, sondern
 mit signiertem Token statt offener Route, siehe `docs/modules/anzeigen.md`.
 Signage liegt im eigenen Repo `acm-signage`.
 
-## Offen: die weiteren Sprachen
+## Die weiteren Sprachen
 
 Das Fundament steht (Deutsch und Englisch, Umschalter in der Kopfzeile). Welche
 Sprachen **darüber hinaus** angeboten werden sollen, entscheidet die
@@ -98,7 +98,28 @@ Vietnam, Rumänien, Äthiopien, Ghana, Spanien, Österreich, Schweiz — und 15 
 Angabe. Nationalität ist nicht Muttersprache, und kein Block ist groß genug,
 dass er sich von selbst aufdrängt.
 
-Danach ist eine Sprache **eine Datei** unter `apps/web/src/texte/` und ein
-Eintrag in `texte/index.ts`; der Typ des deutschen Wörterbuchs erzwingt die
-Vollständigkeit. Übersetzungen in Sprachen, die hier niemand prüfen kann,
-sollten vor dem Ausliefern jemand lesen, der sie spricht.
+**Angeboten werden seit dem 2026-09-11 acht Sprachen**: Deutsch, Englisch,
+Arabisch, Persisch/Dari, Ukrainisch, Bulgarisch, Polnisch, Vietnamesisch — jede
+Nationalität mit mindestens zwei Personen, die nicht schon von Deutsch oder
+Englisch abgedeckt ist. Eine Sprache ist **eine Datei** unter
+`apps/web/src/texte/` und ein Eintrag in `texte/index.ts`, `SPRACHEN`,
+`SPRACHE_LABEL`, `SPRACHE_TAG`, `ZAHL_TAG` und `SCHREIBRICHTUNG`; der Typ des
+deutschen Wörterbuchs erzwingt die Vollständigkeit.
+
+**Die sechs neuen Wörterbücher sind maschinell übersetzt.** Vor dem Ausrollen
+sollte je Sprache jemand darüberlesen, der sie spricht; in jeder Datei steht
+das als Kommentar. Die Übersetzer haben Begriffe genannt, bei denen sie
+unsicher waren — vor allem „Werkbänke" (gemeint ist die verlängerte Werkbank,
+also Lohnfertigung), „Arbeitszeugnis" (in mehreren Rechtsordnungen ohne
+Entsprechung) und der Stand „verworfen".
+
+Arabisch und Persisch laufen von rechts nach links. Die Oberfläche ist dafür
+auf logische Kanten gesetzt (`ms-`/`me-`, `text-start`/`text-end`), `dir` steht
+am `<html>`, und `Intl` rechnet über `ZAHL_TAG` mit `-u-nu-latn`: die Zahlen
+bleiben in den gewohnten Ziffern, damit eine Tafel neben der deutschen
+vergleichbar bleibt.
+
+**Deutsch bleiben drei Dinge, weil sie Inhalt sind und keine Oberfläche:** die
+22 Hilfeseiten (jede Fremdsprache sagt das ausdrücklich — ein Test wacht
+darüber), der Newsletter, und die Zielwerte samt Beschreibung, die in der
+Tabelle `zielwerte` stehen.

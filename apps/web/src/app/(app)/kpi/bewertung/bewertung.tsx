@@ -6,14 +6,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MessageSquare, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { BEREICH_LABEL } from "@/lib/zielwerte";
-import {
-  STATUS_LABEL,
-  bewertungApi,
-  bewertungKeys,
-  type MassnahmeStatus,
-} from "@/lib/kpi/bewertung";
+import { bewertungApi, bewertungKeys, type MassnahmeStatus } from "@/lib/kpi/bewertung";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { useBereich, useMassnahmeStatus } from "@/lib/tafeln";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { cn } from "@/lib/cn";
 
 /**
@@ -27,14 +24,19 @@ import { cn } from "@/lib/cn";
 
 const STATUS_FOLGE: MassnahmeStatus[] = ["offen", "laeuft", "erledigt", "verworfen"];
 
-function datum(iso: string | null): string {
+function datum(iso: string | null, tag: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("de-DE", {
+  return new Date(iso).toLocaleDateString(tag, {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
 }
 
 export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const t = worte.bewertung;
+  const tag = ZAHL_TAG[useSprache()];
+  const bereichName = useBereich();
+  const statusName = useMassnahmeStatus();
   const qc = useQueryClient();
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [neuerKommentar, setNeuerKommentar] = useState("");
@@ -124,25 +126,21 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
           href="/kpi"
           className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
         >
-          <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+          <ArrowLeft className="h-4 w-4" /> {worte.kennzahlenHub.titel}
         </Link>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight">KPI-Bewertung</h2>
-        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-          Kommentieren, was eine Zahl bedeutet, und festhalten, was daraus folgt. Die Liste
-          sind die Kennzahlen mit Zielwert — dieselbe Liste, die auch die Dashboards prägt.
-        </p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight">{t.titel}</h2>
+        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">{t.einleitung}</p>
       </div>
 
       {uebersicht.error && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Übersicht konnte nicht geladen werden: {(uebersicht.error as Error).message}
+          {t.uebersichtFehler((uebersicht.error as Error).message)}
         </Card>
       )}
 
       {!darfSchreiben && (
         <Card className="p-4 text-sm text-[var(--fg-muted)]">
-          Du kannst Bewertungen lesen, aber nicht schreiben. Dafür braucht es das Recht
-          {" "}{"„Bearbeiten“"} auf den Einstellungen.
+          {t.nurLesen}
         </Card>
       )}
 
@@ -151,7 +149,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
           {nachBereich.map(([bereich, werte]) => (
             <div key={bereich}>
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--fg-muted)]">
-                {BEREICH_LABEL[bereich] ?? bereich}
+                {bereichName[bereich] ?? bereich}
               </h2>
               <ul className="space-y-1">
                 {werte.map((z) => (
@@ -187,8 +185,8 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                             )}
                             title={
                               z.ueberfaellig > 0
-                                ? `${z.ueberfaellig} überfällig`
-                                : `${z.offen} offen`
+                                ? t.ueberfaelligTitel(z.ueberfaellig)
+                                : t.offenTitel(z.offen)
                             }
                           >
                             {z.offen}
@@ -208,18 +206,21 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
             <div>
               <h2 className="text-lg font-semibold">{aktivZeile.label}</h2>
               <p className="text-sm text-[var(--fg-muted)]">
-                {aktivZeile.offen} offen, davon {aktivZeile.ueberfaellig} überfällig ·{" "}
-                {aktivZeile.erledigt} erledigt · {aktivZeile.kommentare}{" "}
-                {aktivZeile.kommentare === 1 ? "Kommentar" : "Kommentare"}
+                {t.stand(
+                  aktivZeile.offen,
+                  aktivZeile.ueberfaellig,
+                  aktivZeile.erledigt,
+                  aktivZeile.kommentare,
+                )}
               </p>
             </div>
 
             <Card className="p-5">
-              <h3 className="font-medium">Maßnahmen</h3>
+              <h3 className="font-medium">{t.massnahmen}</h3>
               {darfSchreiben && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_10rem_9rem_auto]">
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="titel">Was ist zu tun</Label>
+                    <Label htmlFor="titel">{t.wasZuTun}</Label>
                     <Input
                       id="titel"
                       value={neueMassnahme.titel}
@@ -229,7 +230,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="zustaendig">Zuständig</Label>
+                    <Label htmlFor="zustaendig">{t.zustaendig}</Label>
                     <Input
                       id="zustaendig"
                       value={neueMassnahme.zustaendig}
@@ -239,7 +240,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label htmlFor="faellig">Fällig</Label>
+                    <Label htmlFor="faellig">{t.faellig}</Label>
                     <Input
                       id="faellig"
                       type="date"
@@ -255,7 +256,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                       disabled={!neueMassnahme.titel.trim() || massnahmeAnlegen.isPending}
                       onClick={() => massnahmeAnlegen.mutate()}
                     >
-                      Anlegen
+                      {t.anlegen}
                     </Button>
                   </div>
                 </div>
@@ -267,8 +268,9 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{m.titel}</div>
                       <div className="text-xs text-[var(--fg-muted)]">
-                        {m.zustaendig || "ohne Zuständigen"} · fällig {datum(m.faellig_am)}
-                        {m.erledigt_am && ` · erledigt ${datum(m.erledigt_am)}`}
+                        {m.zustaendig || t.ohneZustaendigen} ·{" "}
+                        {t.faelligAm(datum(m.faellig_am, tag))}
+                        {m.erledigt_am && ` · ${t.erledigtAm(datum(m.erledigt_am, tag))}`}
                       </div>
                     </div>
                     {darfSchreiben ? (
@@ -284,19 +286,19 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                       >
                         {STATUS_FOLGE.map((s) => (
                           <option key={s} value={s}>
-                            {STATUS_LABEL[s]}
+                            {statusName[s]}
                           </option>
                         ))}
                       </select>
                     ) : (
                       <span className="text-sm text-[var(--fg-muted)]">
-                        {STATUS_LABEL[m.status]}
+                        {statusName[m.status]}
                       </span>
                     )}
                     {darfSchreiben && (
                       <button
                         type="button"
-                        aria-label="Maßnahme löschen"
+                        aria-label={t.massnahmeLoeschen}
                         onClick={() => massnahmeLoeschen.mutate(m.id)}
                         className="rounded p-1 text-[var(--fg-muted)] hover:text-[var(--danger)]"
                       >
@@ -308,18 +310,18 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
               </ul>
               {!massnahmen.isLoading && (massnahmen.data?.length ?? 0) === 0 && (
                 <p className="mt-4 text-sm text-[var(--fg-muted)]">
-                  Noch keine Maßnahme zu dieser Kennzahl.
+                  {t.keineMassnahme}
                 </p>
               )}
             </Card>
 
             <Card className="p-5">
-              <h3 className="font-medium">Kommentare</h3>
+              <h3 className="font-medium">{t.kommentare}</h3>
               {darfSchreiben && (
                 <div className="mt-3 flex gap-2">
                   <Input
                     value={neuerKommentar}
-                    placeholder="Was sagt diese Zahl?"
+                    placeholder={t.kommentarPlatzhalter}
                     onChange={(e) => setNeuerKommentar(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && neuerKommentar.trim()) {
@@ -331,7 +333,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                     disabled={!neuerKommentar.trim() || kommentarAnlegen.isPending}
                     onClick={() => kommentarAnlegen.mutate(neuerKommentar.trim())}
                   >
-                    Speichern
+                    {worte.allgemein.speichern}
                   </Button>
                 </div>
               )}
@@ -341,13 +343,13 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                     <div className="min-w-0 flex-1">
                       <p className="whitespace-pre-wrap text-sm">{k.text}</p>
                       <p className="mt-0.5 text-xs text-[var(--fg-muted)]">
-                        {datum(k.erstellt_am)}
+                        {datum(k.erstellt_am, tag)}
                       </p>
                     </div>
                     {darfSchreiben && (
                       <button
                         type="button"
-                        aria-label="Kommentar löschen"
+                        aria-label={t.kommentarLoeschen}
                         onClick={() => kommentarLoeschen.mutate(k.id)}
                         className="rounded p-1 text-[var(--fg-muted)] hover:text-[var(--danger)]"
                       >
@@ -359,7 +361,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
               </ul>
               {!kommentare.isLoading && (kommentare.data?.length ?? 0) === 0 && (
                 <p className="mt-4 text-sm text-[var(--fg-muted)]">
-                  Noch nichts gesagt zu dieser Kennzahl.
+                  {t.keinKommentar}
                 </p>
               )}
             </Card>

@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
-  BEREICH_LABEL,
   alsAnzeige,
   ausAnzeige,
   ladeZielwerte,
@@ -15,6 +14,7 @@ import {
 } from "@/lib/zielwerte";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
+import { useBereich } from "@/lib/tafeln";
 
 /**
  * Zielwerte der Kennzahlen pflegen.
@@ -24,6 +24,7 @@ import { useTexte } from "@/components/sprache/anbieter";
  * Bequemlichkeit, nicht der Riegel.
  */
 export function Kennzahlen() {
+  const bereichName = useBereich();
   const worte = useTexte();
   const queryClient = useQueryClient();
   const [entwurf, setEntwurf] = useState<Record<string, string>>({});
@@ -87,11 +88,13 @@ export function Kennzahlen() {
     <div className="space-y-4">
       {nachBereich.map(([bereich, werte]) => (
         <Card key={bereich} className="p-5">
-          <h3 className="font-medium">{BEREICH_LABEL[bereich] ?? bereich}</h3>
+          <h3 className="font-medium">{bereichName[bereich] ?? bereich}</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {werte.map((z) => (
               <div key={z.schluessel} className="flex flex-col gap-1">
-                <Label htmlFor={z.schluessel}>{z.label}</Label>
+                <Label htmlFor={z.schluessel} dir="auto">
+                  {z.label}
+                </Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id={z.schluessel}
@@ -106,16 +109,18 @@ export function Kennzahlen() {
                     className="max-w-32 text-end tabular-nums"
                   />
                   <span className="text-sm text-[var(--fg-muted)]">
-                    {z.einheit === "anteil" ? "%" : "Stück"}
+                    {z.einheit === "anteil" ? "%" : worte.allgemein.stueck}
                   </span>
                   {entwurf[z.schluessel] !== undefined && (
                     <Button size="sm" disabled={speichern.isPending} onClick={() => absenden(z)}>
-                      Speichern
+                      {worte.allgemein.speichern}
                     </Button>
                   )}
                 </div>
                 {z.beschreibung && (
-                  <p className="text-xs text-[var(--fg-muted)]">{z.beschreibung}</p>
+                  <p className="text-xs text-[var(--fg-muted)]" dir="auto">
+                    {z.beschreibung}
+                  </p>
                 )}
               </div>
             ))}

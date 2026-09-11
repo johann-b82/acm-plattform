@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Check, KeyRound, Pencil, UserPlus, X } from "lucide-react";
 
 import {
-  LEVEL_LABEL,
   verwaltungApi,
   verwaltungKeys,
   type App,
@@ -332,7 +331,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                         <option value="">{worte.zugaenge.keinZugriff}</option>
                         {LEVELS.map((l) => (
                           <option key={l} value={l}>
-                            {LEVEL_LABEL[l]}
+                            {worte.zugaenge.stufen[l]}
                           </option>
                         ))}
                       </Select>

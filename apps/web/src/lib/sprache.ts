@@ -11,7 +11,17 @@
  * Sprache.
  */
 
-export const SPRACHEN = ["de", "en"] as const;
+/**
+ * Die angebotenen Sprachen.
+ *
+ * Deutsch und Englisch sind die Sprachen des Hauses. Die sechs anderen stehen
+ * hier, weil die Belegschaft sie spricht: die Nationalitäten in Personio
+ * zeigen nach Deutschland, Syrien, Iran, Afghanistan, Bulgarien, der Ukraine,
+ * Polen, Indien und Vietnam. Ein Sprachfeld führt Personio nicht, die
+ * Muttersprache ist also nicht abgefragt, sondern aus der Nationalität
+ * geschlossen — Indien und die westafrikanischen Länder deckt Englisch ab.
+ */
+export const SPRACHEN = ["de", "en", "ar", "fa", "uk", "bg", "pl", "vi"] as const;
 export type Sprache = (typeof SPRACHEN)[number];
 
 export const VORGABE: Sprache = "de";
@@ -26,12 +36,24 @@ export const COOKIE_MAXALTER = 60 * 60 * 24 * 365;
 export const SPRACHE_LABEL: Record<Sprache, string> = {
   de: "Deutsch",
   en: "English",
+  ar: "العربية",
+  fa: "فارسی",
+  uk: "Українська",
+  bg: "Български",
+  pl: "Polski",
+  vi: "Tiếng Việt",
 };
 
 /** Das Kürzel fürs `lang`-Attribut und für `Intl`. */
 export const SPRACHE_TAG: Record<Sprache, string> = {
   de: "de-DE",
   en: "en-GB",
+  ar: "ar",
+  fa: "fa",
+  uk: "uk",
+  bg: "bg",
+  pl: "pl",
+  vi: "vi",
 };
 
 /**
@@ -47,6 +69,12 @@ export const SPRACHE_TAG: Record<Sprache, string> = {
 export const ZAHL_TAG: Record<Sprache, string> = {
   de: "de-DE",
   en: "en-GB",
+  ar: "ar-u-nu-latn",
+  fa: "fa-u-nu-latn",
+  uk: "uk-UA",
+  bg: "bg-BG",
+  pl: "pl-PL",
+  vi: "vi-VN",
 };
 
 /**
@@ -61,6 +89,12 @@ export const ZAHL_TAG: Record<Sprache, string> = {
 export const SCHREIBRICHTUNG: Record<Sprache, "ltr" | "rtl"> = {
   de: "ltr",
   en: "ltr",
+  ar: "rtl",
+  fa: "rtl",
+  uk: "ltr",
+  bg: "ltr",
+  pl: "ltr",
+  vi: "ltr",
 };
 
 /** Prüft einen Cookie-Wert. Alles Unbekannte fällt auf Deutsch zurück. */

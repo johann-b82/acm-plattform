@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import { Info } from "lucide-react";
 
+import { useTexte } from "@/components/sprache/anbieter";
+
 /**
  * Eine Erklärung, die erst auf Nachfrage Platz braucht.
  *
@@ -16,6 +18,7 @@ import { Info } from "lucide-react";
  * `aria-describedby` — sonst wäre die Erklärung für sie schlicht weg.
  */
 export function Hinweis({ text }: { text: string }) {
+  const worte = useTexte();
   const id = useId();
   const [offen, setOffen] = useState(false);
 
@@ -23,7 +26,7 @@ export function Hinweis({ text }: { text: string }) {
     <span className="relative inline-flex align-middle">
       <button
         type="button"
-        aria-label="Erklärung"
+        aria-label={worte.erklaerung.hinweis}
         aria-expanded={offen}
         aria-describedby={id}
         className={
