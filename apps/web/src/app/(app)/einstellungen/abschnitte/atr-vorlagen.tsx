@@ -7,6 +7,8 @@ import { FileUp } from "lucide-react";
 import { XLSX_TYP, atrApi, atrKeys, type Vorlage } from "@/lib/atr";
 import { Card, EmptyState, Input, Label } from "@/components/ui/primitives";
 import { Hinweis } from "@/components/ui/hinweis";
+import { useTexte } from "@/components/sprache/anbieter";
+import type { Texte } from "@/texte";
 
 /**
  * Die Vorlage je Programm: Kopfdaten, die in jedem ATR-Dokument gleich
@@ -15,22 +17,23 @@ import { Hinweis } from "@/components/ui/hinweis";
  * Angelegt werden Vorlagen beim Einlesen einer Referenzmappe — das Programm
  * steht dort in Zelle D2. Hier werden sie gepflegt.
  */
-const FELDER: { feld: keyof Vorlage; label: string }[] = [
-  { feld: "kunde", label: "Kunde" },
-  { feld: "lieferant", label: "Lieferant" },
-  { feld: "arbeitspaket", label: "Arbeitspaket" },
-  { feld: "referenz", label: "Referenz" },
-  { feld: "besteller_spez", label: "Bestellerspezifikation" },
-  { feld: "lieferanten_spez", label: "Lieferantenspezifikation" },
-  { feld: "kunden_spez", label: "Kundenspezifikation" },
-  { feld: "atp", label: "ATP" },
-  { feld: "nscm", label: "NSCM" },
-  { feld: "ata_kapitel", label: "ATA-Kapitel" },
-  { feld: "waage", label: "Waage" },
-  { feld: "qs_unterschrift", label: "QS-Unterschrift" },
+const FELDER: { feld: keyof Vorlage; wort: keyof Texte["atrEinstellungen"] }[] = [
+  { feld: "kunde", wort: "kunde" },
+  { feld: "lieferant", wort: "lieferant" },
+  { feld: "arbeitspaket", wort: "arbeitspaket" },
+  { feld: "referenz", wort: "referenz" },
+  { feld: "besteller_spez", wort: "bestellerSpez" },
+  { feld: "lieferanten_spez", wort: "lieferantenSpez" },
+  { feld: "kunden_spez", wort: "kundenSpez" },
+  { feld: "atp", wort: "atp" },
+  { feld: "nscm", wort: "nscm" },
+  { feld: "ata_kapitel", wort: "ataKapitel" },
+  { feld: "waage", wort: "waage" },
+  { feld: "qs_unterschrift", wort: "qsUnterschrift" },
 ];
 
 export function AtrVorlagen() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const vorlagen = useQuery({
     queryKey: atrKeys.vorlagen(),
@@ -52,7 +55,7 @@ export function AtrVorlagen() {
     mutationFn: ({ v, datei }: { v: Vorlage; datei: File }) =>
       atrApi.geruestSetzen(v, datei),
     onSuccess: () => {
-      toast.success("Gerüstdatei hinterlegt.");
+      toast.success(worte.atrEinstellungen.geruestHinterlegt);
       return neuLaden();
     },
     onError: (fehler: Error) => toast.error(fehler.message),
@@ -61,20 +64,18 @@ export function AtrVorlagen() {
   return (
     <div className="space-y-3">
       <h3 className="flex items-center gap-1.5 font-medium">
-        Vorlagen
+        {worte.atrEinstellungen.vorlagen}
         <Hinweis
           text={
-            "Eine Vorlage je Programm. Kopfdaten und Gerüstdatei stehen in " +
-            "jedem ATR-Dokument dieses Programms gleich. Angelegt wird eine " +
-            "Vorlage beim Einlesen einer Referenzmappe im Teilekatalog."
+            worte.atrEinstellungen.vorlagenHinweis
           }
         />
       </h3>
 
       {liste.length === 0 ? (
         <EmptyState
-          title="Noch keine Vorlage"
-          body="Eine Referenzmappe einlesen — das Programm steht dort in Zelle D2."
+          title={worte.atrEinstellungen.keineVorlage}
+          body={worte.atrEinstellungen.keineVorlageText}
         />
       ) : (
         liste.map((v) => (
@@ -89,7 +90,7 @@ export function AtrVorlagen() {
                 }
               >
                 <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                {v.geruest_dateiname ? "Gerüst ersetzen" : "Gerüst wählen"}
+                {v.geruest_dateiname ? worte.atrEinstellungen.geruestErsetzen : worte.atrEinstellungen.geruestWaehlen}
                 <input
                   type="file"
                   accept={`.xlsx,${XLSX_TYP}`}
@@ -109,14 +110,16 @@ export function AtrVorlagen() {
               {v.geruest_dateiname ? (
                 <span className="text-[var(--fg)]">{v.geruest_dateiname}</span>
               ) : (
-                "noch keine hinterlegt"
+                worte.atrEinstellungen.keineHinterlegt
               )}
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {FELDER.map(({ feld, label }) => (
+              {FELDER.map(({ feld, wort }) => (
                 <div key={feld} className="flex flex-col gap-1">
-                  <Label htmlFor={`${v.programm}-${feld}`}>{label}</Label>
+                  <Label htmlFor={`${v.programm}-${feld}`}>
+                    {worte.atrEinstellungen[wort] as string}
+                  </Label>
                   <Input
                     id={`${v.programm}-${feld}`}
                     defaultValue={(v[feld] as string | null) ?? ""}

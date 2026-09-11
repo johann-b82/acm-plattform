@@ -6,6 +6,7 @@ import { FileUp } from "lucide-react";
 
 import { logoApi, logoKeys } from "@/lib/logo";
 import { Card } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
@@ -18,6 +19,7 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
  * einbetten. Der Fall entfällt, statt behandelt zu werden.
  */
 export function Logo() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
 
   const stand = useQuery({ queryKey: logoKeys.stand(), queryFn: logoApi.stand });
@@ -34,7 +36,7 @@ export function Logo() {
   const hochladen = useMutation({
     mutationFn: (datei: File) => logoApi.hochladen(datei),
     onSuccess: () => {
-      toast.success("Logo hinterlegt.");
+      toast.success(worte.einstellungenText.logoHinterlegt);
       return queryClient.invalidateQueries({ queryKey: ["logo"] });
     },
     onError: (fehler: Error) => toast.error(fehler.message),
@@ -42,12 +44,9 @@ export function Logo() {
 
   return (
     <Card className="space-y-3 p-5">
-      <h3 className="font-medium">Firmenlogo</h3>
+      <h3 className="font-medium">{worte.einstellungenText.firmenlogo}</h3>
       <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-        Steht oben links in der Anwendung und in der Kopfzeile jedes erzeugten
-        Formblatts — Einarbeitungsplan, Wartungsnachweis, Schulungsübersicht,
-        Zeugnis. PNG oder JPEG, höchstens 5 MB. Ist keins hinterlegt, steht dort
-        der Schriftzug „ACM-Plattform“.
+        {worte.einstellungenText.logoHinweis}
       </p>
       <div className="flex flex-wrap items-center gap-4">
         {vorschau ? (
@@ -56,11 +55,11 @@ export function Logo() {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={vorschau}
-            alt="Das hinterlegte Firmenlogo"
+            alt={worte.einstellungenText.logoAlt}
             className="h-16 w-auto rounded border border-[var(--border)] bg-white p-2"
           />
         ) : (
-          <span className="text-sm text-[var(--fg-muted)]">Noch keins hinterlegt.</span>
+          <span className="text-sm text-[var(--fg-muted)]">{worte.einstellungenText.keinsHinterlegt}</span>
         )}
         <label
           className={
@@ -70,12 +69,16 @@ export function Logo() {
           }
         >
           <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
-          {hochladen.isPending ? "Lädt …" : stand.data?.pfad ? "Ersetzen" : "Hochladen"}
+          {hochladen.isPending
+            ? worte.einstellungenText.laedt
+            : stand.data?.pfad
+              ? worte.einstellungenText.ersetzen
+              : worte.einstellungenText.hochladen}
           <input
             type="file"
             accept="image/png,image/jpeg"
             className="sr-only"
-            aria-label="Firmenlogo hochladen"
+            aria-label={worte.einstellungenText.logoHochladen}
             disabled={hochladen.isPending}
             onChange={(e) => {
               const datei = e.target.files?.[0];
