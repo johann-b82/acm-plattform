@@ -29,6 +29,7 @@ from openpyxl.styles import Alignment, PatternFill
 from openpyxl.worksheet.properties import PageSetupProperties
 
 from app.atr.format import bestellposition, deutsches_datum, dokumentnummer, heute
+from app.dokumente.blatt import auf_a4
 
 ROT = PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
 SPALTEN = 14  # A..N
@@ -271,7 +272,7 @@ def baue_atr(gerüst: bytes, lieferung: dict, positionen: list[dict]) -> bytes:
     # Auf eine Seite **Breite** zwingen; die Höhe darf laufen. Ohne das
     # verdoppelte der Überlauf nach rechts die Seitenzahl.
     blatt.print_area = f"A1:N{blatt.max_row}"
-    blatt.page_setup.orientation = "landscape"
+    auf_a4(blatt, quer=True)
     blatt.page_setup.fitToWidth = 1
     blatt.page_setup.fitToHeight = 0
     # Gleiche Ränder links und rechts, damit die rechtsbündige Druckkopfzeile

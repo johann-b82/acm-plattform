@@ -1,3 +1,4 @@
+import { computeFetch } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
@@ -38,6 +39,13 @@ export interface Rolle {
   abteilung_kuerzel: string;
 }
 
+/** Der Schlüssel einer Person für die Formblatt-Routen. */
+function wer(e: Eintritt): string {
+  return e.employee_id !== null
+    ? `employee_id=${e.employee_id}`
+    : `extern_id=${encodeURIComponent(e.extern_id ?? "")}`;
+}
+
 export const onboardingKeys = {
   eintritte: () => ["onboarding", "eintritte"] as const,
   plan: (id: number) => ["onboarding", "plan", id] as const,
@@ -56,6 +64,22 @@ export function istNeu(eintritt: Eintritt, heute = new Date()): boolean {
   if (!eintritt.eintritt) return false;
   const tage = (heute.getTime() - new Date(eintritt.eintritt).getTime()) / 86_400_000;
   return tage >= -30 && tage <= NEU_TAGE;
+}
+
+/**
+ * Ein erzeugtes PDF in einem neuen Fenster öffnen.
+ *
+ * Kein `<a download>`: die Papiere werden angesehen und dann gedruckt, nicht
+ * abgelegt. Der Blob-Verweis wird nach einer Minute wieder freigegeben.
+ */
+async function oeffnePdf(pfad: string): Promise<void> {
+  const antwort = await computeFetch(pfad);
+  if (!antwort.ok) {
+    throw new Error((await antwort.text()).slice(0, 200) || `HTTP ${antwort.status}`);
+  }
+  const url = URL.createObjectURL(await antwort.blob());
+  window.open(url, "_blank", "noopener");
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export const onboardingApi = {
@@ -146,4 +170,19 @@ export const onboardingApi = {
     const { error } = await sb().from("schulung_rollen").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
+
+  /** Formblatt 71 allein — die Schulungsübersicht der Person. */
+  uebersicht: (e: Eintritt) => oeffnePdf(`/api/onboarding/uebersicht.pdf?${wer(e)}`),
+
+  /**
+   * Einarbeitungsplan und Schulungsübersicht als ein Dokument.
+   *
+   * Der Abruf vermerkt die Übergabe — danach gilt die Person nicht mehr als
+   * neu. Deshalb im Anschluss die Eintrittsliste neu laden.
+   */
+  paket: (e: Eintritt, abteilungen: string[] = []) =>
+    oeffnePdf(
+      `/api/onboarding/paket.pdf?${wer(e)}` +
+        abteilungen.map((a) => `&abteilungen=${encodeURIComponent(a)}`).join(""),
+    ),
 };

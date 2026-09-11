@@ -663,6 +663,18 @@ onboarding_abteilung = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+# Vermerk, dass das Onboarding-Paket ausgeliefert wurde. Das entfernt die
+# „neu"-Markierung in der Eintrittsliste — eine Übergabe, die stattgefunden
+# hat, soll nicht weiter als offen dastehen.
+onboarding_paket = sa.Table(
+    "onboarding_paket",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("employee_id", sa.Integer),
+    sa.Column("extern_id", UUID(as_uuid=False)),
+    sa.Column("heruntergeladen_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 einarbeitung_katalog = sa.Table(
     "einarbeitung_katalog",
     metadata,
@@ -806,6 +818,7 @@ TABLES = {
     "einarbeitung_pflicht": einarbeitung_pflicht,
     "plattform_logo": plattform_logo,
     "onboarding_abteilung": onboarding_abteilung,
+    "onboarding_paket": onboarding_paket,
     "zeugnis_aussteller": zeugnis_aussteller,
     "zeugnisse": zeugnisse,
     "zeugnis_bewertungen": zeugnis_bewertungen,

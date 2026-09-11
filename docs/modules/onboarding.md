@@ -55,8 +55,41 @@ Aufrufer nicht erbt.
 verbindet, ergibt „column reference is ambiguous". Die Variable heißt jetzt
 `person_name`, und die Abfrage qualifiziert ihre Spalten.
 
+## Die Papiere: ein Dokument, nicht zwei
+
+    GET /api/onboarding/uebersicht.pdf   Formblatt 71 allein
+    GET /api/onboarding/paket.pdf        Einarbeitungsplan + Schulungsübersicht
+
+Das Paket ist kein zusammengefügtes PDF, sondern **eine Arbeitsmappe mit zwei
+Blättern**; LibreOffice wandelt sie in einem Zug. Das spart eine
+PDF-Zusammenführung als Abhängigkeit — und jedes Blatt behält seine eigene
+Seiteneinrichtung, was ein Zusammenfügen nicht garantieren würde.
+
+Reihenfolge: erst der Einarbeitungsplan (die ersten vier Wochen), dann die
+Schulungsübersicht (was darüber hinaus ansteht).
+
+**Zeitraum und Kreuze bleiben leer.** Für einen Neueintritt ist das Blatt der
+Plan, den er abarbeitet. Ein Datum vorzugeben, das noch niemand terminiert hat,
+wäre erfunden — und stünde hinterher gedruckt im Ordner.
+
+Für extern gepflegte Personen gibt es keine Personio-Kennung und damit keinen
+Plan aus `schulungsplan()`. Dann kommt das Blatt leer, aber mit Tabellenkopf.
+Ein leeres Formular ist brauchbar, ein erfundenes nicht.
+
+## Das Paket zu erzeugen *ist* die Übergabe
+
+`paket.pdf` vermerkt beim ersten Abruf, dass sie stattgefunden hat — damit
+verschwindet die „neu"-Markierung aus der Eintrittsliste. Beim zweiten Abruf
+passiert nichts mehr: der Vermerk sagt „ist übergeben worden", nicht „ist
+zuletzt gedruckt worden".
+
+Geschrieben wird mit `on conflict do nothing` statt erst lesen, dann schreiben:
+zwei gleichzeitige Abrufe liefen sonst in den eindeutigen Index, und der zweite
+bekäme einen Fehler — für eine Nebensache, die niemanden interessiert.
+
+Der Knopf „Vermerken" bleibt daneben stehen, für den Fall, dass die Übergabe
+außerhalb der Anwendung passiert ist.
+
 ## Was noch fehlt
 
-Das Onboarding-Paket als PDF (Formblatt 71 und die Dokumentmappe) ist im
-Altprojekt vorhanden und hier noch nicht portiert; die Übergabe lässt sich
-bereits vermerken. Steht in `docs/backlog.md`.
+Nichts mehr aus dem Altprojekt. Offene Punkte stehen in `docs/backlog.md`.

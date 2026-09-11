@@ -21,6 +21,7 @@ from openpyxl.styles import Alignment, Border, Font, Side
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import PageSetupProperties
 
+from app.dokumente.blatt import auf_a4
 from app.dokumente.logo import Logo
 from app.dokumente.pdf import nach_pdf
 
@@ -230,15 +231,20 @@ def _freigabe(blatt, zeile: int) -> int:
     return zeile + 1
 
 
-def baue_xlsx(
+def fuelle_blatt(
+    blatt,
     name: str,
     stelle: str | None,
     beginn: date | None,
     inhalte: list[Inhalt],
     logo: Logo | None = None,
-) -> bytes:
-    mappe = Workbook()
-    blatt = mappe.active
+) -> None:
+    """Das Formblatt in ein vorhandenes Arbeitsblatt schreiben.
+
+    Herausgezogen aus `baue_xlsx`, damit dasselbe Blatt auch als erste Seite
+    des Onboarding-Pakets dienen kann — zwei Formblätter in einer Mappe werden
+    von LibreOffice in einem Zug zu einem mehrseitigen PDF.
+    """
     blatt.title = "Einarbeitungsplan"
 
     for i, breite in enumerate(SPALTENBREITEN, start=1):
@@ -251,12 +257,35 @@ def baue_xlsx(
     zeile = _freigabe(blatt, zeile + 1)
 
     blatt.print_area = f"A1:H{zeile}"
-    blatt.page_setup.orientation = "portrait"
+    auf_a4(blatt)
     blatt.page_margins = PageMargins(left=0.5, right=0.4, top=0.5, bottom=0.4)
-    # Keine Skalierung: sonst verschieben sich die Zeilenhöhen.
-    blatt.page_setup.scale = 100
-    blatt.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=False)
+    # Auf **eine** Seite Breite, so viele Seiten hoch wie nötig.
+    #
+    # Vorher stand hier feste Skalierung ohne Anpassung, weil eine Skalierung
+    # die Zeilenhöhen verschiebt. Das Ergebnis war schlimmer: der Bogen lief
+    # auf eine zweite Seite über, und die trug nur die abgeschnittenen rechten
+    # Spalten — „Wann?" und „Erledigt / Unterschrift", die Felder also, die von
+    # Hand ausgefüllt werden. Aufgefallen beim Prüfen des Onboarding-Pakets.
+    #
+    # Spaltenbreiten in „Zeichen" lassen sich nicht zuverlässig ausrechnen:
+    # LibreOffice hat im Abbild kein Calibri und ersetzt es durch eine breitere
+    # Schrift. Die Anpassung ist deshalb nicht Bequemlichkeit, sondern das
+    # einzig Verlässliche.
+    blatt.page_setup.scale = None  # schließt sich mit fitToPage aus
+    blatt.page_setup.fitToWidth = 1
+    blatt.page_setup.fitToHeight = 0
+    blatt.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
 
+
+def baue_xlsx(
+    name: str,
+    stelle: str | None,
+    beginn: date | None,
+    inhalte: list[Inhalt],
+    logo: Logo | None = None,
+) -> bytes:
+    mappe = Workbook()
+    fuelle_blatt(mappe.active, name, stelle, beginn, inhalte, logo)
     puffer = BytesIO()
     mappe.save(puffer)
     return puffer.getvalue()
