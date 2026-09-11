@@ -65,3 +65,29 @@ beschreiben dessen Oberfläche und wären ab dem ersten Tag falsch).
 Anzeigen für die Bildschirme (Geburtstage, Neuzugänge) — nicht 1:1, sondern
 mit signiertem Token statt offener Route, siehe `docs/modules/anzeigen.md`.
 Signage liegt im eigenen Repo `acm-signage`.
+
+## Offen: die weiteren Sprachen
+
+Das Fundament steht (Deutsch und Englisch, Umschalter in der Kopfzeile). Welche
+Sprachen **darüber hinaus** angeboten werden sollen, entscheidet die
+Belegschaft: gefragt ist die Muttersprache aus Personio.
+
+Der Befehl dafür ist da:
+
+```
+docker compose exec compute python -m app.cli personio-sprachen
+```
+
+Er liest die Mitarbeiter-Rohdaten des Abgleichs — ohne Netz, denn das Feld
+steht dort schon — und listet Feld, Wert und Anzahl. Liegt kein Abgleich vor,
+fragt er Personio direkt; dafür braucht er `PERSONIO_CLIENT_ID` und
+`PERSONIO_CLIENT_SECRET`.
+
+Auf dem lokalen Stand gibt es kein Ergebnis: die Demodaten führen kein
+Sprachfeld (41 Personen, kein Treffer). Die Antwort kann nur auf einem Stand
+entstehen, der echte Personio-Daten führt.
+
+Danach ist eine Sprache **eine Datei** unter `apps/web/src/texte/` und ein
+Eintrag in `texte/index.ts`; der Typ des deutschen Wörterbuchs erzwingt die
+Vollständigkeit. Übersetzungen in Sprachen, die hier niemand prüfen kann,
+sollten vor dem Ausliefern jemand lesen, der sie spricht.
