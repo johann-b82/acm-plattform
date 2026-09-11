@@ -60,11 +60,58 @@ async def _uebernahme_atr(args) -> None:
         print("  " + zeile)
 
 
+async def _personio_sprachen(args) -> None:
+    """Die gepflegten Sprachen auflisten — erst aus dem Abgleich, sonst live."""
+    from app.db import personio_employees
+    from app.personio.sprachen import sprachen_aus
+
+    async with engine.begin() as conn:
+        rohdaten = list(
+            (
+                await conn.execute(
+                    sa.select(personio_employees.c.raw_json).where(
+                        personio_employees.c.raw_json.isnot(None)
+                    )
+                )
+            ).scalars()
+        )
+
+    quelle = "abgeglichener Bestand"
+    if not rohdaten:
+        from app.config import settings
+        from app.personio.client import PersonioClient
+
+        if not (settings.PERSONIO_CLIENT_ID and settings.PERSONIO_CLIENT_SECRET):
+            print("Kein Abgleich vorhanden und keine Personio-Zugangsdaten gesetzt.")
+            print("Entweder einmal abgleichen lassen oder PERSONIO_CLIENT_ID und")
+            print("PERSONIO_CLIENT_SECRET setzen.")
+            return
+        client = PersonioClient(settings.PERSONIO_CLIENT_ID, settings.PERSONIO_CLIENT_SECRET)
+        try:
+            rohdaten = await client.mitarbeiter()
+        finally:
+            await client.schliessen()
+        quelle = "Personio (live)"
+
+    zeilen = sprachen_aus(rohdaten)
+    print(f"Quelle: {quelle} · {len(rohdaten)} Personen")
+    if not zeilen:
+        print("Kein Feld gefunden, dessen Name nach Sprache aussieht.")
+        return
+    breite = max(len(f) for f, _, _ in zeilen)
+    for feld, wert, anzahl in zeilen:
+        print(f"  {feld.ljust(breite)}  {str(anzahl).rjust(4)}  {wert}")
+
+
 def main() -> int:
     zerleger = argparse.ArgumentParser(prog="python -m app.cli")
     unter = zerleger.add_subparsers(dest="befehl", required=True)
 
     unter.add_parser("reload-postgrest", help="PostgREST-Schema-Cache neu anfordern")
+    unter.add_parser(
+        "personio-sprachen",
+        help="gepflegte Sprachen der Belegschaft auflisten (für die Sprachwahl)",
+    )
 
     for name, hilfe in (
         ("uebernahme-vertrieb", "Upload-Protokolle, Rechnungen und Aufträge aus lumeapps holen"),
@@ -87,6 +134,7 @@ def main() -> int:
     args = zerleger.parse_args()
     lauf = {
         "reload-postgrest": lambda a: _reload_postgrest(),
+        "personio-sprachen": _personio_sprachen,
         "uebernahme-vertrieb": _uebernahme_vertrieb,
         "uebernahme-nutzer": _uebernahme_nutzer,
         "uebernahme-atr": _uebernahme_atr,
