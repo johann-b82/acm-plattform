@@ -11,6 +11,7 @@ const LABEL: Record<Zeitraum, string> = {
   quartal: "zum Vorquartal",
   jahr: "zur Vorperiode",
   alles: "zur Vorperiode",
+  frei: "zum Zeitraum davor",
 };
 
 /**

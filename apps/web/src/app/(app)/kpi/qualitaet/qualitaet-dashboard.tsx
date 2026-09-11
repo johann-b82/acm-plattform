@@ -20,12 +20,9 @@ import {
 } from "recharts";
 
 import {
-  ZEITRAUM_LABEL,
   bucketLabel,
-  fenster,
   fmt,
   takt,
-  type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
 import {
   AUDIT_ARTEN,
@@ -45,20 +42,20 @@ import {
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
-const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
 
 export function QualitaetDashboard() {
   const queryClient = useQueryClient();
-  const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
+  const wahl = useZeitraumwahl();
+  const { zeitraum, von, bis } = wahl;
   const [arten, setArten] = useState<string[]>([...AUDIT_ARTEN]);
   const [reklArt, setReklArt] = useState<ReklamationsArt>("kunde");
   const [mengenart, setMengenart] = useState<Mengenart>("gesamt");
-  const { von, bis } = useMemo(() => fenster(zeitraum), [zeitraum]);
   const t = takt(von, bis);
 
   // Alle vier ausgewählt heißt „kein Filter" — dann rechnet die Datenbank mit
@@ -189,24 +186,7 @@ export function QualitaetDashboard() {
             Audit-Findings, Reklamationsquote und Prüfmengen.
           </p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
-          {ZEITRAEUME.map((z) => (
-            <button
-              key={z}
-              type="button"
-              onClick={() => setZeitraum(z)}
-              aria-pressed={zeitraum === z}
-              className={cn(
-                "rounded px-3 py-1 text-sm transition-colors",
-                zeitraum === z
-                  ? "bg-[var(--fg)] text-[var(--bg)]"
-                  : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-              )}
-            >
-              {ZEITRAUM_LABEL[z]}
-            </button>
-          ))}
-        </div>
+        <Zeitraumwahl wahl={wahl} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

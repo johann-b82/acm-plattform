@@ -9,13 +9,14 @@ import { supabaseBrowser } from "@/lib/supabase/client";
  * Frontends lag — einmal, nicht je Dashboard.
  */
 
-export type Zeitraum = "monat" | "quartal" | "jahr" | "alles";
+export type Zeitraum = "monat" | "quartal" | "jahr" | "alles" | "frei";
 
 export const ZEITRAUM_LABEL: Record<Zeitraum, string> = {
   monat: "Dieser Monat",
   quartal: "Dieses Quartal",
   jahr: "Dieses Jahr",
   alles: "Alles",
+  frei: "Zeitraum wählen",
 };
 
 /** Lokales Datum als `YYYY-MM-DD`.
@@ -29,9 +30,14 @@ function iso(d: Date): string {
   return `${d.getFullYear()}-${monat}-${tag}`;
 }
 
-/** Zeitraum in ein Datumsfenster übersetzen; `alles` lässt beide Grenzen offen. */
+/**
+ * Zeitraum in ein Datumsfenster übersetzen; `alles` lässt beide Grenzen offen.
+ *
+ * `frei` steht hier nicht: dessen Grenzen kommen von der Eingabe und nicht aus
+ * einer Rechnung. Die Wahl hält `useZeitraumwahl` zusammen.
+ */
 export function fenster(zeitraum: Zeitraum, heute = new Date()): { von: string | null; bis: string | null } {
-  if (zeitraum === "alles") return { von: null, bis: null };
+  if (zeitraum === "alles" || zeitraum === "frei") return { von: null, bis: null };
   const bis = iso(heute);
   if (zeitraum === "monat") {
     return { von: iso(new Date(heute.getFullYear(), heute.getMonth(), 1)), bis };

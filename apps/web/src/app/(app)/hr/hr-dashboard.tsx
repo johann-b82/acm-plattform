@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeft, RefreshCw } from "lucide-react";
@@ -17,7 +17,6 @@ import {
 } from "recharts";
 
 import {
-  ZEITRAUM_LABEL,
   bucketLabel,
   fenster,
   fmt,
@@ -28,6 +27,7 @@ import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { ladeZielwerte, nachSchluessel, verfehlt, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { STUFEN_MIT_FENSTER, Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { Belegschaft } from "./belegschaft";
@@ -35,7 +35,6 @@ import { Mitarbeitertabelle } from "./mitarbeitertabelle";
 import { Wochenbericht } from "./wochenbericht";
 import { cn } from "@/lib/cn";
 
-const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr"];
 
 /** Ohne Zeitraum wäre der Nenner der Quoten unbestimmt — „Alles" gibt es hier
  *  nicht. Die Sollstunden brauchen ein Fenster. */
@@ -109,8 +108,14 @@ function Abgleichzeile({ darfAbgleichen }: { darfAbgleichen: boolean }) {
 }
 
 export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean }) {
-  const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
-  const { von, bis } = useMemo(() => personalFenster(zeitraum), [zeitraum]);
+  const wahl = useZeitraumwahl();
+  const { zeitraum } = wahl;
+  // Ohne Fenster wäre der Nenner der Quoten unbestimmt; „Alles" steht deshalb
+  // nicht zur Wahl, und ein leeres Fenster fällt auf das laufende Jahr zurück.
+  const { von, bis } = useMemo(
+    () => (wahl.von && wahl.bis ? { von: wahl.von, bis: wahl.bis } : personalFenster("jahr")),
+    [wahl.von, wahl.bis],
+  );
   const t = takt(von, bis);
 
   const ueber = useQuery({
@@ -187,24 +192,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
             </Link>
           </div>
         </div>
-        <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
-          {ZEITRAEUME.map((z) => (
-            <button
-              key={z}
-              type="button"
-              onClick={() => setZeitraum(z)}
-              aria-pressed={zeitraum === z}
-              className={cn(
-                "rounded px-3 py-1 text-sm transition-colors",
-                zeitraum === z
-                  ? "bg-[var(--fg)] text-[var(--bg)]"
-                  : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-              )}
-            >
-              {ZEITRAUM_LABEL[z]}
-            </button>
-          ))}
-        </div>
+        <Zeitraumwahl wahl={wahl} stufen={STUFEN_MIT_FENSTER} />
       </div>
 
       <Abgleichzeile darfAbgleichen={darfAbgleichen} />

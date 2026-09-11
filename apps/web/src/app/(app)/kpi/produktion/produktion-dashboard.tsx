@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
@@ -16,22 +16,18 @@ import {
 } from "recharts";
 
 import {
-  ZEITRAUM_LABEL,
   bucketLabel,
-  fenster,
   fmt,
   takt,
-  type Zeitraum,
 } from "@/lib/kpi/gemeinsam";
 import { ART_LABEL, produktionApi } from "@/lib/kpi/produktion";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Badge, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
-import { cn } from "@/lib/cn";
 
-const ZEITRAEUME: Zeitraum[] = ["monat", "quartal", "jahr", "alles"];
 
 
 function datum(iso: string | null): string {
@@ -39,8 +35,8 @@ function datum(iso: string | null): string {
 }
 
 export function ProduktionDashboard() {
-  const [zeitraum, setZeitraum] = useState<Zeitraum>("jahr");
-  const { von, bis } = useMemo(() => fenster(zeitraum), [zeitraum]);
+  const wahl = useZeitraumwahl();
+  const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
 
   const verzug = useQuery({
@@ -98,24 +94,7 @@ export function ProduktionDashboard() {
             Aufträge in Verzug. Gezählt wird ein Auftrag erst, wenn sein Ausgang feststeht.
           </p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
-          {ZEITRAEUME.map((z) => (
-            <button
-              key={z}
-              type="button"
-              onClick={() => setZeitraum(z)}
-              aria-pressed={zeitraum === z}
-              className={cn(
-                "rounded px-3 py-1 text-sm transition-colors",
-                zeitraum === z
-                  ? "bg-[var(--fg)] text-[var(--bg)]"
-                  : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-              )}
-            >
-              {ZEITRAUM_LABEL[z]}
-            </button>
-          ))}
-        </div>
+        <Zeitraumwahl wahl={wahl} />
       </div>
 
       {fehler && (
