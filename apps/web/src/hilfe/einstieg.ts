@@ -28,8 +28,10 @@ Nach dem Anmelden siehst du Kacheln. **Du siehst nur die Anwendungen, für die
 du ein Recht hast.** Fehlt eine Kachel, die du brauchst, fehlt dir das Recht —
 nicht die Anwendung. Sag der Plattform-Verwaltung, welche Kachel du erwartest.
 
-Oben rechts stehen deine Anmeldung und, wenn du Plattform-Admin bist, der
-Zugang zu den Einstellungen.
+Oben links steht das Firmenlogo; ein Klick darauf bringt dich immer hierher
+zurück. Oben rechts steht deine Anmeldung und daneben drei Zeichen: **Hilfe**
+(Fragezeichen), **Einstellungen** (Zahnrad, nur für Plattform-Admins) und
+**Abmelden**. Wer die Maus darüber hält, bekommt die Beschriftung.
 
 ## Wo liegt was
 

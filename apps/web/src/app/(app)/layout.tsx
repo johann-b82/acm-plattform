@@ -1,9 +1,17 @@
 import Link from "next/link";
+import { CircleHelp, LogOut, Settings } from "lucide-react";
+
 import { requireSession } from "@/lib/auth";
 import { logoAdresse } from "@/lib/logo-server";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/providers";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
+
+/** Ein Zeichen in der Kopfzeile: quadratische Fläche, sichtbarer Tastaturfokus. */
+const KNOPF =
+  "inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--fg-muted)] " +
+  "transition-colors hover:bg-[var(--muted)] hover:text-[var(--fg)] " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 /**
  * Shell für alle angemeldeten Seiten. Läuft immer pro Anfrage (die Sitzung
@@ -34,19 +42,32 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <span className="font-semibold tracking-tight">ACM-Plattform</span>
             )}
           </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-[var(--fg-muted)]">{session.email}</span>
-            <Link href="/hilfe" className="underline-offset-4 hover:underline">
-              Hilfe
+          {/* Zeichen statt Beschriftungen: drei Wörter nebeneinander drängten
+              die Kopfzeile zu, und gemeint ist jedes Mal dasselbe wie das
+              Zeichen. Die Beschriftung bleibt als `aria-label` und als
+              `title` — wer die Maus darüber hält oder einen Screenreader
+              benutzt, bekommt sie. Die Adresse bleibt Text: sie sagt, wer
+              angemeldet ist, und dafür gibt es kein Zeichen. */}
+          <div className="flex items-center gap-1">
+            <span className="mr-2 hidden text-sm text-[var(--fg-muted)] sm:inline">
+              {session.email}
+            </span>
+            <Link href="/hilfe" aria-label="Hilfe" title="Hilfe" className={KNOPF}>
+              <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
             </Link>
             {session.apps.platform === "admin" && (
-              <Link href="/einstellungen" className="underline-offset-4 hover:underline">
-                Einstellungen
+              <Link
+                href="/einstellungen"
+                aria-label="Einstellungen"
+                title="Einstellungen"
+                className={KNOPF}
+              >
+                <Settings className="h-[18px] w-[18px]" aria-hidden />
               </Link>
             )}
             <form action={signOut}>
-              <button type="submit" className="underline-offset-4 hover:underline">
-                Abmelden
+              <button type="submit" aria-label="Abmelden" title="Abmelden" className={KNOPF}>
+                <LogOut className="h-[18px] w-[18px]" aria-hidden />
               </button>
             </form>
           </div>
