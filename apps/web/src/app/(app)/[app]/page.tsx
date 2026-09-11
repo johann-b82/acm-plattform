@@ -14,7 +14,7 @@ export default async function AppPage({ params }: { params: Promise<{ app: strin
   const session = await requireApp(app);
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">{data.name}</h1>
+      <h2 className="text-2xl font-semibold tracking-tight">{data.name}</h2>
       <p className="mt-2 text-[var(--fg-muted)]">
         Dein Level: <span className="font-mono">{levelFor(session.apps, app)}</span>. Das Modul zieht in
         Phase 4 aus <span className="font-mono">lumeapps</span> hierher um.

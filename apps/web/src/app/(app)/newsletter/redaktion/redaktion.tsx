@@ -153,7 +153,6 @@ export function Redaktion({
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/newsletter/redaktion"]}
         untertitel={worte.newsletter.redaktionEinleitung}
         unter={
           <div className="mt-2 flex justify-center text-sm">

@@ -94,7 +94,6 @@ export function EinkaufDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/kpi/einkauf"]}
         untertitel={worte.einkauf.einleitung}
         unter={<Datenstand bereich="einkauf" />}
         bedienung={<Zeitraumwahl wahl={wahl} />}

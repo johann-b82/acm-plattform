@@ -141,7 +141,7 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{z.name}</h1>
+          <h2 className="text-2xl font-semibold tracking-tight">{z.name}</h2>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             {artLabel[z.art]}
             {schnitt !== null && worte.zeugnis.durchschnitt(schnitt.toFixed(1))}

@@ -1713,6 +1713,13 @@ export const en: Texte = {
     mitgliedEntfernen: "Remove member",
     entfernen: "Remove",
   },
+  kopftitel: {
+    start: "Apps",
+    kennzahlen: "KPI dashboard",
+    offeneSchulungen: "Outstanding training",
+    schulungsmatrix: "Training matrix",
+    atrLieferungen: "ATR deliveries",
+  },
   kennzahlenHub: {
     titel: "KPI dashboard",
     einleitung: "Metrics by department. The data comes from the ERP exports under Uploads.",

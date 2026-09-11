@@ -125,7 +125,6 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/hr/einarbeitung"]}
         untertitel={worte.einarbeitung.einleitung}
         unter={
           <div className="mt-2 flex justify-center gap-4 text-sm">

@@ -108,7 +108,6 @@ export function OffeneSchulungen() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.titel.offeneSchulungen}
         untertitel={worte.offeneSchulungen.einleitung}
         unter={
           <div className="mt-2 flex justify-center gap-4 text-sm">

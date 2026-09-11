@@ -68,7 +68,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf titel={worte.pfad.seiten["/fair"]} untertitel={worte.fair.einleitung} />
+      <Seitenkopf untertitel={worte.fair.einleitung} />
 
       {darfSchreiben && (
         <Card className="flex flex-wrap items-end gap-3 p-4">

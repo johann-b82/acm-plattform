@@ -246,7 +246,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
           Zeichnungen
         </Link>
-        <h1 className="text-lg font-semibold">{z.name}</h1>
+        <h2 className="text-lg font-semibold">{z.name}</h2>
 
         <div className="ml-auto flex items-center gap-1">
           {seiten > 1 && (

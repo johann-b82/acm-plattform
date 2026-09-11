@@ -106,7 +106,6 @@ export function FinanzenDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/kpi/finanzen"]}
         untertitel={worte.finanzen.einleitung}
         unter={<Datenstand bereich="finanzen" />}
         bedienung={<Zeitraumwahl wahl={wahl} />}

@@ -238,7 +238,7 @@ export function UploadsAdmin() {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf titel={worte.pfad.seiten["/uploads"]} untertitel={worte.uploads.einleitung} />
+      <Seitenkopf untertitel={worte.uploads.einleitung} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {ARTEN.map((art) => (

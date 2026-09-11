@@ -201,7 +201,6 @@ export function QualitaetDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/kpi/qualitaet"]}
         untertitel={worte.qualitaet.einleitung}
         unter={<Datenstand bereich="qualitaet" />}
         bedienung={<Zeitraumwahl wahl={wahl} />}

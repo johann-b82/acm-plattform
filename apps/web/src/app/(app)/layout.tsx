@@ -11,6 +11,7 @@ import { Brotkrumen } from "@/components/brotkrumen";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { SprachUmschalter } from "@/components/sprache/umschalter";
 import { KNOPF } from "@/components/kopfzeile/knopf";
+import { Seitentitel } from "@/components/kopfzeile/seitentitel";
 import { FeedbackGlocke } from "@/components/feedback/glocke";
 import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
@@ -36,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     >
       <SprachAnbieter sprache={gewaehlt}>
         <div className="min-h-screen">
-          <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">
+          <header className="relative flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">
             <div className="flex min-w-0 items-center gap-4">
               <Link href="/" className="flex items-center gap-2" aria-label={t.kopf.uebersicht}>
                 {logo ? (
@@ -57,6 +58,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   Hause. */}
               <Brotkrumen />
             </div>
+            {/* Mittig auf der Seite, nicht mittig zwischen den beiden Blöcken:
+                sonst wandert der Titel, sobald der Pfad länger wird. Deshalb
+                absolut gesetzt und ohne Mausfang — was darunter liegt, bleibt
+                anklickbar. */}
+            <Seitentitel />
             {/* Zeichen statt Beschriftungen: drei Wörter nebeneinander drängten
                   die Kopfzeile zu, und gemeint ist jedes Mal dasselbe wie das
                   Zeichen. Die Beschriftung bleibt als `aria-label` und als

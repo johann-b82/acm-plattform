@@ -160,9 +160,9 @@ export function Durchsicht({
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
           Lieferungen
         </Link>
-        <h1 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold">
           Lieferschein {l.lieferschein_nr ?? l.quelle_dateiname}
-        </h1>
+        </h2>
         {offen ? (
           <Badge variant="outline">{worte.lieferungen.entwurf}</Badge>
         ) : (

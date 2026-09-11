@@ -64,9 +64,9 @@ function Deckblatt({ ausgabe, bildUrl }: { ausgabe: Ausgabe; bildUrl?: string })
         <p className="text-sm uppercase tracking-[0.2em] opacity-90">
           Quartal {ausgabe.quartal} · {ausgabe.jahr}
         </p>
-        <h1 className="mt-2 text-4xl font-semibold leading-tight">
+        <h2 className="mt-2 text-4xl font-semibold leading-tight">
           {ausgabe.titel || "Newsletter"}
-        </h1>
+        </h2>
       </div>
     </Seite>
   );

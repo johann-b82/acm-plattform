@@ -34,7 +34,6 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.einstellungen.titel}
         untertitel={worte.einstellungen.einleitung}
       />
 

@@ -15,7 +15,7 @@ export default async function SignageLayout({ children }: { children: React.Reac
   const t = await texte();
   return (
     <div className="space-y-6">
-      <Seitenkopf titel={t.pfad.seiten["/signage"]} untertitel={t.signage.einleitung} />
+      <Seitenkopf untertitel={t.signage.einleitung} />
       <SignageTabs />
       {children}
     </div>
