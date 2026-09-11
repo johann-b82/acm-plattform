@@ -107,6 +107,37 @@ async def _personio_sprachen(args) -> None:
         print(f"  {feld.ljust(breite)}  {str(anzahl).rjust(4)}  {wert}")
 
 
+async def _abgleich(args) -> None:
+    """Alt gegen neu zählen. Gibt 1 zurück, wenn eine Zahl nicht stimmt."""
+    from app.uebernahme import abgleich
+
+    zeilen = await abgleich.vergleiche(_alte_datenbank(args.quelle))
+
+    def zahl(n: int | None) -> str:
+        return "—" if n is None else f"{n:,}".replace(",", ".")
+
+    breite_alt = max(len(z.alt or "") for z in zeilen)
+    breite_neu = max(len(z.neu or "") for z in zeilen)
+    modul = None
+    for z in zeilen:
+        if z.modul != modul:
+            modul = z.modul
+            print(f"\n{modul}")
+        marke = "  " if z.stimmt else "! "
+        print(
+            f"  {marke}{(z.alt or '').ljust(breite_alt)}  {zahl(z.alt_zeilen).rjust(9)}"
+            f"   →  {(z.neu or '').ljust(breite_neu)}  {zahl(z.neu_zeilen).rjust(9)}"
+            + (f"   ({z.hinweis})" if z.hinweis else "")
+        )
+
+    schief = [z for z in zeilen if not z.stimmt]
+    print()
+    if schief:
+        print(f"{len(schief)} von {len(zeilen)} Tabellen weichen ab.")
+        raise SystemExit(1)
+    print(f"Alle {len(zeilen)} Tabellen stimmen überein.")
+
+
 def main() -> int:
     zerleger = argparse.ArgumentParser(prog="python -m app.cli")
     unter = zerleger.add_subparsers(dest="befehl", required=True)
@@ -124,6 +155,7 @@ def main() -> int:
     )
 
     for name, hilfe in (
+        ("abgleich", "Zeilen alt gegen neu zählen (schreibt nichts)"),
         ("uebernahme-vertrieb", "Upload-Protokolle, Rechnungen und Aufträge aus lumeapps holen"),
         ("uebernahme-nutzer", "Personen aus directus_users anlegen (neues Passwort je Person)"),
         ("uebernahme-atr", "ATR-Teilekatalog und Vorlagen aus lumeapps holen"),
@@ -135,16 +167,18 @@ def main() -> int:
             metavar="DSN",
             help="Verbindung zur alten Datenbank, z. B. postgresql://kpi_user:pw@alter-host:5432/kpi_db",
         )
-        p.add_argument(
-            "--trocken",
-            action="store_true",
-            help="nur zählen, nichts schreiben",
-        )
+        if name != "abgleich":
+            p.add_argument(
+                "--trocken",
+                action="store_true",
+                help="nur zählen, nichts schreiben",
+            )
 
     args = zerleger.parse_args()
     lauf = {
         "reload-postgrest": lambda a: _reload_postgrest(),
         "personio-sprachen": _personio_sprachen,
+        "abgleich": _abgleich,
         "uebernahme-vertrieb": _uebernahme_vertrieb,
         "uebernahme-nutzer": _uebernahme_nutzer,
         "uebernahme-atr": _uebernahme_atr,
