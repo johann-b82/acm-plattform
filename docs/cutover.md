@@ -261,9 +261,66 @@ Prüfen: `http://<host>/` → Anmeldung → Kacheln.
 
 ## 4. Daten übernehmen
 
-Vier Läufe, jeder erst trocken. Alle vier sind **geprüft** gegen eine echte Alt-Datenbank mit 125 Alembic-Revisionen und Directus 11.17.2.
+**geprüft** (2026-09-12) — gegen einen Abzug des Produktivsystems, rein lesend über SSH gezogen: alle 73 Tabellenpaare stimmen überein, und 16 Summen über die tragenden Zahlenspalten sind auf beiden Seiten identisch.
 
-### 4a. Vertrieb, Personen und ATR
+### 4a. Alles auf einmal
+
+Ein Lauf holt jeden Fachbereich in der Reihenfolge seiner Abhängigkeiten — Vertrieb, Einkauf, Qualität, Audits, Personal, Schulungen, Kompetenzen, Einarbeitung, Onboarding, Zeugnisse, ATR, Technik, FAIR, Newsletter, Feedback, KPI-Bewertung und die Einstellungen:
+
+```bash
+docker network connect lumeapps_default acm-compute-1
+QUELLE="postgresql://<user>:<passwort>@lumeapps-db-1:5432/<datenbank>"
+
+# Erst zählen, dann schreiben.
+docker compose exec compute python -m app.cli uebernahme --quelle "$QUELLE" --trocken
+docker compose exec compute python -m app.cli uebernahme --quelle "$QUELLE"
+
+# Und nachsehen, ob es aufgeht — Rückgabewert 1, wenn eine Zahl abweicht.
+docker compose exec compute python -m app.cli abgleich --quelle "$QUELLE"
+
+docker network disconnect lumeapps_default acm-compute-1
+```
+
+`--leeren` leert die Zieltabellen vorher. Auf einem frisch aufgesetzten Stack
+ist das unnötig; auf einem, der schon Demodaten trägt, ist es Pflicht, sonst
+stehen beide Bestände nebeneinander.
+
+**Die SNMP-Communities brauchen den alten Schlüssel.** Sie sind mit dem
+`FERNET_KEY` von lumeapps verschlüsselt, nicht mit dem hiesigen. Vor dem Lauf:
+
+```bash
+ALT_FERNET_KEY=<FERNET_KEY aus der .env von lumeapps>
+```
+
+Fehlt er, bricht der Lauf ab, bevor eine Zeile geschrieben ist — Absicht: ein
+Sensor mit unlesbarer Community ist schlimmer als kein Sensor. (Für einen
+reinen Vergleichslauf ohne Messbetrieb gibt es
+`UEBERNAHME_COMMUNITY_PLATZHALTER=1`; am Stichtag ist das der falsche Weg.)
+
+**Vier Abweichungen sind gewollt** und stehen im Abgleich mit `~` statt `!`:
+das Tippspiel-Protokoll, zwei Formblatt-Vorgänge, deren Dateien nicht in der
+Datenbank liegen, und die eine Einstellungszeile, aus der neunzehn Zielwerte
+und drei Listen werden.
+
+### 4b. Die Dateien kommen nicht mit
+
+Der Datenbankabzug enthält keine hochgeladenen Dateien — die liegen in
+Directus. Betroffen sind die FAIR-Zeichnungen (17), die Wartungsnachweise, die
+ATR-Mappen und -Etiketten und die Feedback-Screenshots (10). Die Zeilen
+wandern, die Bytes brauchen einen eigenen Schritt; bis dahin sagt die
+Oberfläche bei der Zeichnung ausdrücklich, dass die Datei fehlt.
+
+Das Firmenlogo geht denselben Weg und ist der einzige Fall, der sich in einem
+Schritt erledigen lässt:
+
+```bash
+# aus der alten Datenbank holen
+psql "$QUELLE" -t -A -c "select encode(logo_data,'base64') from app_settings limit 1" \
+  | tr -d '\n' | base64 -d > logo.png
+# in den Eimer legen und die Zeile darauf zeigen lassen (Pfad: <nutzer-uuid>/<zufall>.png)
+```
+
+### 4c. Nur einzelne Bereiche (Altweg)
 
 Ablauf in `docs/setup.md`, Abschnitt „Datenübernahme aus lumeapps". Kurz:
 
