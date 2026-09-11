@@ -82,6 +82,24 @@ export interface Baustein {
   text: string;
 }
 
+/** Wer unter dem Zeugnis stehen wird — aufgelöst von compute. */
+export interface Unterschrift {
+  name: string | null;
+  titel: string | null;
+  quelle: "personio" | "profil" | "keine";
+}
+
+export interface Unterschriften {
+  fachlich: Unterschrift;
+  personalseitig: Unterschrift;
+}
+
+export const QUELLE_LABEL: Record<Unterschrift["quelle"], string> = {
+  personio: "aus Personio",
+  profil: "aus den Einstellungen",
+  keine: "nicht hinterlegt",
+};
+
 export interface Aussteller {
   firma: string;
   standort: string | null;
@@ -104,6 +122,7 @@ export const zeugnisKeys = {
   bewertungen: (id: string) => ["zeugnisse", id, "noten"] as const,
   bausteine: () => ["zeugnisse", "bausteine"] as const,
   aussteller: () => ["zeugnisse", "aussteller"] as const,
+  unterschriften: (id: string) => ["zeugnisse", id, "unterschriften"] as const,
 };
 
 function sb() {
@@ -240,6 +259,15 @@ export const zeugnisApi = {
     if (error) throw new Error(error.message);
     if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");
   },
+
+  /**
+   * Wer unterschreiben wird — vor dem Erzeugen.
+   *
+   * Die linke Unterschrift hängt an der Person und wird sonst erst beim Setzen
+   * aufgelöst; ein fehlender Vorgesetzter fiele dann erst im fertigen PDF auf.
+   */
+  unterschriften: (id: string) =>
+    computeJson<Unterschriften>(`/api/zeugnisse/${id}/unterschriften`),
 
   /** Die Abschnitte aus den Textbausteinen bilden — ohne Netz. */
   baukasten: (id: string) =>

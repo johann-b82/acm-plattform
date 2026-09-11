@@ -51,6 +51,12 @@ export const GRUPPEN: Gruppe[] = [
       "Die Messgeräte im Netz: wo sie stehen, unter welcher Kennung sie Temperatur und Luftfeuchte liefern und ab wann ein Wert als zu hoch gilt.",
   },
   {
+    id: "zeugnisse",
+    titel: "Zeugnisse",
+    beschreibung:
+      "Was auf jedem Arbeitszeugnis gleich steht: Firma, Ort und die beiden Unterschriften. Die fachliche wird beim Erzeugen aus Personio aufgelöst — hier steht nur ihr Rückfall.",
+  },
+  {
     id: "erscheinung",
     titel: "Erscheinungsbild",
     beschreibung:

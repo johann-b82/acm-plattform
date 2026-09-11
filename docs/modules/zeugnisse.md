@@ -64,9 +64,34 @@ Ein Test hält das fest: er baut ein Zeugnis-DOCX und lässt LibreOffice ein PDF
 daraus machen. Fehlt Writer im Abbild, schlägt er fehl — genau an der Stelle,
 an der der Fehler sonst erst vor Ort aufgefallen wäre.
 
+## Zwei Unterschriften, zwei Herkünfte
+
+Unter dem Zeugnis stehen zwei Namen, und nur einer davon ist für alle gleich.
+
+| | wer | woher |
+|---|---|---|
+| links | die **fachliche** — der oder die Vorgesetzte der Person | Personios Organisationsstruktur |
+| rechts | die **personalseitige** | Ausstellerprofil (`/einstellungen#zeugnisse`) |
+
+Die linke hängt an der Person, nicht am Haus: wer in der Näherei arbeitet,
+bekommt die Unterschrift der Näherei. Sie wird deshalb beim Setzen aufgelöst,
+aus `raw_json.attributes.supervisor` — ein Feld, das der Abgleich ohnehin
+mitbringt. Die Position darunter kommt aus dem vollen Datensatz der
+vorgesetzten Person; am eingebetteten Knoten steht sie oft nicht.
+
+Personio führt neben Vor- und Nachname einen `preferred_name`. Der geht vor:
+er ist das, was im Haus auf dem Türschild steht.
+
+**Beide fallen auf Freitext zurück.** Es gibt genug Fälle, in denen Personio
+nichts hergibt — extern gepflegte Personen, ein nicht gepflegter Vorgesetzter,
+ein Abgleich, der gerade nicht gelaufen ist. Ein Zeugnis ohne Unterschrift wäre
+wertlos. Umgekehrt wird nichts erfunden: ist auch der Freitext leer, bleibt die
+Unterschrift leer und die Maske sagt es.
+
+`GET /api/zeugnisse/{id}/unterschriften` zeigt beide **vor** dem Erzeugen,
+samt Herkunft. Ohne das fiele ein fehlender Vorgesetzter erst im fertigen PDF
+auf — und dann ist das Zeugnis schon gedruckt.
+
 ## Was noch fehlt
 
-Die Vorschlagsliste für Vorgesetzte aus Personio (zweite Unterschrift) ist
-angelegt, aber noch nicht befüllt: das Feld `hr_employee_id` am Aussteller wird
-aufgelöst, ein abteilungsabhängiger Vorgesetzter noch nicht. Steht in
-`docs/backlog.md`.
+Nichts mehr aus dem Altprojekt. Offene Punkte stehen in `docs/backlog.md`.
