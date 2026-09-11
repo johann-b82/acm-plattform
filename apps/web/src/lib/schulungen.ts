@@ -50,6 +50,11 @@ export interface Stand {
   teilnahme_id: string;
   schulung_id: string;
   employee_id: number | null;
+  extern_id: string | null;
+  /** `e:<id>`, `x:<uuid>` oder `p:<personalnummer>` — passt zu `Person.schluessel`. */
+  schluessel: string;
+  mitarbeiter_name: string | null;
+  abteilung_kuerzel: string | null;
   bereich: string;
   schulung: string;
   turnus_monate: number | null;
@@ -58,6 +63,24 @@ export interface Stand {
   ueberfaellig: boolean;
   nie_absolviert: boolean;
 }
+
+/** Eine Zeile der Matrix: wer überhaupt geschult werden muss. */
+export interface Person {
+  schluessel: string;
+  employee_id: number | null;
+  extern_id: string | null;
+  personalnummer: string | null;
+  name: string | null;
+  abteilung: string | null;
+  eintritt: string | null;
+  herkunft: "personio" | "extern" | "ohne_zuordnung";
+}
+
+export const HERKUNFT_LABEL: Record<Person["herkunft"], string> = {
+  personio: "Personio",
+  extern: "extern gepflegt",
+  ohne_zuordnung: "ohne Personio-Treffer",
+};
 
 export interface OhneZuordnung {
   personalnummer: string;
@@ -85,6 +108,7 @@ export const schulungKeys = {
   pflicht: () => ["schulungen", "pflicht"] as const,
   teilnahmen: (id: string) => ["schulungen", "teilnahmen", id] as const,
   stand: () => ["schulungen", "stand"] as const,
+  belegschaft: () => ["schulungen", "belegschaft"] as const,
 };
 
 function sb() {
@@ -215,6 +239,15 @@ export const schulungApi = {
     const { data, error } = await sb().from("schulung_stand").select("*");
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as Stand[];
+  },
+
+  belegschaft: async (): Promise<Person[]> => {
+    const { data, error } = await sb()
+      .from("schulung_belegschaft")
+      .select("*")
+      .order("name");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Person[];
   },
 
   vorschau: async (datei: File): Promise<ImportErgebnis> => {
