@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import { ELTERN, TITEL, krumen } from "@/lib/brotkrumen";
 
+const TAFEL: Record<string, string> = TITEL;
+
 describe("krumen", () => {
   it("bleibt auf der Übersicht leer", () => {
     expect(krumen("/")).toEqual([]);
@@ -102,7 +104,7 @@ describe("Vollständigkeit", () => {
   });
 
   it.each(feste)("kennt %s", (adresse) => {
-    expect(TITEL[adresse]).toBeTruthy();
+    expect(TAFEL[adresse]).toBeTruthy();
   });
 
   it("kennt keine Seite, die es nicht gibt", () => {
