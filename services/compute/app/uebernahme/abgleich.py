@@ -26,13 +26,18 @@ class Paar:
     alt: str | None
     neu: str | None
     hinweis: str = ""
+    #: Warum die beiden Zahlen **nicht** gleich sein dürfen. Steht hier etwas,
+    #: ist die Abweichung gewollt und kein Befund — der Grund gehört in den
+    #: Text, sonst wäre es eine Ausnahme ohne Begründung.
+    erwartet: str = ""
 
 
 #: Alt → neu. `neu=None` heißt: bewusst nicht portiert. `alt=None` heißt: im
 #: neuen Stack dazugekommen, im Alten gibt es dafür keine Zeilen.
 PAARE: list[Paar] = [
     # --- Vertrieb -----------------------------------------------------------
-    Paar("Vertrieb", "upload_batches", "upload_batches"),
+    Paar("Vertrieb", "upload_batches", "upload_batches",
+         erwartet="ein Protokoll der Sorte „tippspiel“ kommt nicht mit"),
     Paar("Vertrieb", "revenues", "revenues"),
     Paar("Vertrieb", "auftraege", "auftraege"),
     Paar("Vertrieb", "auftrag_positionen", "auftrag_positionen"),
@@ -68,7 +73,9 @@ PAARE: list[Paar] = [
     Paar("Personal", "schulung_rolle", "schulung_rollen"),
     Paar("Personal", "schulung_teilnahme", "schulung_teilnahmen"),
     Paar("Personal", "schulung_import", "schulung_importe"),
-    Paar("Personal", "schulung_dokument", "schulung_unterlagen"),
+    Paar("Personal", "schulung_dokument", "schulung_unterlagen",
+         erwartet="ein offener Formblatt-Vorgang; sein Zuhause sind die "
+         "Dokumentvorgänge, und die Datei liegt nicht im Abzug"),
     Paar("Personal", "kompetenz_matrix", "kompetenz_matrizen"),
     Paar("Personal", "kompetenz_kategorie", "kompetenz_kategorien"),
     Paar("Personal", "kompetenz_qualifikation", "kompetenz_qualifikationen"),
@@ -76,7 +83,9 @@ PAARE: list[Paar] = [
     Paar("Personal", "kompetenz_bewertung", "kompetenz_bewertungen"),
     Paar("Personal", "einarbeitung_katalog", "einarbeitung_katalog"),
     Paar("Personal", "einarbeitung_pflicht", "einarbeitung_pflicht"),
-    Paar("Personal", "einarbeitung_dokument", "dokument_nachweise"),
+    Paar("Personal", "einarbeitung_dokument", "dokument_nachweise",
+         erwartet="derselbe Fall wie beim Schulungsdokument: ein Formblatt-"
+         "Vorgang ohne Datei im Abzug"),
     Paar("Personal", "onboarding_abteilung", "onboarding_abteilung"),
     Paar("Personal", "onboarding_paket_download", "onboarding_paket"),
     Paar("Personal", "onboarding_extern", "externe_personen"),
@@ -107,7 +116,9 @@ PAARE: list[Paar] = [
     Paar("Querschnitt", "kpi_comment", "kpi_kommentare"),
     Paar("Querschnitt", "kpi_measure", "kpi_massnahmen"),
     Paar("Querschnitt", "app_settings", "hr_einstellungen",
-         "aufgeteilt auf hr_einstellungen, zielwerte und geheimnisse"),
+         "aufgeteilt auf hr_einstellungen, zielwerte und geheimnisse",
+         erwartet="aus einer Zeile mit siebzig Spalten werden drei Listen und "
+         "neunzehn Zielwerte"),
     # --- bewusst nicht portiert --------------------------------------------
     Paar("Nicht portiert", "tippspiel_tips", None, "Tippspiel wird nicht übernommen"),
     Paar("Nicht portiert", "signage_media", None, "Signage liegt im Repo acm-signage"),
@@ -125,14 +136,23 @@ class Zeile:
     alt_zeilen: int | None
     neu_zeilen: int | None
     hinweis: str
+    erwartet: str = ""
 
     @property
     def stimmt(self) -> bool:
         """Zwei Zahlen, die beide dastehen, müssen gleich sein. Fehlt eine
-        Seite absichtlich, gibt es nichts zu vergleichen."""
-        if self.alt is None or self.neu is None:
+        Seite absichtlich, gibt es nichts zu vergleichen — und eine begründet
+        erwartete Abweichung ist kein Befund, sondern eine Entscheidung."""
+        if self.alt is None or self.neu is None or self.erwartet:
             return True
         return self.alt_zeilen == self.neu_zeilen
+
+    @property
+    def weicht_ab(self) -> bool:
+        """Ob die Zahlen auseinandergehen — auch dann, wenn es so gewollt ist."""
+        if self.alt is None or self.neu is None:
+            return False
+        return self.alt_zeilen != self.neu_zeilen
 
 
 def _zaehle_alt(quelle: sa.engine.Engine, tabelle: str) -> int | None:
@@ -168,6 +188,7 @@ async def vergleiche(quelle: sa.engine.Engine) -> list[Zeile]:
                 alt_zeilen=_zaehle_alt(quelle, p.alt) if p.alt else None,
                 neu_zeilen=await _zaehle_neu(p.neu) if p.neu else None,
                 hinweis=p.hinweis,
+                erwartet=p.erwartet,
             )
         )
     return zeilen
