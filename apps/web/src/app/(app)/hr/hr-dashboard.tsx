@@ -219,6 +219,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kennzahl
           titel="Überstunden-Quote"
+          erklaerung={{ seite: "personal", abschnitt: "Die Quoten" }}
           wert={fmt.prozent(ueber.data?.quote)}
           hinweis={
             ueber.data
@@ -239,6 +240,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
         />
         <Kennzahl
           titel="Krankheitsquote"
+          erklaerung={{ seite: "personal", abschnitt: "Die Quoten" }}
           wert={krank.data?.eingerichtet === false ? "—" : fmt.prozent(krank.data?.quote)}
           hinweis={
             krank.data?.eingerichtet === false
@@ -261,6 +263,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
         />
         <Kennzahl
           titel="Fluktuation"
+          erklaerung={{ seite: "personal", abschnitt: "Die Quoten" }}
           wert={fmt.prozent(fluk.data?.quote)}
           hinweis={
             fluk.data
@@ -281,6 +284,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
         />
         <Kennzahl
           titel="Erfasste Personen"
+          erklaerung={{ seite: "personal", abschnitt: "Die Quoten" }}
           wert={fmt.zahl(ueber.data?.personen)}
           hinweis="mit Anwesenheit im Zeitraum"
           laedt={laedt}

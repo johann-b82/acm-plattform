@@ -128,6 +128,7 @@ export function EinkaufDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kennzahl
           titel="OTD-Quote"
+          erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={fmt.prozent(otd.data?.quote == null ? null : Number(otd.data.quote))}
           hinweis={`Ziel ${fmt.prozent(ziel)} · pünktlich heißt Verzug ≤ 0`}
           laedt={otd.isLoading}
@@ -142,16 +143,19 @@ export function EinkaufDashboard() {
         />
         <Kennzahl
           titel="Pünktliche Positionen"
+          erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={fmt.zahl(otd.data?.puenktlich)}
           laedt={otd.isLoading}
         />
         <Kennzahl
           titel="Positionen gesamt"
+          erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={fmt.zahl(otd.data?.gesamt)}
           laedt={otd.isLoading}
         />
         <Kennzahl
           titel="Ø Verzug"
+          erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={verzugText(otd.data?.verzug_schnitt == null ? null : Number(otd.data.verzug_schnitt))}
           hinweis="Positionen ohne Verzugswert zählen hier nicht mit"
           laedt={otd.isLoading}

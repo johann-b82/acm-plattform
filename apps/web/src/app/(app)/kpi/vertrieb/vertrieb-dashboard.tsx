@@ -105,6 +105,7 @@ export function VertriebDashboard() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Kennzahl
           titel="Umsatz"
+          erklaerung={{ seite: "vertrieb", abschnitt: "Die Kacheln" }}
           wert={fmt.eur(summe.data?.umsatz)}
           hinweis="Rechnungen abzüglich Gutschriften"
           laedt={summe.isLoading}
@@ -119,6 +120,7 @@ export function VertriebDashboard() {
         />
         <Kennzahl
           titel="Ø Auftragswert"
+          erklaerung={{ seite: "vertrieb", abschnitt: "Die Kacheln" }}
           wert={fmt.eur(summe.data?.auftragswert_avg)}
           hinweis="Aufträge über 0 €"
           laedt={summe.isLoading}
@@ -133,6 +135,7 @@ export function VertriebDashboard() {
         />
         <Kennzahl
           titel="Aufträge gesamt"
+          erklaerung={{ seite: "vertrieb", abschnitt: "Die Kacheln" }}
           wert={fmt.zahl(summe.data?.auftraege_anzahl)}
           hinweis="Aufträge über 0 €"
           laedt={summe.isLoading}
