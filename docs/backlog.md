@@ -9,7 +9,6 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 | # | Modul | Alt (Operationen) | Inhalt |
 |---|---|---|---|
 | 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. **Beim Abgleich aufgefallen: im Altsystem ruft ihn niemand auf** — `send_email` hat dort außerhalb des eigenen Routers keinen Aufrufer. Portiert würde ein delegierter OAuth-Ablauf samt Token-Ablage und Einstellungsmaske für etwas, das nichts benutzt. Empfehlung: bauen, wenn der erste Verbraucher da ist (Schulungserinnerungen sind der naheliegende). |
-| 10 | In-App-Dokumentation | — | 22 Markdown-Seiten aus `frontend/src/docs/`. Zuletzt, weil sie den fertigen Stand beschreibt. |
 
 ### Innerhalb des Audit-Moduls offen
 
@@ -60,7 +59,9 @@ Personal (Kennzahlen, Belegschaft, Wochenbericht), Newsletter, KPI-Bewertung,
 Seiten-Feedback, FAIR, ATR (vier Teile), Uploads (13 Routen; die 16 alten minus
 Tippspiel, minus der abgelösten Sammelroute, minus zweier zusammengelegter
 Preisdateien), Personio-Abgleich, Rechteverwaltung, Sensoren, Wartung, Schulungsmatrix,
-Dokumentenlauf (Einarbeitungsplan und Schulungsnachweis).
+Dokumentenlauf (Einarbeitungsplan und Schulungsnachweis), Hilfe in der Anwendung
+(22 Seiten, für diesen Stand geschrieben — die 21 Seiten des Altprojekts
+beschreiben dessen Oberfläche und wären ab dem ersten Tag falsch).
 Anzeigen für die Bildschirme (Geburtstage, Neuzugänge) — nicht 1:1, sondern
 mit signiertem Token statt offener Route, siehe `docs/modules/anzeigen.md`.
 Signage liegt im eigenen Repo `acm-signage`.

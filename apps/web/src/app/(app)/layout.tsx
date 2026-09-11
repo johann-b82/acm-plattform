@@ -23,6 +23,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-[var(--fg-muted)]">{session.email}</span>
+            <Link href="/hilfe" className="underline-offset-4 hover:underline">
+              Hilfe
+            </Link>
             {session.apps.platform === "admin" && (
               <Link href="/einstellungen" className="underline-offset-4 hover:underline">
                 Einstellungen
