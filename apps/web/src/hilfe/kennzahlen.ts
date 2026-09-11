@@ -20,6 +20,14 @@ anderes, gilt das dort Genannte.
 Oben steht der Zeitraum. Er gilt für alles darunter. Vorgewählt ist **dieses
 Jahr** — vom 1. Januar bis heute.
 
+Neben den Vorschlägen steht **„Zeitraum wählen"**: zwei Datumsfelder für ein
+eigenes Fenster. Liegt das Ende vor dem Anfang, sagt die Seite das und fragt
+gar nicht erst ab — sonst käme eine leere Antwort zurück und sähe aus wie
+„keine Daten".
+
+Das eigene Fenster bleibt erhalten, wenn du zwischendurch einen Vorschlag
+antippst. Wer sich vertippt, findet seine Daten danach noch vor.
+
 Alle Datumsvergleiche schließen die Ränder ein: „1.3. bis 31.3." enthält beide
 Tage.
 
