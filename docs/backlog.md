@@ -4,15 +4,6 @@ Stand 2026-09-11. Grundlage ist die OpenAPI des laufenden Altsystems (337
 Operationen auf 274 Pfaden), abgeglichen gegen `acm-plattform`. Jede Zeile ist
 ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 
-## Zuerst: eine offene Probe
-
-**Das Zeugnis-PDF ist ungeprüft.** Das DOCX entsteht nachweislich (lokal
-gebaut und nachgesehen), die Umwandlung nach PDF braucht `libreoffice-writer`
-— der Paketzusatz steht im Dockerfile, der Neubau des Abbilds lief aber in
-eine Speichergrenze der Entwicklungsmaschine und ist nicht durchgelaufen. Vor
-dem ersten echten Zeugnis einmal `GET /api/zeugnisse/{id}/dokument.pdf`
-aufrufen.
-
 ## Offen
 
 | # | Modul | Alt (Operationen) | Inhalt |

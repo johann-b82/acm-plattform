@@ -60,11 +60,9 @@ dahin war nur Calc installiert (für die Excel-Formblätter), und Calc kann eine
 `.docx` nicht öffnen — LibreOffice meldet dann `source file could not be
 loaded`, was nach einer kaputten Datei klingt und keine ist.
 
-> **Ungeprüft.** Das DOCX ist lokal entstanden und nachgesehen (147 KB, 18
-> Absätze, Titel „Endzeugnis"). Die Umwandlung nach PDF **mit** Writer ist es
-> nicht: der Neubau des Abbilds lief in eine Speichergrenze der
-> Entwicklungsmaschine. Der erste Lauf vor Ort ist damit zugleich die Probe.
-> Steht in `docs/backlog.md`.
+Ein Test hält das fest: er baut ein Zeugnis-DOCX und lässt LibreOffice ein PDF
+daraus machen. Fehlt Writer im Abbild, schlägt er fehl — genau an der Stelle,
+an der der Fehler sonst erst vor Ort aufgefallen wäre.
 
 ## Was noch fehlt
 
