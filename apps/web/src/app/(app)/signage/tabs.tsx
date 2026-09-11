@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { useTexte } from "@/components/sprache/anbieter";
 
 const TABS = [
-  { href: "/signage/media", label: "Medien" },
-  { href: "/signage/playlists", label: "Playlists" },
-  { href: "/signage/schedules", label: "Zeitpläne" },
-  { href: "/signage/devices", label: "Geräte" },
+  { href: "/signage/media", wort: "medien" },
+  { href: "/signage/playlists", wort: "playlists" },
+  { href: "/signage/schedules", wort: "zeitplaene" },
+  { href: "/signage/devices", wort: "geraete" },
 ] as const;
 
 export function SignageTabs() {
+  const worte = useTexte();
   const pathname = usePathname();
   return (
-    <nav className="flex gap-1 border-b border-[var(--border)]" aria-label="Signage-Bereiche">
+    <nav className="flex gap-1 border-b border-[var(--border)]" aria-label={worte.signage.bereiche}>
       {TABS.map((tab) => {
         const active = pathname.startsWith(tab.href);
         return (
@@ -29,7 +31,7 @@ export function SignageTabs() {
                 : "border-transparent text-[var(--fg-muted)] hover:text-[var(--fg)]",
             )}
           >
-            {tab.label}
+            {worte.signage[tab.wort]}
           </Link>
         );
       })}

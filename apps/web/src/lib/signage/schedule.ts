@@ -30,17 +30,24 @@ export function hhmmToString(n: number): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-/** Kurzform der aktiven Tage, z. B. "Mo–Fr" oder "Mo, Mi, Fr". */
-export function weekdaysLabel(mask: number): string {
+/** Kurzform der aktiven Tage, z. B. "Mo–Fr" oder "Mo, Mi, Fr".
+ *
+ *  Kürzel und das Wort für „alle sieben" kommen von außen: `Mo` heißt auf
+ *  Englisch `Mon`, und aus „täglich" wird „daily". */
+export function weekdaysLabel(
+  mask: number,
+  kuerzel: readonly string[] = WEEKDAY_LABELS,
+  taeglich = "täglich",
+): string {
   const days = weekdayMaskToArray(mask);
   const active = days.flatMap((on, i) => (on ? [i] : []));
   if (active.length === 0) return "—";
-  if (active.length === 7) return "täglich";
+  if (active.length === 7) return taeglich;
   const isRun = active.every((d, i) => i === 0 || d === active[i - 1] + 1);
   if (isRun && active.length > 2) {
-    return `${WEEKDAY_LABELS[active[0]]}–${WEEKDAY_LABELS[active[active.length - 1]]}`;
+    return `${kuerzel[active[0]]}–${kuerzel[active[active.length - 1]]}`;
   }
-  return active.map((d) => WEEKDAY_LABELS[d]).join(", ");
+  return active.map((d) => kuerzel[d]).join(", ");
 }
 
 /** Relative Zeitangabe ohne Zusatzabhängigkeit (Intl.RelativeTimeFormat). */

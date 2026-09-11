@@ -8,7 +8,6 @@ import { Pencil } from "lucide-react";
 import { signageApi, signageKeys } from "@/lib/signage/api";
 import type { SignageSchedule } from "@/lib/signage/types";
 import {
-  WEEKDAY_LABELS,
   hhmmFromString,
   hhmmToString,
   weekdayMaskFromArray,
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
 
 interface DraftState {
   playlist_id: string;
@@ -49,6 +49,9 @@ const EMPTY_DRAFT: DraftState = {
 };
 
 export function SchedulesAdmin() {
+  const worte = useTexte();
+  const weekdaysLabel2 = (mask: number) =>
+    weekdaysLabel(mask, worte.signage.wochentagKuerzel, worte.signage.taeglich);
   const queryClient = useQueryClient();
   // undefined = Dialog zu, null = neu, Objekt = bearbeiten
   const [editing, setEditing] = useState<SignageSchedule | null | undefined>(undefined);
@@ -91,10 +94,10 @@ export function SchedulesAdmin() {
       const start = hhmmFromString(draft.start);
       const end = hhmmFromString(draft.end);
       if (start === null || end === null) throw new Error("Zeit im Format HH:MM angeben.");
-      if (start >= end) throw new Error("Ende muss nach dem Start liegen. Über Mitternacht bitte zwei Zeitpläne anlegen.");
-      if (!draft.playlist_id) throw new Error("Playlist auswählen.");
+      if (start >= end) throw new Error(worte.signage.endeNachStart);
+      if (!draft.playlist_id) throw new Error(worte.signage.playlistWaehlen);
       const mask = weekdayMaskFromArray(draft.days);
-      if (mask === 0) throw new Error("Mindestens einen Wochentag wählen.");
+      if (mask === 0) throw new Error(worte.signage.mindestensEinTag);
       const body = {
         playlist_id: draft.playlist_id,
         weekday_mask: mask,
@@ -156,21 +159,21 @@ export function SchedulesAdmin() {
       open={editing !== undefined}
       onOpenChange={(o) => !o && setEditing(undefined)}
       title={editing ? "Zeitplan bearbeiten" : "Neuer Zeitplan"}
-      description="Ein Zeitplan hat Vorrang vor der reinen Tag-Zuordnung. Fenster über Mitternacht in zwei Zeitpläne aufteilen."
+      description={worte.signage.zeitplanHinweis}
       footer={
         <>
           <Button variant="outline" onClick={() => setEditing(undefined)}>
-            Abbrechen
+            {worte.signage.abbrechen}
           </Button>
           <Button disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-            Speichern
+            {worte.signage.speichern}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="sched-playlist">Playlist</Label>
+          <Label htmlFor="sched-playlist">{worte.signage.playlist}</Label>
           <Select
             id="sched-playlist"
             value={draft.playlist_id}
@@ -186,9 +189,9 @@ export function SchedulesAdmin() {
         </div>
 
         <fieldset className="flex flex-col gap-1">
-          <legend className="text-sm font-medium">Wochentage</legend>
+          <legend className="text-sm font-medium">{worte.signage.wochentage}</legend>
           <div className="flex gap-1">
-            {WEEKDAY_LABELS.map((label, index) => (
+            {worte.signage.wochentagKuerzel.map((label, index) => (
               <label
                 key={label}
                 className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-xs"
@@ -211,7 +214,7 @@ export function SchedulesAdmin() {
 
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="sched-start">Von</Label>
+            <Label htmlFor="sched-start">{worte.signage.von}</Label>
             <Input
               id="sched-start"
               type="time"
@@ -220,7 +223,7 @@ export function SchedulesAdmin() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="sched-end">Bis</Label>
+            <Label htmlFor="sched-end">{worte.signage.bis}</Label>
             <Input
               id="sched-end"
               type="time"
@@ -229,7 +232,7 @@ export function SchedulesAdmin() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="sched-priority">Priorität</Label>
+            <Label htmlFor="sched-priority">{worte.signage.prioritaet}</Label>
             <Input
               id="sched-priority"
               type="number"
@@ -242,7 +245,7 @@ export function SchedulesAdmin() {
         <div className="flex items-center gap-2">
           <Switch
             checked={draft.enabled}
-            label="Zeitplan aktiv"
+            label={worte.signage.zeitplanAktiv}
             onCheckedChange={(enabled) => setDraft({ ...draft, enabled })}
           />
           <span className="text-sm">aktiv</span>
@@ -258,12 +261,12 @@ export function SchedulesAdmin() {
   );
 
   if (isLoading) {
-    return <TableWrap className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</TableWrap>;
+    return <TableWrap className="p-5 text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</TableWrap>;
   }
   if (isError) {
     return (
       <TableWrap className="p-5 text-sm text-[var(--danger)]">
-        Zeitpläne konnten nicht geladen werden.
+        {worte.signage.zeitplaeneFehler}
       </TableWrap>
     );
   }
@@ -271,8 +274,8 @@ export function SchedulesAdmin() {
     return (
       <>
         <EmptyState
-          title="Keine Zeitpläne"
-          body="Ohne Zeitplan entscheidet allein die Tag-Zuordnung, welche Playlist ein Gerät zeigt. Ein Zeitplan schaltet eine Playlist an bestimmten Tagen und Uhrzeiten davor."
+          title={worte.signage.keineZeitplaene}
+          body={worte.signage.keineZeitplaeneText}
           action={
             <Button onClick={() => openDialog(null)} disabled={playlists.length === 0}>
               {playlists.length === 0 ? "Zuerst Playlist anlegen" : "Zeitplan anlegen"}
@@ -290,12 +293,12 @@ export function SchedulesAdmin() {
         <Table>
           <thead>
             <tr>
-              <Th>Playlist</Th>
-              <Th>Tage</Th>
-              <Th>Zeitfenster</Th>
-              <Th className="text-right">Priorität</Th>
-              <Th>Aktiv</Th>
-              <Th className="text-right">Aktionen</Th>
+              <Th>{worte.signage.playlist}</Th>
+              <Th>{worte.signage.tage}</Th>
+              <Th>{worte.signage.zeitfenster}</Th>
+              <Th className="text-right">{worte.signage.prioritaet}</Th>
+              <Th>{worte.signage.aktiv}</Th>
+              <Th className="text-right">{worte.signage.aktionen}</Th>
             </tr>
           </thead>
           <tbody>
@@ -304,7 +307,7 @@ export function SchedulesAdmin() {
                 <Td className="font-medium">
                   {playlistName.get(s.playlist_id) ?? `${s.playlist_id.slice(0, 8)}…`}
                 </Td>
-                <Td>{weekdaysLabel(s.weekday_mask)}</Td>
+                <Td>{weekdaysLabel2(s.weekday_mask)}</Td>
                 <Td className="font-mono tabular-nums">
                   {hhmmToString(s.start_hhmm)} – {hhmmToString(s.end_hhmm)}
                 </Td>
@@ -312,7 +315,7 @@ export function SchedulesAdmin() {
                 <Td>
                   <Switch
                     checked={s.enabled}
-                    label="Zeitplan aktiv"
+                    label={worte.signage.zeitplanAktiv}
                     onCheckedChange={(enabled) => toggleMutation.mutate({ id: s.id, enabled })}
                   />
                 </Td>
@@ -322,8 +325,8 @@ export function SchedulesAdmin() {
                       variant="ghost"
                       size="icon"
                       onClick={() => openDialog(s)}
-                      aria-label="Zeitplan bearbeiten"
-                      title="Bearbeiten"
+                      aria-label={worte.signage.zeitplanBearbeiten}
+                      title={worte.signage.bearbeiten}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -341,7 +344,7 @@ export function SchedulesAdmin() {
         </Table>
       </TableWrap>
       <div className="flex justify-end">
-        <Button onClick={() => openDialog(null)}>Neuer Zeitplan</Button>
+        <Button onClick={() => openDialog(null)}>{worte.signage.neuerZeitplan}</Button>
       </div>
       {dialog}
     </div>

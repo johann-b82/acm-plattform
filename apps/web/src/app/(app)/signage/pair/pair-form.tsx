@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { signageApi, signageKeys } from "@/lib/signage/api";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
 import { TagPicker } from "@/components/signage/tag-picker";
+import { useTexte } from "@/components/sprache/anbieter";
 
 const CODE_PATTERN = /^[A-Z0-9]{3}-[A-Z0-9]{3}$/;
 
@@ -16,6 +17,7 @@ const CODE_PATTERN = /^[A-Z0-9]{3}-[A-Z0-9]{3}$/;
  * eingegeben wird. Das Eingabefeld formatiert automatisch auf XXX-XXX.
  */
 export function PairForm() {
+  const worte = useTexte();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [code, setCode] = useState("");
@@ -41,7 +43,7 @@ export function PairForm() {
     onError: (err: Error) => {
       // Die API fasst ungültig, abgelaufen und bereits vergeben zu einem 404 zusammen.
       if (/not found|invalid|expired|claimed/i.test(err.message)) {
-        setCodeError("Code unbekannt, abgelaufen oder schon vergeben. Am Bildschirm neu anzeigen lassen.");
+        setCodeError(worte.signage.codeUnbekannt);
         return;
       }
       toast.error(`Kopplung fehlgeschlagen: ${err.message}`);
@@ -58,21 +60,21 @@ export function PairForm() {
           e.preventDefault();
           setCodeError(null);
           if (!codeValid) {
-            setCodeError("Format XXX-XXX erwartet.");
+            setCodeError(worte.signage.formatErwartet);
             return;
           }
           claimMutation.mutate();
         }}
       >
         <div className="flex flex-col gap-2">
-          <Label htmlFor="pair-code">Kopplungscode</Label>
+          <Label htmlFor="pair-code">{worte.signage.kopplungscode}</Label>
           <Input
             id="pair-code"
             value={code}
             autoFocus
             autoComplete="off"
             maxLength={7}
-            placeholder="ABC-123"
+            placeholder={worte.signage.codeBeispiel}
             onChange={(e) => {
               const cleaned = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 6);
               setCode(cleaned.length > 3 ? `${cleaned.slice(0, 3)}-${cleaned.slice(3)}` : cleaned);
@@ -89,12 +91,12 @@ export function PairForm() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label htmlFor="pair-name">Gerätename</Label>
+          <Label htmlFor="pair-name">{worte.signage.geraetename}</Label>
           <Input
             id="pair-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Empfang links"
+            placeholder={worte.signage.geraeteBeispiel}
             maxLength={128}
             required
             autoComplete="off"
@@ -102,10 +104,10 @@ export function PairForm() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label>Tags</Label>
+          <Label>{worte.signage.tags}</Label>
           <TagPicker value={tags} onChange={setTags} />
           <p className="text-xs text-[var(--fg-muted)]">
-            Über die Tags bekommt das Gerät seine Playlist. Ohne Tag bleibt der Bildschirm leer.
+            {worte.signage.tagsPflicht}
           </p>
         </div>
 
@@ -115,10 +117,10 @@ export function PairForm() {
             onClick={() => router.push("/signage/devices")}
             disabled={claimMutation.isPending}
           >
-            Abbrechen
+            {worte.signage.abbrechen}
           </Button>
           <Button type="submit" disabled={claimMutation.isPending || !name.trim()}>
-            Koppeln
+            {worte.signage.koppeln}
           </Button>
         </div>
       </form>

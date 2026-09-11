@@ -26,10 +26,12 @@ import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { DeviceStatusBadge, UptimeBadge } from "@/components/signage/status";
 import { TagPicker } from "@/components/signage/tag-picker";
+import { useTexte } from "@/components/sprache/anbieter";
 
 const ROTATIONS = [0, 90, 180, 270] as const;
 
 export function DevicesAdmin() {
+  const worte = useTexte();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<SignageDevice | null>(null);
@@ -86,7 +88,7 @@ export function DevicesAdmin() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!editing) throw new Error("kein Gerät gewählt");
+      if (!editing) throw new Error(worte.signage.keinGeraetGewaehlt);
       const tagIds = await signageApi.resolveTagIds(form.tags);
       await signageApi.updateDevice(editing.id, { name: form.name.trim(), tag_ids: tagIds });
       if (form.rotation !== editing.rotation || form.audio_enabled !== editing.audio_enabled) {
@@ -100,7 +102,7 @@ export function DevicesAdmin() {
       invalidate();
       queryClient.invalidateQueries({ queryKey: signageKeys.tags() });
       setEditing(null);
-      toast.success("Gerät gespeichert.");
+      toast.success(worte.signage.geraetGespeichert);
     },
     onError: (err: Error) => toast.error(`Speichern fehlgeschlagen: ${err.message}`),
   });
@@ -140,7 +142,7 @@ export function DevicesAdmin() {
     mutationFn: (id: string) => signageApi.deleteDevice(id),
     onSuccess: () => {
       invalidate();
-      toast.success("Gerät gelöscht.");
+      toast.success(worte.signage.geraetGeloescht);
     },
     onError: (err: Error) => toast.error(`Löschen fehlgeschlagen: ${err.message}`),
   });
@@ -148,9 +150,9 @@ export function DevicesAdmin() {
   if (!isLoading && devices.length === 0) {
     return (
       <EmptyState
-        title="Noch kein Gerät gekoppelt"
-        body="Starte einen Bildschirm mit dem Player. Er zeigt einen sechsstelligen Code, den du hier eingibst."
-        action={<Button onClick={() => router.push("/signage/pair")}>Gerät koppeln</Button>}
+        title={worte.signage.keinGeraet}
+        body={worte.signage.keinGeraetText}
+        action={<Button onClick={() => router.push("/signage/pair")}>{worte.signage.geraetKoppeln}</Button>}
       />
     );
   }
@@ -161,13 +163,13 @@ export function DevicesAdmin() {
         <Table>
           <thead>
             <tr>
-              <Th>Gerät</Th>
-              <Th>Status</Th>
-              <Th>Verfügbarkeit 24 h</Th>
-              <Th>Ausfälle 24 h</Th>
-              <Th>Tags</Th>
-              <Th>Playlist</Th>
-              <Th>Zuletzt gesehen</Th>
+              <Th>{worte.signage.geraet}</Th>
+              <Th>{worte.signage.status}</Th>
+              <Th>{worte.signage.verfuegbarkeit}</Th>
+              <Th>{worte.signage.ausfaelle}</Th>
+              <Th>{worte.signage.tags}</Th>
+              <Th>{worte.signage.playlist}</Th>
+              <Th>{worte.signage.zuletztGesehen}</Th>
               <Th className="text-right">Aktionen</Th>
             </tr>
           </thead>
@@ -191,7 +193,7 @@ export function DevicesAdmin() {
                 </Td>
                 <Td>
                   {d.revoked_at ? (
-                    <Badge className="status-bad">entzogen</Badge>
+                    <Badge className="status-bad">{worte.signage.entzogen}</Badge>
                   ) : (
                     <DeviceStatusBadge lastSeenAt={d.last_seen_at} />
                   )}
@@ -221,7 +223,7 @@ export function DevicesAdmin() {
                       onClick={() => reloadMutation.mutate(d)}
                       disabled={reloadMutation.isPending}
                       aria-label={`${d.name} neu laden`}
-                      title="Seite neu laden"
+                      title={worte.signage.seiteNeuLaden}
                     >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
@@ -230,7 +232,7 @@ export function DevicesAdmin() {
                       size="icon"
                       onClick={() => setRebooting(d)}
                       aria-label={`${d.name} neu starten`}
-                      title="Gerät neu starten"
+                      title={worte.signage.neuStarten}
                     >
                       <Power className="h-4 w-4" />
                     </Button>
@@ -239,7 +241,7 @@ export function DevicesAdmin() {
                       size="icon"
                       onClick={() => openEdit(d)}
                       aria-label={`${d.name} bearbeiten`}
-                      title="Bearbeiten"
+                      title={worte.signage.bearbeiten}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -248,7 +250,7 @@ export function DevicesAdmin() {
                       size="icon"
                       onClick={() => setRevoking(d)}
                       aria-label={`Zugang von ${d.name} entziehen`}
-                      title="Zugang entziehen"
+                      title={worte.signage.zugangEntziehen}
                     >
                       <ShieldOff className="h-4 w-4 text-[var(--danger)]" />
                     </Button>
@@ -267,30 +269,30 @@ export function DevicesAdmin() {
       </TableWrap>
 
       <div className="flex justify-end">
-        <Button onClick={() => router.push("/signage/pair")}>Gerät koppeln</Button>
+        <Button onClick={() => router.push("/signage/pair")}>{worte.signage.geraetKoppeln}</Button>
       </div>
 
       <Dialog
         open={editing !== null}
         onOpenChange={(o) => !o && setEditing(null)}
-        title="Gerät bearbeiten"
+        title={worte.signage.geraetBearbeiten}
         footer={
           <>
             <Button variant="outline" onClick={() => setEditing(null)}>
-              Abbrechen
+              {worte.signage.abbrechen}
             </Button>
             <Button
               disabled={!form.name.trim() || saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
             >
-              Speichern
+              {worte.signage.speichern}
             </Button>
           </>
         }
       >
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="dev-name">Name</Label>
+            <Label htmlFor="dev-name">{worte.signage.name}</Label>
             <Input
               id="dev-name"
               value={form.name}
@@ -299,15 +301,15 @@ export function DevicesAdmin() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Tags</Label>
+            <Label>{worte.signage.tags}</Label>
             <TagPicker value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
             <p className="text-xs text-[var(--fg-muted)]">
-              Bestimmen, welche Playlists und Zeitpläne dieses Gerät bekommt.
+              {worte.signage.tagsHinweis}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <Label htmlFor="dev-rotation">Bilddrehung</Label>
+              <Label htmlFor="dev-rotation">{worte.signage.bilddrehung}</Label>
               <Select
                 id="dev-rotation"
                 value={String(form.rotation)}
@@ -323,11 +325,11 @@ export function DevicesAdmin() {
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Ton</Label>
+              <Label>{worte.signage.ton}</Label>
               <div className="flex h-9 items-center gap-2">
                 <Switch
                   checked={form.audio_enabled}
-                  label="Ton aktiv"
+                  label={worte.signage.tonAktiv}
                   onCheckedChange={(audio_enabled) => setForm({ ...form, audio_enabled })}
                 />
                 <span className="text-sm">{form.audio_enabled ? "an" : "aus"}</span>
@@ -340,12 +342,12 @@ export function DevicesAdmin() {
       <Dialog
         open={revoking !== null}
         onOpenChange={(o) => !o && setRevoking(null)}
-        title="Zugang entziehen"
-        description={`„${revoking?.name ?? ""}“ verliert sofort seinen Zugang und zeigt wieder den Kopplungscode.`}
+        title={worte.signage.zugangEntziehen}
+        description={worte.signage.entziehenText(revoking?.name ?? "")}
         footer={
           <>
             <Button variant="outline" onClick={() => setRevoking(null)}>
-              Abbrechen
+              {worte.signage.abbrechen}
             </Button>
             <Button
               variant="destructive"
@@ -361,12 +363,12 @@ export function DevicesAdmin() {
       <Dialog
         open={rebooting !== null}
         onOpenChange={(o) => !o && setRebooting(null)}
-        title="Gerät neu starten"
-        description={`„${rebooting?.name ?? ""}“ ist etwa eine Minute lang schwarz.`}
+        title={worte.signage.neuStarten}
+        description={worte.signage.neustartText(rebooting?.name ?? "")}
         footer={
           <>
             <Button variant="outline" onClick={() => setRebooting(null)}>
-              Abbrechen
+              {worte.signage.abbrechen}
             </Button>
             <Button
               variant="destructive"

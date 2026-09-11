@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { signageApi, signageKeys } from "@/lib/signage/api";
 import { Badge } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Chip-Eingabe für Tags. Arbeitet auf Namen; der Aufrufer löst sie beim
@@ -17,7 +18,7 @@ export function TagPicker({
   value,
   onChange,
   disabled,
-  placeholder = "Tag eingeben und Enter drücken",
+  placeholder,
   ariaLabel = "Tags",
 }: {
   value: string[];
@@ -26,6 +27,8 @@ export function TagPicker({
   placeholder?: string;
   ariaLabel?: string;
 }) {
+  const worte = useTexte();
+  const text = placeholder ?? worte.signage.tagEingeben;
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +107,7 @@ export function TagPicker({
           onFocus={() => setIsOpen(true)}
           onBlur={() => window.setTimeout(() => setIsOpen(false), 150)}
           onKeyDown={handleKeyDown}
-          placeholder={value.length === 0 ? placeholder : ""}
+          placeholder={value.length === 0 ? text : ""}
           className="min-w-28 flex-1 bg-transparent outline-none"
         />
       </div>

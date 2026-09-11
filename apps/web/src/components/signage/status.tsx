@@ -3,17 +3,19 @@
 import { Badge } from "@/components/ui/primitives";
 import { minutesSince } from "@/lib/signage/schedule";
 import type { SignageConversionStatus, SignageDeviceAnalytics } from "@/lib/signage/types";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Gerätestatus aus `last_seen_at` abgeleitet (Schwellen wie im Altprojekt):
  * unter 2 min online, unter 5 min Warnung, darüber offline, ohne Wert unbekannt.
  */
 export function DeviceStatusBadge({ lastSeenAt }: { lastSeenAt: string | null }) {
+  const worte = useTexte();
   const minutes = minutesSince(lastSeenAt);
-  if (minutes === null) return <Badge className="status-none">nie gesehen</Badge>;
-  if (minutes < 2) return <Badge className="status-ok">online</Badge>;
-  if (minutes < 5) return <Badge className="status-warn">vor {minutes} min</Badge>;
-  return <Badge className="status-bad">offline</Badge>;
+  if (minutes === null) return <Badge className="status-none">{worte.signage.nieGesehen}</Badge>;
+  if (minutes < 2) return <Badge className="status-ok">{worte.signage.online}</Badge>;
+  if (minutes < 5) return <Badge className="status-warn">{worte.signage.vorMinuten(minutes)}</Badge>;
+  return <Badge className="status-bad">{worte.signage.offline}</Badge>;
 }
 
 /** Verfügbarkeit und verpasste Fenster; Farbstufen ab 95 % und 80 %. */
@@ -24,9 +26,10 @@ export function UptimeBadge({
   variant: "uptime" | "missed";
   data: SignageDeviceAnalytics | undefined;
 }) {
+  const worte = useTexte();
   if (!data || data.uptime_24h_pct === null) {
     return (
-      <span title="Noch keine Heartbeats aufgezeichnet.">
+      <span title={worte.signage.keineHeartbeats}>
         <Badge className="status-none">—</Badge>
       </span>
     );
@@ -50,13 +53,6 @@ export function UptimeBadge({
   );
 }
 
-const CONVERSION_LABEL: Record<SignageConversionStatus, string> = {
-  pending: "wartet",
-  processing: "konvertiert",
-  done: "fertig",
-  failed: "fehlgeschlagen",
-};
-
 const CONVERSION_CLASS: Record<SignageConversionStatus, string> = {
   pending: "status-none",
   processing: "status-warn animate-pulse",
@@ -72,10 +68,17 @@ export function ConversionBadge({
   status: SignageConversionStatus | null;
   error: string | null;
 }) {
+  const worte = useTexte();
+  const stand: Record<SignageConversionStatus, string> = {
+    pending: worte.signage.wartet,
+    processing: worte.signage.konvertiert,
+    done: worte.signage.fertig,
+    failed: worte.signage.fehlgeschlagen,
+  };
   if (!status) return null;
   return (
     <span title={status === "failed" && error ? error : undefined}>
-      <Badge className={CONVERSION_CLASS[status]}>{CONVERSION_LABEL[status]}</Badge>
+      <Badge className={CONVERSION_CLASS[status]}>{stand[status]}</Badge>
     </span>
   );
 }
