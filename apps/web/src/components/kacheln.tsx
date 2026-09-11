@@ -40,9 +40,9 @@ export function Kacheln({
                 className="flex h-full items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
               >
                 <Bild
-                  className="mt-0.5 h-5 w-5 shrink-0 text-[var(--fg-muted)]"
+                  className="h-10 w-10 shrink-0 text-[var(--fg-muted)]"
                   aria-hidden
-                  strokeWidth={1.75}
+                  strokeWidth={1.5}
                 />
                 <div className="min-w-0">
                   <div className="font-medium">{k.name}</div>
