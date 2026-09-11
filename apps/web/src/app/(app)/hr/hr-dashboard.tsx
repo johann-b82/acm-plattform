@@ -175,7 +175,6 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/hr"]}
         untertitel={worte.personal.einleitung}
         unter={
           <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm">

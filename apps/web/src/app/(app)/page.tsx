@@ -28,7 +28,6 @@ export default async function LauncherPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">{t.start.titel}</h1>
       {denied && (
         <p role="alert" className="mt-2 text-sm text-[var(--danger)]">
           {t.start.verweigert(denied)}

@@ -1686,6 +1686,13 @@ export const de = {
     mitgliedEntfernen: "Mitglied entfernen",
     entfernen: "Entfernen",
   },
+  kopftitel: {
+    start: "Apps",
+    kennzahlen: "KPI-Dashboard",
+    offeneSchulungen: "Offene Schulungen",
+    schulungsmatrix: "Schulungsmatrix",
+    atrLieferungen: "ATR-Lieferungen",
+  },
   kennzahlenHub: {
     titel: "KPI-Dashboard",
     einleitung: "Kennzahlen je Fachbereich. Die Daten kommen aus den ERP-Exporten unter Uploads.",

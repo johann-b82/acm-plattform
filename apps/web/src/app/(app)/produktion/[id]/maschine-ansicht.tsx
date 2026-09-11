@@ -174,7 +174,7 @@ export function MaschineAnsicht({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{m.name}</h1>
+          <h2 className="text-2xl font-semibold tracking-tight">{m.name}</h2>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             {[m.hersteller, m.modell].filter(Boolean).join(" · ") || "Ohne Herstellerangabe"}
           </p>

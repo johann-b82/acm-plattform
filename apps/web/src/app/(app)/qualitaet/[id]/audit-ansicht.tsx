@@ -166,9 +166,9 @@ export function AuditAnsicht({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight">
             <span className="tabular-nums">{a.nummer}</span> · {a.titel}
-          </h1>
+          </h2>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             {a.art === "intern" ? worte.auditAnsicht.internesAudit : worte.auditAnsicht.externesAudit}
             {worte.auditAnsicht.prioritaet(prioritaet[a.prioritaet])}

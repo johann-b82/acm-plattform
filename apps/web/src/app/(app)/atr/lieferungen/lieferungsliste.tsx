@@ -87,7 +87,6 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.titel.atrLieferungen}
         untertitel={worte.lieferungen.einleitung}
         unter={
           <div className="mt-2 flex justify-center text-sm">

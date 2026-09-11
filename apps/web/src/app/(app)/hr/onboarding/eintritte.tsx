@@ -153,7 +153,6 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/hr/onboarding"]}
         untertitel={worte.onboarding.einleitung}
         unter={
           <div className="mt-2 flex justify-center gap-4 text-sm">

@@ -95,7 +95,6 @@ export function FeedbackListe() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={t.pfad.seiten["/platform/feedback"]}
         untertitel={
           <>
             {t.meldungen.stand(offen)}

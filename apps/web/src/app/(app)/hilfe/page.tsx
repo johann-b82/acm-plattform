@@ -22,7 +22,6 @@ export default async function HilfePage() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={t.pfad.seiten["/hilfe"]}
         untertitel={
           <>
             {t.hilfe.einleitung}

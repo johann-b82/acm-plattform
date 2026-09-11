@@ -78,7 +78,6 @@ export function Zeugnisliste() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/hr/zeugnisse"]}
         untertitel={worte.zeugnisse.einleitung}
       />
 

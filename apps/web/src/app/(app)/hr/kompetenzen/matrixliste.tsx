@@ -78,7 +78,6 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/hr/kompetenzen"]}
         untertitel={worte.kompetenzen.einleitung}
       />
 

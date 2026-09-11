@@ -96,7 +96,6 @@ export function SensorDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/sensoren"]}
         untertitel={worte.sensoren.einleitung}
         bedienung={
           <Button variant="outline" onClick={() => messen.mutate()} disabled={messen.isPending}>

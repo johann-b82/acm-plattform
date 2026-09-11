@@ -74,7 +74,6 @@ export function VertriebDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/kpi/vertrieb"]}
         unter={<Datenstand bereich="vertrieb" />}
         bedienung={<Zeitraumwahl wahl={wahl} />}
       />

@@ -123,7 +123,7 @@ export function SchulungAnsicht({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{schulung.name}</h1>
+          <h2 className="text-2xl font-semibold tracking-tight">{schulung.name}</h2>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             <Badge variant="outline">{schulung.bereich}</Badge>{" "}
             {schulung.turnus ?? worte.schulung.ohneTurnus}

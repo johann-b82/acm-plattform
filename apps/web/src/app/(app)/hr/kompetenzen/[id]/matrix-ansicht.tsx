@@ -167,9 +167,9 @@ export function MatrixAnsicht({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight">
             {matrix.titel ?? matrix.blatt}
-          </h1>
+          </h2>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             <Badge variant="outline">{bereichLabel[matrix.bereich]}</Badge>{" "}
             {worte.matrix.blattStand(matrix.blatt)}

@@ -81,7 +81,7 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/newsletter"]}</h1>
+          <h2 className="text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/newsletter"]}</h2>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             {aktiv.titel || worte.newsletter.quartalJahr(aktiv.quartal, aktiv.jahr)}
             {aktiv.status === "entwurf" && worte.newsletter.entwurfSuffix}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TITEL } from "@/lib/brotkrumen";
+import { LANGER_NAME, TITEL } from "@/lib/brotkrumen";
 import { SPRACHEN, SPRACHE_LABEL, SPRACHE_TAG, VORGABE, spracheAus } from "@/lib/sprache";
 import { WOERTERBUCH, texteFuer } from "@/texte";
 
@@ -49,5 +49,22 @@ describe("Wörterbücher", () => {
     for (const s of SPRACHEN) {
       expect(texteFuer(s).start.verweigert("ATR")).toContain("ATR");
     }
+  });
+});
+
+describe("Titel in der Kopfzeile", () => {
+  // Fünf Seiten heißen ausgeschrieben anders als ihre Krume. Steht der
+  // Schlüssel nicht im Wörterbuch, bliebe die Kopfzeile leer — und zwar
+  // lautlos.
+  it.each(SPRACHEN)("%s kennt jeden langen Namen", (s) => {
+    const namen = texteFuer(s).kopftitel as Record<string, string>;
+    for (const schluessel of Object.values(LANGER_NAME)) {
+      expect(namen[schluessel], schluessel).toBeTruthy();
+    }
+  });
+
+  it("nennt nur Adressen, die es gibt", () => {
+    const bekannt = new Set([...Object.keys(TITEL), "/"]);
+    expect(Object.keys(LANGER_NAME).filter((p) => !bekannt.has(p))).toEqual([]);
   });
 });

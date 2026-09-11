@@ -109,3 +109,21 @@ function eltern(pfad: string): string | undefined {
   const schnitt = pfad.lastIndexOf("/");
   return schnitt > 0 ? tiefsteBekannte(pfad.slice(0, schnitt)) : undefined;
 }
+
+/**
+ * Seiten, deren ausgeschriebener Name nicht ihre Krume ist.
+ *
+ * In der Kette will man kurze Glieder — „Matrix" hinter „Schulungen" sagt
+ * genug. Über der Seite steht der Name für sich allein und muss auch allein
+ * verständlich sein: „Schulungsmatrix".
+ *
+ * Der Wert ist der Schlüssel im Wörterbuch, nicht der Text — der hängt an der
+ * Sprache.
+ */
+export const LANGER_NAME: Record<string, string> = {
+  "/": "start",
+  "/kpi": "kennzahlen",
+  "/hr/schulungen/offen": "offeneSchulungen",
+  "/hr/schulungen/matrix": "schulungsmatrix",
+  "/atr/lieferungen": "atrLieferungen",
+};

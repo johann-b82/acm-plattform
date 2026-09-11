@@ -33,7 +33,7 @@ export default async function KpiHubPage() {
   };
   return (
     <div className="space-y-6">
-      <Seitenkopf titel={t.kennzahlenHub.titel} untertitel={t.kennzahlenHub.einleitung} />
+      <Seitenkopf untertitel={t.kennzahlenHub.einleitung} />
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {BEREICHE.map((b) =>
           b.bereit ? (

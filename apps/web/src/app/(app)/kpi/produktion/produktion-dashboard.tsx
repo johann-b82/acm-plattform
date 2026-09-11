@@ -85,7 +85,6 @@ export function ProduktionDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        titel={worte.pfad.seiten["/kpi/produktion"]}
         untertitel={worte.produktion.einleitung}
         unter={<Datenstand bereich="produktion" />}
         bedienung={<Zeitraumwahl wahl={wahl} />}

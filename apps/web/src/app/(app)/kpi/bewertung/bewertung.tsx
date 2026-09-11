@@ -126,7 +126,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
         >
           <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">KPI-Bewertung</h1>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight">KPI-Bewertung</h2>
         <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
           Kommentieren, was eine Zahl bedeutet, und festhalten, was daraus folgt. Die Liste
           sind die Kennzahlen mit Zielwert — dieselbe Liste, die auch die Dashboards prägt.
