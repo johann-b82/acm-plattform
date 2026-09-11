@@ -107,6 +107,22 @@ async def _personio_sprachen(args) -> None:
         print(f"  {feld.ljust(breite)}  {str(anzahl).rjust(4)}  {wert}")
 
 
+async def _uebernahme(args) -> None:
+    """Alle Fachbereiche übernehmen, in der Reihenfolge ihrer Abhängigkeiten."""
+    from app.uebernahme import lauf as fahrplan
+
+    bereiche = tuple(args.bereich) if args.bereich else fahrplan.BEREICHE
+    if args.leeren and not args.trocken:
+        geleert = await fahrplan.leeren(bereiche)
+        print(f"Zieltabellen geleert: {len(geleert)}")
+    ergebnis = await fahrplan.fahren(
+        _alte_datenbank(args.quelle), bereiche=bereiche, trocken=args.trocken
+    )
+    print("Übernahme" + (" (trocken, nichts geschrieben)" if args.trocken else ""))
+    for tabelle, anzahl in ergebnis.bericht.items():
+        print(f"  {tabelle.ljust(28)} {anzahl:>9,}".replace(",", "."))
+
+
 async def _abgleich(args) -> None:
     """Alt gegen neu zählen. Gibt 1 zurück, wenn eine Zahl nicht stimmt."""
     from app.uebernahme import abgleich
@@ -123,11 +139,12 @@ async def _abgleich(args) -> None:
         if z.modul != modul:
             modul = z.modul
             print(f"\n{modul}")
-        marke = "  " if z.stimmt else "! "
+        marke = "~ " if z.weicht_ab and z.erwartet else ("  " if z.stimmt else "! ")
         print(
             f"  {marke}{(z.alt or '').ljust(breite_alt)}  {zahl(z.alt_zeilen).rjust(9)}"
             f"   →  {(z.neu or '').ljust(breite_neu)}  {zahl(z.neu_zeilen).rjust(9)}"
             + (f"   ({z.hinweis})" if z.hinweis else "")
+            + (f"   [gewollt: {z.erwartet}]" if z.weicht_ab and z.erwartet else "")
         )
 
     schief = [z for z in zeilen if not z.stimmt]
@@ -156,6 +173,7 @@ def main() -> int:
 
     for name, hilfe in (
         ("abgleich", "Zeilen alt gegen neu zählen (schreibt nichts)"),
+        ("uebernahme", "alle Fachbereiche aus lumeapps übernehmen"),
         ("uebernahme-vertrieb", "Upload-Protokolle, Rechnungen und Aufträge aus lumeapps holen"),
         ("uebernahme-nutzer", "Personen aus directus_users anlegen (neues Passwort je Person)"),
         ("uebernahme-atr", "ATR-Teilekatalog und Vorlagen aus lumeapps holen"),
@@ -167,6 +185,19 @@ def main() -> int:
             metavar="DSN",
             help="Verbindung zur alten Datenbank, z. B. postgresql://kpi_user:pw@alter-host:5432/kpi_db",
         )
+        if name == "uebernahme":
+            p.add_argument(
+                "--bereich",
+                action="append",
+                metavar="NAME",
+                help="nur diesen Fachbereich (mehrfach angebbar)",
+            )
+            p.add_argument(
+                "--leeren",
+                action="store_true",
+                help="Zieltabellen vorher leeren — nur für den Umzug, nimmt auch"
+                " Abhängiges mit",
+            )
         if name != "abgleich":
             p.add_argument(
                 "--trocken",
@@ -179,6 +210,7 @@ def main() -> int:
         "reload-postgrest": lambda a: _reload_postgrest(),
         "personio-sprachen": _personio_sprachen,
         "abgleich": _abgleich,
+        "uebernahme": _uebernahme,
         "uebernahme-vertrieb": _uebernahme_vertrieb,
         "uebernahme-nutzer": _uebernahme_nutzer,
         "uebernahme-atr": _uebernahme_atr,
