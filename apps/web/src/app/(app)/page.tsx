@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { levelFor, requireSession } from "@/lib/auth";
+import { Kacheln } from "@/components/kacheln";
 import { texte } from "@/lib/sprache-server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,21 +38,16 @@ export default async function LauncherPage({
           {t.start.keineApp}
         </p>
       ) : (
-        <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {visible.map((a) => (
-            <li key={a.id}>
-              <Link
-                href={a.path}
-                className="block rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
-              >
-                <div className="font-medium">{a.name}</div>
-                <div className="mt-1 text-xs uppercase tracking-wide text-[var(--fg-muted)]">
-                  {levelFor(session.apps, a.id)}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-6">
+          <Kacheln
+            spalten="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+            eintraege={visible.map((a) => ({
+              pfad: a.path,
+              name: a.name,
+              marke: levelFor(session.apps, a.id) ?? undefined,
+            }))}
+          />
+        </div>
       )}
     </div>
   );

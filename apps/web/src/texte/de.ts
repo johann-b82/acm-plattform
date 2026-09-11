@@ -1726,15 +1726,28 @@ export const de = {
   kennzahlenHub: {
     titel: "KPI-Dashboard",
     einleitung: "Kennzahlen je Fachbereich. Die Daten kommen aus den ERP-Exporten unter Uploads.",
-    nochNicht: "noch nicht übernommen",
     bereiche: {
-      vertrieb: "Umsatz, Auftragswert, Kundenanteil",
-      personal: "Belegschaft, Fluktuation, Krankenstand — eigene Berechtigung",
-      qualitaet: "Audit-Findings und Reklamationsquote",
-      finanzen: "Material- und Personalkostenquote",
-      einkauf: "Liefertermintreue der Lieferanten",
-      produktion: "Verzug, überfällige Aufträge",
-      bewertung: "Kommentare und Maßnahmen zu jeder Kennzahl",
+      "/kpi/vertrieb": "Umsatz, Auftragswert, Kundenanteil",
+      "/hr/kennzahlen": "Belegschaft, Fluktuation, Krankenstand — eigene Berechtigung",
+      "/kpi/qualitaet": "Audit-Findings und Reklamationsquote",
+      "/kpi/finanzen": "Material- und Personalkostenquote",
+      "/kpi/einkauf": "Liefertermintreue der Lieferanten",
+      "/kpi/produktion": "Verzug, überfällige Aufträge",
+      "/kpi/bewertung": "Kommentare und Maßnahmen zu jeder Kennzahl",
+    },
+  },
+  personalHub: {
+    einleitung:
+      "Die Personalarbeit, nach Bereichen. Die Zahlen sind einer davon.",
+    bereiche: {
+      "/hr/kennzahlen": "Belegschaft, Fluktuation, Krankenstand, Überstunden",
+      "/hr/organigramm": "Wer wem berichtet",
+      "/hr/kompetenzen": "Qualifikationsmatrix je Abteilung",
+      "/hr/schulungen": "Pflichtschulungen, Termine, Nachweise",
+      "/hr/onboarding": "Eintritte und was dafür zu tun ist",
+      "/hr/einarbeitung": "Einarbeitungspläne und ihr Stand",
+      "/hr/dokumente": "Formblätter erzeugen, drucken, eingescannt zurücklesen",
+      "/hr/zeugnisse": "Arbeitszeugnisse schreiben und ausgeben",
     },
   },
   erklaerung: {

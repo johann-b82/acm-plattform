@@ -176,25 +176,6 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.personal.einleitung}
-        unter={
-          <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm">
-              <Link href="/hr/organigramm" className="underline-offset-4 hover:underline">
-                {worte.pfad.seiten["/hr/organigramm"]}
-              </Link>
-              <Link href="/hr/kompetenzen" className="underline-offset-4 hover:underline">
-                {worte.pfad.seiten["/hr/kompetenzen"]}
-              </Link>
-              <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
-                {worte.pfad.seiten["/hr/schulungen"]}
-              </Link>
-              <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
-                {worte.pfad.seiten["/hr/onboarding"]}
-              </Link>
-              <Link href="/hr/einarbeitung" className="underline-offset-4 hover:underline">
-                {worte.pfad.seiten["/hr/einarbeitung"]}
-              </Link>
-          </div>
-        }
         bedienung={<Zeitraumwahl wahl={wahl} stufen={STUFEN_MIT_FENSTER} />}
       />
 
