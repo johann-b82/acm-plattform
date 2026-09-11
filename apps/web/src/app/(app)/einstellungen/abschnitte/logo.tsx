@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/primitives";
 const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
 /**
- * Das Firmenlogo für die erzeugten Formblätter.
+ * Das Firmenlogo — oben links in der Anwendung und auf jedem Formblatt.
  *
  * Nur PNG oder JPEG. Das Altprojekt lässt zusätzlich SVG zu und muss es dafür
  * reinigen, weil eine SVG-Datei Skripte tragen kann — gebraucht wird das Logo
@@ -44,8 +44,10 @@ export function Logo() {
     <Card className="space-y-3 p-5">
       <h3 className="font-medium">Firmenlogo</h3>
       <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-        Steht in der Kopfzeile jedes erzeugten Formblatts — Einarbeitungsplan,
-        Wartungsnachweis, Zeugnis. PNG oder JPEG, höchstens 5 MB.
+        Steht oben links in der Anwendung und in der Kopfzeile jedes erzeugten
+        Formblatts — Einarbeitungsplan, Wartungsnachweis, Schulungsübersicht,
+        Zeugnis. PNG oder JPEG, höchstens 5 MB. Ist keins hinterlegt, steht dort
+        der Schriftzug „ACM-Plattform“.
       </p>
       <div className="flex flex-wrap items-center gap-4">
         {vorschau ? (

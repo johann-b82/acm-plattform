@@ -60,7 +60,7 @@ export const GRUPPEN: Gruppe[] = [
     id: "erscheinung",
     titel: "Erscheinungsbild",
     beschreibung:
-      "Das Firmenlogo für die erzeugten Formblätter — Einarbeitungsplan, Wartungsnachweis, Zeugnis.",
+      "Das Firmenlogo — oben links in der Anwendung und in der Kopfzeile jeder erzeugten Datei: Einarbeitungsplan, Wartungsnachweis, Schulungsübersicht, Zeugnis.",
   },
   {
     id: "anzeigen",

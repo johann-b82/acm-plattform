@@ -52,7 +52,15 @@ als eine kurze.
 ## Das Logo
 
 Eine Zeile in `plattform_logo`, das Bild im Eimer `plattform`, gepflegt unter
-`/einstellungen#erscheinung`. Es steht auf jedem erzeugten Formblatt.
+`/einstellungen#erscheinung`. Es steht auf jedem erzeugten Formblatt **und oben
+links in der Anwendung**.
+
+Für die Kopfzeile wird es serverseitig in `lib/logo-server.ts` signiert, nicht
+im Browser: die Kopfzeile steht auf jeder Seite, und zwei zusätzliche Abfragen
+plus ein kurzes Aufblitzen des Schriftzugs wären der falsche Preis. Dabei ist
+der Host zu tauschen — der Server spricht Kong im Compose-Netz an, der Browser
+geht über den Caddy. Signiert ist der Pfad, nicht der Host; der Token bleibt
+gültig.
 
 **Nur PNG oder JPEG.** Das Altprojekt lässt zusätzlich SVG zu und muss es dafür
 mit `nh3` reinigen, weil eine SVG-Datei Skripte tragen kann. Gebraucht wird das

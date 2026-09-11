@@ -54,14 +54,20 @@ warum. Das Textfeld bleibt daneben stehen — die Maske muss bedienbar bleiben.
 
 ## Das Logo
 
-PNG oder JPEG, höchstens 5 MB. Es steht in der Kopfzeile jedes erzeugten
-Formblatts: Einarbeitungsplan, Wartungsnachweis, Zeugnis, Schulungsübersicht.
+PNG oder JPEG, höchstens 5 MB. Es steht an zwei Stellen: **oben links in der
+Anwendung** und in der Kopfzeile jedes erzeugten Formblatts —
+Einarbeitungsplan, Wartungsnachweis, Zeugnis, Schulungsübersicht. Ist keins
+hinterlegt, steht oben links der Schriftzug „ACM-Plattform".
 
 Kein SVG. Eine SVG-Datei kann Skripte tragen und müsste gereinigt werden — und
 in die Formblätter lässt sie sich ohnehin nicht einbetten. Der Fall entfällt,
 statt behandelt zu werden.
 
 Fehlt das Logo, entstehen die Blätter trotzdem — ohne Bild, aber vollständig.
+
+Auf der **Anmeldeseite** steht es nicht: der Eimer ist nicht öffentlich, und
+ihn dafür zu öffnen hieße, das Logo jedem im Netz zu zeigen, der die Adresse
+errät. Dafür ist der Gewinn zu klein.
 `.trim(),
     },
     {

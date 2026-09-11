@@ -1,3 +1,4 @@
+import { LOGO_EIMER, LOGO_MAX_BYTES, LOGO_TYPEN } from "@/lib/logo-gemeinsam";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
@@ -8,9 +9,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
  * statt behandelt zu werden.
  */
 
-export const LOGO_EIMER = "plattform";
-export const LOGO_TYPEN = ["image/png", "image/jpeg"];
-export const LOGO_MAX_BYTES = 5 * 1024 * 1024;
+export { LOGO_EIMER, LOGO_MAX_BYTES, LOGO_TYPEN } from "@/lib/logo-gemeinsam";
 
 export interface LogoStand {
   pfad: string | null;
