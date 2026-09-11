@@ -1231,6 +1231,9 @@ export const en: Texte = {
       "release can be withdrawn above.",
   },
   fair: {
+    dateiFehlt: (meldung: string) =>
+      `The drawing itself cannot be loaded (${meldung}). The measures are listed ` +
+      "below all the same.",
     einleitung:
       "First article inspection: upload a drawing and put a numbered balloon on every dimension " +
       "to be checked. The database issues the numbers and keeps them gap-free.",

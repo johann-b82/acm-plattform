@@ -1239,6 +1239,8 @@ export const pl: Texte = {
       "zwolnienie można cofnąć powyżej.",
   },
   fair: {
+    dateiFehlt: (meldung: string) =>
+      `Samego rysunku nie da się wczytać (${meldung}). Wymiary mimo to są poniżej.`,
     einleitung:
       "Badanie pierwszej sztuki: wczytać rysunek i przy każdym wymiarze do sprawdzenia " +
       "postawić numerowany balonik. Numery nadaje baza danych i trzyma je bez luk.",
