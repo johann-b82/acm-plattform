@@ -11,7 +11,6 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 | 3 | Dokumentenlauf (Schulungsnachweis **und** Einarbeitungsbogen) | ~30 | Dieselbe Mechanik für beide: QR-Code zur Zuordnung, Laufweg (erstellt → übergeben → zurück → geprüft), Scan-Upload, halbautomatische Vollständigkeitsprüfung. Dazu Unterlagen je Schulung und die Zertifikate. Einmal bauen, zweimal benutzen. |
 | 4 | Onboarding: Dokumente | ~4 | Das Onboarding-Paket als PDF (Formblatt 71, Dokumentmappe). Eintritte, Schulungsplan, Abteilungs-Übersteuerung und Rollenzuordnung stehen (PR #47). |
 | 6 | Zeugnisse: Vorgesetzten-Vorschlag | 1 | Die zweite Unterschrift abteilungsabhängig aus Personio vorschlagen. Zeugnis, Baukasten, KI und Dokument stehen (PR #49). |
-| 7 | HR-Embeds | 3 | Geburtstage und Neuzugänge für die Bildschirme. **Nicht 1:1**: Das Altsystem liefert sie über sitzungslose Routen; seine eigene Doku nennt den signierten Token je Playlist-Eintrag „die richtige Lösung, die in der neuen Plattform liegt". Zu bauen sind: Token-Erzeugung in den Einstellungen, zwei öffentliche Seiten außerhalb der angemeldeten Hülle und der Foto-Weg über die Personio-Zugangsdaten (nur für gerade gezeigte Personen, mit Zwischenspeicher und Ratsperre). |
 | 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. **Beim Abgleich aufgefallen: im Altsystem ruft ihn niemand auf** — `send_email` hat dort außerhalb des eigenen Routers keinen Aufrufer. Portiert würde ein delegierter OAuth-Ablauf samt Token-Ablage und Einstellungsmaske für etwas, das nichts benutzt. Empfehlung: bauen, wenn der erste Verbraucher da ist (Schulungserinnerungen sind der naheliegende). |
 | 9 | Einstellungen: Personio-Auswahllisten | 1 | Die Auswahllisten aus Personio (Abwesenheitsarten) in der Einstellungsmaske vorschlagen, statt IDs abzutippen. Das Logo steht (PR #48). |
 | 10 | In-App-Dokumentation | — | 22 Markdown-Seiten aus `frontend/src/docs/`. Zuletzt, weil sie den fertigen Stand beschreibt. |
@@ -42,4 +41,6 @@ Personal (Kennzahlen, Belegschaft, Wochenbericht), Newsletter, KPI-Bewertung,
 Seiten-Feedback, FAIR, ATR (vier Teile), Uploads (13 Routen; die 16 alten minus
 Tippspiel, minus der abgelösten Sammelroute, minus zweier zusammengelegter
 Preisdateien), Personio-Abgleich, Rechteverwaltung, Sensoren, Wartung.
+Anzeigen für die Bildschirme (Geburtstage, Neuzugänge) — nicht 1:1, sondern
+mit signiertem Token statt offener Route, siehe `docs/modules/anzeigen.md`.
 Signage liegt im eigenen Repo `acm-signage`.

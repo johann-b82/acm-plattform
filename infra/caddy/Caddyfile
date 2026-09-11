@@ -17,10 +17,29 @@
 		max_size 60MB
 	}
 
-	header {
+	# Die Anzeigen unter /embed/* müssen einrahmbar sein: die Tafeln laufen im
+	# eigenen Signage-Stack auf einem eigenen Port, also einem anderen Origin,
+	# und SAMEORIGIN ließe den Rahmen im Player leer. Sie bekommen deshalb
+	# einen eigenen Satz Kopfzeilen — ohne X-Frame-Options, dafür mit der
+	# Herkunftsliste als CSP. Zwei Blöcke statt Löschen im nachgelagerten
+	# `handle`: eine Kopfzeile, die weiter oben gesetzt wird, lässt sich weiter
+	# unten nicht mehr zuverlässig entfernen (auch `defer` hilft nicht).
+	@ohne_anzeigen not path /embed/*
+	header @ohne_anzeigen {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		X-Frame-Options SAMEORIGIN
+		-Server
+	}
+
+	# Diese Seiten tragen keine Bedienelemente, und ihre Daten hängen am
+	# signierten Token — Einrahmen ist hier also kein Hebel. Wer die Herkunft
+	# der Tafeln kennt, stellt enger:
+	#   EMBED_FRAME_ANCESTORS="'self' http://signage.acm.local:8080"
+	header /embed/* {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Content-Security-Policy "frame-ancestors {$EMBED_FRAME_ANCESTORS:*}"
 		-Server
 	}
 

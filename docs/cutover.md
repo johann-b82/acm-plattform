@@ -307,6 +307,8 @@ prüfen", dann den Schalter umlegen.
 
 Ablauf in `acm-signage/docs/setup.md`. Vorher die alten Verzeichnisse in den Medienspeicher kopieren, danach `SIGNAGE_DEVICE_JWT_SECRET` aus der alten `.env` übernehmen — ohne das zeigt jeder Bildschirm wieder einen Kopplungscode.
 
+**Die Playlist-Einträge der HR-Tafeln müssen neu gesetzt werden.** Die alten Adressen `/embed/birthdays` und `/embed/joiners` waren offen; die neuen verlangen einen signierten Token je Eintrag. Erzeugen unter `/einstellungen#anzeigen` der Plattform, je einen für „Geburtstage der Woche" und „Neu im Team", und die fertige Adresse in den Playlist-Eintrag vom Typ „Adresse" eintragen. Dazu muss `EMBED_SECRET` in der `.env` der Plattform gesetzt sein — sonst lässt sich keine Adresse erzeugen. Hintergrund: `docs/modules/anzeigen.md`.
+
 ---
 
 ## 5. Pis umstellen
