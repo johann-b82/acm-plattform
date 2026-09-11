@@ -23,6 +23,8 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
+import type { Texte } from "@/texte";
 
 /**
  * Durchsicht einer Lieferung: Kopfdaten ergänzen, Positionen prüfen,
@@ -44,17 +46,17 @@ const AUSGABEN = [
   { feld: "etikett_pfad", name: "Etikett", dateiname: "Etikett.docx" },
 ] as const;
 
-const KOPFFELDER: { feld: keyof Lieferung; label: string; typ?: string }[] = [
-  { feld: "atr_nummer", label: "ATR-Nummer" },
-  { feld: "containernummer", label: "Containernummer" },
-  { feld: "satz_titel", label: "Satzbezeichnung" },
-  { feld: "programm", label: "Programm" },
-  { feld: "msn", label: "MSN" },
-  { feld: "bereich", label: "Bereich" },
-  { feld: "wiegedatum", label: "Wiegedatum", typ: "date" },
-  { feld: "pruefdatum", label: "Prüfdatum", typ: "date" },
-  { feld: "qs_unterschrift", label: "QS-Unterschrift" },
-  { feld: "max_gewicht_kg", label: "Höchstgewicht kg" },
+const KOPFFELDER: { feld: keyof Lieferung; wort: keyof Texte["durchsicht"]; typ?: string }[] = [
+  { feld: "atr_nummer", wort: "atrNummer" },
+  { feld: "containernummer", wort: "containernummer" },
+  { feld: "satz_titel", wort: "satzTitel" },
+  { feld: "programm", wort: "programm" },
+  { feld: "msn", wort: "msn" },
+  { feld: "bereich", wort: "bereich" },
+  { feld: "wiegedatum", wort: "wiegedatum", typ: "date" },
+  { feld: "pruefdatum", wort: "pruefdatum", typ: "date" },
+  { feld: "qs_unterschrift", wort: "qsUnterschrift" },
+  { feld: "max_gewicht_kg", wort: "hoechstgewicht" },
 ];
 
 export function Durchsicht({
@@ -64,6 +66,7 @@ export function Durchsicht({
   id: string;
   darfSchreiben: boolean;
 }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
 
   const lieferung = useQuery({
@@ -137,7 +140,7 @@ export function Durchsicht({
     return <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>;
   }
   if (!l) {
-    return <p className="text-sm text-[var(--fg-muted)]">Lieferung nicht gefunden.</p>;
+    return <p className="text-sm text-[var(--fg-muted)]">{worte.durchsicht.nichtGefunden}</p>;
   }
 
   const gesamtgewicht = zeilen.reduce(
@@ -161,21 +164,21 @@ export function Durchsicht({
           Lieferschein {l.lieferschein_nr ?? l.quelle_dateiname}
         </h1>
         {offen ? (
-          <Badge variant="outline">Entwurf</Badge>
+          <Badge variant="outline">{worte.lieferungen.entwurf}</Badge>
         ) : (
-          <Badge>freigegeben</Badge>
+          <Badge>{worte.lieferungen.freigegeben}</Badge>
         )}
         {darfSchreiben && (
           <div className="ml-auto">
             {offen ? (
               <Button onClick={() => status.mutate("freigegeben")}>
                 <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden />
-                Freigeben
+                {worte.durchsicht.freigeben}
               </Button>
             ) : (
               <Button variant="outline" onClick={() => status.mutate("entwurf")}>
                 <Undo2 className="mr-2 h-4 w-4" aria-hidden />
-                Freigabe zurücknehmen
+                {worte.durchsicht.zuruecknehmen}
               </Button>
             )}
           </div>
@@ -194,7 +197,7 @@ export function Durchsicht({
             disabled={erzeugen.isPending || zeilen.length === 0}
           >
             <FileCog className="mr-2 h-4 w-4" aria-hidden />
-            {erzeugen.isPending ? "Wird erzeugt …" : "Dokumente erzeugen"}
+            {erzeugen.isPending ? worte.durchsicht.wirdErzeugt : worte.durchsicht.dokumenteErzeugen}
           </Button>
         )}
 
@@ -241,11 +244,11 @@ export function Durchsicht({
       )}
 
       <Card className="p-5">
-        <h2 className="font-medium">Kopfdaten</h2>
+        <h2 className="font-medium">{worte.durchsicht.kopfdaten}</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {KOPFFELDER.map(({ feld, label, typ }) => (
+          {KOPFFELDER.map(({ feld, wort, typ }) => (
             <div key={feld} className="flex flex-col gap-1">
-              <Label htmlFor={feld}>{label}</Label>
+              <Label htmlFor={feld}>{worte.durchsicht[wort] as string}</Label>
               <Input
                 id={feld}
                 type={typ}
@@ -266,7 +269,7 @@ export function Durchsicht({
 
       <Card className="p-5">
         <div className="flex flex-wrap items-baseline gap-3">
-          <h2 className="font-medium">Positionen</h2>
+          <h2 className="font-medium">{worte.durchsicht.positionen}</h2>
           <span className="text-sm text-[var(--fg-muted)]">
             {zeilen.length} Zeilen · {gesamtgewicht.toFixed(3).replace(".", ",")} kg
             {ohneKatalog > 0 && ` · ${ohneKatalog} nicht im Katalog`}
@@ -278,13 +281,13 @@ export function Durchsicht({
           <Table>
             <thead>
               <tr>
-                <Th className="w-14">Pos</Th>
-                <Th>Teilenummer</Th>
-                <Th>Bezeichnung</Th>
-                <Th>Zeichnung</Th>
-                <Th className="w-16">Menge</Th>
-                <Th className="w-28">Gewicht kg</Th>
-                <Th>Seriennummern</Th>
+                <Th className="w-14">{worte.durchsicht.pos}</Th>
+                <Th>{worte.atr.teilenummer}</Th>
+                <Th>{worte.atr.bezeichnung}</Th>
+                <Th>{worte.atr.zeichnung}</Th>
+                <Th className="w-16">{worte.durchsicht.menge}</Th>
+                <Th className="w-28">{worte.atr.gewicht}</Th>
+                <Th>{worte.durchsicht.seriennummern}</Th>
                 <Th className="w-12" />
               </tr>
             </thead>
@@ -296,7 +299,7 @@ export function Durchsicht({
                     <span className="font-medium">{p.teilenummer ?? "—"}</span>
                     {!p.teil_id && (
                       <span className="mt-0.5 block text-xs text-[var(--fg-muted)]">
-                        nicht im Katalog
+                        {worte.durchsicht.nichtImKatalog}
                       </span>
                     )}
                   </Td>
@@ -375,9 +378,7 @@ export function Durchsicht({
 
         {!offen && (
           <p className="mt-3 text-xs text-[var(--fg-muted)]">
-            Die Lieferung ist freigegeben; die Positionen sind fest. Die
-            Datenbank weist eine Änderung ab — die Freigabe lässt sich oben
-            zurücknehmen.
+            {worte.durchsicht.festHinweis}
           </p>
         )}
       </Card>

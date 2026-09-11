@@ -19,6 +19,8 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
  * Der Teilekatalog: was ein Teil heißt, wiegt und zu welcher Zeichnung es
@@ -27,6 +29,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
  * geschrieben steht als im Katalog.
  */
 export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [suche, setSuche] = useState("");
   const [neueNummer, setNeueNummer] = useState("");
@@ -104,32 +107,27 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-        <h1 className="text-2xl font-semibold tracking-tight">ATR</h1>
-        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-          Der Teilekatalog ist die Grundlage: aus ihm holt ein Lieferschein
-          Bezeichnung, Zeichnung und Gewicht. Gefunden wird über die
-          Teilenummer ohne Beiwerk — nur die Ziffern zählen.
-        </p>
-        </div>
-        <Link
-          href="/atr/lieferungen"
-          className="text-sm underline-offset-4 hover:underline"
-        >
-          Zu den Lieferungen
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/atr"]}
+        untertitel={worte.atr.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center text-sm">
+            <Link href="/atr/lieferungen" className="underline-offset-4 hover:underline">
+              {worte.atr.zuLieferungen}
+            </Link>
+          </div>
+        }
+      />
 
       {darfSchreiben && (
         <Card className="space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-1 flex-col gap-1">
-              <Label htmlFor="neu">Teil von Hand anlegen</Label>
+              <Label htmlFor="neu">{worte.atr.teilAnlegen}</Label>
               <Input
                 id="neu"
                 value={neueNummer}
-                placeholder="Teilenummer, z. B. VR-1234-56"
+                placeholder={worte.atr.teilBeispiel}
                 onChange={(e) => setNeueNummer(e.target.value)}
               />
             </div>
@@ -138,7 +136,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
               onClick={() => anlegen.mutate()}
             >
               <Plus className="mr-2 h-4 w-4" aria-hidden />
-              Anlegen
+              {worte.atr.anlegen}
             </Button>
             <label
               className={
@@ -148,12 +146,12 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
               }
             >
               <FileUp className="mr-2 h-4 w-4" aria-hidden />
-              {einlesen.isPending ? "Wird gelesen …" : "Referenzmappe einlesen"}
+              {einlesen.isPending ? worte.atr.wirdGelesen : worte.atr.mappeEinlesen}
               <input
                 type="file"
                 accept={`.xlsx,${XLSX_TYP}`}
                 className="sr-only"
-                aria-label="Referenzmappe einlesen"
+                aria-label={worte.atr.mappeEinlesen}
                 disabled={einlesen.isPending}
                 onChange={(e) => {
                   const datei = e.target.files?.[0];
@@ -187,26 +185,22 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="suche">Suchen</Label>
+        <Label htmlFor="suche">{worte.atr.suchen}</Label>
         <Input
           id="suche"
           className="max-w-md"
           value={suche}
-          placeholder="Teilenummer, Bezeichnung oder Zeichnung"
+          placeholder={worte.atr.suchePlatzhalter}
           onChange={(e) => setSuche(e.target.value)}
         />
       </div>
 
-      {teile.isLoading && <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>}
+      {teile.isLoading && <p className="text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</p>}
 
       {!teile.isLoading && liste.length === 0 && (
         <EmptyState
-          title={suche ? "Nichts gefunden" : "Der Katalog ist leer"}
-          body={
-            suche
-              ? "Kein Teil passt zu dieser Suche."
-              : "Eine Referenzmappe einlesen oder ein Teil von Hand anlegen."
-          }
+          title={suche ? worte.atr.nichtsGefunden : worte.atr.katalogLeer}
+          body={suche ? worte.atr.keinTeil : worte.atr.katalogLeerText}
         />
       )}
 
@@ -215,11 +209,11 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
           <Table>
             <thead>
               <tr>
-                <Th>Teilenummer</Th>
-                <Th>Bezeichnung</Th>
-                <Th>Zeichnung</Th>
-                <Th className="w-28">Gewicht kg</Th>
-                <Th>Kategorie</Th>
+                <Th>{worte.atr.teilenummer}</Th>
+                <Th>{worte.atr.bezeichnung}</Th>
+                <Th>{worte.atr.zeichnung}</Th>
+                <Th className="w-28">{worte.atr.gewicht}</Th>
+                <Th>{worte.atr.kategorie}</Th>
                 <Th className="w-12" />
               </tr>
             </thead>
@@ -263,7 +257,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
 
       {liste.length === 500 && (
         <p className="text-xs text-[var(--fg-muted)]">
-          Nur die ersten 500 Treffer — bitte enger suchen.
+          {worte.atr.nurErste}
         </p>
       )}
     </div>

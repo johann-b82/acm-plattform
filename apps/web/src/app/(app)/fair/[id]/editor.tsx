@@ -25,6 +25,7 @@ import { Button, Card, Select } from "@/components/ui/primitives";
 import { Zeichenflaeche } from "./zeichenflaeche";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Der Editor: Zeichnung anzeigen, Bereiche markieren, Ballons setzen.
@@ -43,6 +44,7 @@ type Schritt =
   | { art: "wartet_auf_blase"; bereich: Rechteck };
 
 export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boolean }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const fenster = useRef<HTMLDivElement>(null);
 
@@ -249,7 +251,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         <div className="ml-auto flex items-center gap-1">
           {seiten > 1 && (
             <Select
-              aria-label="Seite"
+              aria-label={worte.fair.seite}
               className="w-28"
               value={seite}
               onChange={(e) => setSeite(Number(e.target.value))}
@@ -264,7 +266,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Ansicht drehen"
+            aria-label={worte.fair.drehen}
             onClick={() => drehen.mutate(naechsteDrehung(drehung))}
             disabled={!darfSchreiben}
           >
@@ -273,7 +275,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Verkleinern"
+            aria-label={worte.fair.verkleinern}
             onClick={() => setAnsicht((a) => zoomeUm(a, 0, 0, 1 / 1.3))}
           >
             <ZoomOut className="h-4 w-4" />
@@ -281,12 +283,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Vergrößern"
+            aria-label={worte.fair.vergroessern}
             onClick={() => setAnsicht((a) => zoomeUm(a, 0, 0, 1.3))}
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" aria-label="Einpassen" onClick={einpassenJetzt}>
+          <Button variant="ghost" size="icon" aria-label={worte.fair.einpassen} onClick={einpassenJetzt}>
             <Maximize className="h-4 w-4" />
           </Button>
         </div>

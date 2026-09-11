@@ -23,13 +23,18 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 /**
  * Die Zeichnungen einer Erstmusterprüfung. Hochladen, öffnen, löschen.
  */
 export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
 
@@ -63,23 +68,16 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">FAIR</h1>
-        <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-          Erstmusterprüfung: eine Zeichnung hochladen und zu jedem zu prüfenden
-          Maß einen nummerierten Ballon setzen. Die Nummern vergibt die
-          Datenbank und hält sie lückenlos.
-        </p>
-      </div>
+      <Seitenkopf titel={worte.pfad.seiten["/fair"]} untertitel={worte.fair.einleitung} />
 
       {darfSchreiben && (
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-1 flex-col gap-1">
-            <Label htmlFor="name">Bezeichnung (leer = Dateiname)</Label>
+            <Label htmlFor="name">{worte.fair.bezeichnungFrei}</Label>
             <Input
               id="name"
               value={name}
-              placeholder="z. B. Welle 12×40, Zeichnung 4711"
+              placeholder={worte.fair.beispiel}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
@@ -91,12 +89,12 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             }
           >
             <FileUp className="mr-2 h-4 w-4" aria-hidden />
-            {hochladen.isPending ? "Wird geladen …" : "Zeichnung wählen"}
+            {hochladen.isPending ? worte.fair.wirdGeladen : worte.fair.zeichnungWaehlen}
             <input
               type="file"
               accept={ERLAUBTE_TYPEN.join(",")}
               className="sr-only"
-              aria-label="Zeichnung wählen"
+              aria-label={worte.fair.zeichnungWaehlen}
               disabled={hochladen.isPending}
               onChange={(e) => {
                 const datei = e.target.files?.[0];
@@ -109,16 +107,14 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {zeichnungen.isLoading && (
-        <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>
+        <p className="text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</p>
       )}
 
       {!zeichnungen.isLoading && liste.length === 0 && (
         <EmptyState
-          title="Noch keine Zeichnung"
+          title={worte.fair.keineZeichnung}
           body={
-            darfSchreiben
-              ? "PDF oder Bild hochladen — danach lassen sich die Maße ballonieren."
-              : "Sobald eine Zeichnung hochgeladen ist, steht sie hier."
+            darfSchreiben ? worte.fair.keineZeichnungSchreiben : worte.fair.keineZeichnungLesen
           }
         />
       )}
@@ -128,10 +124,10 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           <Table>
             <thead>
               <tr>
-                <Th>Bezeichnung</Th>
-                <Th>Teilenummer</Th>
-                <Th>Kunde</Th>
-                <Th>Hochgeladen</Th>
+                <Th>{worte.fair.bezeichnung}</Th>
+                <Th>{worte.fair.teilenummer}</Th>
+                <Th>{worte.fair.kunde}</Th>
+                <Th>{worte.fair.hochgeladen}</Th>
                 <Th />
               </tr>
             </thead>

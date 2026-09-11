@@ -24,8 +24,11 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 /**
  * Die eingelesenen Lieferscheine. Ein Entwurf wartet auf Durchsicht, eine
@@ -33,6 +36,8 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
  * nicht mehr ändern (das hält die Datenbank, nicht diese Seite).
  */
 export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [bericht, setBericht] = useState<LieferscheinErgebnis | null>(null);
 
@@ -81,19 +86,17 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">ATR-Lieferungen</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Ein Lieferschein wird eingelesen, gegen den Teilekatalog
-            abgeglichen und als Entwurf abgelegt. Nach der Durchsicht wird er
-            freigegeben.
-          </p>
-        </div>
-        <Link href="/atr" className="text-sm underline-offset-4 hover:underline">
-          Zum Teilekatalog
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.titel.atrLieferungen}
+        untertitel={worte.lieferungen.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center text-sm">
+            <Link href="/atr" className="underline-offset-4 hover:underline">
+              {worte.lieferungen.zumKatalog}
+            </Link>
+          </div>
+        }
+      />
 
       {darfSchreiben && (
         <Card className="space-y-3 p-4">
@@ -106,12 +109,12 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               }
             >
               <FileUp className="mr-2 h-4 w-4" aria-hidden />
-              {einlesen.isPending ? "Wird gelesen …" : "Lieferschein einlesen"}
+              {einlesen.isPending ? worte.lieferungen.wirdGelesen : worte.lieferungen.einlesen}
               <input
                 type="file"
                 accept="application/pdf,.pdf"
                 className="sr-only"
-                aria-label="Lieferschein einlesen"
+                aria-label={worte.lieferungen.einlesen}
                 disabled={einlesen.isPending}
                 onChange={(e) => {
                   const datei = e.target.files?.[0];
@@ -127,7 +130,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               disabled={durchsehen.isPending}
             >
               <FolderSearch className="mr-2 h-4 w-4" aria-hidden />
-              {durchsehen.isPending ? "Läuft …" : "Eingang durchsehen"}
+              {durchsehen.isPending ? worte.lieferungen.laeuft : worte.lieferungen.eingangDurchsehen}
             </Button>
           </div>
 
@@ -135,9 +138,8 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             <div className="rounded-md bg-[var(--muted)] p-3 text-sm">
               <p>
                 <span className="font-medium">{bericht.dateiname}</span>
-                {bericht.lieferschein_nr && ` · Nr. ${bericht.lieferschein_nr}`}:{" "}
-                {bericht.positionen} Positionen, {bericht.zugeordnet} im Katalog
-                gefunden.
+                {bericht.lieferschein_nr && worte.lieferungen.berichtNummer(bericht.lieferschein_nr)}
+                : {worte.lieferungen.berichtZeile(bericht.positionen, bericht.zugeordnet)}
               </p>
               <p className="mt-1 text-[var(--fg-muted)]">{bericht.programm_grund}</p>
               {bericht.hinweise.length > 0 && (
@@ -153,16 +155,16 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {lieferungen.isLoading && (
-        <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>
+        <p className="text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</p>
       )}
 
       {!lieferungen.isLoading && liste.length === 0 && (
         <EmptyState
-          title="Noch kein Lieferschein"
+          title={worte.lieferungen.keinLieferschein}
           body={
             darfSchreiben
-              ? "Ein Lieferschein-PDF einlesen — danach steht er hier zur Durchsicht."
-              : "Sobald ein Lieferschein eingelesen ist, steht er hier."
+              ? worte.lieferungen.keinLieferscheinSchreiben
+              : worte.lieferungen.keinLieferscheinLesen
           }
         />
       )}
@@ -172,11 +174,11 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           <Table>
             <thead>
               <tr>
-                <Th>Lieferschein</Th>
-                <Th>Datum</Th>
-                <Th>Programm</Th>
-                <Th>MSN</Th>
-                <Th>Status</Th>
+                <Th>{worte.lieferungen.lieferschein}</Th>
+                <Th>{worte.lieferungen.datum}</Th>
+                <Th>{worte.lieferungen.programm}</Th>
+                <Th>{worte.lieferungen.msn}</Th>
+                <Th>{worte.lieferungen.status}</Th>
                 <Th className="w-12" />
               </tr>
             </thead>
@@ -202,9 +204,9 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                   <Td>{l.msn ?? "—"}</Td>
                   <Td>
                     {l.status === "entwurf" ? (
-                      <Badge variant="outline">Entwurf</Badge>
+                      <Badge variant="outline">{worte.lieferungen.entwurf}</Badge>
                     ) : (
-                      <Badge>freigegeben</Badge>
+                      <Badge>{worte.lieferungen.freigegeben}</Badge>
                     )}
                   </Td>
                   <Td className="text-right">

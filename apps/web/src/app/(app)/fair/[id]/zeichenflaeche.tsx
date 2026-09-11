@@ -5,6 +5,7 @@ import { Document, Page } from "react-pdf";
 
 import "@/app/(app)/fair/pdf-arbeiter";
 import type { ZeichnungsArt } from "@/lib/fair";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Die Zeichnung in ihrer natürlichen Größe — eine PDF-Seite oder ein Bild.
@@ -33,12 +34,13 @@ function ZeichenflaecheImpl({
   onMasse: (m: { b: number; h: number }) => void;
   onSeiten: (n: number) => void;
 }) {
+  const worte = useTexte();
   if (art === "bild") {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={url}
-        alt="Zeichnung"
+        alt={worte.fair.zeichnung}
         draggable={false}
         style={{
           display: "block",
@@ -62,7 +64,7 @@ function ZeichenflaecheImpl({
       file={url}
       onLoadSuccess={({ numPages }) => onSeiten(numPages)}
       loading=""
-      error="Die Zeichnung ließ sich nicht laden."
+      error={worte.fair.ladefehler}
     >
       <Page
         pageNumber={seite}
