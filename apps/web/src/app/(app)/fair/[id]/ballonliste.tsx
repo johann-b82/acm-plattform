@@ -16,6 +16,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Die Prüfliste: Nummer, Seite, gemessener Wert.
@@ -37,6 +38,7 @@ export function Ballonliste({
   darfSchreiben: boolean;
   onWaehlen: (b: Ballon) => void;
 }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const neuLaden = () =>
     queryClient.invalidateQueries({ queryKey: fairKeys.ballons(zeichnungId) });
@@ -96,9 +98,9 @@ export function Ballonliste({
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-medium">Prüfliste</h2>
+        <h2 className="font-medium">{worte.fair.pruefliste}</h2>
         <span className="text-sm text-[var(--fg-muted)]">
-          {ballons.length === 1 ? "1 Maß" : `${ballons.length} Maße`}
+          {ballons.length === 1 ? worte.fair.einMass : worte.fair.masse(ballons.length)}
         </span>
         <div className="ml-auto flex gap-2">
           <Button
@@ -108,7 +110,7 @@ export function Ballonliste({
             disabled={ballons.length === 0}
           >
             <ClipboardCopy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-            Kopieren
+            {worte.fair.kopieren}
           </Button>
           <Button
             variant="outline"
@@ -117,23 +119,23 @@ export function Ballonliste({
             disabled={ballons.length === 0}
           >
             <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-            CSV
+            {worte.fair.csv}
           </Button>
         </div>
       </div>
 
       {ballons.length === 0 ? (
         <p className="mt-3 text-sm text-[var(--fg-muted)]">
-          Noch kein Maß markiert.
+          {worte.fair.keinMass}
         </p>
       ) : (
         <TableWrap className="mt-3">
           <Table>
             <thead>
               <tr>
-                <Th className="w-16">Nr</Th>
-                <Th className="w-20">Seite</Th>
-                <Th>Wert</Th>
+                <Th className="w-16">{worte.fair.nr}</Th>
+                <Th className="w-20">{worte.fair.seite}</Th>
+                <Th>{worte.fair.wert}</Th>
                 <Th className="w-32" />
               </tr>
             </thead>
@@ -149,8 +151,8 @@ export function Ballonliste({
                   <Td>
                     <Input
                       defaultValue={b.wert}
-                      aria-label={`Wert zu Nummer ${b.nummer}`}
-                      placeholder="z. B. 12,0 h7"
+                      aria-label={worte.fair.wertZu(b.nummer)}
+                      placeholder={worte.fair.wertBeispiel}
                       disabled={!darfSchreiben}
                       onBlur={(e) => {
                         if (e.target.value !== b.wert) {
@@ -165,7 +167,7 @@ export function Ballonliste({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`Nummer ${b.nummer} nach oben`}
+                          aria-label={worte.fair.nachOben(b.nummer)}
                           disabled={i === 0}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -177,7 +179,7 @@ export function Ballonliste({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`Nummer ${b.nummer} nach unten`}
+                          aria-label={worte.fair.nachUnten(b.nummer)}
                           disabled={i === ballons.length - 1}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -187,7 +189,7 @@ export function Ballonliste({
                           <ArrowDown className="h-4 w-4" />
                         </Button>
                         <ConfirmDeleteButton
-                          itemLabel={`Nummer ${b.nummer}`}
+                          itemLabel={worte.fair.nummer(b.nummer)}
                           onConfirm={() =>
                             loeschen.mutateAsync(b.id).then(() => undefined)
                           }
