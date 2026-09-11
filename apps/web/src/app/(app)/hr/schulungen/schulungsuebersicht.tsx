@@ -126,6 +126,9 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
           <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
             Was offen ist
           </Link>
+          <Link href="/hr/schulungen/matrix" className="underline-offset-4 hover:underline">
+            Matrix
+          </Link>
           <Link href="/hr" className="underline-offset-4 hover:underline">
             Personal
           </Link>

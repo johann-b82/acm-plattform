@@ -108,9 +108,14 @@ export function OffeneSchulungen() {
             hier nicht mehr auf.
           </p>
         </div>
-        <Link href="/hr/schulungen" className="text-sm underline-offset-4 hover:underline">
-          Zum Katalog
-        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/hr/schulungen/matrix" className="underline-offset-4 hover:underline">
+            Matrix
+          </Link>
+          <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
+            Zum Katalog
+          </Link>
+        </div>
       </div>
 
       <Card className="flex flex-wrap items-end gap-3 p-4">

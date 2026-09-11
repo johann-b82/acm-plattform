@@ -14,7 +14,6 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 | 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. **Beim Abgleich aufgefallen: im Altsystem ruft ihn niemand auf** — `send_email` hat dort außerhalb des eigenen Routers keinen Aufrufer. Portiert würde ein delegierter OAuth-Ablauf samt Token-Ablage und Einstellungsmaske für etwas, das nichts benutzt. Empfehlung: bauen, wenn der erste Verbraucher da ist (Schulungserinnerungen sind der naheliegende). |
 | 9 | Einstellungen: Personio-Auswahllisten | 1 | Die Auswahllisten aus Personio (Abwesenheitsarten) in der Einstellungsmaske vorschlagen, statt IDs abzutippen. Das Logo steht (PR #48). |
 | 10 | In-App-Dokumentation | — | 22 Markdown-Seiten aus `frontend/src/docs/`. Zuletzt, weil sie den fertigen Stand beschreibt. |
-| 11 | Schulungsmatrix (Ansicht) | 2 | Die Kreuztabelle aller Personen gegen alle Schulungen. Die Liste „was offen ist" deckt das Handeln ab; die Matrix ist die Übersicht für den Aushang. |
 
 ### Innerhalb des Audit-Moduls offen
 
@@ -40,7 +39,7 @@ Vertrieb, Einkauf, Produktion (Kennzahlen), Qualität (Kennzahlen), Finanzen,
 Personal (Kennzahlen, Belegschaft, Wochenbericht), Newsletter, KPI-Bewertung,
 Seiten-Feedback, FAIR, ATR (vier Teile), Uploads (13 Routen; die 16 alten minus
 Tippspiel, minus der abgelösten Sammelroute, minus zweier zusammengelegter
-Preisdateien), Personio-Abgleich, Rechteverwaltung, Sensoren, Wartung.
+Preisdateien), Personio-Abgleich, Rechteverwaltung, Sensoren, Wartung, Schulungsmatrix.
 Anzeigen für die Bildschirme (Geburtstage, Neuzugänge) — nicht 1:1, sondern
 mit signiertem Token statt offener Route, siehe `docs/modules/anzeigen.md`.
 Signage liegt im eigenen Repo `acm-signage`.

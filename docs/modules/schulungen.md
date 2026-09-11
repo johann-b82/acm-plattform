@@ -59,6 +59,43 @@ Die Liste unter „Was offen ist" sortiert nach Dringlichkeit, nicht nach Namen:
 „Nie absolviert" wiegt schwerer als „überfällig" — das eine ist eine Lücke, das
 andere eine Verspätung.
 
+## Die Matrix und die Liste beantworten verschiedene Fragen
+
+`/hr/schulungen/offen` sagt: **wer ist als Nächstes dran?** Sortiert nach
+Dringlichkeit, eine Zeile je offener Teilnahme — die Liste, nach der jemand
+handelt.
+
+`/hr/schulungen/matrix` sagt: **steht für jede Person und jede Schulung ein
+Datum?** Das ist die Frage aus dem Audit, und sie braucht die Gegenrichtung:
+auch die Person, für die gar nichts eingetragen ist, muss eine Zeile bekommen.
+In der Liste taucht sie nicht auf — sie hat ja keine Teilnahme, die offen sein
+könnte.
+
+Dafür gibt es `schulung_belegschaft`: eine Sicht über die drei Arten von
+Person, die in der Matrix eine Zeile bekommen.
+
+| Schlüssel | wer | woher |
+|---|---|---|
+| `e:<id>` | aktive Personio-Personen und Eintritte | `personio_employees` |
+| `x:<uuid>` | extern gepflegte | `externe_personen` |
+| `p:<nr>` | Reste der Excel-Historie ohne Personio-Treffer | `schulung_teilnahmen` |
+
+Die dritte Art ist kein Schönheitsfehler, sondern der Grund, warum der Import
+nichts verwirft (siehe oben). `schulung_stand` trägt denselben Schlüssel,
+damit Zeile und Zelle ohne zweite Abfrage zusammenfinden.
+
+Ausgetretene stehen nicht darin. Ihre Historie bleibt in den Teilnahmen —
+aber „wer ist geschult" meint die Belegschaft von heute.
+
+**Gepivotet wird in der Oberfläche, nicht in SQL.** Eine Kreuztabelle in
+Postgres bräuchte dynamische Spalten (`crosstab`), also eine Spaltenliste, die
+sich bei jeder neuen Schulung ändert. Belegschaft × Katalog ist eine kleine
+Menge; das Pivot im Browser kostet nichts und bleibt lesbar.
+
+Die Spaltenüberschriften stehen senkrecht, nicht schräg: eine schräg gestellte
+Beschriftung ragt aus ihrer Zelle heraus und wird vom Rollbereich
+abgeschnitten — beim ersten Versuch fehlte der Anfang jedes langen Namens.
+
 ## Was noch fehlt
 
 Unterlagen je Schulung, Nachweise und Zertifikate, das Schulungsprotokoll als
