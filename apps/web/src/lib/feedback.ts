@@ -96,6 +96,21 @@ export const feedbackApi = {
     return { mitBild: pfad !== null };
   },
 
+  /** Wie viele Meldungen noch niemand angesehen hat.
+   *
+   *  Zählt in der Datenbank, statt die Liste zu holen und im Browser zu
+   *  filtern: die Kopfzeile fragt das auf jeder Seite und im Takt, und die
+   *  Berichte tragen Text und Bildpfade mit sich. Wer das Recht nicht hat,
+   *  bekommt von der Leseregel 0 — das ist die richtige Antwort. */
+  ungeseheneAnzahl: async (): Promise<number> => {
+    const { count, error } = await supabaseBrowser()
+      .from("feedback")
+      .select("id", { count: "exact", head: true })
+      .is("gesehen_am", null);
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  },
+
   liste: async (): Promise<Feedback[]> => {
     const { data, error } = await supabaseBrowser()
       .from("feedback")
@@ -116,11 +131,17 @@ export const feedbackApi = {
     return data.signedUrl;
   },
 
-  gesehen: async (id: string): Promise<void> => {
+  /** Hakt ab, dass diese Meldungen auf dem Bildschirm standen.
+   *
+   *  Angesehen heißt: die Liste hat sie gezeigt. Früher zählte nur, wer das
+   *  Bildschirmfoto öffnete — eine Meldung ohne Bild blieb damit für immer
+   *  ungesehen, und die Zahl an der Glocke ginge nie wieder herunter. */
+  gesehen: async (ids: string[]): Promise<void> => {
+    if (ids.length === 0) return;
     const { error } = await supabaseBrowser()
       .from("feedback")
       .update({ gesehen_am: new Date().toISOString() })
-      .eq("id", id)
+      .in("id", ids)
       .is("gesehen_am", null);
     // Kein `pruefeBetroffen`: war die Meldung schon gesehen, ändert sich
     // nichts, und das ist kein Fehler.
@@ -146,7 +167,11 @@ export const feedbackApi = {
       const { error } = await sb.storage.from(EIMER).remove([bildPfad]);
       if (error) throw new Error(error.message);
     }
-    const { data, error } = await sb.from("feedback").delete().eq("id", id).select("id");
+    const { data, error } = await sb
+      .from("feedback")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) throw new Error(error.message);
     pruefeBetroffen(data);
   },

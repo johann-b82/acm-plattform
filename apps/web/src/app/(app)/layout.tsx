@@ -2,31 +2,28 @@ import Link from "next/link";
 import { CircleHelp, LogOut, Settings } from "lucide-react";
 
 import { requireSession } from "@/lib/auth";
+import { hasLevel } from "@/lib/rechte";
 import { logoAdresse } from "@/lib/logo-server";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/providers";
 import { Brotkrumen } from "@/components/brotkrumen";
+import { KNOPF } from "@/components/kopfzeile/knopf";
+import { FeedbackGlocke } from "@/components/feedback/glocke";
+import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
 import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umschalter";
-
-/** Ein Zeichen in der Kopfzeile: quadratische Fläche, sichtbarer Tastaturfokus. */
-const KNOPF =
-  "inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--fg-muted)] " +
-  "transition-colors hover:bg-[var(--muted)] hover:text-[var(--fg)] " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 /**
  * Shell für alle angemeldeten Seiten. Läuft immer pro Anfrage (die Sitzung
  * kommt aus Cookies), deshalb werden hier die Laufzeitwerte für den
  * Supabase-Client im Browser gelesen und an die Provider gereicht.
  */
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
   const logo = await logoAdresse();
+  const darfMeldungen = session.apps.platform === "admin";
+  // Wer eine Maßnahme abhaken darf, ist derselbe Kreis wie bei den Zielwerten.
+  const darfMassnahmen = hasLevel(session.apps, "settings", "editor");
   return (
     <Providers
       supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL!}
@@ -34,11 +31,7 @@ export default async function AppLayout({
     >
       <div className="min-h-screen">
         <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">
-          <Link
-            href="/"
-            className="flex items-center gap-2"
-            aria-label="Zur Übersicht"
-          >
+          <Link href="/" className="flex items-center gap-2" aria-label="Zur Übersicht">
             {logo ? (
               // Eine signierte Adresse auf eine hochgeladene Datei; `next/image`
               // bräuchte dafür eine Host-Freigabe und brächte hier nichts.
@@ -49,9 +42,7 @@ export default async function AppLayout({
                 className="h-8 w-auto max-w-44 object-contain"
               />
             ) : (
-              <span className="font-semibold tracking-tight">
-                ACM-Plattform
-              </span>
+              <span className="font-semibold tracking-tight">ACM-Plattform</span>
             )}
           </Link>
           {/* Zeichen statt Beschriftungen: drei Wörter nebeneinander drängten
@@ -64,13 +55,14 @@ export default async function AppLayout({
             <span className="mr-2 hidden text-sm text-[var(--fg-muted)] sm:inline">
               {session.email}
             </span>
+            {/* Zwei Zahlen, die etwas von einem wollen — deshalb stehen sie
+                links von den Werkzeugen und nur bei denen, die sie abtragen
+                können: Meldungen sieht die Plattform-Verwaltung, Maßnahmen,
+                wer sie auch abhaken darf. */}
+            {darfMeldungen && <FeedbackGlocke />}
+            {darfMassnahmen && <MassnahmenKnopf />}
             <ErscheinungsbildUmschalter />
-            <Link
-              href="/hilfe"
-              aria-label="Hilfe"
-              title="Hilfe"
-              className={KNOPF}
-            >
+            <Link href="/hilfe" aria-label="Hilfe" title="Hilfe" className={KNOPF}>
               <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
             </Link>
             {session.apps.platform === "admin" && (
@@ -84,12 +76,7 @@ export default async function AppLayout({
               </Link>
             )}
             <form action={signOut}>
-              <button
-                type="submit"
-                aria-label="Abmelden"
-                title="Abmelden"
-                className={KNOPF}
-              >
+              <button type="submit" aria-label="Abmelden" title="Abmelden" className={KNOPF}>
                 <LogOut className="h-[18px] w-[18px]" aria-hidden />
               </button>
             </form>

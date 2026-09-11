@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Image as BildIcon } from "lucide-react";
@@ -33,11 +33,15 @@ export function FeedbackListe() {
 
   const liste = useQuery({ queryKey: feedbackKeys.liste(), queryFn: feedbackApi.liste });
   const meldungen = liste.data ?? [];
-  const ungesehen = meldungen.filter((m) => m.gesehen_am === null).length;
   const offen = meldungen.filter((m) => m.status === "neu").length;
+  const ungesehen = meldungen.filter((m) => m.gesehen_am === null).length;
 
-  const neuLaden = () =>
-    queryClient.invalidateQueries({ queryKey: feedbackKeys.liste() });
+  // Auch die Zahl an der Glocke in der Kopfzeile: sie zählt in der Datenbank
+  // und merkt von einer hier angesehenen Meldung sonst erst beim nächsten Takt.
+  const neuLaden = async () => {
+    await queryClient.invalidateQueries({ queryKey: feedbackKeys.liste() });
+    await queryClient.invalidateQueries({ queryKey: feedbackKeys.offen() });
+  };
 
   const setzeStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: FeedbackStatus }) =>
@@ -64,10 +68,25 @@ export function FeedbackListe() {
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
-  const merkeGesehen = useMutation({
-    mutationFn: (id: string) => feedbackApi.gesehen(id),
-    onSuccess: neuLaden,
+  // Was hier zu sehen ist, gilt als angesehen. Das ist der Takt, in dem die
+  // Glocke in der Kopfzeile wieder auf null geht: Seite geöffnet, gelesen,
+  // erledigt. Im Kreis läuft der Effekt nicht — die Liste wird danach nicht
+  // neu geladen, der Schlüssel bleibt also stehen.
+  const schluessel = meldungen
+    .filter((m) => m.gesehen_am === null)
+    .map((m) => m.id)
+    .join(",");
+  const { mutate: merkeGesehen } = useMutation({
+    mutationFn: (ids: string[]) => feedbackApi.gesehen(ids),
+    // Nur die Zahl in der Kopfzeile, nicht die Liste: der Strich am Rand
+    // markiert, was beim Öffnen neu war, und soll stehen bleiben, solange man
+    // hier ist. Ein Neuladen würde ihn eine Zehntelsekunde nach dem Öffnen
+    // wegnehmen — und die Menge unter dem Effekt gleich mit.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: feedbackKeys.offen() }),
   });
+  useEffect(() => {
+    if (schluessel) merkeGesehen(schluessel.split(","));
+  }, [schluessel, merkeGesehen]);
 
   return (
     <div className="space-y-6">
@@ -75,7 +94,7 @@ export function FeedbackListe() {
         <h1 className="text-2xl font-semibold tracking-tight">Meldungen</h1>
         <p className="mt-1 text-sm text-[var(--fg-muted)]">
           Was aus den Ansichten gemeldet wurde. {offen} offen
-          {ungesehen > 0 && ` · ${ungesehen} noch nicht angesehen`}
+          {ungesehen > 0 && ` · ${ungesehen} neu seit dem letzten Aufruf`}
         </p>
       </div>
 
@@ -108,10 +127,7 @@ export function FeedbackListe() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        zeigeBild.mutate(m);
-                        if (m.gesehen_am === null) merkeGesehen.mutate(m.id);
-                      }}
+                      onClick={() => zeigeBild.mutate(m)}
                     >
                       <BildIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                       Bild
