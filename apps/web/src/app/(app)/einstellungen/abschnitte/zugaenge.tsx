@@ -52,10 +52,13 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
     null,
   );
 
-  // Nur die Zahl der noch nicht angesehenen Meldungen — die Liste selbst
-  // holt die eigene Seite.
-  const meldungen = useQuery({ queryKey: feedbackKeys.liste(), queryFn: feedbackApi.liste });
-  const ungesehene = (meldungen.data ?? []).filter((m) => m.gesehen_am === null).length;
+  // Nur die Zahl der noch nicht angesehenen Meldungen — gezählt wird in der
+  // Datenbank, die Liste selbst holt die eigene Seite.
+  const meldungen = useQuery({
+    queryKey: feedbackKeys.offen(),
+    queryFn: feedbackApi.ungeseheneAnzahl,
+  });
+  const ungesehene = meldungen.data ?? 0;
 
   const [apps, gruppen, rechte, mitgliedschaften, nutzer] = useQueries({
     queries: [

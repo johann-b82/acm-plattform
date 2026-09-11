@@ -34,6 +34,27 @@ Erscheinungsbilds und drei Zeichen: **Hilfe** (Fragezeichen),
 **Einstellungen** (Zahnrad, nur für Plattform-Admins) und **Abmelden**. Wer
 die Maus darüber hält, bekommt die Beschriftung.
 
+Auf jeder Seite außer dieser steht darunter der **Pfad** — *Start › Personal ›
+Schulungen*. Jede Station davon ist ein Verweis; das ist der Weg eine Ebene
+nach oben, ohne den Zurück-Knopf des Browsers. Auf einer Detailseite endet der
+Pfad bei der Liste, aus der sie stammt.
+
+## Zahlen in der Kopfzeile
+
+Zwei Zeichen tragen eine Zahl, und beide sieht nur, wer etwas damit anfangen
+kann:
+
+* **Glocke** — gemeldete Seiten, die noch niemand angesehen hat. Nur für die
+  Plattform-Verwaltung. Die Zahl geht auf null, sobald die Liste unter
+  *Einstellungen → Gemeldete Seiten ansehen* offen war.
+* **Hakenliste** — offene Maßnahmen aus der KPI-Bewertung, über alle
+  Kennzahlen zusammen. Sie wird **rot**, sobald eine davon überfällig ist;
+  wie viele das sind, steht in der Beschriftung. Nur für die, die eine
+  Maßnahme auch abhaken dürfen.
+
+Eine Null zeigt keines der beiden Zeichen an — eine Zahl, die immer dasteht,
+sieht man nach einer Woche nicht mehr.
+
 ## Hell oder dunkel
 
 Drei Felder oben rechts: **hell**, **dunkel** und **wie das System**.
