@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/auth";
+import { logoAdresse } from "@/lib/logo-server";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/providers";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
@@ -11,6 +12,7 @@ import { MeldeKnopf } from "@/components/feedback/melde-knopf";
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
+  const logo = await logoAdresse();
   return (
     <Providers
       supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL!}
@@ -18,8 +20,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     >
       <div className="min-h-screen">
         <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">
-          <Link href="/" className="font-semibold tracking-tight">
-            ACM-Plattform
+          <Link href="/" className="flex items-center gap-2" aria-label="Zur Übersicht">
+            {logo ? (
+              // Eine signierte Adresse auf eine hochgeladene Datei; `next/image`
+              // bräuchte dafür eine Host-Freigabe und brächte hier nichts.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logo}
+                alt="ACM"
+                className="h-8 w-auto max-w-44 object-contain"
+              />
+            ) : (
+              <span className="font-semibold tracking-tight">ACM-Plattform</span>
+            )}
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-[var(--fg-muted)]">{session.email}</span>
