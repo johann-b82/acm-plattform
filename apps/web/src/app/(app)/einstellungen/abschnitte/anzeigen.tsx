@@ -8,12 +8,13 @@ import { Copy, MonitorPlay } from "lucide-react";
 import { computeJson } from "@/lib/compute";
 import type { Anzeigenart, NeuerToken } from "@/lib/anzeige";
 import { Button, Card, Input, Label, Select } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
-const ANZEIGEN: { art: Anzeigenart; titel: string; pfad: string }[] = [
-  { art: "geburtstage", titel: "Geburtstage der Woche", pfad: "/embed/geburtstage" },
-  { art: "neuzugaenge", titel: "Neu im Team", pfad: "/embed/neuzugaenge" },
+const ANZEIGEN: { art: Anzeigenart; pfad: string }[] = [
+  { art: "geburtstage", pfad: "/embed/geburtstage" },
+  { art: "neuzugaenge", pfad: "/embed/neuzugaenge" },
 ];
 
 /**
@@ -30,6 +31,7 @@ const ANZEIGEN: { art: Anzeigenart; titel: string; pfad: string }[] = [
  * der Umgebung wechselt.
  */
 export function Anzeigen() {
+  const worte = useTexte();
   const [art, setArt] = useState<Anzeigenart>("geburtstage");
   const [tage, setTage] = useState(365);
   const [ergebnis, setErgebnis] = useState<{ art: Anzeigenart; adresse: string; bis: string } | null>(
@@ -57,14 +59,12 @@ export function Anzeigen() {
         Adressen für die Bildschirme
       </h3>
       <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-        Erzeugt die Adresse für einen Playlist-Eintrag im Signage-Player. Sie
-        gilt nur für die gewählte Anzeige und läuft ab — ein Eintrag, den
-        niemand mehr pflegt, hört damit von selbst auf zu zeigen.
+        {worte.einstellungenText.anzeigenHinweis}
       </p>
 
       <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1">
-          <Label htmlFor="anzeige-art">Anzeige</Label>
+          <Label htmlFor="anzeige-art">{worte.einstellungenText.anzeige}</Label>
           <Select
             id="anzeige-art"
             value={art}
@@ -75,13 +75,13 @@ export function Anzeigen() {
           >
             {ANZEIGEN.map((a) => (
               <option key={a.art} value={a.art}>
-                {a.titel}
+                {worte.einstellungenText[a.art]}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="anzeige-tage">Gültig für (Tage)</Label>
+          <Label htmlFor="anzeige-tage">{worte.einstellungenText.gueltigTage}</Label>
           <Input
             id="anzeige-tage"
             type="number"
@@ -93,7 +93,7 @@ export function Anzeigen() {
           />
         </div>
         <Button onClick={() => erzeugen.mutate()} disabled={erzeugen.isPending}>
-          {erzeugen.isPending ? "Erzeugt …" : "Adresse erzeugen"}
+          {erzeugen.isPending ? worte.einstellungenText.erzeugt : worte.einstellungenText.adresseErzeugen}
         </Button>
       </div>
 
@@ -112,8 +112,8 @@ export function Anzeigen() {
               onClick={() =>
                 navigator.clipboard
                   .writeText(ergebnis.adresse)
-                  .then(() => toast.success("Adresse kopiert."))
-                  .catch(() => toast.error("Kopieren ging nicht — bitte von Hand markieren."))
+                  .then(() => toast.success(worte.einstellungenText.adresseKopiert))
+                  .catch(() => toast.error(worte.einstellungenText.kopierenFehler))
               }
             >
               <Copy className="mr-1.5 h-4 w-4" aria-hidden />

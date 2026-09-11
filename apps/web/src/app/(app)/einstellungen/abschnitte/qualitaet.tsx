@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-import { KATEGORIEN, auditApi, auditKeys, type Norm, type Schritt } from "@/lib/audit";
+import { auditApi, auditKeys, type Norm, type Schritt } from "@/lib/audit";
 import {
   Badge,
   Button,
@@ -19,6 +19,8 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useAuditworte } from "@/lib/tafeln";
 
 const LEERE_NORM = { regelwerk: "", revision: "", klausel: "", kurztext: "" };
 
@@ -30,6 +32,8 @@ const LEERE_NORM = { regelwerk: "", revision: "", klausel: "", kurztext: "" };
  * `on delete restrict`; hier gibt es deshalb gar keinen Löschknopf.
  */
 export function Qualitaet() {
+  const worte = useTexte();
+  const auditworte = useAuditworte();
   const queryClient = useQueryClient();
   const [neueNorm, setNeueNorm] = useState({ ...LEERE_NORM });
   const [neueVorlage, setNeueVorlage] = useState("");
@@ -57,7 +61,7 @@ export function Qualitaet() {
     onError: (fehler: Error) =>
       toast.error(
         /duplicate|unique/i.test(fehler.message)
-          ? "Diese Klausel steht schon in der Matrix."
+          ? worte.qualitaetEinstellungen.schonInMatrix
           : fehler.message,
       ),
   });
@@ -108,16 +112,14 @@ export function Qualitaet() {
   return (
     <div className="space-y-4">
       <Card className="space-y-4 p-5">
-        <h3 className="font-medium">Normmatrix</h3>
+        <h3 className="font-medium">{worte.qualitaetEinstellungen.normmatrix}</h3>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Klauseln, auf die sich ein Audit beruft. Eine benutzte Norm lässt
-          sich nicht löschen — sie wird stillgelegt, sonst verlöre ein Audit
-          still seine Grundlage.
+          {worte.qualitaetEinstellungen.normmatrixHinweis}
         </p>
 
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="regelwerk">Regelwerk</Label>
+            <Label htmlFor="regelwerk">{worte.qualitaetEinstellungen.regelwerk}</Label>
             <Input
               id="regelwerk"
               className="w-40"
@@ -127,7 +129,7 @@ export function Qualitaet() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="revision">Revision</Label>
+            <Label htmlFor="revision">{worte.qualitaetEinstellungen.revision}</Label>
             <Input
               id="revision"
               className="w-28"
@@ -137,7 +139,7 @@ export function Qualitaet() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="klausel">Klausel</Label>
+            <Label htmlFor="klausel">{worte.qualitaetEinstellungen.klausel}</Label>
             <Input
               id="klausel"
               className="w-28"
@@ -147,11 +149,11 @@ export function Qualitaet() {
             />
           </div>
           <div className="flex min-w-48 flex-1 flex-col gap-1">
-            <Label htmlFor="kurztext">Kurztext</Label>
+            <Label htmlFor="kurztext">{worte.qualitaetEinstellungen.kurztext}</Label>
             <Input
               id="kurztext"
               value={neueNorm.kurztext}
-              placeholder="Internes Audit"
+              placeholder={worte.qualitaetEinstellungen.kurztextBeispiel}
               onChange={(e) => setNeueNorm({ ...neueNorm, kurztext: e.target.value })}
             />
           </div>
@@ -162,7 +164,7 @@ export function Qualitaet() {
             onClick={() => normAnlegen.mutate()}
           >
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Aufnehmen
+            {worte.qualitaetEinstellungen.aufnehmen}
           </Button>
         </div>
 
@@ -171,12 +173,12 @@ export function Qualitaet() {
             <Table>
               <thead>
                 <tr>
-                  <Th>Regelwerk</Th>
-                  <Th>Revision</Th>
-                  <Th>Klausel</Th>
-                  <Th>Kurztext</Th>
-                  <Th>Geprüft</Th>
-                  <Th>Aktiv</Th>
+                  <Th>{worte.qualitaetEinstellungen.regelwerk}</Th>
+                  <Th>{worte.qualitaetEinstellungen.revision}</Th>
+                  <Th>{worte.qualitaetEinstellungen.klausel}</Th>
+                  <Th>{worte.qualitaetEinstellungen.kurztext}</Th>
+                  <Th>{worte.qualitaetEinstellungen.geprueft}</Th>
+                  <Th>{worte.qualitaetEinstellungen.aktiv}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -189,7 +191,7 @@ export function Qualitaet() {
                     <Td>
                       <Switch
                         checked={n.geprueft}
-                        label={`${n.regelwerk} ${n.klausel} geprüft`}
+                        label={worte.qualitaetEinstellungen.geprueftSchalter(`${n.regelwerk} ${n.klausel}`)}
                         onCheckedChange={(geprueft) =>
                           normAendern.mutate({ id: n.id, felder: { geprueft } })
                         }
@@ -198,7 +200,7 @@ export function Qualitaet() {
                     <Td>
                       <Switch
                         checked={n.aktiv}
-                        label={`${n.regelwerk} ${n.klausel} aktiv`}
+                        label={worte.qualitaetEinstellungen.aktivSchalter(`${n.regelwerk} ${n.klausel}`)}
                         onCheckedChange={(aktiv) =>
                           normAendern.mutate({ id: n.id, felder: { aktiv } })
                         }
@@ -213,19 +215,18 @@ export function Qualitaet() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="font-medium">Phasenvorlagen</h3>
+        <h3 className="font-medium">{worte.qualitaetEinstellungen.phasenvorlagen}</h3>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Die Schrittfolge, die ein neues Audit mitbekommt. Sie wird beim
-          Anlegen kopiert — eine spätere Änderung schreibt keine Historie um.
+          {worte.qualitaetEinstellungen.phasenvorlagenHinweis}
         </p>
 
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex min-w-48 flex-1 flex-col gap-1">
-            <Label htmlFor="neue-vorlage">Neue Vorlage</Label>
+            <Label htmlFor="neue-vorlage">{worte.qualitaetEinstellungen.neueVorlage}</Label>
             <Input
               id="neue-vorlage"
               value={neueVorlage}
-              placeholder="Systemaudit Standard"
+              placeholder={worte.qualitaetEinstellungen.vorlageBeispiel}
               onChange={(e) => setNeueVorlage(e.target.value)}
             />
           </div>
@@ -234,7 +235,7 @@ export function Qualitaet() {
             onClick={() => vorlageAnlegen.mutate()}
           >
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Anlegen
+            {worte.qualitaetEinstellungen.anlegen}
           </Button>
         </div>
 
@@ -246,11 +247,11 @@ export function Qualitaet() {
                 <h4 className="font-medium">{v.name}</h4>
                 {v.kategorie && (
                   <Badge variant="outline">
-                    {KATEGORIEN.find((k) => k.wert === v.kategorie)?.label}
+                    {auditworte[v.kategorie]}
                   </Badge>
                 )}
                 <span className="text-sm text-[var(--fg-muted)]">
-                  {meine.length} {meine.length === 1 ? "Schritt" : "Schritte"}
+                  {worte.qualitaetEinstellungen.schritte(meine.length)}
                 </span>
               </div>
               <ol className="mt-3 space-y-1 text-sm">
@@ -276,11 +277,11 @@ export function Qualitaet() {
               </ol>
               <div className="mt-3 flex flex-wrap items-end gap-2">
                 <div className="flex min-w-48 flex-1 flex-col gap-1">
-                  <Label htmlFor={`schritt-${v.id}`}>Schritt ergänzen</Label>
+                  <Label htmlFor={`schritt-${v.id}`}>{worte.qualitaetEinstellungen.schrittErgaenzen}</Label>
                   <Input
                     id={`schritt-${v.id}`}
                     value={neuerSchritt[v.id] ?? ""}
-                    placeholder="z. B. Eröffnungsgespräch"
+                    placeholder={worte.qualitaetEinstellungen.schrittBeispiel}
                     onChange={(e) =>
                       setNeuerSchritt((s) => ({ ...s, [v.id]: e.target.value }))
                     }

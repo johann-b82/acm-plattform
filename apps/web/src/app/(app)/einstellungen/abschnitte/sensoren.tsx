@@ -15,30 +15,28 @@ import {
   Switch,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
+import type { Texte } from "@/texte";
 
 /** Was sich an einem angelegten Gerät ändern lässt, in der Reihenfolge der Maske. */
 const FELDER: {
   feld: keyof Sensor;
-  label: string;
-  hinweis?: string;
+  wort: keyof Texte["sensorEinstellungen"];
+  hinweis?: keyof Texte["sensorEinstellungen"];
   breit?: boolean;
 }[] = [
-  { feld: "name", label: "Name" },
-  { feld: "rechner", label: "Rechner", hinweis: "muss in SNMP_ERLAUBT stehen" },
-  { feld: "port", label: "Port" },
-  { feld: "temperatur_oid", label: "Kennung Temperatur", breit: true },
-  { feld: "feuchte_oid", label: "Kennung Luftfeuchte", breit: true },
-  {
-    feld: "temperatur_faktor",
-    label: "Faktor Temperatur",
-    hinweis: "0,1 wenn das Gerät Zehntelgrad als ganze Zahl liefert",
-  },
-  { feld: "feuchte_faktor", label: "Faktor Luftfeuchte" },
-  { feld: "temperatur_min", label: "Temperatur ab (°C)" },
-  { feld: "temperatur_max", label: "Temperatur bis (°C)" },
-  { feld: "feuchte_min", label: "Luftfeuchte ab (%)" },
-  { feld: "feuchte_max", label: "Luftfeuchte bis (%)" },
-  { feld: "farbe", label: "Farbe im Verlauf", hinweis: "z. B. #0f6e8c" },
+  { feld: "name", wort: "name" },
+  { feld: "rechner", wort: "rechner", hinweis: "rechnerHinweis" },
+  { feld: "port", wort: "port" },
+  { feld: "temperatur_oid", wort: "kennungTemperatur", breit: true },
+  { feld: "feuchte_oid", wort: "kennungLuftfeuchte", breit: true },
+  { feld: "temperatur_faktor", wort: "faktorTemperatur", hinweis: "faktorHinweis" },
+  { feld: "feuchte_faktor", wort: "faktorLuftfeuchte" },
+  { feld: "temperatur_min", wort: "temperaturAb" },
+  { feld: "temperatur_max", wort: "temperaturBis" },
+  { feld: "feuchte_min", wort: "feuchteAb" },
+  { feld: "feuchte_max", wort: "feuchteBis" },
+  { feld: "farbe", wort: "farbe", hinweis: "farbeHinweis" },
 ];
 
 const ZAHLENFELDER = new Set<keyof Sensor>([
@@ -68,6 +66,7 @@ const LEER = {
  * trägt eine neue ein — angezeigt wird sie nirgends.
  */
 export function Sensoren() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState({ ...LEER });
   const [probe, setProbe] = useState<string | null>(null);
@@ -89,7 +88,7 @@ export function Sensoren() {
     onSuccess: () => {
       setNeu({ ...LEER });
       setProbe(null);
-      toast.success("Sensor angelegt.");
+      toast.success(worte.sensorEinstellungen.sensorAngelegt);
       return neuLaden();
     },
     onError: (fehler: Error) => toast.error(fehler.message),
@@ -127,7 +126,7 @@ export function Sensoren() {
   const loeschen = useMutation({
     mutationFn: (id: string) => sensorApi.loeschen(id),
     onSuccess: () => {
-      toast.success("Sensor gelöscht, samt Zeitreihe.");
+      toast.success(worte.sensorEinstellungen.sensorGeloescht);
       return neuLaden();
     },
     onError: (fehler: Error) => toast.error(fehler.message),
@@ -142,23 +141,23 @@ export function Sensoren() {
   return (
     <div className="space-y-4">
       <Card className="space-y-3 p-5">
-        <h3 className="font-medium">Neues Gerät</h3>
+        <h3 className="font-medium">{worte.sensorEinstellungen.neuesGeraet}</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="neu-name">Name</Label>
+            <Label htmlFor="neu-name">{worte.sensorEinstellungen.name}</Label>
             <Input
               id="neu-name"
               value={neu.name}
-              placeholder="Serverraum"
+              placeholder={worte.sensorEinstellungen.nameBeispiel}
               onChange={(e) => setNeu({ ...neu, name: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="neu-rechner">Rechner</Label>
+            <Label htmlFor="neu-rechner">{worte.sensorEinstellungen.rechner}</Label>
             <Input
               id="neu-rechner"
               value={neu.rechner}
-              placeholder="sensor-01.acm.local"
+              placeholder={worte.sensorEinstellungen.rechnerBeispiel}
               onChange={(e) => setNeu({ ...neu, rechner: e.target.value })}
             />
             <span className="text-xs text-[var(--fg-muted)]">
@@ -166,7 +165,7 @@ export function Sensoren() {
             </span>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="neu-community">Community</Label>
+            <Label htmlFor="neu-community">{worte.sensorEinstellungen.community}</Label>
             <Input
               id="neu-community"
               type="password"
@@ -175,11 +174,11 @@ export function Sensoren() {
               onChange={(e) => setNeu({ ...neu, community: e.target.value })}
             />
             <span className="text-xs text-[var(--fg-muted)]">
-              wird verschlüsselt abgelegt und nie wieder angezeigt
+              {worte.einstellungenText.communityHinweis}
             </span>
           </div>
           <div className="flex flex-col gap-1 lg:col-span-2">
-            <Label htmlFor="neu-temp">Kennung Temperatur</Label>
+            <Label htmlFor="neu-temp">{worte.sensorEinstellungen.kennungTemperatur}</Label>
             <Input
               id="neu-temp"
               value={neu.temperatur_oid}
@@ -188,11 +187,11 @@ export function Sensoren() {
             />
           </div>
           <div className="flex flex-col gap-1 lg:col-span-2">
-            <Label htmlFor="neu-feuchte">Kennung Luftfeuchte</Label>
+            <Label htmlFor="neu-feuchte">{worte.sensorEinstellungen.kennungLuftfeuchte}</Label>
             <Input
               id="neu-feuchte"
               value={neu.feuchte_oid}
-              placeholder="optional"
+              placeholder={worte.sensorEinstellungen.optional}
               onChange={(e) => setNeu({ ...neu, feuchte_oid: e.target.value })}
             />
           </div>
@@ -201,7 +200,7 @@ export function Sensoren() {
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={!bereit || anlegen.isPending} onClick={() => anlegen.mutate()}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Anlegen
+            {worte.sensorEinstellungen.anlegen}
           </Button>
           <Button
             variant="outline"
@@ -209,18 +208,18 @@ export function Sensoren() {
             onClick={() => ausprobieren.mutate()}
           >
             <PlugZap className="mr-1.5 h-4 w-4" aria-hidden />
-            {ausprobieren.isPending ? "Fragt …" : "Ausprobieren"}
+            {ausprobieren.isPending ? worte.sensorEinstellungen.fragt : worte.sensorEinstellungen.ausprobieren}
           </Button>
           {probe && <span className="text-sm text-[var(--fg-muted)]">{probe}</span>}
         </div>
       </Card>
 
       {sensoren.isLoading ? (
-        <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
+        <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Noch kein Gerät"
-          body="Trag oben Rechner, Community und mindestens eine Kennung ein."
+          title={worte.sensorEinstellungen.keinGeraet}
+          body={worte.sensorEinstellungen.keinGeraetText}
         />
       ) : (
         liste.map((s) => (
@@ -230,7 +229,7 @@ export function Sensoren() {
               <div className="ml-auto flex items-center gap-3">
                 <Switch
                   checked={s.aktiv}
-                  label={`${s.name} wird abgefragt`}
+                  label={worte.sensorEinstellungen.wirdAbgefragt(s.name)}
                   onCheckedChange={(aktiv) =>
                     aendern.mutate({ id: s.id, felder: { aktiv } })
                   }
@@ -246,12 +245,12 @@ export function Sensoren() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {FELDER.map(({ feld, label, hinweis, breit }) => (
+              {FELDER.map(({ feld, wort, hinweis, breit }) => (
                 <div
                   key={feld}
                   className={breit ? "flex flex-col gap-1 lg:col-span-2" : "flex flex-col gap-1"}
                 >
-                  <Label htmlFor={`${s.id}-${feld}`}>{label}</Label>
+                  <Label htmlFor={`${s.id}-${feld}`}>{worte.sensorEinstellungen[wort] as string}</Label>
                   <Input
                     id={`${s.id}-${feld}`}
                     defaultValue={(s[feld] as string | number | null) ?? ""}
@@ -267,7 +266,7 @@ export function Sensoren() {
                           : Number(roh.replace(",", "."))
                         : roh || null;
                       if (typeof wert === "number" && !Number.isFinite(wert)) {
-                        toast.error("Bitte eine Zahl eingeben.");
+                        toast.error(worte.sensorEinstellungen.zahlEingeben);
                         e.target.value = alt;
                         return;
                       }
@@ -275,23 +274,25 @@ export function Sensoren() {
                     }}
                   />
                   {hinweis && (
-                    <span className="text-xs text-[var(--fg-muted)]">{hinweis}</span>
+                    <span className="text-xs text-[var(--fg-muted)]">
+                      {worte.sensorEinstellungen[hinweis] as string}
+                    </span>
                   )}
                 </div>
               ))}
               <div className="flex flex-col gap-1">
-                <Label htmlFor={`${s.id}-community`}>Community ersetzen</Label>
+                <Label htmlFor={`${s.id}-community`}>{worte.sensorEinstellungen.communityErsetzen}</Label>
                 <Input
                   id={`${s.id}-community`}
                   type="password"
-                  placeholder="unverändert"
+                  placeholder={worte.sensorEinstellungen.unveraendert}
                   autoComplete="off"
                   onBlur={(e) => {
                     const wert = e.target.value;
                     if (!wert) return;
                     e.target.value = "";
                     aendern.mutate({ id: s.id, felder: { community: wert } });
-                    toast.success("Community ersetzt.");
+                    toast.success(worte.sensorEinstellungen.communityErsetzt);
                   }}
                 />
               </div>

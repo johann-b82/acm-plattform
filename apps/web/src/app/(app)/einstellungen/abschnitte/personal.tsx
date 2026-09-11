@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Check, Plus } from "lucide-react";
 
 import {
-  HR_LABEL,
   alsFreitext,
   ausFreitext,
   hrEinstellungKeys,
@@ -17,6 +16,7 @@ import {
   type HrEinstellung,
 } from "@/lib/hr-einstellungen";
 import { Badge, Button, Card, Input, Label } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Listen statt Zahlen — deshalb ein eigener Abschnitt und nicht noch eine
@@ -32,6 +32,12 @@ import { Badge, Button, Card, Input, Label } from "@/components/ui/primitives";
  * bleiben.
  */
 export function Personal() {
+  const worte = useTexte();
+  const hrLabel: Record<string, string> = {
+    krank_typ_ids: worte.einstellungenText.krankTypen,
+    produktion_abteilungen: worte.einstellungenText.produktionAbteilungen,
+    kompetenz_attribute: worte.einstellungenText.kompetenzAttribute,
+  };
   const queryClient = useQueryClient();
   const [entwurf, setEntwurf] = useState<Record<string, string>>({});
 
@@ -57,7 +63,7 @@ export function Personal() {
         return rest;
       });
       queryClient.invalidateQueries({ queryKey: hrEinstellungKeys.alle() });
-      toast.success("Gespeichert. Das Personal-Dashboard zeigt es nach dem Neuladen.");
+      toast.success(worte.einstellungenText.personalGespeichert);
     },
     onError: (err: Error) => toast.error(`Speichern fehlgeschlagen: ${err.message}`),
   });
@@ -112,13 +118,15 @@ export function Personal() {
             const liste = vorschlaege(e.schluessel, listen.data);
             return (
               <div key={e.schluessel} className="flex flex-col gap-1">
-                <Label htmlFor={e.schluessel}>{HR_LABEL[e.schluessel] ?? e.schluessel}</Label>
+                <Label htmlFor={e.schluessel}>{hrLabel[e.schluessel] ?? e.schluessel}</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id={e.schluessel}
                     value={wert(e)}
                     placeholder={
-                      e.schluessel === "krank_typ_ids" ? "568234, 3270500" : "Fertigung, Montage"
+                      e.schluessel === "krank_typ_ids"
+                        ? "568234, 3270500"
+                        : worte.einstellungenText.abteilungenBeispiel
                     }
                     onChange={(ev) =>
                       setEntwurf((v) => ({ ...v, [e.schluessel]: ev.target.value }))
@@ -170,7 +178,7 @@ export function Personal() {
                     })}
                     {listen.data?.arten_aus_bestand && e.schluessel === "krank_typ_ids" && (
                       <Badge variant="outline" className="text-xs">
-                        aus dem Bestand
+                        {worte.einstellungenText.ausDemBestand}
                       </Badge>
                     )}
                   </div>

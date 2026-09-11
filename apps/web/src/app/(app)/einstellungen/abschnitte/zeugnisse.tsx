@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { zeugnisApi, zeugnisKeys, type Aussteller } from "@/lib/zeugnisse";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button, Card, Input, Label, Select } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Das Ausstellerprofil: was auf jedem Zeugnis gleich steht.
@@ -23,6 +24,7 @@ import { Button, Card, Input, Label, Select } from "@/components/ui/primitives";
  * nicht nachgepflegt werden, wenn sich die Position ändert.
  */
 export function Zeugnisse() {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [entwurf, setEntwurf] = useState<Partial<Aussteller>>({});
 
@@ -48,7 +50,7 @@ export function Zeugnisse() {
     onSuccess: () => {
       setEntwurf({});
       queryClient.invalidateQueries({ queryKey: zeugnisKeys.aussteller() });
-      toast.success("Gespeichert.");
+      toast.success(worte.einstellungenText.gespeichert);
     },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
@@ -73,39 +75,36 @@ export function Zeugnisse() {
 
   return (
     <Card className="space-y-4 p-5">
-      <h3 className="font-medium">Ausstellerprofil</h3>
+      <h3 className="font-medium">{worte.zeugnisEinstellungen.ausstellerprofil}</h3>
       <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-        Steht auf jedem Zeugnis. Die Briefvorlage der ACM wird verwendet, sobald
-        „ACM“ im Firmennamen steht.
+        {worte.zeugnisEinstellungen.ausstellerHinweis}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Feld id="firma" label="Firma" wert={wert("firma")} setze={(t) => setze("firma", t)} />
+        <Feld id="firma" label={worte.einstellungenText.firma} wert={wert("firma")} setze={(t) => setze("firma", t)} />
         <Feld
           id="standort"
-          label="Ort (über dem Datum)"
+          label={worte.einstellungenText.ort}
           wert={wert("standort")}
           setze={(t) => setze("standort", t)}
         />
       </div>
 
       <div className="space-y-3 rounded-md border border-[var(--border)] p-4">
-        <h4 className="text-sm font-medium">Linke Unterschrift — fachlich</h4>
+        <h4 className="text-sm font-medium">{worte.zeugnisEinstellungen.linkeUnterschrift}</h4>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Normalerweise der oder die Vorgesetzte der Person; die wird beim
-          Erzeugen aus Personio aufgelöst. Was hier steht, greift nur, wenn
-          Personio nichts hergibt — bei extern gepflegten Personen etwa.
+          {worte.zeugnisEinstellungen.linkeHinweis}
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Feld
             id="u1name"
-            label="Name (Rückfall)"
+            label={worte.einstellungenText.nameRueckfall}
             wert={wert("unterzeichner1_name")}
             setze={(t) => setze("unterzeichner1_name", t)}
           />
           <Feld
             id="u1titel"
-            label="Titel (Rückfall)"
+            label={worte.einstellungenText.titelRueckfall}
             wert={wert("unterzeichner1_titel")}
             setze={(t) => setze("unterzeichner1_titel", t)}
           />
@@ -113,15 +112,13 @@ export function Zeugnisse() {
       </div>
 
       <div className="space-y-3 rounded-md border border-[var(--border)] p-4">
-        <h4 className="text-sm font-medium">Rechte Unterschrift — Personalwesen</h4>
+        <h4 className="text-sm font-medium">{worte.zeugnisEinstellungen.rechteUnterschrift}</h4>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Für alle Zeugnisse dieselbe. An eine Person aus Personio gebunden,
-          kommt der Titel von dort und bleibt richtig, wenn sich die Position
-          ändert.
+          {worte.zeugnisEinstellungen.rechteHinweis}
         </p>
         <div className="space-y-1">
           <Label htmlFor="hrperson" className="block">
-            Person aus Personio
+            {worte.zeugnisEinstellungen.personAusPersonio}
           </Label>
           <Select
             id="hrperson"
@@ -134,7 +131,7 @@ export function Zeugnisse() {
               }))
             }
           >
-            <option value="">— keine, Freitext unten verwenden —</option>
+            <option value="">{worte.zeugnisEinstellungen.keinePerson}</option>
             {(personen.data ?? []).map((p) => (
               <option key={p.id} value={p.id}>
                 {[p.first_name, p.last_name].filter(Boolean).join(" ") || `#${p.id}`}
@@ -144,21 +141,20 @@ export function Zeugnisse() {
           </Select>
           {personen.error && (
             <p className="text-xs text-[var(--warn)]">
-              Die Personenliste konnte nicht geladen werden (
-              {(personen.error as Error).message}).
+              {worte.zeugnisEinstellungen.personenFehler((personen.error as Error).message)}
             </p>
           )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Feld
             id="u2name"
-            label="Name (Rückfall)"
+            label={worte.einstellungenText.nameRueckfall}
             wert={wert("unterzeichner2_name")}
             setze={(t) => setze("unterzeichner2_name", t)}
           />
           <Feld
             id="u2titel"
-            label="Titel (Rückfall)"
+            label={worte.einstellungenText.titelRueckfall}
             wert={wert("unterzeichner2_titel")}
             setze={(t) => setze("unterzeichner2_titel", t)}
           />
@@ -167,7 +163,7 @@ export function Zeugnisse() {
 
       {offen && (
         <Button disabled={speichern.isPending} onClick={() => speichern.mutate(entwurf)}>
-          {speichern.isPending ? "Speichert …" : "Speichern"}
+          {speichern.isPending ? worte.einstellungenText.speichert : worte.einstellungenText.speichern}
         </Button>
       )}
     </Card>
