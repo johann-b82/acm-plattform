@@ -5,16 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileDown, FileText, Sparkles, Wrench } from "lucide-react";
+import { FileDown, FileText, PenLine, Sparkles, Wrench } from "lucide-react";
 
 import {
   ABSCHNITTE,
   ARTEN,
   DIMENSIONEN,
   NOTEN,
+  QUELLE_LABEL,
   zeugnisApi,
   zeugnisKeys,
   zufriedenheit,
+  type Unterschrift,
   type Zeugnis,
 } from "@/lib/zeugnisse";
 import {
@@ -346,6 +348,8 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
           den Server nicht.
         </p>
 
+        <Unterschriften id={id} />
+
         {!z.abschnitte ? (
           <p className="text-sm text-[var(--fg-muted)]">
             Noch kein Text. Vergib die Noten und lass ihn bilden.
@@ -387,6 +391,65 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
           <span className="text-sm">Fertig — nicht mehr in Arbeit</span>
         </div>
       </Card>
+    </div>
+  );
+}
+
+
+/**
+ * Wer unter diesem Zeugnis stehen wird.
+ *
+ * Die linke Unterschrift hängt an der Person und wird erst beim Setzen aus
+ * Personio aufgelöst. Stünde sie nirgends, fiele das erst im fertigen PDF auf
+ * — und dann ist das Zeugnis schon gedruckt.
+ */
+function Unterschriften({ id }: { id: string }) {
+  const abfrage = useQuery({
+    queryKey: zeugnisKeys.unterschriften(id),
+    queryFn: () => zeugnisApi.unterschriften(id),
+  });
+
+  if (abfrage.isPending) return null;
+  if (abfrage.isError) {
+    return (
+      <p className="text-sm text-[var(--warn)]">
+        Die Unterschriften konnten nicht ermittelt werden (
+        {(abfrage.error as Error).message}).
+      </p>
+    );
+  }
+
+  const { fachlich, personalseitig } = abfrage.data;
+  return (
+    <div className="rounded-md border border-[var(--border)] p-4">
+      <h3 className="flex items-center gap-1.5 text-sm font-medium">
+        <PenLine className="h-4 w-4" aria-hidden />
+        Darunter steht
+      </h3>
+      <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <Signatur titel="Fachlich" u={fachlich} />
+        <Signatur titel="Personalwesen" u={personalseitig} />
+      </div>
+      {(fachlich.quelle === "keine" || personalseitig.quelle === "keine") && (
+        <p className="mt-3 text-sm text-[var(--warn)]">
+          Eine Unterschrift fehlt. Hinterlegen unter Einstellungen → Zeugnisse,
+          oder in Personio den Vorgesetzten pflegen.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Signatur({ titel, u }: { titel: string; u: Unterschrift }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-[var(--fg-muted)]">{titel}</p>
+      <p className={u.name ? "font-medium" : "font-medium text-[var(--warn)]"}>
+        {u.name ?? "— niemand hinterlegt —"}
+      </p>
+      <p className="text-sm text-[var(--fg-muted)]">
+        {[u.titel, QUELLE_LABEL[u.quelle]].filter(Boolean).join(" · ")}
+      </p>
     </div>
   );
 }

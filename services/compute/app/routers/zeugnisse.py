@@ -8,6 +8,11 @@ gehen über PostgREST. Hier bleibt, was Python braucht: die Abschnitte bilden
     POST /api/zeugnisse/{id}/ki          dieselben Abschnitte von der KI
     GET  /api/zeugnisse/{id}/dokument.docx
     GET  /api/zeugnisse/{id}/dokument.pdf
+    GET  /api/zeugnisse/{id}/unterschriften  wer darunter stehen wird
+
+Die letzte Route ist ein Blick voraus: die linke Unterschrift hängt an der
+Person und wird erst beim Setzen aufgelöst. Wer sie erst im fertigen PDF sieht,
+merkt einen fehlenden Vorgesetzten zu spät.
 """
 from __future__ import annotations
 
@@ -21,7 +26,6 @@ from pydantic import BaseModel
 from app.auth import require_app
 from app.db import (
     SessionLocal,
-    personio_employees,
     zeugnis_aussteller,
     zeugnis_bausteine,
     zeugnis_bewertungen,
@@ -32,6 +36,7 @@ from app.dokumente.pdf import PdfFehlgeschlagen
 from app.zeugnis.baukasten import baue_abschnitte, ersetze_pronomen
 from app.zeugnis.dokument import baue_docx, baue_pdf
 from app.zeugnis.ki import ZeugnisKIError, generiere_abschnitte
+from app.zeugnis.unterschriften import Unterschrift, beide
 
 router = APIRouter(
     prefix="/api/zeugnisse",
@@ -44,6 +49,19 @@ router = APIRouter(
 class Abschnitte(BaseModel):
     abschnitte: dict[str, str]
     schlussnote: float | None
+
+
+class UnterschriftRead(BaseModel):
+    name: str | None
+    titel: str | None
+    #: "personio" = aus der Organisationsstruktur, "profil" = Freitext aus den
+    #: Einstellungen, "keine" = nirgends hinterlegt.
+    quelle: str
+
+
+class UnterschriftenRead(BaseModel):
+    fachlich: UnterschriftRead
+    personalseitig: UnterschriftRead
 
 
 def _anrede(zeile) -> str:
@@ -168,34 +186,48 @@ async def ki(
     return Abschnitte(abschnitte=vorhanden, schlussnote=schnitt)
 
 
-async def _dokument(zeugnis_id: str) -> tuple[bytes, str]:
-    zeile, _, _ = await _laden(zeugnis_id)
+async def _unterschriften(employee_id: int | None) -> tuple[Unterschrift, Unterschrift, dict | None]:
     async with SessionLocal() as sitzung:
         aussteller = (
             await sitzung.execute(sa.select(zeugnis_aussteller))
         ).mappings().one_or_none()
-        hr_name = hr_titel = None
-        if aussteller and aussteller["hr_employee_id"]:
-            person = (
-                await sitzung.execute(
-                    sa.select(personio_employees).where(
-                        personio_employees.c.id == aussteller["hr_employee_id"]
-                    )
-                )
-            ).mappings().one_or_none()
-            if person:
-                hr_name = f"{person['first_name'] or ''} {person['last_name'] or ''}".strip()
+        links, rechts = await beide(sitzung, employee_id, aussteller)
+    return links, rechts, dict(aussteller) if aussteller else None
+
+
+async def _dokument(zeugnis_id: str) -> tuple[bytes, str]:
+    zeile, _, _ = await _laden(zeugnis_id)
+    links, rechts, aussteller = await _unterschriften(zeile["employee_id"])
 
     logo = await lade_logo()
     docx = baue_docx(
         SimpleNamespace(**dict(zeile)),
-        SimpleNamespace(**dict(aussteller)) if aussteller else None,
+        SimpleNamespace(**aussteller) if aussteller else None,
         logo.daten if logo else None,
-        hr_name=hr_name,
-        hr_titel=hr_titel,
+        supervisor_name=links.name,
+        supervisor_titel=links.titel,
+        hr_name=rechts.name,
+        hr_titel=rechts.titel,
         dateiname=f"Zeugnis {zeile['name']}",
     )
     return docx, zeile["name"]
+
+
+@router.get("/{zeugnis_id}/unterschriften", response_model=UnterschriftenRead)
+async def unterschriften(zeugnis_id: str = Path(...)) -> UnterschriftenRead:
+    """Wer unter diesem Zeugnis stehen wird — vor dem Erzeugen.
+
+    Die linke Unterschrift hängt an der Person und wird sonst erst beim Setzen
+    aufgelöst; ein fehlender Vorgesetzter fiele dann erst im fertigen PDF auf.
+    """
+    zeile, _, _ = await _laden(zeugnis_id)
+    links, rechts, _ = await _unterschriften(zeile["employee_id"])
+    return UnterschriftenRead(
+        fachlich=UnterschriftRead(name=links.name, titel=links.titel, quelle=links.quelle),
+        personalseitig=UnterschriftRead(
+            name=rechts.name, titel=rechts.titel, quelle=rechts.quelle
+        ),
+    )
 
 
 @router.get("/{zeugnis_id}/dokument.docx")
