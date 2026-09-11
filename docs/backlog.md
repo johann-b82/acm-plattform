@@ -83,9 +83,20 @@ steht dort schon — und listet Feld, Wert und Anzahl. Liegt kein Abgleich vor,
 fragt er Personio direkt; dafür braucht er Zugangsdaten, entweder aus
 Einstellungen → Personal oder aus der Umgebung.
 
-Auf dem lokalen Stand gibt es kein Ergebnis: die Demodaten führen kein
-Sprachfeld (41 Personen, kein Treffer). Die Antwort kann nur auf einem Stand
-entstehen, der echte Personio-Daten führt.
+Am 2026-09-11 einmal live gefragt (`--live` fragt Personio direkt, statt den
+abgeglichenen Bestand zu lesen — auf einem Stand mit Demodaten steht das Feld
+sonst nie darin): **250 Personen, kein einziges Feld, dessen Name nach Sprache
+aussieht.** Personio führt rund 200 Felder, darunter kein „Sprache",
+„Muttersprache" oder „Mother tongue". Die Muttersprachen lassen sich also
+nicht abfragen, solange HR kein solches Feld pflegt.
+
+Der einzige Anhalt ist die Nationalität, in zwei verschieden gefüllten
+Feldern („Nationalität" und „Nationalität (DATEV LODAS)"). Zusammengelegt über
+die 73 aktiven Personen: 25 Deutschland, 5 Syrien, 4 Iran, je 3 Bulgarien,
+Indien, Afghanistan und Ukraine, 2 Polen, je 1 Gambia, Marokko, Liechtenstein,
+Vietnam, Rumänien, Äthiopien, Ghana, Spanien, Österreich, Schweiz — und 15 ohne
+Angabe. Nationalität ist nicht Muttersprache, und kein Block ist groß genug,
+dass er sich von selbst aufdrängt.
 
 Danach ist eine Sprache **eine Datei** unter `apps/web/src/texte/` und ein
 Eintrag in `texte/index.ts`; der Typ des deutschen Wörterbuchs erzwingt die
