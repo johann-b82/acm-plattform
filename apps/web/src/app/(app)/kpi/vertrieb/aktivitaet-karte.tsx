@@ -179,6 +179,17 @@ function Diagramm({
   const zeige = einheit === "eur" ? fmt.eur : fmt.zahl;
   const zeigeGenau = einheit === "eur" ? fmt.eurGenau : fmt.zahl;
 
+  // Die Achse muss so breit sein wie ihre längste Beschriftung. Eine feste
+  // Breite reichte, solange die Angebote fünfstellig waren; mit den echten
+  // Zahlen steht dort „1.000.000 €“, und von der Million war die erste Ziffer
+  // abgeschnitten. Gerechnet wird über den größten Wert, nicht über alle —
+  // die längste Zahl ist immer die größte.
+  const achsenbreite = useMemo(() => {
+    const groesster = daten.reduce((h, w) => Math.max(h, Number(w[feld] ?? 0)), 0);
+    const zeichen = zeige(groesster).length;
+    return Math.min(96, Math.max(36, 12 + zeichen * 7));
+  }, [daten, feld, zeige]);
+
   return (
     <Card className="p-4">
       <h3 className="text-sm font-semibold">{titel}</h3>
@@ -204,7 +215,7 @@ function Diagramm({
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              width={einheit === "eur" ? 64 : 36}
+              width={achsenbreite}
               tickFormatter={(v: number) => zeige(v)}
             />
             <Tooltip
