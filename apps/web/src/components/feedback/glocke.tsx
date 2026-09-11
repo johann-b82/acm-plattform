@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 
 import { Zaehlknopf } from "@/components/kopfzeile/zaehlknopf";
+import { useTexte } from "@/components/sprache/anbieter";
 import { feedbackApi, feedbackKeys } from "@/lib/feedback";
 
 /**
@@ -18,6 +19,7 @@ import { feedbackApi, feedbackKeys } from "@/lib/feedback";
  * eine Zahl wäre Aufwand ohne Gewinn.
  */
 export function FeedbackGlocke() {
+  const t = useTexte();
   const { data: anzahl = 0 } = useQuery({
     queryKey: feedbackKeys.offen(),
     queryFn: feedbackApi.ungeseheneAnzahl,
@@ -28,11 +30,7 @@ export function FeedbackGlocke() {
   return (
     <Zaehlknopf
       href="/platform/feedback"
-      beschriftung={
-        anzahl === 0
-          ? "Meldungen — nichts Neues"
-          : `Meldungen — ${anzahl} noch nicht angesehen`
-      }
+      beschriftung={anzahl === 0 ? t.kopf.meldungenLeer : t.kopf.meldungen(anzahl)}
       anzahl={anzahl}
     >
       <Bell className="h-[18px] w-[18px]" aria-hidden />

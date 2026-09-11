@@ -3,8 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 
+import { useTexte } from "@/components/sprache/anbieter";
 import {
-  ERSCHEINUNGSBILD_LABEL,
   abonnieren,
   anwenden,
   aufDemServer,
@@ -32,7 +32,13 @@ const STUFEN: { wert: Erscheinungsbild; Zeichen: typeof Sun }[] = [
  * mehrere offene Tabs von selbst ab.
  */
 export function ErscheinungsbildUmschalter() {
+  const t = useTexte();
   const wahl = useSyncExternalStore(abonnieren, gespeichert, aufDemServer);
+  const label: Record<Erscheinungsbild, string> = {
+    hell: t.kopf.hell,
+    dunkel: t.kopf.dunkel,
+    system: t.kopf.system,
+  };
 
   function waehle(neu: Erscheinungsbild) {
     anwenden(neu);
@@ -42,7 +48,7 @@ export function ErscheinungsbildUmschalter() {
   return (
     <div
       role="group"
-      aria-label="Erscheinungsbild"
+      aria-label={t.kopf.erscheinungsbild}
       className="inline-flex items-center rounded-md border border-[var(--border)] p-0.5"
     >
       {STUFEN.map(({ wert, Zeichen }) => {
@@ -51,8 +57,8 @@ export function ErscheinungsbildUmschalter() {
           <button
             key={wert}
             type="button"
-            aria-label={ERSCHEINUNGSBILD_LABEL[wert]}
-            title={ERSCHEINUNGSBILD_LABEL[wert]}
+            aria-label={label[wert]}
+            title={label[wert]}
             aria-pressed={an}
             onClick={() => waehle(wert)}
             className={

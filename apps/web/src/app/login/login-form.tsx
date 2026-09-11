@@ -2,13 +2,14 @@
 
 import { useActionState } from "react";
 import { signIn, type LoginState } from "./actions";
+import type { Texte } from "@/texte";
 
-export function LoginForm() {
+export function LoginForm({ texte }: { texte: Texte["anmeldung"] }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(signIn, {});
   return (
     <form action={action} className="mt-6 flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
-        <span>E-Mail</span>
+        <span>{texte.email}</span>
         <input
           name="email"
           type="email"
@@ -18,7 +19,7 @@ export function LoginForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span>Passwort</span>
+        <span>{texte.passwort}</span>
         <input
           name="password"
           type="password"
@@ -37,7 +38,7 @@ export function LoginForm() {
         disabled={pending}
         className="h-9 rounded-md bg-[var(--fg)] px-3 text-sm font-medium text-[var(--bg)] disabled:opacity-60"
       >
-        {pending ? "Anmelden …" : "Anmelden"}
+        {pending ? texte.laeuft : texte.knopf}
       </button>
     </form>
   );

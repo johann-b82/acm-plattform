@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { VORSCHALTSKRIPT } from "@/lib/erscheinungsbild";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { sprache } from "@/lib/sprache-server";
 
 export const metadata: Metadata = {
   title: "ACM-Plattform",
   description: "KPI-Dashboards und interne Anwendungen",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Das `lang`-Attribut ist keine Zierde: Screenreader wählen danach ihre
+  // Aussprache, und der Browser seine Silbentrennung.
+  const gewaehlt = await sprache();
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang={SPRACHE_TAG[gewaehlt]} suppressHydrationWarning>
       <head>
         {/* Läuft vor dem ersten Bild. Ohne das blitzt bei dunkler Wahl kurz
             die helle Seite auf — React kommt erst nach dem ersten Malen zum

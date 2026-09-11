@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { levelFor, requireSession } from "@/lib/auth";
+import { texte } from "@/lib/sprache-server";
 import { createClient } from "@/lib/supabase/server";
 
 type App = { id: string; name: string; path: string; sort: number };
@@ -11,6 +12,7 @@ export default async function LauncherPage({
 }) {
   const session = await requireSession();
   const { denied } = await searchParams;
+  const t = await texte();
   const supabase = await createClient();
   // RLS: `apps` ist für alle Eingeloggten lesbar; die Sichtbarkeit je Kachel
   // kommt aus dem Claim `apps`, den der Token-Hook aus app_grants berechnet.
@@ -26,15 +28,15 @@ export default async function LauncherPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Apps</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t.start.titel}</h1>
       {denied && (
         <p role="alert" className="mt-2 text-sm text-[var(--danger)]">
-          Für „{denied}“ hast du keine Berechtigung.
+          {t.start.verweigert(denied)}
         </p>
       )}
       {visible.length === 0 ? (
         <p className="mt-6 text-[var(--fg-muted)]">
-          Deinem Konto ist noch keine App zugewiesen. Bitte an die Plattform-Verwaltung wenden.
+          {t.start.keineApp}
         </p>
       ) : (
         <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

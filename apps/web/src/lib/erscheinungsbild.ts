@@ -15,12 +15,6 @@ export type Erscheinungsbild = "system" | "hell" | "dunkel";
 
 export const SCHLUESSEL = "erscheinungsbild";
 
-export const ERSCHEINUNGSBILD_LABEL: Record<Erscheinungsbild, string> = {
-  system: "Wie das System",
-  hell: "Hell",
-  dunkel: "Dunkel",
-};
-
 function istWahl(wert: unknown): wert is Erscheinungsbild {
   return wert === "system" || wert === "hell" || wert === "dunkel";
 }

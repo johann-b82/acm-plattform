@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ListChecks } from "lucide-react";
 
 import { Zaehlknopf } from "@/components/kopfzeile/zaehlknopf";
+import { useTexte } from "@/components/sprache/anbieter";
 import { bewertungApi, bewertungKeys } from "@/lib/kpi/bewertung";
 import { massnahmenStand } from "@/lib/kopfzeile";
 
@@ -19,6 +20,7 @@ import { massnahmenStand } from "@/lib/kopfzeile";
  * Seite kostet die Anzeige keine zusätzliche Abfrage.
  */
 export function MassnahmenKnopf() {
+  const t = useTexte();
   const { data } = useQuery({
     queryKey: bewertungKeys.uebersicht(),
     queryFn: bewertungApi.uebersicht,
@@ -30,11 +32,7 @@ export function MassnahmenKnopf() {
   return (
     <Zaehlknopf
       href="/kpi/bewertung"
-      beschriftung={
-        offen === 0
-          ? "Maßnahmen — keine offen"
-          : `Maßnahmen — ${offen} offen${ueberfaellig > 0 ? `, davon ${ueberfaellig} überfällig` : ""}`
-      }
+      beschriftung={offen === 0 ? t.kopf.massnahmenLeer : t.kopf.massnahmen(offen, ueberfaellig)}
       anzahl={offen}
       dringend={ueberfaellig > 0}
     >

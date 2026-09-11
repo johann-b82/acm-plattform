@@ -15,7 +15,7 @@
 export type Krume = { titel: string; adresse: string };
 
 /** Wie eine Seite in der Kette heißt. Kurz — die Kette nennt den Rest. */
-export const TITEL: Record<string, string> = {
+export const TITEL = {
   "/atr": "ATR",
   "/atr/lieferungen": "Lieferungen",
   "/einstellungen": "Einstellungen",
@@ -51,7 +51,10 @@ export const TITEL: Record<string, string> = {
   "/signage/playlists": "Wiedergabelisten",
   "/signage/schedules": "Zeitpläne",
   "/uploads": "Uploads",
-};
+} satisfies Record<string, string>;
+
+/** Die Adressen, die einen Titel haben — jede Sprache muss sie alle nennen. */
+export type Pfadtitel = Record<keyof typeof TITEL, string>;
 
 /**
  * Seiten, die woanders hängen, als ihre Adresse sagt. Nur für den Fall, dass
@@ -68,7 +71,11 @@ export const ELTERN: Record<string, string> = {
  * selbst und auf allem, was hier nicht steht — eine Krume „Start“ allein sagt
  * nichts, was das Logo daneben nicht schon sagt.
  */
-export function krumen(pfad: string): Krume[] {
+export function krumen(
+  pfad: string,
+  titel: Record<string, string> = TITEL,
+  start = "Start",
+): Krume[] {
   const ziel = tiefsteBekannte(pfad);
   if (!ziel) return [];
   const kette: string[] = [];
@@ -77,17 +84,22 @@ export function krumen(pfad: string): Krume[] {
     kette.unshift(p);
   }
   return [
-    { titel: "Start", adresse: "/" },
-    ...kette.map((p) => ({ titel: TITEL[p], adresse: p })),
+    { titel: start, adresse: "/" },
+    ...kette.map((p) => ({ titel: titel[p] ?? BEKANNT[p], adresse: p })),
   ];
 }
+
+/** Dieselbe Tafel, nur ohne feste Schlüssel: zum Nachschlagen mit einer
+ *  beliebigen Adresse. Welche Adressen es gibt, steht in `TITEL`; wie sie
+ *  heißen, kommt je nach Sprache von außen. */
+const BEKANNT: Record<string, string> = TITEL;
 
 /** Die längste Vorsilbe der Adresse, die einen Titel hat. */
 function tiefsteBekannte(pfad: string): string | undefined {
   const teile = pfad.split("/").filter(Boolean);
   for (let i = teile.length; i > 0; i -= 1) {
     const p = `/${teile.slice(0, i).join("/")}`;
-    if (p in TITEL) return p;
+    if (p in BEKANNT) return p;
   }
   return undefined;
 }

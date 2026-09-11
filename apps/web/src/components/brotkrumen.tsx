@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
+import { useTexte } from "@/components/sprache/anbieter";
 import { krumen } from "@/lib/brotkrumen";
 
 /**
@@ -11,12 +12,13 @@ import { krumen } from "@/lib/brotkrumen";
  * Adressen ohne Titel — eine Kette aus einem Glied ist keine Hilfe.
  */
 export function Brotkrumen() {
+  const t = useTexte();
   const pfad = usePathname();
-  const kette = krumen(pfad ?? "/");
+  const kette = krumen(pfad ?? "/", t.pfad.seiten, t.pfad.start);
   if (kette.length === 0) return null;
 
   return (
-    <nav aria-label="Pfad" className="mb-4">
+    <nav aria-label={t.pfad.aria} className="mb-4">
       <ol className="flex flex-wrap items-center gap-1.5 text-sm">
         {kette.map((krume, i) => {
           // Die letzte Krume ist nur dann die aktuelle Seite, wenn die Adresse
