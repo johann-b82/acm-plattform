@@ -57,6 +57,12 @@ export const GRUPPEN: Gruppe[] = [
       "Das Firmenlogo für die erzeugten Formblätter — Einarbeitungsplan, Wartungsnachweis, Zeugnis.",
   },
   {
+    id: "anzeigen",
+    titel: "Anzeigen",
+    beschreibung:
+      "Die Adressen, die auf den Bildschirmen im Haus laufen. Jede trägt einen unterschriebenen Token, gilt nur für ihre eine Anzeige und läuft ab.",
+  },
+  {
     id: "zugaenge",
     titel: "Nutzer und Gruppen",
     beschreibung:

@@ -199,6 +199,24 @@ class PersonioClient:
         """`/company/absence-periods` — stundenbasiert (Freizeitausgleich)."""
         return await self._seiten_v1("/company/absence-periods")
 
+    async def profilbild(self, employee_id: int) -> tuple[bytes, str] | None:
+        """`/company/employees/{id}/profile-picture` — Bytes und MIME-Typ.
+
+        `None`, wenn Personio 404 antwortet: die Person hat kein Bild. Das ist
+        kein Fehler, und der Aufrufer soll dafür nicht 502 melden müssen.
+        """
+        try:
+            antwort = await self._get(
+                f"{BASIS_V1}/company/employees/{employee_id}/profile-picture",
+                versuche=0,
+            )
+        except PersonioFehler as fehler:
+            if fehler.status == 404:
+                return None
+            raise
+        typ = antwort.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+        return antwort.content, typ
+
     async def freistellungen(self) -> list[dict]:
         """`/company/time-offs` — tagesbasiert (Urlaub, Krankheit).
 

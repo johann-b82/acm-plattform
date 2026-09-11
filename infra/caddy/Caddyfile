@@ -43,6 +43,21 @@
 		reverse_proxy kong:8000
 	}
 
+	# --- /embed/* → web, aber einrahmbar. Die Tafeln laufen im eigenen
+	# Signage-Stack auf einem anderen Port, also einem anderen Origin; die
+	# allgemeine Regel SAMEORIGIN oben würde den Rahmen im Player sperren.
+	# Diese Seiten tragen keine Bedienelemente, und ihre Daten hängen am
+	# signierten Token — Einrahmen ist hier also kein Hebel. Enger stellt es,
+	# wer die Herkunft kennt:
+	#   EMBED_FRAME_ANCESTORS="'self' http://signage.acm.local:8080"
+	handle /embed/* {
+		header {
+			-X-Frame-Options
+			Content-Security-Policy "frame-ancestors {$EMBED_FRAME_ANCESTORS:*}"
+		}
+		reverse_proxy web:3000
+	}
+
 	# --- alles andere → Next.js
 	handle {
 		reverse_proxy web:3000

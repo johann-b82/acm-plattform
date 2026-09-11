@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     ZEUGNIS_MODELL: str = "claude-opus-5"
 
+    # Anzeigen für die Bildschirme (Befund 4). Unterschreibt die Token, mit
+    # denen eine Tafel ohne Anmeldung an ihre Kachel kommt. Leer heisst: es
+    # lassen sich keine Token erzeugen und keine prüfen — die Anzeigen sind
+    # aus. Erzeugen mit: python -c "import secrets; print(secrets.token_urlsafe(32))"
+    EMBED_SECRET: str = ""
+
     COMPUTE_LOG_LEVEL: str = "warning"
     # Größte angenommene Upload-Datei. Wird beim Lesen geprüft, nicht danach.
     MAX_UPLOAD_BYTES: int = 60 * 1024 * 1024
