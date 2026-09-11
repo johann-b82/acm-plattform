@@ -1,3 +1,4 @@
+import { computeJson } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
@@ -15,9 +16,51 @@ export interface HrEinstellung {
   werte: string[];
 }
 
+/**
+ * Was zur Auswahl steht, statt abgetippt zu werden.
+ *
+ * Abteilungen und Feldnamen holt compute aus dem abgeglichenen Bestand,
+ * die Abwesenheits*arten* live von Personio — die werden nicht abgeglichen und
+ * stehen in keiner Tabelle. Fällt Personio aus, kommt trotzdem eine Antwort;
+ * `hinweis` sagt dann, warum die Arten aus dem Bestand stammen.
+ */
+export interface Auswahllisten {
+  abwesenheitsarten: { id: number; name: string }[];
+  abteilungen: string[];
+  felder: string[];
+  hinweis: string | null;
+  arten_aus_bestand: boolean;
+}
+
 export const hrEinstellungKeys = {
   alle: () => ["hr-einstellungen"] as const,
+  listen: () => ["hr-einstellungen", "listen"] as const,
 };
+
+export function ladeAuswahllisten(): Promise<Auswahllisten> {
+  return computeJson<Auswahllisten>("/api/hr/listen");
+}
+
+/** Welche Liste gehört zu welcher Einstellung? Leer heißt: nur Freitext. */
+export function vorschlaege(
+  schluessel: string,
+  listen: Auswahllisten | undefined,
+): { wert: string; label: string }[] {
+  if (!listen) return [];
+  if (schluessel === "krank_typ_ids") {
+    return listen.abwesenheitsarten.map((a) => ({
+      wert: String(a.id),
+      label: `${a.name} (${a.id})`,
+    }));
+  }
+  if (schluessel === "produktion_abteilungen") {
+    return listen.abteilungen.map((a) => ({ wert: a, label: a }));
+  }
+  if (schluessel === "kompetenz_attribute") {
+    return listen.felder.map((f) => ({ wert: f, label: f }));
+  }
+  return [];
+}
 
 export async function ladeHrEinstellungen(): Promise<HrEinstellung[]> {
   const { data, error } = await supabaseBrowser()
