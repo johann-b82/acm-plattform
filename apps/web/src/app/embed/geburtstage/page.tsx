@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { anzeigeApi, anzeigeKeys, name, WOCHENTAGE } from "@/lib/anzeige";
-import { Kachel, OhneToken, PRO_SEITE, Tafel } from "@/components/anzeige/tafel";
+import { Kachel, OhneToken, PRO_SEITE, Tafel, zustandAus } from "@/components/anzeige/tafel";
 import { sekundenAus, useBlaettern } from "@/components/anzeige/blaettern";
 
 /**
@@ -52,9 +52,7 @@ function Geburtstage() {
   return (
     <Tafel
       titel="Geburtstage diese Woche"
-      laedt={abfrage.isLoading}
-      fehler={abfrage.error as Error | null}
-      leer={alle.length === 0}
+      zustand={zustandAus(abfrage, alle.length)}
       leerText="Diese Woche hat niemand Geburtstag."
     >
       {sichtbar.map((person) => (
@@ -65,7 +63,13 @@ function Geburtstage() {
           hervorgehoben={person.wochentag === heute}
           name={name(person)}
           zeile={
-            person.wochentag === heute ? "Heute" : WOCHENTAGE[person.wochentag]
+            person.wochentag === heute ? (
+              <span className="rounded-full bg-[var(--ring)] px-5 py-1.5 font-medium text-white">
+                Heute
+              </span>
+            ) : (
+              WOCHENTAGE[person.wochentag]
+            )
           }
         />
       ))}

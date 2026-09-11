@@ -48,6 +48,29 @@ export const WOCHENTAGE = [
   "Sonntag",
 ] as const;
 
+/** Ein Fehler, der weiß, womit der Dienst geantwortet hat. */
+export class AnzeigeFehler extends Error {
+  constructor(
+    nachricht: string,
+    readonly status: number,
+  ) {
+    super(nachricht);
+    this.name = "AnzeigeFehler";
+  }
+}
+
+/**
+ * Lohnt ein zweiter Versuch?
+ *
+ * Bei einem abgelehnten Token nicht: der wird beim dritten Mal auch nicht
+ * richtig. Und es ist mehr als Sparsamkeit — solange nachgefasst wird, steht
+ * auf der Tafel „Einen Moment", und wer davorsteht, sieht nicht, dass die
+ * Adresse kaputt ist. Nur ein Serverfehler ist einen Versuch wert.
+ */
+export function lohntNochmal(fehler: unknown): boolean {
+  return !(fehler instanceof AnzeigeFehler) || fehler.status >= 500;
+}
+
 async function hole<T>(pfad: string): Promise<T> {
   const antwort = await fetch(pfad);
   if (!antwort.ok) {
@@ -56,7 +79,7 @@ async function hole<T>(pfad: string): Promise<T> {
       body && typeof body === "object" && "detail" in body
         ? String((body as { detail: unknown }).detail)
         : `HTTP ${antwort.status}`;
-    throw new Error(detail);
+    throw new AnzeigeFehler(detail, antwort.status);
   }
   return (await antwort.json()) as T;
 }

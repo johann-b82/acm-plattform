@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { anzeigeApi, anzeigeKeys, name } from "@/lib/anzeige";
-import { Kachel, OhneToken, PRO_SEITE, Tafel } from "@/components/anzeige/tafel";
+import { Kachel, OhneToken, PRO_SEITE, Tafel, zustandAus } from "@/components/anzeige/tafel";
 import { sekundenAus, useBlaettern } from "@/components/anzeige/blaettern";
 
 /**
@@ -47,9 +47,7 @@ function Neuzugaenge() {
   return (
     <Tafel
       titel="Neu im Team"
-      laedt={abfrage.isLoading}
-      fehler={abfrage.error as Error | null}
-      leer={alle.length === 0}
+      zustand={zustandAus(abfrage, alle.length)}
       leerText="Zuletzt hat niemand angefangen."
     >
       {sichtbar.map((person) => (

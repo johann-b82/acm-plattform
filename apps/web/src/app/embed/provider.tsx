@@ -3,6 +3,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
+import { lohntNochmal } from "@/lib/anzeige";
+
 /**
  * Ein eigener Provider statt `components/providers`.
  *
@@ -23,7 +25,10 @@ export function AnzeigeProvider({ children }: { children: ReactNode }) {
             staleTime: 5 * 60_000,
             refetchInterval: 5 * 60_000,
             refetchIntervalInBackground: true,
-            retry: 2,
+            // Höchstens einmal nachfassen, und bei einem abgelehnten Token
+            // gar nicht: sonst steht minutenlang „Einen Moment" auf der Tafel,
+            // statt dass jemand die kaputte Adresse bemerkt.
+            retry: (versuche, fehler) => versuche < 1 && lohntNochmal(fehler),
           },
         },
       }),

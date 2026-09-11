@@ -6,8 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { anzeigeApi, initialen, name, WOCHENTAGE } from "@/lib/anzeige";
+import { AnzeigeFehler, anzeigeApi, initialen, lohntNochmal, name, WOCHENTAGE } from "@/lib/anzeige";
 import { sekundenAus } from "@/components/anzeige/blaettern";
+import { zustandAus } from "@/components/anzeige/tafel";
 
 describe("Fotoadresse", () => {
   it("trägt den Token im Abfrageteil", () => {
@@ -56,5 +57,57 @@ describe("Anzeigedauer aus der Adresse", () => {
     expect(sekundenAus(url("duration=bald"))).toBe(10);
     expect(sekundenAus(url("duration=0"))).toBe(10);
     expect(sekundenAus(url("duration=-5"))).toBe(10);
+  });
+});
+
+describe("Zustand der Tafel", () => {
+  const abfrage = (teile: Partial<{ isError: boolean; isSuccess: boolean; error: unknown }>) => ({
+    isError: false,
+    isSuccess: false,
+    error: null,
+    ...teile,
+  });
+
+  it("zeigt den Fehler, statt ihn als leere Woche auszugeben", () => {
+    // Genau der Fall, der im Browser aufgefallen ist: ein abgelehnter Token
+    // ließ die Tafel „niemand" melden. Auf einem Flurbildschirm sieht ein
+    // kaputter Token damit aus wie eine ruhige Woche.
+    const z = zustandAus(abfrage({ isError: true, error: new Error("Der Token ist unlesbar.") }), 0);
+    expect(z).toEqual({ art: "fehler", text: "Der Token ist unlesbar." });
+  });
+
+  it("nennt auch einen Fehler, der keine Error-Instanz ist", () => {
+    expect(zustandAus(abfrage({ isError: true, error: "irgendwas" }), 0)).toEqual({
+      art: "fehler",
+      text: "Unbekannter Fehler.",
+    });
+  });
+
+  it("lädt, solange die Abfrage weder fertig noch gescheitert ist", () => {
+    expect(zustandAus(abfrage({}), 0)).toEqual({ art: "laedt" });
+  });
+
+  it("ist erst leer, wenn die Abfrage durch ist und nichts geliefert hat", () => {
+    expect(zustandAus(abfrage({ isSuccess: true }), 0)).toEqual({ art: "leer" });
+  });
+
+  it("zeigt Daten, sobald welche da sind", () => {
+    expect(zustandAus(abfrage({ isSuccess: true }), 3)).toEqual({ art: "daten" });
+  });
+});
+
+describe("Nachfassen", () => {
+  it("fasst bei einem abgelehnten Token nicht nach", () => {
+    // Solange nachgefasst wird, steht „Einen Moment" auf der Tafel — und
+    // niemand sieht, dass die Adresse kaputt ist.
+    expect(lohntNochmal(new AnzeigeFehler("Der Token ist unlesbar.", 403))).toBe(false);
+  });
+
+  it("fasst bei einem Serverfehler nach", () => {
+    expect(lohntNochmal(new AnzeigeFehler("Personio antwortet nicht.", 502))).toBe(true);
+  });
+
+  it("fasst nach, wenn gar keine Antwort kam", () => {
+    expect(lohntNochmal(new TypeError("Failed to fetch"))).toBe(true);
   });
 });

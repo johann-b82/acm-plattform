@@ -9,7 +9,7 @@ angefangen hat. Der Signage-Player holt sie als Playlist-Eintrag vom Typ
 | Die beiden Seiten | `/embed/geburtstage`, `/embed/neuzugaenge` (ohne Anmeldung) |
 | Adressen erzeugen | `/einstellungen#anzeigen` (Plattform-Verwaltung) |
 | Routen, Token, Bildweg | `compute`, `app/embed.py` und `app/routers/embed.py` |
-| Einrahmen erlaubt | `infra/caddy/Caddyfile`, Block `handle /embed/*` |
+| Einrahmen erlaubt | `infra/caddy/Caddyfile`, Kopfzeilenblock `header /embed/*` |
 
 Keine Migration: die Anzeigen lesen nur `personio_employees`.
 
@@ -115,11 +115,19 @@ Caddy setzt für die ganze Plattform `X-Frame-Options: SAMEORIGIN`. Der
 Signage-Stack läuft in einem eigenen Compose-Projekt auf einem eigenen Port,
 also einem anderen Origin — der Rahmen im Player bliebe leer.
 
-Der Block `handle /embed/*` nimmt die Kopfzeile für diese Seiten zurück und
-setzt stattdessen `Content-Security-Policy: frame-ancestors`, vorbelegt mit `*`.
-Vertretbar, weil diese Seiten keine Bedienelemente tragen (Clickjacking hat
-nichts zu greifen) und ihre Daten ohnehin am Token hängen. Wer die Herkunft der
-Tafeln kennt, stellt enger:
+Deshalb zwei Kopfzeilenblöcke statt einem: `header @ohne_anzeigen` (alles außer
+`/embed/*`) setzt `X-Frame-Options` wie bisher, `header /embed/*` setzt
+stattdessen `Content-Security-Policy: frame-ancestors`, vorbelegt mit `*`.
+
+**Nicht per Löschen weiter unten.** Der naheliegende Weg — `-X-Frame-Options`
+im `handle`-Block der Anzeigen — wirkt nicht: Caddy schreibt die Kopfzeile des
+allgemeinen Blocks erst beim Hinausschreiben der Antwort, also nach dem
+Löschen. Auch `defer` ändert daran nichts; nachgemessen, die Kopfzeile stand
+danach weiter da.
+
+Vertretbar ist das offene `*`, weil diese Seiten keine Bedienelemente tragen
+(Clickjacking hat nichts zu greifen) und ihre Daten ohnehin am Token hängen.
+Wer die Herkunft der Tafeln kennt, stellt enger:
 
 ```
 EMBED_FRAME_ANCESTORS="'self' http://signage.acm.local:8080"
@@ -138,3 +146,15 @@ EMBED_FRAME_ANCESTORS="'self' http://signage.acm.local:8080"
   an, das es hier nicht gibt. `src/lib/anzeige.ts` ruft mit nacktem `fetch`.
 - **Das Bild kann keinen Kopf setzen.** `<img>` trägt den Token deshalb im
   Abfrageteil — dieselbe Form, die der Signage-Player für seine Medien nutzt.
+- **„Leer" heißt: die Abfrage ist durch und hat nichts geliefert.** Beim Prüfen
+  im Browser stand bei einem abgelehnten Token „Zuletzt hat niemand
+  angefangen" — die Liste *war* ja leer. Auf einem Flurbildschirm sieht ein
+  kaputter Token damit aus wie eine ruhige Woche, und niemand merkt es. Der
+  Zustand kommt deshalb als **ein** Wert in die Tafel (`zustandAus()`), nicht
+  als drei Schalter nebeneinander.
+- **Ein abgelehnter Token wird nicht wiederholt.** Er wird beim dritten Mal
+  auch nicht richtig, und solange nachgefasst wird, steht „Einen Moment" auf
+  der Tafel statt der Ursache. `lohntNochmal()` lässt nur Serverfehler und
+  ausgefallene Verbindungen nachfassen. Verschärft wird das dadurch, dass
+  Chrome die Zeitgeber einer nicht sichtbaren Seite bremst: die Wiederholung
+  kam im Test minutenlang nicht, und die Tafel hing im Ladezustand fest.
