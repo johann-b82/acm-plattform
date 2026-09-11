@@ -298,7 +298,14 @@ gehen kann.
 Das Dashboard liegt unter `/hr` und zeigt oben den Stand des letzten
 Abgleichs samt Fehlertext; wer `hr:admin` hat, kann ihn von Hand anstoßen.
 Welche Abwesenheitsarten als Krankheit zählen, steht unter `/einstellungen#personal` —
-ohne die Angabe bleibt die Kachel sichtbar leer statt still null.
+ohne die Angabe bleibt die Kachel sichtbar leer statt still null. Dort stehen
+sie zur Auswahl, statt abgetippt zu werden: `GET /api/hr/listen` holt die
+Abwesenheitsarten live von Personio (sie werden nicht abgeglichen und stehen in
+keiner Tabelle), Abteilungen und Feldnamen dagegen aus dem abgeglichenen
+Bestand. Ist Personio nicht erreichbar, antwortet die Route trotzdem mit 200:
+die Arten kommen dann aus den bereits abgeglichenen Abwesenheiten, und ein
+Hinweis sagt warum. Ein 500 spränge einem Admin ins Gesicht, der bloß eine
+Abteilung eintragen will.
 
 ### Kompetenzentwicklung
 

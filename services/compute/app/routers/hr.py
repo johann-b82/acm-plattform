@@ -9,6 +9,10 @@ zwei Routen statt einer Route mit zwei Türen:
   `POST /api/hr/sync`         ein HR-Admin über die Oberfläche, normales Token
   `POST /api/hr/sync/geplant` der nächtliche pg_cron-Job, gemeinsames Geheimnis
 
+Dazu `GET /api/hr/listen`: die Auswahllisten für die Einstellungsmaske. Auch
+sie spricht mit einem fremden System — die Abwesenheits*arten* werden nicht
+abgeglichen und stehen in keiner Tabelle.
+
 Der Cron-Weg braucht ein eigenes Verfahren, weil ein SQL-Job kein Nutzer-Token
 besitzt und keins erzeugen kann, ohne den JWT-Schlüssel in der Datenbank zu
 haben. Ohne gesetztes `HR_SYNC_TOKEN` ist diese Route zu.
@@ -24,11 +28,25 @@ from pydantic import BaseModel
 from app.auth import require_app
 from app.config import settings
 from app.personio.client import PersonioFehler
+from app.personio.listen import sammeln
 from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/hr", tags=["hr"])
+
+
+class ArtRead(BaseModel):
+    id: int
+    name: str
+
+
+class ListenRead(BaseModel):
+    abwesenheitsarten: list[ArtRead]
+    abteilungen: list[str]
+    felder: list[str]
+    hinweis: str | None = None
+    arten_aus_bestand: bool = False
 
 
 class AbgleichErgebnis(BaseModel):
@@ -93,3 +111,25 @@ async def sync_von_hand() -> AbgleichErgebnis:
 async def sync_geplant() -> AbgleichErgebnis:
     """Wird von pg_cron über pg_net gerufen. Nicht in der OpenAPI-Liste."""
     return await _laufen_lassen()
+
+
+@router.get(
+    "/listen",
+    response_model=ListenRead,
+    dependencies=[Depends(require_app("platform", "admin"))],
+)
+async def auswahllisten() -> ListenRead:
+    """Was in den Einstellungen zur Auswahl steht, statt abgetippt zu werden.
+
+    Antwortet auch dann mit 200, wenn Personio nicht erreichbar ist: dann sind
+    die Arten der Notnagel aus dem Bestand und `hinweis` sagt warum. Ein 500
+    spränge einem Admin ins Gesicht, der bloß eine Abteilung eintragen will.
+    """
+    listen = await sammeln()
+    return ListenRead(
+        abwesenheitsarten=[ArtRead(id=a.id, name=a.name) for a in listen.abwesenheitsarten],
+        abteilungen=listen.abteilungen,
+        felder=listen.felder,
+        hinweis=listen.hinweis,
+        arten_aus_bestand=listen.arten_aus_bestand,
+    )

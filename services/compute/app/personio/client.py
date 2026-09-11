@@ -199,6 +199,15 @@ class PersonioClient:
         """`/company/absence-periods` — stundenbasiert (Freizeitausgleich)."""
         return await self._seiten_v1("/company/absence-periods")
 
+    async def abwesenheitsarten(self) -> list[dict]:
+        """`/company/time-off-types` — die Arten, nicht die Abwesenheiten.
+
+        Nicht `/company/absence-types`: der Pfad antwortet mit 404. Die Arten
+        werden nicht abgeglichen, sie stehen in keiner Tabelle — gebraucht
+        werden sie nur, um in den Einstellungen eine Auswahlliste anzubieten.
+        """
+        return await self._seiten_v1("/company/time-off-types")
+
     async def profilbild(self, employee_id: int) -> tuple[bytes, str] | None:
         """`/company/employees/{id}/profile-picture` — Bytes und MIME-Typ.
 
