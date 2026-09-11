@@ -44,6 +44,7 @@ import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
+import { Datenstand } from "@/components/kpi/datenstand";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
@@ -185,6 +186,7 @@ export function QualitaetDashboard() {
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             Audit-Findings, Reklamationsquote und Prüfmengen.
           </p>
+          <Datenstand bereich="qualitaet" />
         </div>
         <Zeitraumwahl wahl={wahl} />
       </div>

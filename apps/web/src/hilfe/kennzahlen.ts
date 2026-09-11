@@ -15,6 +15,23 @@ export const KENNZAHLEN: Gruppe = {
 Diese Regeln gelten auf jeder Kennzahlenseite. Steht auf einer Seite etwas
 anderes, gilt das dort Genannte.
 
+## Der Datenstand
+
+Unter der Überschrift steht, **wie alt die Daten dieser Seite sind** — das
+Datum des letzten geglückten Uploads, und wie lange das her ist. Genannt wird
+die **älteste** der Dateien, auf denen die Seite steht: so alt ist die Seite.
+Wer die Maus darüber hält, sieht jede einzelne mit ihrem Datum.
+
+Jede Seite nennt nur ihre eigenen Dateien. Ein neuer Umsatzauszug macht die
+Qualitätszahlen nicht frischer.
+
+Fehlt eine Datei ganz, steht dort **„Datenstand unvollständig"** und welche es
+ist. Die Kacheln, die auf ihr stehen, bleiben dann leer — das ist derselbe
+Fall wie unter *Erste Schritte → Wenn etwas leer bleibt*.
+
+Ein Upload, der fehlgeschlagen ist, zählt nicht als Stand. Er hat nichts
+eingespielt; als Datum gezählt täuschte er Frische vor.
+
 ## Der Zeitraum
 
 Oben steht der Zeitraum. Er gilt für alles darunter. Vorgewählt ist **dieses

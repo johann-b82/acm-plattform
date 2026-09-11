@@ -23,6 +23,7 @@ import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
+import { Datenstand } from "@/components/kpi/datenstand";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { AktivitaetKarte } from "./aktivitaet-karte";
 
@@ -79,6 +80,7 @@ export function VertriebDashboard() {
             <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
           </Link>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Vertrieb</h1>
+          <Datenstand bereich="vertrieb" />
         </div>
         <Zeitraumwahl wahl={wahl} />
       </div>
