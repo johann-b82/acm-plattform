@@ -302,22 +302,39 @@ das Tippspiel-Protokoll, zwei Formblatt-Vorgänge, deren Dateien nicht in der
 Datenbank liegen, und die eine Einstellungszeile, aus der neunzehn Zielwerte
 und drei Listen werden.
 
-### 4b. Die Dateien kommen nicht mit
+### 4b. Die Dateien
 
-Der Datenbankabzug enthält keine hochgeladenen Dateien — die liegen in
-Directus. Betroffen sind die FAIR-Zeichnungen (17), die Wartungsnachweise, die
-ATR-Mappen und -Etiketten und die Feedback-Screenshots (10). Die Zeilen
-wandern, die Bytes brauchen einen eigenen Schritt; bis dahin sagt die
-Oberfläche bei der Zeichnung ausdrücklich, dass die Datei fehlt.
+**geprüft** (2026-09-12) — 416 Dateien übernommen, nichts blieb liegen.
 
-Das Firmenlogo geht denselben Weg und ist der einzige Fall, der sich in einem
-Schritt erledigen lässt:
+Dateien wandern nicht mit den Zeilen: sie stecken teils als `bytea` in der
+alten Datenbank (die erzeugten ATR-Mappen, PDFs und Etiketten, die beiden
+Gerüstdateien, die Feedback-Screenshots), teils als Datei in Directus (die 17
+FAIR-Zeichnungen). Ein zweiter Lauf holt beides:
 
 ```bash
-# aus der alten Datenbank holen
+# Directus-Dateien vom alten Host holen — nur lesen
+rsync -a acm@<alter-host>:/home/acm/lumeapps/directus_uploads/ ./directus/
+docker compose cp ./directus acm-compute-1:/tmp/directus
+
+docker compose exec compute python -m app.cli uebernahme-dateien \
+  --quelle "$QUELLE" --directus /tmp/directus
+```
+
+Der Lauf legt sie unter genau den Pfaden ab, die die Zeilen nennen oder die
+der Dienst selbst vergäbe, setzt `pdf_pfad`, `mappe_pfad`, `etikett_pfad`,
+`geruest_pfad` und `bild_pfad` — und bei den Lieferungen `erzeugt_am`, sonst
+hält die Maske die Dokumente für nicht vorhanden. `geaendert_am` bleibt dabei
+unberührt: eine nachgereichte Datei ist keine Änderung an der Lieferung.
+
+Er ist wiederholbar; vorhandene Dateien werden ersetzt, nicht verdoppelt.
+
+Das Firmenlogo steckt ebenfalls in der alten Zeile und geht von Hand:
+
+```bash
 psql "$QUELLE" -t -A -c "select encode(logo_data,'base64') from app_settings limit 1" \
   | tr -d '\n' | base64 -d > logo.png
-# in den Eimer legen und die Zeile darauf zeigen lassen (Pfad: <nutzer-uuid>/<zufall>.png)
+# in den Eimer `plattform` legen (Pfad <nutzer-uuid>/<zufall>.png) und
+# public.plattform_logo darauf zeigen lassen
 ```
 
 ### 4c. Nur einzelne Bereiche (Altweg)

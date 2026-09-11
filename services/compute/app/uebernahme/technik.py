@@ -351,9 +351,7 @@ UMZUEGE: list[Umzug] = [
     # `error_code` hat kein Zuhause: eine gescheiterte Abfrage ist im neuen
     # Stack keine Messung, sie steht in `sensor_versuche` (docs/modules/
     # sensoren.md). Im Abzug ist die Spalte in allen 12.415 Zeilen leer, es
-    # geht also nichts verloren. `sensor_poll_log` kommt aus demselben Grund
-    # nicht mit: ein Betriebsprotokoll, das ohnehin nach vierzehn Tagen
-    # aufgeräumt wird.
+    # geht also nichts verloren. Das Protokoll der Versuche steht darunter.
     Umzug(
         alt="sensor_readings",
         neu="sensor_messungen",
@@ -366,6 +364,34 @@ UMZUEGE: list[Umzug] = [
             "gemessen_am": "recorded_at",
             "temperatur": "temperature",
             "feuchte": "humidity",
+        },
+    ),
+    # Das Protokoll der Abfrageversuche. Es wird nach vierzehn Tagen aufgeräumt
+    # und wäre insofern verzichtbar — aber die Sensorseite zeigt daraus, wann
+    # ein Gerät zuletzt nicht geantwortet hat und woran es lag. Ohne diese
+    # Zeilen stünde dort nach dem Umzug „noch nie versucht“, obwohl elftausend
+    # Versuche dokumentiert sind.
+    #
+    # `latency_ms` hat kein Zuhause: der neue Stack misst die Antwortzeit
+    # nicht. `error_kind` ist neu doppelt so lang erlaubt, passt also.
+    #
+    # Anders als bei den Messungen gibt es hier **keinen** eindeutigen Index
+    # über Gerät und Zeitpunkt — zwei Versuche in derselben Sekunde sind
+    # erlaubt. `on conflict (id)` trifft deshalb nie, und ein zweiter Lauf
+    # legt die Zeilen erneut an. Für einen einmaligen Umzug ist das richtig;
+    # wer ihn wiederholt, leert die Tabelle vorher.
+    Umzug(
+        alt="sensor_poll_log",
+        neu="sensor_versuche",
+        id_aus=None,
+        schluessel=("id",),
+        sortierung="id",
+        verweise={"sensor_id": "sensors"},
+        spalten={
+            "sensor_id": "sensor_id",
+            "versucht_am": "attempted_at",
+            "erfolg": "success",
+            "fehler": "error_kind",
         },
     ),
     # --- FAIR ---------------------------------------------------------------

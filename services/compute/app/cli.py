@@ -123,6 +123,22 @@ async def _uebernahme(args) -> None:
         print(f"  {tabelle.ljust(28)} {anzahl:>9,}".replace(",", "."))
 
 
+async def _uebernahme_dateien(args) -> None:
+    """Die Dateien nachholen: aus der alten Datenbank und aus Directus."""
+    from pathlib import Path
+
+    from app.uebernahme import dateien
+
+    verzeichnis = Path(args.directus) if args.directus else None
+    if verzeichnis is not None and not verzeichnis.is_dir():
+        print(f"Kein Verzeichnis: {verzeichnis}")
+        raise SystemExit(2)
+    bericht = await dateien.uebernehmen(_alte_datenbank(args.quelle), verzeichnis)
+    print("Übernahme Dateien")
+    for zeile in bericht.zeilen():
+        print("  " + zeile)
+
+
 async def _abgleich(args) -> None:
     """Alt gegen neu zählen. Gibt 1 zurück, wenn eine Zahl nicht stimmt."""
     from app.uebernahme import abgleich
@@ -174,6 +190,7 @@ def main() -> int:
     for name, hilfe in (
         ("abgleich", "Zeilen alt gegen neu zählen (schreibt nichts)"),
         ("uebernahme", "alle Fachbereiche aus lumeapps übernehmen"),
+        ("uebernahme-dateien", "die Dateien nachholen (ATR, Feedback, FAIR)"),
         ("uebernahme-vertrieb", "Upload-Protokolle, Rechnungen und Aufträge aus lumeapps holen"),
         ("uebernahme-nutzer", "Personen aus directus_users anlegen (neues Passwort je Person)"),
         ("uebernahme-atr", "ATR-Teilekatalog und Vorlagen aus lumeapps holen"),
@@ -185,6 +202,12 @@ def main() -> int:
             metavar="DSN",
             help="Verbindung zur alten Datenbank, z. B. postgresql://kpi_user:pw@alter-host:5432/kpi_db",
         )
+        if name == "uebernahme-dateien":
+            p.add_argument(
+                "--directus",
+                metavar="VERZEICHNIS",
+                help="Kopie von directus_uploads — darin liegen die FAIR-Zeichnungen",
+            )
         if name == "uebernahme":
             p.add_argument(
                 "--bereich",
@@ -198,7 +221,7 @@ def main() -> int:
                 help="Zieltabellen vorher leeren — nur für den Umzug, nimmt auch"
                 " Abhängiges mit",
             )
-        if name != "abgleich":
+        if name not in ("abgleich", "uebernahme-dateien"):
             p.add_argument(
                 "--trocken",
                 action="store_true",
@@ -211,6 +234,7 @@ def main() -> int:
         "personio-sprachen": _personio_sprachen,
         "abgleich": _abgleich,
         "uebernahme": _uebernahme,
+        "uebernahme-dateien": _uebernahme_dateien,
         "uebernahme-vertrieb": _uebernahme_vertrieb,
         "uebernahme-nutzer": _uebernahme_nutzer,
         "uebernahme-atr": _uebernahme_atr,
