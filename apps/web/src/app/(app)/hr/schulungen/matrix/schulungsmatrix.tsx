@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import {
-  DRINGLICHKEIT_LABEL,
-  HERKUNFT_LABEL,
   dringlichkeit,
   schulungApi,
   schulungKeys,
@@ -17,8 +15,12 @@ import {
 } from "@/lib/schulungen";
 import { Card, EmptyState, Input, Select, TableWrap } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
+import { useDringlichkeit, useHerkunft } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "short" });
+
 
 /** Die Farbe der Zelle sagt dasselbe wie die Liste „was offen ist". */
 const ZELLE: Record<Dringlichkeit, string> = {
@@ -43,6 +45,8 @@ const ZELLE: Record<Dringlichkeit, string> = {
  * kostet nichts.
  */
 export function Schulungsmatrix() {
+  const worte = useTexte();
+  const herkunft = useHerkunft();
   const [suche, setSuche] = useState("");
   const [bereich, setBereich] = useState("alle");
   const [nurLuecken, setNurLuecken] = useState(false);
@@ -95,41 +99,37 @@ export function Schulungsmatrix() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Schulungsmatrix</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Alle Personen gegen alle Schulungen — die Übersicht für den Aushang
-            und fürs Audit. Wer noch gar keine Teilnahme hat, steht mit leerer
-            Zeile darin; genau das ist die Lücke, die man sucht.
-          </p>
-        </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
-            Was offen ist
-          </Link>
-          <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
-            Katalog
-          </Link>
-        </div>
-      </div>
+      <Seitenkopf
+        titel={worte.titel.schulungsmatrix}
+        untertitel={worte.schulungsmatrix.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center gap-4 text-sm">
+            <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
+              {worte.schulungsmatrix.wasOffenIst}
+            </Link>
+            <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
+              {worte.schulungsmatrix.katalog}
+            </Link>
+          </div>
+        }
+      />
 
       <Card className="flex flex-wrap items-end gap-4 p-4">
         <div className="space-y-1">
           <label htmlFor="matrix-suche" className="text-sm font-medium">
-            Person oder Abteilung
+            {worte.schulungsmatrix.suchfeld}
           </label>
           <Input
             id="matrix-suche"
             value={suche}
-            placeholder="Name, Abteilung, Personalnummer"
+            placeholder={worte.schulungsmatrix.suchePlatzhalter}
             className="w-64"
             onChange={(e) => setSuche(e.target.value)}
           />
         </div>
         <div className="space-y-1">
           <label htmlFor="matrix-bereich" className="text-sm font-medium">
-            Bereich
+            {worte.schulungsmatrix.bereich}
           </label>
           <Select
             id="matrix-bereich"
@@ -137,7 +137,7 @@ export function Schulungsmatrix() {
             className="w-48"
             onChange={(e) => setBereich(e.target.value)}
           >
-            <option value="alle">Alle Bereiche</option>
+            <option value="alle">{worte.schulungsmatrix.alleBereiche}</option>
             {bereiche.map((b) => (
               <option key={b} value={b}>
                 {b}
@@ -152,20 +152,24 @@ export function Schulungsmatrix() {
             onChange={(e) => setNurLuecken(e.target.checked)}
             className="h-4 w-4 accent-[var(--ring)]"
           />
-          Nur Personen mit Lücken
+          {worte.schulungsmatrix.nurLuecken}
         </label>
         <span className="pb-2 text-sm text-[var(--fg-muted)]">
-          {zeilen.length} von {personen.data?.length ?? 0} Personen · {spalten.length} Schulungen
+          {worte.schulungsmatrix.zaehlung(
+            zeilen.length,
+            personen.data?.length ?? 0,
+            spalten.length,
+          )}
         </span>
       </Card>
 
       {fehler && <p className="text-sm text-[var(--danger)]">{(fehler as Error).message}</p>}
-      {laedt && <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>}
+      {laedt && <p className="text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</p>}
 
       {!laedt && !fehler && zeilen.length === 0 && (
         <EmptyState
-          title="Keine Person passt"
-          body="Andere Suche oder anderer Bereich — oder es ist wirklich niemand offen."
+          title={worte.schulungsmatrix.niemand}
+          body={worte.schulungsmatrix.niemandText}
         />
       )}
 
@@ -185,7 +189,7 @@ export function Schulungsmatrix() {
                     "bg-[var(--surface)] px-3 py-2 text-left font-medium"
                   }
                 >
-                  Person
+                  {worte.schulungsmatrix.person}
                 </th>
                 {spalten.map((s) => (
                   <th
@@ -222,7 +226,7 @@ export function Schulungsmatrix() {
                   >
                     <span className="block truncate font-medium">{p.name ?? "—"}</span>
                     <span className="block truncate text-xs text-[var(--fg-muted)]">
-                      {[p.abteilung, p.herkunft !== "personio" ? HERKUNFT_LABEL[p.herkunft] : null]
+                      {[p.abteilung, p.herkunft !== "personio" ? herkunft[p.herkunft] : null]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
@@ -249,13 +253,16 @@ function Zelle({
   person: Person;
   schulung: Schulung;
 }) {
+  const worte = useTexte();
+  const dringlichkeitLabel = useDringlichkeit();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "short" });
   // Keine Teilnahme heißt: nie zugewiesen. Das ist etwas anderes als
   // „zugewiesen und nicht absolviert" und darf nicht gleich aussehen.
   if (!zelle) {
     return (
       <td
         className="border-b border-[var(--border)] px-1 py-2 text-center text-[var(--fg-muted)]"
-        title={`${person.name ?? "?"} · ${schulung.name}: nicht zugewiesen`}
+        title={worte.schulungsmatrix.nichtZugewiesen(person.name ?? "?", schulung.name)}
       >
         ·
       </td>
@@ -270,11 +277,13 @@ function Zelle({
           ZELLE[wie],
         )}
         title={
-          `${person.name ?? "?"} · ${schulung.name}: ${DRINGLICHKEIT_LABEL[wie]}` +
-          (zelle.faellig_am ? ` (fällig ${DATUM.format(new Date(zelle.faellig_am))})` : "")
+          worte.schulungsmatrix.zelle(person.name ?? "?", schulung.name, dringlichkeitLabel[wie]) +
+          (zelle.faellig_am
+            ? worte.schulungsmatrix.faelligAm(DATUM.format(new Date(zelle.faellig_am)))
+            : "")
         }
       >
-        {zelle.aktuell_datum ? DATUM.format(new Date(zelle.aktuell_datum)) : "offen"}
+        {zelle.aktuell_datum ? DATUM.format(new Date(zelle.aktuell_datum)) : worte.schulungsmatrix.offen}
       </span>
     </td>
   );

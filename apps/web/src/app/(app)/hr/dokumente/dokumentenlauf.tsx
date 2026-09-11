@@ -7,8 +7,6 @@ import { toast } from "sonner";
 import { Check, FileDown, FileUp, Plus, ScanLine, X } from "lucide-react";
 
 import {
-  ART_LABEL,
-  STAND_LABEL,
   WEG,
   dokumentApi,
   dokumentKeys,
@@ -30,8 +28,12 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitives";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
+import { useDokumentworte } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "short" });
+
 
 /**
  * Der Dokumentenlauf.
@@ -46,6 +48,9 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "short" });
  * weiß es besser.
  */
 export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const dokumentworte = useDokumentworte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "short" });
   const queryClient = useQueryClient();
   const [art, setArt] = useState<Art>("einarbeitung");
   const [person, setPerson] = useState<string>("");
@@ -117,30 +122,26 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dokumentenlauf</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Blätter mit QR-Code: erzeugen, aushändigen, ausgefüllt zurücknehmen,
-            prüfen. Der QR ordnet den Scan wieder zu — unabhängig davon, wie die
-            Datei heißt.
-          </p>
-        </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
-            Onboarding
-          </Link>
-          <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
-            Schulungen
-          </Link>
-        </div>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr/dokumente"]}
+        untertitel={worte.dokumentenlauf.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center gap-4 text-sm">
+            <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
+              {worte.pfad.seiten["/hr/onboarding"]}
+            </Link>
+            <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
+              {worte.pfad.seiten["/hr/schulungen"]}
+            </Link>
+          </div>
+        }
+      />
 
       {darfSchreiben && (
         <Card className="flex flex-wrap items-end gap-4 p-4">
           <div className="space-y-1">
             <label htmlFor="neu-art" className="text-sm font-medium">
-              Formblatt
+              {worte.dokumentenlauf.formblatt}
             </label>
             <Select
               id="neu-art"
@@ -148,16 +149,16 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
               className="w-56"
               onChange={(e) => setArt(e.target.value as Art)}
             >
-              {(Object.keys(ART_LABEL) as Art[]).map((a) => (
+              {(Object.keys(dokumentworte.art) as Art[]).map((a) => (
                 <option key={a} value={a}>
-                  {ART_LABEL[a]}
+                  {dokumentworte.art[a]}
                 </option>
               ))}
             </Select>
           </div>
           <div className="space-y-1">
             <label htmlFor="neu-person" className="text-sm font-medium">
-              Für wen
+              {worte.dokumentenlauf.fuerWen}
             </label>
             <Select
               id="neu-person"
@@ -165,7 +166,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
               className="w-72"
               onChange={(e) => setPerson(e.target.value)}
             >
-              <option value="">— Person wählen —</option>
+              <option value="">{worte.dokumentenlauf.personWaehlen}</option>
               {(eintritte.data ?? []).map((p) => (
                 <option
                   key={p.employee_id ?? p.extern_id}
@@ -179,13 +180,13 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
           </div>
           <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            {anlegen.isPending ? "Erzeugt …" : "Blatt erzeugen"}
+            {anlegen.isPending ? worte.dokumentenlauf.erzeugt : worte.dokumentenlauf.blattErzeugen}
           </Button>
         </Card>
       )}
 
       <Card className="flex flex-wrap items-center gap-2 p-3 text-sm">
-        <span className="text-[var(--fg-muted)]">Stand:</span>
+        <span className="text-[var(--fg-muted)]">{worte.dokumentenlauf.standFilter}</span>
         {(["alle", ...WEG] as const).map((s) => (
           <Button
             key={s}
@@ -193,11 +194,11 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
             variant={filter === s ? "default" : "outline"}
             onClick={() => setFilter(s as Stand | "alle")}
           >
-            {s === "alle" ? "Alle" : STAND_LABEL[s as Stand]}
+            {s === "alle" ? worte.dokumentenlauf.alle : dokumentworte.stand[s as Stand]}
           </Button>
         ))}
         <span className="ml-auto text-[var(--fg-muted)]">
-          {liste.length} von {vorgaenge.data?.length ?? 0}
+          {worte.dokumentenlauf.vonGesamt(liste.length, vorgaenge.data?.length ?? 0)}
         </span>
       </Card>
 
@@ -207,19 +208,19 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
 
       {!vorgaenge.isPending && liste.length === 0 ? (
         <EmptyState
-          title="Kein Vorgang"
-          body="Oben ein Blatt erzeugen — es bekommt einen QR-Code und wird von da an verfolgt."
+          title={worte.dokumentenlauf.keinVorgang}
+          body={worte.dokumentenlauf.keinVorgangText}
         />
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Person</Th>
-                <Th>Formblatt</Th>
-                <Th>Kennung</Th>
-                <Th>Stand</Th>
-                <Th>Vollständig</Th>
+                <Th>{worte.dokumentenlauf.person}</Th>
+                <Th>{worte.dokumentenlauf.formblatt}</Th>
+                <Th>{worte.dokumentenlauf.kennung}</Th>
+                <Th>{worte.dokumentenlauf.stand}</Th>
+                <Th>{worte.dokumentenlauf.vollstaendigSpalte}</Th>
                 <Th />
               </tr>
             </thead>
@@ -232,11 +233,11 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                       <span className="block text-xs text-[var(--fg-muted)]">{v.funktion}</span>
                     )}
                   </Td>
-                  <Td>{ART_LABEL[v.art]}</Td>
+                  <Td>{dokumentworte.art[v.art]}</Td>
                   <Td className="font-mono text-xs">{v.doc_uid}</Td>
                   <Td>
                     <Badge variant={v.status === "geprueft" ? "default" : "outline"}>
-                      {STAND_LABEL[v.status]}
+                      {dokumentworte.stand[v.status]}
                     </Badge>
                     <span className="mt-1 block text-xs text-[var(--fg-muted)]">
                       {DATUM.format(new Date(v.erstellt_am))}
@@ -258,7 +259,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                         onClick={() => oeffnen.mutate({ id: v.id, was: "blatt.pdf" })}
                       >
                         <FileDown className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                        Blatt
+                        {worte.dokumentenlauf.blatt}
                       </Button>
                       {v.scan_pfad && (
                         <Button
@@ -266,7 +267,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                           variant="ghost"
                           onClick={() => oeffnen.mutate({ id: v.id, was: "scan" })}
                         >
-                          Scan
+                          {worte.dokumentenlauf.scan}
                         </Button>
                       )}
                       {darfSchreiben && naechste(v.status) && v.status !== "zurueck" && (
@@ -278,7 +279,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                             weiter.mutate({ id: v.id, ziel: naechste(v.status)! })
                           }
                         >
-                          {STAND_LABEL[naechste(v.status)!]}
+                          {dokumentworte.stand[naechste(v.status)!]}
                         </Button>
                       )}
                       {darfSchreiben && (
@@ -291,12 +292,12 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                           }
                         >
                           <ScanLine className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                          {scan.isPending ? "Prüft …" : "Scan"}
+                          {scan.isPending ? worte.dokumentenlauf.prueft : worte.dokumentenlauf.scan}
                           <input
                             type="file"
                             accept="application/pdf,image/png,image/jpeg"
                             className="sr-only"
-                            aria-label={`Scan für ${v.name} hochladen`}
+                            aria-label={worte.dokumentenlauf.scanFuer(v.name)}
                             disabled={scan.isPending}
                             onChange={(e) => {
                               const datei = e.target.files?.[0];
@@ -311,7 +312,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                         variant="ghost"
                         onClick={() => setOffen(offen === v.id ? null : v.id)}
                       >
-                        {offen === v.id ? "zu" : "Details"}
+                        {offen === v.id ? worte.dokumentenlauf.zu : worte.dokumentenlauf.details}
                       </Button>
                     </div>
                     {offen === v.id && <Details vorgang={v} darfSchreiben={darfSchreiben} />}
@@ -351,19 +352,20 @@ function Urteil({
   umkehren: (wert: boolean) => void;
   laeuft: boolean;
 }) {
+  const worte = useTexte();
   if (vorgang.vollstaendig === null) {
-    return <span className="text-sm text-[var(--fg-muted)]">— noch nicht geprüft</span>;
+    return <span className="text-sm text-[var(--fg-muted)]">{worte.dokumentenlauf.nochNichtGeprueft}</span>;
   }
   return (
     <div className="flex items-center gap-2">
       <Badge className={vorgang.vollstaendig ? "status-ok" : "status-bad"}>
-        {vorgang.vollstaendig ? "vollständig" : "unvollständig"}
+        {vorgang.vollstaendig ? worte.dokumentenlauf.vollstaendig : worte.dokumentenlauf.unvollstaendig}
       </Badge>
       {darfSchreiben && (
         <Button
           size="sm"
           variant="ghost"
-          title="Urteil umkehren — die Messung sieht nur, ob Tinte im Feld ist"
+          title={worte.dokumentenlauf.umkehren}
           disabled={laeuft}
           onClick={() => umkehren(!vorgang.vollstaendig)}
         >
@@ -386,6 +388,9 @@ function Urteil({
  * wäre jedes Mal weg.
  */
 function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const dokumentworte = useDokumentworte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "short" });
   const queryClient = useQueryClient();
   const [zeile, setZeile] = useState("");
 
@@ -410,7 +415,8 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
           const wann = vorgang[STEMPEL[s]];
           return (
             <span key={s}>
-              {STAND_LABEL[s]}: {typeof wann === "string" ? DATUM.format(new Date(wann)) : "—"}
+              {dokumentworte.stand[s]}:{" "}
+              {typeof wann === "string" ? DATUM.format(new Date(wann)) : "—"}
             </span>
           );
         })}
@@ -419,11 +425,11 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
       {vorgang.pruef_ergebnis && (
         <div>
           <p className="text-sm font-medium">
-            Prüfung{" "}
+            {worte.dokumentenlauf.pruefung}{" "}
             <span className="font-normal text-[var(--fg-muted)]">
               {vorgang.pruef_ergebnis.qr_ok
-                ? "— QR gelesen"
-                : "— kein QR gefunden, Felder nicht zuzuordnen"}
+                ? worte.dokumentenlauf.qrGelesen
+                : worte.dokumentenlauf.keinQr}
             </span>
           </p>
           <ul className="mt-1 grid gap-1 sm:grid-cols-2">
@@ -442,7 +448,7 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
       )}
 
       <div>
-        <p className="text-sm font-medium">Nachweise</p>
+        <p className="text-sm font-medium">{worte.dokumentenlauf.nachweise}</p>
         <ul className="mt-1 space-y-1 text-xs text-[var(--fg-muted)]">
           {(nachweise.data ?? []).map((n) => (
             <li key={n.id}>
@@ -450,13 +456,13 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
               {n.zeile ? ` · ${n.zeile}` : ""} · {DATUM.format(new Date(n.hochgeladen_am))}
             </li>
           ))}
-          {nachweise.data?.length === 0 && <li>Noch keine hinterlegt.</li>}
+          {nachweise.data?.length === 0 && <li>{worte.dokumentenlauf.keineNachweise}</li>}
         </ul>
         {darfSchreiben && (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Input
               value={zeile}
-              placeholder="Zu welcher Zeile? (freiwillig)"
+              placeholder={worte.dokumentenlauf.welcheZeile}
               className="w-64 text-xs"
               onChange={(e) => setZeile(e.target.value)}
             />
@@ -468,11 +474,11 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
               }
             >
               <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-              {hochladen.isPending ? "Lädt …" : "Nachweis"}
+              {hochladen.isPending ? worte.dokumentenlauf.laedt : worte.dokumentenlauf.nachweis}
               <input
                 type="file"
                 className="sr-only"
-                aria-label="Nachweis hochladen"
+                aria-label={worte.dokumentenlauf.nachweisHoch}
                 disabled={hochladen.isPending}
                 onChange={(e) => {
                   const datei = e.target.files?.[0];

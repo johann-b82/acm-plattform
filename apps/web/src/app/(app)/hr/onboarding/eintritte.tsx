@@ -26,8 +26,11 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 const LEER = { name: "", abteilung: "", position: "", eintritt: "" };
 
@@ -40,6 +43,8 @@ const LEER = { name: "", abteilung: "", position: "", eintritt: "" };
  * ohne diesen Hinweis entstünden unbemerkt zu wenige Pflichtschulungen.
  */
 export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [offen, setOffen] = useState<number | null>(null);
   const [neu, setNeu] = useState({ ...LEER });
@@ -65,8 +70,8 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
     onSuccess: (anzahl) => {
       toast.success(
         anzahl === 0
-          ? "Es fehlte nichts."
-          : `${anzahl} ${anzahl === 1 ? "Schulung" : "Schulungen"} angelegt.`,
+          ? worte.onboarding.nichtsGefehlt
+          : worte.onboarding.angelegt(anzahl),
       );
       queryClient.invalidateQueries({ queryKey: ["schulungen"] });
       return neuLaden();
@@ -147,27 +152,20 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Onboarding</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Wer neu ist und welche Schulungen die Anforderungsmatrix für ihn
-            verlangt. Der Plan wird nicht gespeichert, sondern gerechnet —
-            ändert sich die Matrix, ändert sich der Plan.
-          </p>
-        </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/hr/dokumente" className="underline-offset-4 hover:underline">
-            Dokumentenlauf
-          </Link>
-          <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
-            Schulungen
-          </Link>
-          <Link href="/hr" className="underline-offset-4 hover:underline">
-            Personal
-          </Link>
-        </div>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr/onboarding"]}
+        untertitel={worte.onboarding.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center gap-4 text-sm">
+            <Link href="/hr/dokumente" className="underline-offset-4 hover:underline">
+              {worte.pfad.seiten["/hr/dokumente"]}
+            </Link>
+            <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">
+              {worte.pfad.seiten["/hr/schulungen"]}
+            </Link>
+          </div>
+        }
+      />
 
       <Card className="flex flex-wrap items-center gap-3 p-4">
         <Button
@@ -175,37 +173,37 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
           variant={nurNeue ? "default" : "outline"}
           onClick={() => setNurNeue(true)}
         >
-          Neu (letzte 90 Tage)
+          {worte.onboarding.neu90}
         </Button>
         <Button
           size="sm"
           variant={nurNeue ? "outline" : "default"}
           onClick={() => setNurNeue(false)}
         >
-          Alle
+          {worte.onboarding.alle}
         </Button>
         <span className="text-sm text-[var(--fg-muted)]">
-          {liste.length} {liste.length === 1 ? "Person" : "Personen"}
+          {worte.onboarding.personen(liste.length)}
         </span>
       </Card>
 
       {eintritte.isLoading ? (
-        <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
+        <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Keine Eintritte"
-          body="Sobald jemand mit Eintrittsdatum aus Personio kommt, steht er hier."
+          title={worte.onboarding.keineEintritte}
+          body={worte.onboarding.keineEintritteText}
         />
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Person</Th>
-                <Th>Abteilung</Th>
-                <Th>Position</Th>
-                <Th>Eintritt</Th>
-                <Th>Übergabe</Th>
+                <Th>{worte.onboarding.person}</Th>
+                <Th>{worte.onboarding.abteilung}</Th>
+                <Th>{worte.onboarding.position}</Th>
+                <Th>{worte.onboarding.eintritt}</Th>
+                <Th>{worte.onboarding.uebergabe}</Th>
                 <Th />
               </tr>
             </thead>
@@ -216,7 +214,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                     {e.name}
                     {e.extern_id && (
                       <Badge variant="outline" className="ml-2">
-                        nicht in Personio
+                        {worte.onboarding.nichtInPersonio}
                       </Badge>
                     )}
                     {istNeu(e) && <Badge className="ml-2">neu</Badge>}
@@ -229,8 +227,8 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                         disabled={!darfSchreiben}
                         title={
                           e.abteilung_gesetzt
-                            ? "Hier gesetzt — übersteuert Personio"
-                            : "Aus Personio"
+                            ? worte.onboarding.hierGesetzt
+                            : worte.onboarding.ausPersonio
                         }
                         onBlur={(ev) => {
                           const wert = ev.target.value.trim() || null;
@@ -251,7 +249,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                     ) : darfSchreiben ? (
                       <Button size="sm" variant="outline" onClick={() => paket.mutate(e)}>
                         <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                        Vermerken
+                        {worte.onboarding.vermerken}
                       </Button>
                     ) : (
                       "—"
@@ -262,21 +260,21 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                       <Button
                         size="sm"
                         variant="outline"
-                        title="Einarbeitungsplan und Schulungsübersicht als ein PDF"
+                        title={worte.onboarding.paketTitel}
                         disabled={paketDrucken.isPending}
                         onClick={() => paketDrucken.mutate(e)}
                       >
                         <FileDown className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                        Paket
+                        {worte.onboarding.paket}
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        title="Nur die Schulungsübersicht (Formblatt 71)"
+                        title={worte.onboarding.uebersichtTitel}
                         disabled={uebersichtDrucken.isPending}
                         onClick={() => uebersichtDrucken.mutate(e)}
                       >
-                        Übersicht
+                        {worte.onboarding.uebersicht}
                       </Button>
                       {e.employee_id !== null ? (
                         <Button
@@ -286,7 +284,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                             setOffen(offen === e.employee_id ? null : e.employee_id)
                           }
                         >
-                          {offen === e.employee_id ? "Plan zu" : "Plan"}
+                          {offen === e.employee_id ? worte.onboarding.planZu : worte.onboarding.plan}
                         </Button>
                       ) : (
                         darfSchreiben && (
@@ -310,18 +308,18 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
       {offen !== null && (
         <Card className="space-y-3 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-medium">Schulungsplan</h2>
+            <h2 className="font-medium">{worte.onboarding.schulungsplan}</h2>
             {darfSchreiben && (
               <Button
                 disabled={planAnlegen.isPending}
                 onClick={() => planAnlegen.mutate(offen)}
               >
-                Fehlende anlegen
+                {worte.onboarding.fehlendeAnlegen}
               </Button>
             )}
           </div>
           {plan.isLoading ? (
-            <p className="text-sm text-[var(--fg-muted)]">wird gerechnet …</p>
+            <p className="text-sm text-[var(--fg-muted)]">{worte.onboarding.wirdGerechnet}</p>
           ) : (
             <Planliste zeilen={plan.data ?? []} />
           )}
@@ -330,11 +328,9 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
 
       <Card className="space-y-4 p-5">
         <div>
-          <h2 className="font-medium">Position → Abteilungskürzel</h2>
+          <h2 className="font-medium">{worte.onboarding.bruecke}</h2>
           <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Die Brücke zwischen Personio und der feinen Ebene der
-            Anforderungsmatrix. Ohne Eintrag greift die feine Ebene für diese
-            Position nicht — der Plan sagt das dann ausdrücklich.
+            {worte.onboarding.brueckeHinweis}
           </p>
         </div>
         {(rollen.data ?? []).length > 0 && (
@@ -358,21 +354,21 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
         {darfSchreiben && (
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="position">Position</Label>
+              <Label htmlFor="position">{worte.onboarding.position}</Label>
               <Input
                 id="position"
                 value={neueRolle.position}
-                placeholder="z. B. CNC Fräser"
+                placeholder={worte.onboarding.positionBeispiel}
                 onChange={(e) => setNeueRolle({ ...neueRolle, position: e.target.value })}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="kuerzel">Kürzel</Label>
+              <Label htmlFor="kuerzel">{worte.onboarding.kuerzel}</Label>
               <Input
                 id="kuerzel"
                 className="w-28"
                 value={neueRolle.kuerzel}
-                placeholder="CNC"
+                placeholder={worte.onboarding.kuerzelBeispiel}
                 onChange={(e) => setNeueRolle({ ...neueRolle, kuerzel: e.target.value })}
               />
             </div>
@@ -381,7 +377,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               disabled={!neueRolle.position.trim() || !neueRolle.kuerzel.trim()}
               onClick={() => rolleSetzen.mutate()}
             >
-              Zuordnen
+              {worte.onboarding.zuordnen}
             </Button>
           </div>
         )}
@@ -390,15 +386,14 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
       {darfSchreiben && (
         <Card className="space-y-3 p-5">
           <div>
-            <h2 className="font-medium">Person ohne Personio</h2>
+            <h2 className="font-medium">{worte.onboarding.ohnePersonio}</h2>
             <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-              Für Eintritte, die noch nicht im Abgleich stehen — oder gar nicht
-              dorthin gehören.
+              {worte.onboarding.ohnePersonioHinweis}
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex min-w-40 flex-1 flex-col gap-1">
-              <Label htmlFor="extern-name">Name</Label>
+              <Label htmlFor="extern-name">{worte.onboarding.name}</Label>
               <Input
                 id="extern-name"
                 value={neu.name}
@@ -406,7 +401,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="extern-abteilung">Abteilung</Label>
+              <Label htmlFor="extern-abteilung">{worte.onboarding.abteilung}</Label>
               <Input
                 id="extern-abteilung"
                 className="w-40"
@@ -415,7 +410,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="extern-position">Position</Label>
+              <Label htmlFor="extern-position">{worte.onboarding.position}</Label>
               <Input
                 id="extern-position"
                 className="w-40"
@@ -424,7 +419,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="extern-eintritt">Eintritt</Label>
+              <Label htmlFor="extern-eintritt">{worte.onboarding.eintritt}</Label>
               <Input
                 id="extern-eintritt"
                 type="date"
@@ -437,7 +432,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               onClick={() => externAnlegen.mutate()}
             >
               <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-              Anlegen
+              {worte.onboarding.anlegen}
             </Button>
           </div>
         </Card>
@@ -448,6 +443,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
 
 /** Soll und Ist nebeneinander — samt dem Hinweis, wenn eine Ebene nicht greift. */
 function Planliste({ zeilen }: { zeilen: Planzeile[] }) {
+  const worte = useTexte();
   const hinweis = zeilen.find((z) => z.quelle === "kuerzel_fehlt");
   const echte = zeilen.filter((z) => z.quelle !== "kuerzel_fehlt");
 
@@ -455,26 +451,23 @@ function Planliste({ zeilen }: { zeilen: Planzeile[] }) {
     <div className="space-y-3">
       {hinweis && (
         <p className="rounded-md bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] p-3 text-sm">
-          Für die Position {hinweis.abteilung ? `„${hinweis.abteilung}“ ` : ""}ist kein
-          Abteilungskürzel hinterlegt. Die feine Ebene der Anforderungsmatrix
-          greift für diese Person deshalb nicht — es fehlen möglicherweise
-          Pflichtschulungen.
+          {worte.onboarding.kuerzelFehlt(hinweis.abteilung ? `„${hinweis.abteilung}“ ` : "")}
         </p>
       )}
       {echte.length === 0 ? (
         <p className="text-sm text-[var(--fg-muted)]">
-          Die Anforderungsmatrix verlangt für diese Abteilung nichts.
+          {worte.onboarding.matrixVerlangtNichts}
         </p>
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Schulung</Th>
-                <Th>Bereich</Th>
-                <Th>Turnus</Th>
-                <Th>Pflicht über</Th>
-                <Th>Stand</Th>
+                <Th>{worte.onboarding.schulung}</Th>
+                <Th>{worte.onboarding.bereich}</Th>
+                <Th>{worte.onboarding.turnus}</Th>
+                <Th>{worte.onboarding.pflichtUeber}</Th>
+                <Th>{worte.onboarding.stand}</Th>
               </tr>
             </thead>
             <tbody>
@@ -485,14 +478,17 @@ function Planliste({ zeilen }: { zeilen: Planzeile[] }) {
                   <Td>{z.turnus ?? "—"}</Td>
                   <Td>
                     <Badge variant="outline">
-                      {z.quelle === "personio" ? "Abteilung" : "Kürzel"} {z.abteilung}
+                      {z.quelle === "personio"
+                        ? worte.onboarding.ueberAbteilung
+                        : worte.onboarding.ueberKuerzel}{" "}
+                      {z.abteilung}
                     </Badge>
                   </Td>
                   <Td>
                     {z.vorhanden ? (
-                      <Badge variant="secondary">vorhanden</Badge>
+                      <Badge variant="secondary">{worte.onboarding.vorhanden}</Badge>
                     ) : (
-                      <Badge>fehlt</Badge>
+                      <Badge>{worte.onboarding.fehlt}</Badge>
                     )}
                   </Td>
                 </tr>

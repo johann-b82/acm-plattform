@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { FileUp, Plus } from "lucide-react";
 
 import {
-  DRINGLICHKEIT_LABEL,
   dringlichkeit,
   schulungApi,
   schulungKeys,
@@ -28,8 +27,12 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
+import { useDringlichkeit } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 /**
  * Der Schulungskatalog und was daran offen ist.
@@ -39,6 +42,9 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
  * Altprojekt bliebe die beim Import berechnete Spalte stehen.
  */
 export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const dringlichkeitLabel = useDringlichkeit();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState({ bereich: "betrieblich", name: "" });
   const [vorschau, setVorschau] = useState<{ datei: File; ergebnis: ImportErgebnis } | null>(
@@ -114,35 +120,29 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Schulungen</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Der Katalog, sein Turnus und wer ihn erfüllt. Fälligkeiten werden
-            aus letztem Termin und Turnus gerechnet, nicht gespeichert.
-          </p>
-        </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
-            Was offen ist
-          </Link>
-          <Link href="/hr/schulungen/matrix" className="underline-offset-4 hover:underline">
-            Matrix
-          </Link>
-          <Link href="/hr/dokumente" className="underline-offset-4 hover:underline">
-            Dokumentenlauf
-          </Link>
-          <Link href="/hr" className="underline-offset-4 hover:underline">
-            Personal
-          </Link>
-        </div>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr/schulungen"]}
+        untertitel={worte.schulungen.einleitung}
+        unter={
+          <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm">
+            <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
+              {worte.schulungsmatrix.wasOffenIst}
+            </Link>
+            <Link href="/hr/schulungen/matrix" className="underline-offset-4 hover:underline">
+              {worte.pfad.seiten["/hr/schulungen/matrix"]}
+            </Link>
+            <Link href="/hr/dokumente" className="underline-offset-4 hover:underline">
+              {worte.schulungen.dokumentenlauf}
+            </Link>
+          </div>
+        }
+      />
 
       {darfSchreiben && (
         <Card className="space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
-              <Label htmlFor="bereich">Bereich</Label>
+              <Label htmlFor="bereich">{worte.schulungen.bereich}</Label>
               <Input
                 id="bereich"
                 className="w-40"
@@ -157,11 +157,11 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
               </datalist>
             </div>
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="name">Neue Schulung</Label>
+              <Label htmlFor="name">{worte.schulungen.neueSchulung}</Label>
               <Input
                 id="name"
                 value={neu.name}
-                placeholder="z. B. Brandschutzunterweisung"
+                placeholder={worte.schulungen.beispiel}
                 onChange={(e) => setNeu({ ...neu, name: e.target.value })}
               />
             </div>
@@ -170,7 +170,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
               onClick={() => anlegen.mutate()}
             >
               <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-              Anlegen
+              {worte.schulungen.anlegen}
             </Button>
             <label
               className={
@@ -180,12 +180,12 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
               }
             >
               <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
-              {zeigen.isPending ? "Wird gelesen …" : "Übersicht einlesen"}
+              {zeigen.isPending ? worte.schulungen.wirdGelesen : worte.schulungen.uebersichtEinlesen}
               <input
                 type="file"
                 accept=".xlsx"
                 className="sr-only"
-                aria-label="Schulungsübersicht einlesen"
+                aria-label={worte.schulungen.einlesenAria}
                 disabled={zeigen.isPending}
                 onChange={(e) => {
                   const datei = e.target.files?.[0];
@@ -200,19 +200,20 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
             <div className="space-y-2 rounded-md bg-[var(--muted)] p-4 text-sm">
               <p className="font-medium">{vorschau.ergebnis.dateiname}</p>
               <p>
-                {vorschau.ergebnis.schulungen} Schulungen (
-                {vorschau.ergebnis.schulungen_neu} neu),{" "}
-                {vorschau.ergebnis.teilnahmen} Teilnahmen, davon{" "}
-                {vorschau.ergebnis.teilnahmen_zugeordnet} einer Person in Personio
-                zugeordnet.
+                {worte.schulungen.vorschau(
+                  vorschau.ergebnis.schulungen,
+                  vorschau.ergebnis.schulungen_neu,
+                  vorschau.ergebnis.teilnahmen,
+                  vorschau.ergebnis.teilnahmen_zugeordnet,
+                )}
               </p>
               {vorschau.ergebnis.nicht_zugeordnet.length > 0 && (
                 <p className="text-[var(--fg-muted)]">
-                  Ohne Personio-Treffer:{" "}
+                  {worte.schulungen.ohneTreffer}
                   {vorschau.ergebnis.nicht_zugeordnet
                     .map((o) => `${o.mitarbeiter_name ?? o.personalnummer} (${o.teilnahmen})`)
                     .join(", ")}
-                  . Diese Zeilen kommen mit Personalnummer und Namen trotzdem mit.
+                  {worte.schulungen.ohneTrefferNach}
                 </p>
               )}
               {vorschau.ergebnis.hinweise.slice(0, 5).map((h) => (
@@ -222,10 +223,10 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
               ))}
               <div className="flex gap-2 pt-1">
                 <Button disabled={uebernehmen.isPending} onClick={() => uebernehmen.mutate()}>
-                  {uebernehmen.isPending ? "Wird übernommen …" : "Übernehmen"}
+                  {uebernehmen.isPending ? worte.schulungen.wirdUebernommen : worte.schulungen.uebernehmen}
                 </Button>
                 <Button variant="outline" onClick={() => setVorschau(null)}>
-                  Abbrechen
+                  {worte.schulungen.abbrechen}
                 </Button>
               </div>
             </div>
@@ -234,24 +235,24 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
       )}
 
       {katalog.isLoading ? (
-        <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
+        <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Noch keine Schulung"
-          body="Leg eine an oder lies die Schulungsübersicht ein."
+          title={worte.schulungen.keineSchulung}
+          body={worte.schulungen.keineSchulungText}
         />
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Bereich</Th>
-                <Th>Schulung</Th>
-                <Th>Turnus</Th>
-                <Th>Frist (Tage)</Th>
-                <Th>Verantwortlich</Th>
-                <Th>Offen</Th>
-                <Th>Aktiv</Th>
+                <Th>{worte.schulungen.bereich}</Th>
+                <Th>{worte.schulungen.schulung}</Th>
+                <Th>{worte.schulungen.turnus}</Th>
+                <Th>{worte.schulungen.frist}</Th>
+                <Th>{worte.schulungen.verantwortlich}</Th>
+                <Th>{worte.schulungen.offen}</Th>
+                <Th>{worte.schulungen.aktiv}</Th>
               </tr>
             </thead>
             <tbody>
@@ -274,7 +275,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
                       {s.turnus ?? "—"}
                       {s.turnus && s.turnus_monate === null && (
                         <span className="ml-1 text-xs text-[var(--fg-muted)]">
-                          (nicht berechenbar)
+                          {worte.schulungen.nichtBerechenbar}
                         </span>
                       )}
                     </Td>
@@ -289,7 +290,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
                           const roh = e.target.value.trim();
                           const wert = roh === "" ? null : Number(roh);
                           if (wert !== null && (!Number.isFinite(wert) || wert <= 0)) {
-                            toast.error("Bitte eine Zahl größer als 0.");
+                            toast.error(worte.schulungen.zahlGroesserNull);
                             e.target.value = String(s.frist_tage ?? "");
                             return;
                           }
@@ -316,14 +317,14 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
                       {offen ? (
                         <span className="flex flex-wrap gap-2">
                           {offen.nie > 0 && (
-                            <span className="text-[var(--danger)]">{offen.nie} nie</span>
+                            <span className="text-[var(--danger)]">{worte.schulungen.nieKurz(offen.nie)}</span>
                           )}
                           {offen.ueberfaellig > 0 && (
                             <span className="text-[var(--danger)]">
-                              {offen.ueberfaellig} überfällig
+                              {worte.schulungen.ueberfaelligKurz(offen.ueberfaellig)}
                             </span>
                           )}
-                          {offen.bald > 0 && <span>{offen.bald} bald</span>}
+                          {offen.bald > 0 && <span>{worte.schulungen.baldKurz(offen.bald)}</span>}
                           {offen.nie + offen.ueberfaellig + offen.bald === 0 && "—"}
                         </span>
                       ) : (
@@ -333,7 +334,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
                     <Td>
                       <Switch
                         checked={s.aktiv}
-                        label={`${s.name} aktiv`}
+                        label={worte.schulungen.aktivSchalter(s.name)}
                         disabled={!darfSchreiben}
                         onCheckedChange={(aktiv) =>
                           aendern.mutate({ id: s.id, felder: { aktiv } })
@@ -349,10 +350,11 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
       )}
 
       <p className="text-sm text-[var(--fg-muted)]">
-        {DRINGLICHKEIT_LABEL.nie} heißt: für diese Person steht kein Termin in
-        der Historie. {DRINGLICHKEIT_LABEL.faellig_bald} heißt: innerhalb der
-        nächsten zwei Monate. Stand vom{" "}
-        {stand.data?.length ? DATUM.format(new Date()) : "—"}.
+        {worte.schulungen.fussnote(
+          dringlichkeitLabel.nie,
+          dringlichkeitLabel.faellig_bald,
+          stand.data?.length ? DATUM.format(new Date()) : "—",
+        )}
       </p>
     </div>
   );

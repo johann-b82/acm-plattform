@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Network } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 import {
   anzeigename,
@@ -15,6 +14,8 @@ import {
   type Knoten,
 } from "@/lib/organigramm";
 import { Card, EmptyState, Input, Select } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
  * Wer wem berichtet.
@@ -25,6 +26,7 @@ import { Card, EmptyState, Input, Select } from "@/components/ui/primitives";
  * zuklappen will, kann es.
  */
 export function Organigramm() {
+  const worte = useTexte();
   const [suche, setSuche] = useState("");
   const [standort, setStandort] = useState<string>("");
   const [zu, setZu] = useState<Set<number>>(new Set());
@@ -55,32 +57,20 @@ export function Organigramm() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Network className="h-6 w-6" aria-hidden />
-            Organigramm
-          </h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Aus Personio. Wer dort keinen Vorgesetzten hinterlegt hat, steht
-            oben — das ist bei der Geschäftsführung richtig und sonst ein
-            Hinweis auf eine Lücke in den Stammdaten.
-          </p>
-        </div>
-        <Link href="/hr" className="text-sm underline-offset-4 hover:underline">
-          Personal
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr/organigramm"]}
+        untertitel={worte.organigramm.einleitung}
+      />
 
       <Card className="flex flex-wrap items-end gap-4 p-4">
         <div className="space-y-1">
           <label htmlFor="org-suche" className="text-sm font-medium">
-            Person, Position oder Abteilung
+            {worte.organigramm.suchfeld}
           </label>
           <Input
             id="org-suche"
             value={suche}
-            placeholder="Name, Position, Abteilung"
+            placeholder={worte.organigramm.suchePlatzhalter}
             className="w-72"
             onChange={(e) => setSuche(e.target.value)}
           />
@@ -88,7 +78,7 @@ export function Organigramm() {
         {orte.length > 0 && (
           <div className="space-y-1">
             <label htmlFor="org-ort" className="text-sm font-medium">
-              Standort
+              {worte.organigramm.standort}
             </label>
             <Select
               id="org-ort"
@@ -96,7 +86,7 @@ export function Organigramm() {
               className="w-48"
               onChange={(e) => setStandort(e.target.value)}
             >
-              <option value="">Alle Standorte</option>
+              <option value="">{worte.organigramm.alleStandorte}</option>
               {orte.map((o) => (
                 <option key={o} value={o}>
                   {o}
@@ -106,20 +96,20 @@ export function Organigramm() {
           </div>
         )}
         <span className="pb-2 text-sm text-[var(--fg-muted)]">
-          {personen.data?.length ?? 0} Personen
-          {ohneVorgesetzten > 1 && ` · ${ohneVorgesetzten} ohne Vorgesetzten`}
+          {worte.organigramm.personen(personen.data?.length ?? 0)}
+          {ohneVorgesetzten > 1 && worte.organigramm.ohneVorgesetzten(ohneVorgesetzten)}
         </span>
       </Card>
 
       {personen.error && (
         <p className="text-sm text-[var(--danger)]">{(personen.error as Error).message}</p>
       )}
-      {personen.isPending && <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>}
+      {personen.isPending && <p className="text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</p>}
 
       {!personen.isPending && wald.length === 0 && (
         <EmptyState
-          title="Niemand gefunden"
-          body="Andere Suche, anderer Standort — oder der Personio-Abgleich lief noch nicht."
+          title={worte.organigramm.niemand}
+          body={worte.organigramm.niemandText}
         />
       )}
 
@@ -154,6 +144,7 @@ function Ast({
   umschalten: (id: number) => void;
   ebene: number;
 }) {
+  const worte = useTexte();
   const hatKinder = knoten.kinder.length > 0;
   const zugeklappt = zu.has(knoten.id);
 
@@ -168,7 +159,11 @@ function Ast({
             type="button"
             onClick={() => umschalten(knoten.id)}
             aria-expanded={!zugeklappt}
-            aria-label={`${anzeigename(knoten)} ${zugeklappt ? "aufklappen" : "zuklappen"}`}
+            aria-label={
+              zugeklappt
+                ? worte.organigramm.aufklappen(anzeigename(knoten))
+                : worte.organigramm.zuklappen(anzeigename(knoten))
+            }
             className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
           >
             {zugeklappt ? (
@@ -192,7 +187,7 @@ function Ast({
           )}
           {hatKinder && (
             <span className="ml-2 text-xs text-[var(--fg-muted)]">
-              {knoten.kinder.length} direkt
+              {worte.organigramm.direkt(knoten.kinder.length)}
             </span>
           )}
         </div>
