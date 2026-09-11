@@ -49,6 +49,13 @@ export const de = {
   },
   allgemein: {
     laedt: "Wird geladen …",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+    loeschen: "Löschen",
+    stueck: "Stück",
+    loeschenTitel: "Löschen bestätigen",
+    loeschenFrage: (was: string) => `„${was}“ wird endgültig gelöscht.`,
+    loeschenKnopf: (was: string) => `${was} löschen`,
   },
   zeitraum: {
     monat: "Dieser Monat",
@@ -1674,6 +1681,11 @@ export const de = {
     zahlEingeben: "Bitte eine Zahl eingeben.",
   },
   zugaenge: {
+    stufen: {
+      viewer: "Ansehen",
+      editor: "Bearbeiten",
+      admin: "Verwalten",
+    },
     gruppeAngelegt: "Gruppe angelegt.",
     gruppeGibtEsSchon: "Diesen Gruppennamen gibt es schon.",
     personAngelegt: "Person angelegt",
@@ -1750,7 +1762,52 @@ export const de = {
       "/hr/zeugnisse": "Arbeitszeugnisse schreiben und ausgeben",
     },
   },
+  bewertung: {
+    titel: "KPI-Bewertung",
+    einleitung:
+      "Kommentieren, was eine Zahl bedeutet, und festhalten, was daraus folgt. Die Liste sind " +
+      "die Kennzahlen mit Zielwert — dieselbe Liste, die auch die Dashboards prägt.",
+    uebersichtFehler: (meldung: string) =>
+      `Übersicht konnte nicht geladen werden: ${meldung}`,
+    nurLesen:
+      "Du kannst Bewertungen lesen, aber nicht schreiben. Dafür braucht es das Recht " +
+      "„Bearbeiten“ auf den Einstellungen.",
+    stand: (offen: number, ueberfaellig: number, erledigt: number, kommentare: number) =>
+      `${offen} offen, davon ${ueberfaellig} überfällig · ${erledigt} erledigt · ` +
+      `${kommentare} ${kommentare === 1 ? "Kommentar" : "Kommentare"}`,
+    offenTitel: (anzahl: number) => `${anzahl} offen`,
+    ueberfaelligTitel: (anzahl: number) => `${anzahl} überfällig`,
+    massnahmen: "Maßnahmen",
+    wasZuTun: "Was ist zu tun",
+    zustaendig: "Zuständig",
+    faellig: "Fällig",
+    anlegen: "Anlegen",
+    ohneZustaendigen: "ohne Zuständigen",
+    faelligAm: (datum: string) => `fällig ${datum}`,
+    erledigtAm: (datum: string) => `erledigt ${datum}`,
+    massnahmeLoeschen: "Maßnahme löschen",
+    keineMassnahme: "Noch keine Maßnahme zu dieser Kennzahl.",
+    kommentare: "Kommentare",
+    kommentarPlatzhalter: "Was sagt diese Zahl?",
+    kommentarLoeschen: "Kommentar löschen",
+    keinKommentar: "Noch nichts gesagt zu dieser Kennzahl.",
+    status: {
+      offen: "offen",
+      laeuft: "läuft",
+      erledigt: "erledigt",
+      verworfen: "verworfen",
+    },
+    bereiche: {
+      vertrieb: "Vertrieb",
+      einkauf: "Einkauf",
+      produktion: "Produktion",
+      qualitaet: "Qualität",
+      finanzen: "Finanzen",
+      personal: "Personal",
+    },
+  },
   erklaerung: {
+    hinweis: "Erklärung",
     frage: (titel: string) => `Wie wird „${titel}“ gerechnet?`,
     knopf: "Rechenweg",
     untertitel: "So wird gerechnet",

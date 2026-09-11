@@ -28,7 +28,7 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { STUFEN_MIT_FENSTER, Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
@@ -49,7 +49,7 @@ function personalFenster(zeitraum: Zeitraum): { von: string; bis: string } {
 function Abgleichzeile({ darfAbgleichen }: { darfAbgleichen: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
-  const tag = SPRACHE_TAG[useSprache()];
+  const tag = ZAHL_TAG[useSprache()];
   const qc = useQueryClient();
   const stand = useQuery({
     queryKey: personalKeys.abgleich(),

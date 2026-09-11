@@ -26,7 +26,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useKompetenzbereich } from "@/lib/tafeln";
 
@@ -42,7 +42,7 @@ import { useKompetenzbereich } from "@/lib/tafeln";
 export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
   const bereichLabel = useKompetenzbereich();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [bereich, setBereich] = useState<Bereich>("produktion");
   const [vorschau, setVorschau] = useState<{ datei: File; ergebnis: ImportErgebnis } | null>(
@@ -108,7 +108,7 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 "focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
             >
-              <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
+              <FileUp className="me-1.5 h-4 w-4" aria-hidden />
               {zeigen.isPending ? worte.kompetenzen.wirdGelesen : worte.kompetenzen.einlesen}
               <input
                 type="file"

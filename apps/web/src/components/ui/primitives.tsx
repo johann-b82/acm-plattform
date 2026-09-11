@@ -64,7 +64,7 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {
-  return <select className={cn(FIELD, "pr-8", className)} {...props} />;
+  return <select className={cn(FIELD, "pe-8", className)} {...props} />;
 }
 
 export function Label({ className, ...props }: ComponentProps<"label">) {
@@ -105,7 +105,7 @@ export function Switch({
         <span
           className={cn(
             "absolute top-0.5 h-3.5 w-3.5 rounded-full bg-[var(--surface)] transition-all",
-            checked ? "left-[1.15rem]" : "left-0.5",
+            checked ? "start-[1.15rem]" : "start-0.5",
           )}
         />
       </span>
@@ -186,7 +186,7 @@ export function Th({ className, ...props }: ComponentProps<"th">) {
   return (
     <th
       className={cn(
-        "border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-left font-medium",
+        "border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-start font-medium",
         className,
       )}
       {...props}

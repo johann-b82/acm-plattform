@@ -157,7 +157,7 @@ export function Durchsicht({
           href="/atr/lieferungen"
           className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
+          <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
           Lieferungen
         </Link>
         <h2 className="text-lg font-semibold">
@@ -169,15 +169,15 @@ export function Durchsicht({
           <Badge>{worte.lieferungen.freigegeben}</Badge>
         )}
         {darfSchreiben && (
-          <div className="ml-auto">
+          <div className="ms-auto">
             {offen ? (
               <Button onClick={() => status.mutate("freigegeben")}>
-                <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden />
+                <CheckCircle2 className="me-2 h-4 w-4" aria-hidden />
                 {worte.durchsicht.freigeben}
               </Button>
             ) : (
               <Button variant="outline" onClick={() => status.mutate("entwurf")}>
-                <Undo2 className="mr-2 h-4 w-4" aria-hidden />
+                <Undo2 className="me-2 h-4 w-4" aria-hidden />
                 {worte.durchsicht.zuruecknehmen}
               </Button>
             )}
@@ -196,7 +196,7 @@ export function Durchsicht({
             onClick={() => erzeugen.mutate()}
             disabled={erzeugen.isPending || zeilen.length === 0}
           >
-            <FileCog className="mr-2 h-4 w-4" aria-hidden />
+            <FileCog className="me-2 h-4 w-4" aria-hidden />
             {erzeugen.isPending ? worte.durchsicht.wirdErzeugt : worte.durchsicht.dokumenteErzeugen}
           </Button>
         )}
@@ -217,13 +217,13 @@ export function Durchsicht({
                 })
               }
             >
-              <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              <Download className="me-1.5 h-3.5 w-3.5" aria-hidden />
               {name}
             </Button>
           );
         })}
 
-        <span className="ml-auto text-xs text-[var(--fg-muted)]">
+        <span className="ms-auto text-xs text-[var(--fg-muted)]">
           {!l.erzeugt_am
             ? "Noch nichts erzeugt."
             : new Date(l.erzeugt_am) < new Date(l.geaendert_am)
@@ -235,7 +235,7 @@ export function Durchsicht({
       {l.hinweise.length > 0 && (
         <Card className="p-4">
           <h2 className="text-sm font-medium">Beim Einlesen aufgefallen</h2>
-          <ul className="mt-2 list-disc pl-5 text-sm text-[var(--fg-muted)]">
+          <ul className="mt-2 list-disc ps-5 text-sm text-[var(--fg-muted)]">
             {l.hinweise.map((h, i) => (
               <li key={i}>{h}</li>
             ))}
@@ -360,7 +360,7 @@ export function Durchsicht({
                   <Td className="text-xs">
                     {p.seriennummern.length ? p.seriennummern.join(", ") : "—"}
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     {bearbeitbar && (
                       <ConfirmDeleteButton
                         itemLabel={`Position ${p.pos ?? p.reihenfolge}`}

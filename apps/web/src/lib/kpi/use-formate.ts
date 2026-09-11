@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { useSprache } from "@/components/sprache/anbieter";
 import { formate, type Formate } from "@/lib/kpi/gemeinsam";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 
 /**
  * Die Zahlenformate der gewählten Sprache.
@@ -14,5 +14,5 @@ import { SPRACHE_TAG } from "@/lib/sprache";
  */
 export function useFormate(): Formate {
   const sprache = useSprache();
-  return useMemo(() => formate(SPRACHE_TAG[sprache]), [sprache]);
+  return useMemo(() => formate(ZAHL_TAG[sprache]), [sprache]);
 }

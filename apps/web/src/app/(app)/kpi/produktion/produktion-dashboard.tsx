@@ -234,9 +234,9 @@ export function ProduktionDashboard() {
                   <Th>{worte.produktion.auftrag}</Th>
                   <Th>{worte.produktion.kunde}</Th>
                   <Th>{worte.produktion.stand}</Th>
-                  <Th className="text-right">{worte.produktion.zieltermin}</Th>
-                  <Th className="text-right">{worte.produktion.geliefert}</Th>
-                  <Th className="text-right">{worte.produktion.verzug}</Th>
+                  <Th className="text-end">{worte.produktion.zieltermin}</Th>
+                  <Th className="text-end">{worte.produktion.geliefert}</Th>
+                  <Th className="text-end">{worte.produktion.verzug}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -249,9 +249,9 @@ export function ProduktionDashboard() {
                         {worte.produktion[z.art]}
                       </Badge>
                     </Td>
-                    <Td className="text-right tabular-nums">{datum(z.ziel)}</Td>
-                    <Td className="text-right tabular-nums">{datum(z.ist)}</Td>
-                    <Td className="text-right tabular-nums text-[var(--danger)]">
+                    <Td className="text-end tabular-nums">{datum(z.ziel)}</Td>
+                    <Td className="text-end tabular-nums">{datum(z.ist)}</Td>
+                    <Td className="text-end tabular-nums text-[var(--danger)]">
                       +{z.verzug_tage.toLocaleString("de-DE")} d
                     </Td>
                   </tr>

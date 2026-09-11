@@ -134,7 +134,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
               disabled={!neueNummer.trim() || anlegen.isPending}
               onClick={() => anlegen.mutate()}
             >
-              <Plus className="mr-2 h-4 w-4" aria-hidden />
+              <Plus className="me-2 h-4 w-4" aria-hidden />
               {worte.atr.anlegen}
             </Button>
             <label
@@ -144,7 +144,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
                 "hover:bg-[var(--muted)] focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
             >
-              <FileUp className="mr-2 h-4 w-4" aria-hidden />
+              <FileUp className="me-2 h-4 w-4" aria-hidden />
               {einlesen.isPending ? worte.atr.wirdGelesen : worte.atr.mappeEinlesen}
               <input
                 type="file"
@@ -172,7 +172,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
                 .
               </p>
               {bericht.hinweise.length > 0 && (
-                <ul className="mt-1 list-disc pl-5 text-[var(--fg-muted)]">
+                <ul className="mt-1 list-disc ps-5 text-[var(--fg-muted)]">
                   {bericht.hinweise.map((h, i) => (
                     <li key={i}>{h}</li>
                   ))}
@@ -237,7 +237,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
                   <Td>
                     <Feld teil={t} feld="kategorie" breite="w-40" platzhalter="—" />
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     {darfSchreiben && (
                       <ConfirmDeleteButton
                         itemLabel={t.teilenummer}

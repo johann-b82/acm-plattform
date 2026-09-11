@@ -28,7 +28,7 @@ import {
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { useKompetenzbereich, useStufentext } from "@/lib/tafeln";
 
 
@@ -50,7 +50,7 @@ export function MatrixAnsicht({
   const worte = useTexte();
   const bereichLabel = useKompetenzbereich();
   const stufentext = useStufentext();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState({ bezeichnung: "", kategorie: "" });
   const [neuePerson, setNeuePerson] = useState("");
@@ -189,19 +189,19 @@ export function MatrixAnsicht({
               <tr>
                 <th
                   className={
-                    "sticky left-0 z-10 min-w-64 border-b border-[var(--border)] " +
-                    "bg-[var(--muted)] px-3 py-2 text-left font-medium"
+                    "sticky start-0 z-10 min-w-64 border-b border-[var(--border)] " +
+                    "bg-[var(--muted)] px-3 py-2 text-start font-medium"
                   }
                 >
                   {worte.matrix.qualifikation}
                 </th>
-                <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-right font-medium">
+                <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-end font-medium">
                   Ø
                 </th>
                 {spalten.map((p) => (
                   <th
                     key={p.id}
-                    className="border-b border-[var(--border)] bg-[var(--muted)] px-2 py-2 text-left font-medium"
+                    className="border-b border-[var(--border)] bg-[var(--muted)] px-2 py-2 text-start font-medium"
                   >
                     <div className="flex w-28 items-start gap-1">
                       <span className={cn(!p.employee_id && "text-[var(--fg-muted)]")}>
@@ -229,14 +229,14 @@ export function MatrixAnsicht({
                       <tr>
                         <td
                           colSpan={2 + spalten.length}
-                          className="sticky left-0 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-[var(--fg-muted)]"
+                          className="sticky start-0 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-[var(--fg-muted)]"
                         >
                           {q.kategorie}
                         </td>
                       </tr>
                     )}
                     <tr>
-                      <td className="sticky left-0 z-10 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+                      <td className="sticky start-0 z-10 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2">
                         <div className="flex items-center gap-2">
                           {q.nr !== null && (
                             <span className="w-6 tabular-nums text-[var(--fg-muted)]">
@@ -245,7 +245,7 @@ export function MatrixAnsicht({
                           )}
                           <span>{q.bezeichnung}</span>
                           {darfSchreiben && (
-                            <span className="ml-auto">
+                            <span className="ms-auto">
                               <ConfirmDeleteButton
                                 itemLabel={q.bezeichnung}
                                 onConfirm={() =>
@@ -256,7 +256,7 @@ export function MatrixAnsicht({
                           )}
                         </div>
                       </td>
-                      <td className="border-b border-[var(--border)] px-3 py-2 text-right tabular-nums text-[var(--fg-muted)]">
+                      <td className="border-b border-[var(--border)] px-3 py-2 text-end tabular-nums text-[var(--fg-muted)]">
                         {s?.schnitt ?? "—"}
                       </td>
                       {spalten.map((p) => (
@@ -334,7 +334,7 @@ export function MatrixAnsicht({
               disabled={!neu.bezeichnung.trim() || qualifikationAnlegen.isPending}
               onClick={() => qualifikationAnlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               {worte.matrix.zeile}
             </Button>
           </div>
@@ -353,7 +353,7 @@ export function MatrixAnsicht({
               disabled={!neuePerson.trim() || personAnlegen.isPending}
               onClick={() => personAnlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               {worte.matrix.spalte}
             </Button>
           </div>
@@ -387,7 +387,7 @@ function Zelle({
   return (
     <td
       className={cn(
-        "border-b border-l border-[var(--border)] px-1 py-1",
+        "border-b border-s border-[var(--border)] px-1 py-1",
         luecke && "bg-[color-mix(in_srgb,var(--danger)_8%,transparent)]",
       )}
     >

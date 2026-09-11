@@ -41,14 +41,14 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
       <div className="grid gap-8 lg:grid-cols-[11rem_minmax(0,1fr)]">
         <nav
           aria-label={worte.einstellungen.bereiche}
-          className="self-start lg:sticky lg:top-6 lg:border-l lg:border-[var(--border)]"
+          className="self-start lg:sticky lg:top-6 lg:border-s lg:border-[var(--border)]"
         >
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:flex-col lg:gap-0">
             {GRUPPEN.map((g) => (
               <li key={g.id}>
                 <a
                   href={`#${g.id}`}
-                  className="block py-1 text-[var(--fg-muted)] underline-offset-4 hover:text-[var(--fg)] hover:underline lg:-ml-px lg:border-l lg:border-transparent lg:pl-3 lg:hover:border-[var(--fg-muted)]"
+                  className="block py-1 text-[var(--fg-muted)] underline-offset-4 hover:text-[var(--fg)] hover:underline lg:-ms-px lg:border-s lg:border-transparent lg:ps-3 lg:hover:border-[var(--fg-muted)]"
                 >
                   {gruppen[g.id]}
                 </a>

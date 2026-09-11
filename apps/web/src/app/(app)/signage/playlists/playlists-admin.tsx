@@ -127,7 +127,7 @@ export function PlaylistsAdmin() {
       footer={
         <>
           <Button variant="outline" onClick={() => setNewOpen(false)}>
-            Abbrechen
+            {worte.allgemein.abbrechen}
           </Button>
           <Button
             disabled={!name.trim() || createMutation.isPending}
@@ -191,10 +191,10 @@ export function PlaylistsAdmin() {
             <tr>
               <Th>{worte.signage.name}</Th>
               <Th>{worte.signage.tags}</Th>
-              <Th className="text-right">Priorität</Th>
+              <Th className="text-end">Priorität</Th>
               <Th>{worte.signage.aktiv}</Th>
               <Th>{worte.signage.erstellt}</Th>
-              <Th className="text-right">Aktionen</Th>
+              <Th className="text-end">Aktionen</Th>
             </tr>
           </thead>
           <tbody>
@@ -214,7 +214,7 @@ export function PlaylistsAdmin() {
                     ))}
                   </div>
                 </Td>
-                <Td className="text-right font-mono tabular-nums">{p.priority}</Td>
+                <Td className="text-end font-mono tabular-nums">{p.priority}</Td>
                 <Td>
                   <Switch
                     checked={p.enabled}

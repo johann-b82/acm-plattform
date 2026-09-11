@@ -15,7 +15,7 @@ import { Button, Card, EmptyState, Select } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 
 
@@ -28,7 +28,7 @@ import { Seitenkopf } from "@/components/seitenkopf";
  */
 export function FeedbackListe() {
   const t = useTexte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], {
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -116,7 +116,7 @@ export function FeedbackListe() {
         {meldungen.map((m) => (
           <li key={m.id}>
             <Card
-              className={`p-4 ${m.gesehen_am === null ? "border-l-2 border-l-[var(--fg)]" : ""}`}
+              className={`p-4 ${m.gesehen_am === null ? "border-s-2 border-s-[var(--fg)]" : ""}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -134,7 +134,7 @@ export function FeedbackListe() {
                       size="sm"
                       onClick={() => zeigeBild.mutate(m)}
                     >
-                      <BildIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                      <BildIcon className="me-1.5 h-3.5 w-3.5" aria-hidden />
                       {t.meldungen.bild}
                     </Button>
                   )}

@@ -116,7 +116,7 @@ export function Anzeigen() {
                   .catch(() => toast.error(worte.einstellungenText.kopierenFehler))
               }
             >
-              <Copy className="mr-1.5 h-4 w-4" aria-hidden />
+              <Copy className="me-1.5 h-4 w-4" aria-hidden />
               Kopieren
             </Button>
           </div>

@@ -9,7 +9,7 @@ import { personioKeys, personioZugang } from "@/lib/personio-zugang";
 import { Button, Card, Input, Label } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 
 /**
  * Zugangsdaten eintragen, ohne an den Server zu müssen.
@@ -23,7 +23,7 @@ import { SPRACHE_TAG } from "@/lib/sprache";
  */
 export function PersonioZugang() {
   const worte = useTexte().personioZugang;
-  const ZEIT = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], {
+  const ZEIT = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], {
     dateStyle: "medium",
     timeStyle: "short",
   });
@@ -125,7 +125,7 @@ export function PersonioZugang() {
           disabled={!daten?.gesetzt || pruefen.isPending}
           onClick={() => pruefen.mutate()}
         >
-          <PlugZap className="mr-1 h-4 w-4" aria-hidden />
+          <PlugZap className="me-1 h-4 w-4" aria-hidden />
           {pruefen.isPending ? worte.prueftGerade : worte.pruefen}
         </Button>
         {daten?.quelle === "datenbank" && (

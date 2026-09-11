@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useDringlichkeit } from "@/lib/tafeln";
 
@@ -44,7 +44,7 @@ import { useDringlichkeit } from "@/lib/tafeln";
 export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
   const dringlichkeitLabel = useDringlichkeit();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState({ bereich: "betrieblich", name: "" });
   const [vorschau, setVorschau] = useState<{ datei: File; ergebnis: ImportErgebnis } | null>(
@@ -168,7 +168,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
               disabled={!neu.name.trim() || !neu.bereich.trim() || anlegen.isPending}
               onClick={() => anlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               {worte.schulungen.anlegen}
             </Button>
             <label
@@ -178,7 +178,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
                 "focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
             >
-              <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
+              <FileUp className="me-1.5 h-4 w-4" aria-hidden />
               {zeigen.isPending ? worte.schulungen.wirdGelesen : worte.schulungen.uebersichtEinlesen}
               <input
                 type="file"
@@ -273,7 +273,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
                     <Td>
                       {s.turnus ?? "—"}
                       {s.turnus && s.turnus_monate === null && (
-                        <span className="ml-1 text-xs text-[var(--fg-muted)]">
+                        <span className="ms-1 text-xs text-[var(--fg-muted)]">
                           {worte.schulungen.nichtBerechenbar}
                         </span>
                       )}

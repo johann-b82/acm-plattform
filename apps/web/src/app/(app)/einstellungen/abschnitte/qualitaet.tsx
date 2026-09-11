@@ -163,7 +163,7 @@ export function Qualitaet() {
             }
             onClick={() => normAnlegen.mutate()}
           >
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.qualitaetEinstellungen.aufnehmen}
           </Button>
         </div>
@@ -234,7 +234,7 @@ export function Qualitaet() {
             disabled={!neueVorlage.trim() || vorlageAnlegen.isPending}
             onClick={() => vorlageAnlegen.mutate()}
           >
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.qualitaetEinstellungen.anlegen}
           </Button>
         </div>
@@ -262,11 +262,11 @@ export function Qualitaet() {
                     </span>
                     <span>{s.titel}</span>
                     {s.pflicht && (
-                      <Badge variant="outline" className="ml-1">
+                      <Badge variant="outline" className="ms-1">
                         Pflicht
                       </Badge>
                     )}
-                    <span className="ml-auto">
+                    <span className="ms-auto">
                       <ConfirmDeleteButton
                         itemLabel={s.titel}
                         onConfirm={() => schrittWeg.mutateAsync(s.id).then(() => undefined)}

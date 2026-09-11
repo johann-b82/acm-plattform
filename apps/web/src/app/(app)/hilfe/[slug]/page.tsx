@@ -40,9 +40,9 @@ export default async function HilfeSeite({ params }: { params: Promise<{ slug: s
     <div className="grid gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
       <nav
         aria-label={gruppe.titel}
-        className="self-start text-sm lg:sticky lg:top-6 lg:border-l lg:border-[var(--border)]"
+        className="self-start text-sm lg:sticky lg:top-6 lg:border-s lg:border-[var(--border)]"
       >
-        <p className="mb-2 font-medium lg:pl-3">{gruppe.titel}</p>
+        <p className="mb-2 font-medium lg:ps-3">{gruppe.titel}</p>
         <ul className="flex flex-wrap gap-x-4 gap-y-1 lg:flex-col lg:gap-0">
           {geschwister.map((s) => (
             <li key={s.slug}>
@@ -50,10 +50,10 @@ export default async function HilfeSeite({ params }: { params: Promise<{ slug: s
                 href={`/hilfe/${s.slug}`}
                 aria-current={s.slug === seite.slug ? "page" : undefined}
                 className={
-                  "block py-1 underline-offset-4 hover:underline lg:-ml-px lg:border-l lg:pl-3 " +
+                  "block py-1 underline-offset-4 hover:underline lg:-ms-px lg:border-s lg:ps-3 " +
                   (s.slug === seite.slug
-                    ? "border-[var(--fg)] font-medium lg:border-l"
-                    : "border-transparent text-[var(--fg-muted)] lg:border-l")
+                    ? "border-[var(--fg)] font-medium lg:border-s"
+                    : "border-transparent text-[var(--fg-muted)] lg:border-s")
                 }
               >
                 {s.titel}
@@ -63,7 +63,7 @@ export default async function HilfeSeite({ params }: { params: Promise<{ slug: s
         </ul>
         <Link
           href="/hilfe"
-          className="mt-3 block py-1 text-[var(--fg-muted)] underline-offset-4 hover:underline lg:pl-3"
+          className="mt-3 block py-1 text-[var(--fg-muted)] underline-offset-4 hover:underline lg:ps-3"
         >
           {t.hilfe.alleThemen}
         </Link>

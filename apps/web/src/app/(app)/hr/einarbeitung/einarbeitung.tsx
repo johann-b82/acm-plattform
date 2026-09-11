@@ -154,7 +154,7 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
             disabled={!gewaehlt || bogen.isPending}
             onClick={() => bogen.mutate({ employee_id: fuer })}
           >
-            <FileDown className="mr-1.5 h-4 w-4" aria-hidden />
+            <FileDown className="me-1.5 h-4 w-4" aria-hidden />
             {bogen.isPending ? worte.einarbeitung.wirdGebaut : worte.einarbeitung.einarbeitungsplan}
           </Button>
           {gewaehlt && (
@@ -182,7 +182,7 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
             />
           </div>
           <Button disabled={!neu.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.einarbeitung.anlegen}
           </Button>
         </Card>
@@ -259,7 +259,7 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
                           {darfSchreiben && (
                             <button
                               type="button"
-                              className="ml-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
+                              className="ms-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
                               aria-label={worte.einarbeitung.entfernen(a)}
                               onClick={() =>
                                 pflichtSetzen.mutate({ id: i.id, abteilung: a, an: false })
@@ -289,7 +289,7 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
                       )}
                     </div>
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     {darfSchreiben && (
                       <ConfirmDeleteButton
                         itemLabel={i.inhalt}

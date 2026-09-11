@@ -68,7 +68,7 @@ export function Logo() {
             "focus-within:outline-2 focus-within:outline-[var(--ring)]"
           }
         >
-          <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
+          <FileUp className="me-1.5 h-4 w-4" aria-hidden />
           {hochladen.isPending
             ? worte.einstellungenText.laedt
             : stand.data?.pfad

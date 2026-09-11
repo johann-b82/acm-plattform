@@ -80,7 +80,7 @@ export function TagPicker({
         className="flex min-h-9 cursor-text flex-wrap items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-sm"
       >
         {value.map((tag) => (
-          <Badge key={tag} variant="secondary" className="gap-1 pr-1">
+          <Badge key={tag} variant="secondary" className="gap-1 pe-1">
             <span>{tag}</span>
             <button
               type="button"

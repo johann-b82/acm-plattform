@@ -30,7 +30,7 @@ import {
 import { Badge, Button, Card, EmptyState } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 
 
@@ -100,7 +100,7 @@ export function SensorDashboard() {
         bedienung={
           <Button variant="outline" onClick={() => messen.mutate()} disabled={messen.isPending}>
             <RefreshCw
-              className={cn("mr-2 h-4 w-4", messen.isPending && "animate-spin")}
+              className={cn("me-2 h-4 w-4", messen.isPending && "animate-spin")}
               aria-hidden
             />
             {messen.isPending ? worte.sensoren.misst : worte.sensoren.jetztMessen}
@@ -169,7 +169,7 @@ function Kachel({
   farbe: string;
 }) {
   const worte = useTexte();
-  const tag = SPRACHE_TAG[useSprache()];
+  const tag = ZAHL_TAG[useSprache()];
   const ZEIT = new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" });
   const zustandText: Record<Zustand, string> = {
     frisch: worte.sensoren.frisch,
@@ -192,7 +192,7 @@ function Kachel({
         <h2 className="font-medium">{sensor.name}</h2>
         <Badge
           variant={zust === "frisch" ? "secondary" : "outline"}
-          className="ml-auto"
+          className="ms-auto"
         >
           {zustandText[zust]}
         </Badge>
@@ -272,7 +272,7 @@ function Verlauf({
   laedt: boolean;
 }) {
   const worte = useTexte();
-  const tag = SPRACHE_TAG[useSprache()];
+  const tag = ZAHL_TAG[useSprache()];
   const UHR = new Intl.DateTimeFormat(tag, { hour: "2-digit", minute: "2-digit" });
   const TAG_UHR = new Intl.DateTimeFormat(tag, {
     day: "2-digit",

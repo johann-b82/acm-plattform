@@ -170,7 +170,7 @@ export function DevicesAdmin() {
               <Th>{worte.signage.tags}</Th>
               <Th>{worte.signage.playlist}</Th>
               <Th>{worte.signage.zuletztGesehen}</Th>
-              <Th className="text-right">Aktionen</Th>
+              <Th className="text-end">Aktionen</Th>
             </tr>
           </thead>
           <tbody>

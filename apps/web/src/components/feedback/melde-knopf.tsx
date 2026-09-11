@@ -116,9 +116,9 @@ export function MeldeKnopf() {
 
   return (
     <>
-      <div data-feedback-ui="true" className="fixed bottom-4 right-4 z-40">
+      <div data-feedback-ui="true" className="fixed bottom-4 end-4 z-40">
         <Button variant="outline" onClick={oeffnen} className="shadow-sm">
-          <MessageSquareWarning className="mr-2 h-4 w-4" aria-hidden />
+          <MessageSquareWarning className="me-2 h-4 w-4" aria-hidden />
           {t.melden.knopf}
         </Button>
       </div>

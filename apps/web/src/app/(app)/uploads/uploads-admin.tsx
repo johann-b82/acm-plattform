@@ -12,7 +12,7 @@ import { Badge, Button, Card, Table, TableWrap, Td, Th } from "@/components/ui/p
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
@@ -231,7 +231,7 @@ export function UploadsAdmin() {
     onError: (err: Error) => toast.error(worte.uploads.fehlgeschlagenMeldung(err.message)),
   });
 
-  const zeitFmt = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], {
+  const zeitFmt = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -298,8 +298,8 @@ export function UploadsAdmin() {
               <tr>
                 <Th>{worte.uploads.datei}</Th>
                 <Th>{worte.uploads.art}</Th>
-                <Th className="text-right">{worte.uploads.zeilen}</Th>
-                <Th className="text-right">{worte.uploads.uebersprungenSpalte}</Th>
+                <Th className="text-end">{worte.uploads.zeilen}</Th>
+                <Th className="text-end">{worte.uploads.uebersprungenSpalte}</Th>
                 <Th>{worte.uploads.status}</Th>
                 <Th>{worte.uploads.zeitpunkt}</Th>
               </tr>
@@ -309,8 +309,8 @@ export function UploadsAdmin() {
                 <tr key={b.id}>
                   <Td className="font-mono text-xs">{b.filename}</Td>
                   <Td>{arten[b.kind] ?? b.kind}</Td>
-                  <Td className="text-right font-mono tabular-nums">{fmt.zahl(b.row_count)}</Td>
-                  <Td className="text-right font-mono tabular-nums">
+                  <Td className="text-end font-mono tabular-nums">{fmt.zahl(b.row_count)}</Td>
+                  <Td className="text-end font-mono tabular-nums">
                     {b.error_count > 0 ? fmt.zahl(b.error_count) : "—"}
                   </Td>
                   <Td>

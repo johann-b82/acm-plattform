@@ -70,7 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   benutzt, bekommt sie. Die Adresse bleibt Text: sie sagt, wer
                   angemeldet ist, und dafür gibt es kein Zeichen. */}
               <div className="flex items-center gap-1">
-                <span className="mr-2 hidden text-sm text-[var(--fg-muted)] sm:inline">
+                <span className="me-2 hidden text-sm text-[var(--fg-muted)] sm:inline">
                   {session.email}
                 </span>
                 {/* Zwei Zahlen, die etwas von einem wollen — deshalb stehen sie

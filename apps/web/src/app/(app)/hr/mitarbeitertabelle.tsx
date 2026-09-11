@@ -62,9 +62,9 @@ export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
             <tr>
               <Th>{worte.mitarbeiter.person}</Th>
               <Th>{worte.mitarbeiter.abteilung}</Th>
-              <Th className="text-right">{worte.mitarbeiter.istStunden}</Th>
-              <Th className="text-right">{worte.mitarbeiter.ueberstunden}</Th>
-              <Th className="text-right">{worte.mitarbeiter.quote}</Th>
+              <Th className="text-end">{worte.mitarbeiter.istStunden}</Th>
+              <Th className="text-end">{worte.mitarbeiter.ueberstunden}</Th>
+              <Th className="text-end">{worte.mitarbeiter.quote}</Th>
             </tr>
           </thead>
           <tbody>
@@ -72,18 +72,18 @@ export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
               <tr key={z.employee_id}>
                 <Td>{z.name ?? `#${z.employee_id}`}</Td>
                 <Td className="text-[var(--fg-muted)]">{z.department ?? "—"}</Td>
-                <Td className="text-right font-mono tabular-nums">
+                <Td className="text-end font-mono tabular-nums">
                   {z.ist_stunden.toFixed(2)}
                 </Td>
                 <Td
                   className={cn(
-                    "text-right font-mono tabular-nums",
+                    "text-end font-mono tabular-nums",
                     z.ueberstunden > 0 && "font-medium",
                   )}
                 >
                   {z.ueberstunden > 0 ? z.ueberstunden.toFixed(2) : "—"}
                 </Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--fg-muted)]">
+                <Td className="text-end font-mono tabular-nums text-[var(--fg-muted)]">
                   {fmt.prozent(z.quote)}
                 </Td>
               </tr>

@@ -24,14 +24,14 @@ export function Suche() {
     <div className="space-y-3">
       <div className="relative max-w-md">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
+          className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
           aria-hidden
         />
         <Input
           value={begriff}
           placeholder={t.hilfe.suchen}
           aria-label={t.hilfe.suchen}
-          className="pl-9"
+          className="ps-9"
           onChange={(e) => setBegriff(e.target.value)}
         />
       </div>
@@ -52,7 +52,7 @@ export function Suche() {
                   >
                     {seite.titel}
                   </Link>
-                  <span className="ml-2 text-xs text-[var(--fg-muted)]">{gruppe.titel}</span>
+                  <span className="ms-2 text-xs text-[var(--fg-muted)]">{gruppe.titel}</span>
                   <p className="text-sm text-[var(--fg-muted)]">{seite.kurz}</p>
                 </li>
               ))}

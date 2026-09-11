@@ -3,6 +3,7 @@
 import { useTexte } from "@/components/sprache/anbieter";
 import type { Art, Stand } from "@/lib/dokumente";
 import type { Intervall } from "@/lib/wartung";
+import type { MassnahmeStatus } from "@/lib/kpi/bewertung";
 import type { KapitelArt } from "@/lib/newsletter";
 import type { Dringlichkeit, Person } from "@/lib/schulungen";
 
@@ -21,6 +22,16 @@ export function useDringlichkeit(): Record<Dringlichkeit, string> {
     faellig_bald: t.offeneSchulungen.wirdFaellig,
     offen: t.offeneSchulungen.imTurnus,
   };
+}
+
+/** Die Fachbereiche, in die die Zielwerte einsortiert sind. */
+export function useBereich(): Record<string, string> {
+  return useTexte().bewertung.bereiche;
+}
+
+/** Der Stand einer Maßnahme aus dem KVP-Kreis. */
+export function useMassnahmeStatus(): Record<MassnahmeStatus, string> {
+  return useTexte().bewertung.status;
 }
 
 /** Woher eine Person in der Schulungsliste stammt. */

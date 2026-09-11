@@ -142,7 +142,7 @@ export function Personal() {
                       disabled={speichern.isPending}
                       onClick={() => sichern(e.schluessel, wert(e))}
                     >
-                      Speichern
+                      {worte.allgemein.speichern}
                     </Button>
                   )}
                 </div>

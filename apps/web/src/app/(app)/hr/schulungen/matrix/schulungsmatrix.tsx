@@ -16,7 +16,7 @@ import {
 import { Card, EmptyState, Input, Select, TableWrap } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useDringlichkeit, useHerkunft } from "@/lib/tafeln";
 
@@ -184,8 +184,8 @@ export function Schulungsmatrix() {
                     Spalten niemand mehr, wessen Zeile er liest. */}
                 <th
                   className={
-                    "sticky left-0 top-0 z-20 w-64 border-b border-[var(--border)] " +
-                    "bg-[var(--surface)] px-3 py-2 text-left font-medium"
+                    "sticky start-0 top-0 z-20 w-64 border-b border-[var(--border)] " +
+                    "bg-[var(--surface)] px-3 py-2 text-start font-medium"
                   }
                 >
                   {worte.schulungsmatrix.person}
@@ -219,8 +219,8 @@ export function Schulungsmatrix() {
                   <th
                     scope="row"
                     className={
-                      "sticky left-0 z-10 border-b border-[var(--border)] bg-[var(--surface)] " +
-                      "px-3 py-2 text-left font-normal"
+                      "sticky start-0 z-10 border-b border-[var(--border)] bg-[var(--surface)] " +
+                      "px-3 py-2 text-start font-normal"
                     }
                   >
                     <span className="block truncate font-medium">{p.name ?? "—"}</span>
@@ -254,7 +254,7 @@ function Zelle({
 }) {
   const worte = useTexte();
   const dringlichkeitLabel = useDringlichkeit();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "short" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "short" });
   // Keine Teilnahme heißt: nie zugewiesen. Das ist etwas anderes als
   // „zugewiesen und nicht absolviert" und darf nicht gleich aussehen.
   if (!zelle) {

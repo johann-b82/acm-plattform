@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import {
   aeltester,
   alterInTagen,
@@ -23,7 +23,7 @@ import {
 export function Datenstand({ bereich }: { bereich: string }) {
   const t = useTexte();
   const sprache = useSprache();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[sprache], { dateStyle: "short" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[sprache], { dateStyle: "short" });
   const { data, isLoading } = useQuery({
     queryKey: datenstandKeys.alle(),
     queryFn: datenstand,

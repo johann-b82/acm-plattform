@@ -33,7 +33,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { useAuditworte } from "@/lib/tafeln";
 import type { Texte } from "@/texte";
 
@@ -58,7 +58,7 @@ export function AuditAnsicht({
 }) {
   const worte = useTexte();
   const auditworte = useAuditworte();
-  const tag = SPRACHE_TAG[useSprache()];
+  const tag = ZAHL_TAG[useSprache()];
   const ZEIT = new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" });
   const prioritaet: Record<number, string> = {
     1: worte.auditAnsicht.niedrig,
@@ -356,7 +356,7 @@ export function AuditAnsicht({
               disabled={!neuePhase.trim() || phaseAnlegen.isPending}
               onClick={() => phaseAnlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               Hinzufügen
             </Button>
           </div>
@@ -389,7 +389,7 @@ export function AuditAnsicht({
                 {z.grund && (
                   <span className="text-[var(--fg-muted)]">{`„${z.grund}“`}</span>
                 )}
-                <span className="ml-auto text-[var(--fg-muted)]">{z.wer_email ?? "—"}</span>
+                <span className="ms-auto text-[var(--fg-muted)]">{z.wer_email ?? "—"}</span>
               </li>
             ))}
           </ul>
@@ -418,7 +418,7 @@ function PhasenZeile({
 }) {
   const worte = useTexte();
   const auditworte = useAuditworte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const [grund, setGrund] = useState(false);
   const [text, setText] = useState("");
 
@@ -441,7 +441,7 @@ function PhasenZeile({
         <Td>
           {phase.titel}
           {phase.pflicht && (
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="ms-2">
               Pflicht
             </Badge>
           )}

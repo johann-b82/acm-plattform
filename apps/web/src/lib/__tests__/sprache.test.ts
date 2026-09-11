@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { LANGER_NAME, TITEL } from "@/lib/brotkrumen";
-import { SPRACHEN, SPRACHE_LABEL, SPRACHE_TAG, VORGABE, spracheAus } from "@/lib/sprache";
+import {
+  SPRACHEN,
+  SPRACHE_LABEL,
+  SPRACHE_TAG,
+  VORGABE,
+  ZAHL_TAG,
+  spracheAus,
+} from "@/lib/sprache";
 import { WOERTERBUCH, texteFuer } from "@/texte";
 
 describe("spracheAus", () => {
@@ -22,7 +29,10 @@ describe("Wörterbücher", () => {
   it.each(SPRACHEN)("%s ist vollständig angemeldet", (s) => {
     expect(WOERTERBUCH[s]).toBeTruthy();
     expect(SPRACHE_LABEL[s]).toBeTruthy();
-    expect(SPRACHE_TAG[s]).toMatch(/^[a-z]{2}-[A-Z]{2}$/);
+    expect(SPRACHE_TAG[s]).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/);
+    // Das Rechen-Kürzel darf ein Unicode-Anhängsel tragen (`-u-nu-latn`),
+    // muss aber dieselbe Sprache meinen.
+    expect(ZAHL_TAG[s].startsWith(s)).toBe(true);
   });
 
   it.each(SPRACHEN)("%s benennt jede Seite des Pfades", (s) => {
@@ -42,6 +52,17 @@ describe("Wörterbücher", () => {
       expect(t.kopf.massnahmen(5, 2)).toContain("2");
       // Ohne Überfällige darf die zweite Zahl nicht auftauchen.
       expect(t.kopf.massnahmen(5, 0)).not.toContain("0");
+    }
+  });
+
+  it("sagt in jeder Fremdsprache, dass die Hilfe deutsch bleibt", () => {
+    // Im Deutschen steht dort nichts — der Satz wäre eine Selbstverständlichkeit.
+    // In jeder anderen Sprache muss er stehen, sonst klickt jemand auf die
+    // Hilfe und findet ohne Vorwarnung Deutsch vor.
+    for (const s of SPRACHEN) {
+      const satz = texteFuer(s).hilfe.nurDeutsch;
+      if (s === VORGABE) expect(satz).toBe("");
+      else expect(satz, s).toBeTruthy();
     }
   });
 

@@ -43,7 +43,7 @@ export function Vergleich({
       title={`${alsProzent(wert)} ${was}`}
     >
       {alsProzent(wert)}
-      <span className="ml-1 opacity-70">{was}</span>
+      <span className="ms-1 opacity-70">{was}</span>
     </span>
   );
 }

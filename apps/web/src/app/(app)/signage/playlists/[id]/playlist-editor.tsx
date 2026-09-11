@@ -391,7 +391,7 @@ function EditorForm({ data }: { data: EditorData }) {
                       ]);
                       setPickerOpen(false);
                     }}
-                    className="flex w-full items-center gap-3 rounded-md p-2 text-left hover:bg-[var(--muted)]"
+                    className="flex w-full items-center gap-3 rounded-md p-2 text-start hover:bg-[var(--muted)]"
                   >
                     <Thumb media={m} />
                     <span className="min-w-0 flex-1 truncate text-sm">{m.title}</span>

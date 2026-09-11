@@ -25,6 +25,10 @@ export default async function LauncherPage({
   const visible = (data as App[]).filter(
     (a) => !quer.includes(a.id) && levelFor(session.apps, a.id),
   );
+  // Die Stufe steht auf der Kachel — in der Sprache der Oberfläche, nicht als
+  // Schlüssel aus dem Token.
+  const stufe = (l: string | null) =>
+    l && l in t.zugaenge.stufen ? t.zugaenge.stufen[l as keyof typeof t.zugaenge.stufen] : undefined;
 
   return (
     <div>
@@ -44,7 +48,7 @@ export default async function LauncherPage({
             eintraege={visible.map((a) => ({
               pfad: a.path,
               name: a.name,
-              marke: levelFor(session.apps, a.id) ?? undefined,
+              marke: stufe(levelFor(session.apps, a.id)),
             }))}
           />
         </div>
