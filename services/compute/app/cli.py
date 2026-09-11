@@ -61,20 +61,25 @@ async def _uebernahme_atr(args) -> None:
 
 
 async def _personio_sprachen(args) -> None:
-    """Die gepflegten Sprachen auflisten — erst aus dem Abgleich, sonst live."""
+    """Die gepflegten Sprachen auflisten — erst aus dem Abgleich, sonst live.
+
+    Mit `--live` gleich bei Personio: auf einem Stand, dessen Bestand aus
+    Demodaten besteht, steht das Sprachfeld sonst nie darin."""
     from app.db import personio_employees
     from app.personio.sprachen import sprachen_aus
 
-    async with engine.begin() as conn:
-        rohdaten = list(
-            (
-                await conn.execute(
-                    sa.select(personio_employees.c.raw_json).where(
-                        personio_employees.c.raw_json.isnot(None)
+    rohdaten: list = []
+    if not args.live:
+        async with engine.begin() as conn:
+            rohdaten = list(
+                (
+                    await conn.execute(
+                        sa.select(personio_employees.c.raw_json).where(
+                            personio_employees.c.raw_json.isnot(None)
+                        )
                     )
-                )
-            ).scalars()
-        )
+                ).scalars()
+            )
 
     quelle = "abgeglichener Bestand"
     if not rohdaten:
@@ -107,9 +112,15 @@ def main() -> int:
     unter = zerleger.add_subparsers(dest="befehl", required=True)
 
     unter.add_parser("reload-postgrest", help="PostgREST-Schema-Cache neu anfordern")
-    unter.add_parser(
+    sprachen = unter.add_parser(
         "personio-sprachen",
         help="gepflegte Sprachen der Belegschaft auflisten (für die Sprachwahl)",
+    )
+    sprachen.add_argument(
+        "--live",
+        action="store_true",
+        help="Personio direkt fragen, statt den abgeglichenen Bestand zu lesen "
+        "(schreibt nichts — für Stände, deren Bestand aus Demodaten besteht)",
     )
 
     for name, hilfe in (
