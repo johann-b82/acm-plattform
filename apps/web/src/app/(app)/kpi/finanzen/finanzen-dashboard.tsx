@@ -16,8 +16,6 @@ import {
 } from "recharts";
 
 import {
-  bucketLabel,
-  fmt,
   takt,
 } from "@/lib/kpi/gemeinsam";
 import { finanzenApi } from "@/lib/kpi/finanzen";
@@ -27,11 +25,15 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 
 
 
 export function FinanzenDashboard() {
+  const worte = useTexte();
+  const fmt = useFormate();
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
@@ -86,11 +88,11 @@ export function FinanzenDashboard() {
   const chartDaten = useMemo(
     () =>
       (verlaufDaten ?? []).map((p) => ({
-        label: bucketLabel(p.bucket, t),
+        label: fmt.bucket(p.bucket, t),
         quote: p.quote == null ? null : p.quote * 100,
         kosten: p.materialkosten,
       })),
-    [verlaufDaten, t],
+    [verlaufDaten, t, fmt],
   );
 
   const zeilenDaten = verbrauch.data;
@@ -109,11 +111,11 @@ export function FinanzenDashboard() {
             href="/kpi"
             className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
           >
-            <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Finanzen</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/finanzen"]}</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Material- und Personalkosten im Verhältnis zum Rechnungsumsatz.
+            {worte.finanzen.einleitung}
           </p>
           <Datenstand bereich="finanzen" />
         </div>
@@ -122,30 +124,33 @@ export function FinanzenDashboard() {
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Kennzahlen konnten nicht geladen werden: {(fehler as Error).message}
+          {worte.dashboard.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {keineDaten && (
         <Card className="p-8 text-center">
-          <p className="font-medium">Für diesen Zeitraum liegen keine Daten vor</p>
+          <p className="font-medium">{worte.dashboard.keineDatenTitel}</p>
           <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--fg-muted)]">
-            Es braucht drei Dateien: die Lagerbewegungen für den Verbrauch, die Wareneingänge für
-            die Preise und den Umsatz als Bezugsgröße. Alle drei liegen unter{" "}
+            {worte.finanzen.keineDatenVor}
             <Link href="/uploads" className="underline underline-offset-4">
-              Uploads
+              {worte.pfad.seiten["/uploads"]}
             </Link>
-            .
+            {worte.finanzen.keineDatenNach}
           </p>
         </Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Kennzahl
-          titel="Materialkostenquote"
+          titel={worte.finanzen.materialquote}
           erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
           wert={fmt.prozent(summe.data?.quote)}
-          hinweis={ziel == null ? "Materialkosten / Umsatz" : `Höchstens ${fmt.prozent(ziel)}`}
+          hinweis={
+            ziel == null
+              ? worte.finanzen.materialquoteHinweis
+              : worte.finanzen.hoechstens(fmt.prozent(ziel))
+          }
           warnung={ziel != null && summe.data?.quote != null && summe.data.quote > ziel}
           vergleich={
             <Vergleiche
@@ -159,13 +164,13 @@ export function FinanzenDashboard() {
           laedt={summe.isLoading}
         />
         <Kennzahl
-          titel="Materialkosten"
+          titel={worte.finanzen.materialkosten}
           erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
           wert={fmt.eur(summe.data?.materialkosten)}
           laedt={summe.isLoading}
         />
         <Kennzahl
-          titel="Umsatz"
+          titel={worte.finanzen.umsatz}
           erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
           wert={fmt.eur(summe.data?.umsatz)}
           laedt={summe.isLoading}
@@ -179,14 +184,17 @@ export function FinanzenDashboard() {
           }
         />
         <Kennzahl
-          titel="Personalkostenquote"
+          titel={worte.finanzen.personalquote}
           erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
           wert={hatFenster ? fmt.prozent(personal.data?.quote) : "—"}
           hinweis={
             !hatFenster
-              ? "braucht einen Zeitraum"
+              ? worte.finanzen.brauchtZeitraum
               : personal.data
-                ? `${fmt.eur(personal.data.personalkosten)} bei ${fmt.zahl(personal.data.personen)} Personen`
+                ? worte.finanzen.personalHinweis(
+                    fmt.eur(personal.data.personalkosten),
+                    fmt.zahl(personal.data.personen),
+                  )
                 : undefined
           }
           warnung={
@@ -206,10 +214,10 @@ export function FinanzenDashboard() {
           }
         />
         <Kennzahl
-          titel="Artikel ohne Preis"
+          titel={worte.finanzen.ohnePreis}
           erklaerung={{ seite: "finanzen", abschnitt: "Wenn eine Quote leer bleibt" }}
           wert={fmt.zahl(summe.data?.ohne_preis)}
-          hinweis="verbraucht, aber nicht bewertet"
+          hinweis={worte.finanzen.ohnePreisHinweis}
           warnung={(summe.data?.ohne_preis ?? 0) > 0}
           laedt={summe.isLoading}
         />
@@ -217,7 +225,7 @@ export function FinanzenDashboard() {
 
       {hatFenster && (jeAbteilung.data?.length ?? 0) > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Personalkosten je Abteilung</h2>
+          <h2 className="font-medium">{worte.finanzen.jeAbteilung}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
             Abteilungen mit weniger als drei beitragenden Personen stehen unter{" "}
             {"„Übrige“"} — eine Abteilung mit einer Person wäre sonst deren Gehalt.
@@ -226,10 +234,10 @@ export function FinanzenDashboard() {
             <Table>
               <thead>
                 <tr>
-                  <Th>Abteilung</Th>
-                  <Th className="text-right">Personen</Th>
-                  <Th className="text-right">Kosten</Th>
-                  <Th className="text-right">Anteil</Th>
+                  <Th>{worte.finanzen.abteilung}</Th>
+                  <Th className="text-right">{worte.finanzen.personen}</Th>
+                  <Th className="text-right">{worte.finanzen.kosten}</Th>
+                  <Th className="text-right">{worte.finanzen.anteil}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -255,9 +263,9 @@ export function FinanzenDashboard() {
 
       {chartDaten.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Materialkostenquote im Zeitverlauf</h2>
+          <h2 className="font-medium">{worte.finanzen.verlauf}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Lücken sind Zeiträume ohne Umsatz — ohne Bezugsgröße gibt es keine Quote.
+            {worte.finanzen.verlaufHinweis}
           </p>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -286,7 +294,12 @@ export function FinanzenDashboard() {
                     y={ziel * 100}
                     stroke="var(--fg-muted)"
                     strokeDasharray="4 4"
-                    label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
+                    label={{
+                      value: worte.finanzen.ziellinie,
+                      position: "right",
+                      fontSize: 11,
+                      fill: "var(--fg-muted)",
+                    }}
                   />
                 )}
                 <Line
@@ -306,20 +319,19 @@ export function FinanzenDashboard() {
 
       {zeilen.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Materialverbrauch je Artikel</h2>
+          <h2 className="font-medium">{worte.finanzen.verbrauch}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Höchste Kosten zuerst. Artikel ohne Preis stehen am Ende — sie gehen in die Quote
-            nicht ein. Höchstens 500 Zeilen.
+            {worte.finanzen.verbrauchHinweis}
           </p>
           <TableWrap className="mt-4">
             <Table>
               <thead>
                 <tr>
-                  <Th>Artikel</Th>
-                  <Th>Bezeichnung</Th>
-                  <Th className="text-right">Verbrauch</Th>
-                  <Th className="text-right">Stückpreis</Th>
-                  <Th className="text-right">Kosten</Th>
+                  <Th>{worte.finanzen.artikel}</Th>
+                  <Th>{worte.finanzen.bezeichnung}</Th>
+                  <Th className="text-right">{worte.finanzen.menge}</Th>
+                  <Th className="text-right">{worte.finanzen.stueckpreis}</Th>
+                  <Th className="text-right">{worte.finanzen.kosten}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -330,7 +342,7 @@ export function FinanzenDashboard() {
                     <Td className="text-right tabular-nums">{fmt.zahl(z.menge)}</Td>
                     <Td className="text-right tabular-nums">
                       {z.stueckpreis == null ? (
-                        <span className="text-[var(--danger)]">kein Preis</span>
+                        <span className="text-[var(--danger)]">{worte.finanzen.keinPreis}</span>
                       ) : (
                         fmt.eurGenau(z.stueckpreis)
                       )}

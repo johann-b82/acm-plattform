@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { fmt } from "@/lib/kpi/gemeinsam";
+
 import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 
 /**
  * Wochenbericht — Saldo Mehrarbeit und Krankheit je Person und Woche.
@@ -68,15 +70,17 @@ export function Wochenbericht() {
   const krankStunden = zeilen.reduce((s, z) => s + z.krank_stunden, 0);
   const ueberstunden = zeilen.filter((z) => z.netto > 0.01);
 
+  const worte = useTexte();
+  const fmt = useFormate();
   const fehler = wochen.error ?? bericht.error;
 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold">Wochenbericht</h2>
+        <h2 className="text-base font-semibold">{worte.wochenbericht.titel}</h2>
         <div className="flex items-center gap-2">
           <label htmlFor="woche" className="text-xs text-[var(--fg-muted)]">
-            Kalenderwoche
+            {worte.wochenbericht.kalenderwoche}
           </label>
           <select
             id="woche"
@@ -86,7 +90,7 @@ export function Wochenbericht() {
           >
             {(wochen.data ?? []).map((w) => (
               <option key={`${w.iso_jahr}-${w.iso_woche}`} value={`${w.iso_jahr}-${w.iso_woche}`}>
-                KW {String(w.iso_woche).padStart(2, "0")} / {w.iso_jahr}
+                {worte.wochenbericht.kw(String(w.iso_woche).padStart(2, "0"), String(w.iso_jahr))}
               </option>
             ))}
           </select>
@@ -95,13 +99,13 @@ export function Wochenbericht() {
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Wochenbericht konnte nicht geladen werden: {(fehler as Error).message}
+          {worte.wochenbericht.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {!fehler && !bericht.isLoading && zeilen.length === 0 && (
         <Card className="p-6 text-center text-sm text-[var(--fg-muted)]">
-          Für diese Woche liegen keine Anwesenheiten vor.
+          {worte.wochenbericht.keineDaten}
         </Card>
       )}
 
@@ -109,7 +113,7 @@ export function Wochenbericht() {
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <Card className="p-4">
-              <div className="text-sm text-[var(--fg-muted)]">Saldo Mehrarbeit</div>
+              <div className="text-sm text-[var(--fg-muted)]">{worte.wochenbericht.saldo}</div>
               <div
                 className={cn(
                   "mt-1 font-mono text-2xl font-medium tabular-nums",
@@ -117,24 +121,24 @@ export function Wochenbericht() {
                 )}
               >
                 {saldo > 0 ? "+" : ""}
-                {saldo.toFixed(2)} Std.
+                {saldo.toFixed(2)} {worte.wochenbericht.stunden}
               </div>
               <div className="mt-1 text-xs text-[var(--fg-muted)]">
-                Ist minus effektives Soll, über alle {zeilen.length} Personen
+                {worte.wochenbericht.saldoHinweis(String(zeilen.length))}
               </div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-[var(--fg-muted)]">Über dem Soll</div>
+              <div className="text-sm text-[var(--fg-muted)]">{worte.wochenbericht.ueberSoll}</div>
               <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
                 {fmt.zahl(ueberstunden.length)}
               </div>
               <div className="mt-1 text-xs text-[var(--fg-muted)]">
-                von {zeilen.length} Personen mit Stempelung
+                {worte.wochenbericht.ueberSollHinweis(String(zeilen.length))}
               </div>
             </Card>
             <Card className="p-4">
               <div className="flex items-baseline justify-between">
-                <div className="text-sm text-[var(--fg-muted)]">Krankheit</div>
+                <div className="text-sm text-[var(--fg-muted)]">{worte.wochenbericht.krankheit}</div>
                 <div className="flex gap-1 text-xs">
                   {(["tage", "stunden"] as Einheit[]).map((e) => (
                     <button
@@ -149,7 +153,7 @@ export function Wochenbericht() {
                           : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
                       )}
                     >
-                      {e === "tage" ? "Tage" : "Std."}
+                      {e === "tage" ? worte.wochenbericht.tage : worte.wochenbericht.stunden}
                     </button>
                   ))}
                 </div>
@@ -158,7 +162,7 @@ export function Wochenbericht() {
                 {einheit === "tage" ? krankTage.toFixed(2) : krankStunden.toFixed(2)}
               </div>
               <div className="mt-1 text-xs text-[var(--fg-muted)]">
-                über Kalendertage der Abwesenheit verteilt
+                {worte.wochenbericht.krankheitHinweis}
               </div>
             </Card>
           </div>
@@ -167,11 +171,11 @@ export function Wochenbericht() {
             <Table>
               <thead>
                 <tr>
-                  <Th>Person</Th>
-                  <Th className="text-right">Ist</Th>
-                  <Th className="text-right">Soll</Th>
-                  <Th className="text-right">Saldo</Th>
-                  <Th className="text-right">Krankheit</Th>
+                  <Th>{worte.mitarbeiter.person}</Th>
+                  <Th className="text-right">{worte.wochenbericht.ist}</Th>
+                  <Th className="text-right">{worte.wochenbericht.soll}</Th>
+                  <Th className="text-right">{worte.wochenbericht.saldoSpalte}</Th>
+                  <Th className="text-right">{worte.wochenbericht.krankheit}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -209,9 +213,7 @@ export function Wochenbericht() {
           </TableWrap>
 
           <p className="text-xs text-[var(--fg-muted)]">
-            Soll ist das effektive Wochensoll: Urlaub und Krankheit sind abgezogen, wer
-            unentschuldigt fehlt steht im Minus. In der laufenden Woche zählt das Soll
-            nur bis zum letzten gestempelten Tag.
+            {worte.wochenbericht.fussnote}
           </p>
         </>
       )}

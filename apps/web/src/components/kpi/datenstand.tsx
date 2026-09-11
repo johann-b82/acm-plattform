@@ -2,16 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
 import {
   aeltester,
-  alterText,
+  alterInTagen,
   datenstand,
   datenstandKeys,
   staende,
   type Stand,
 } from "@/lib/datenstand";
-
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "short" });
 
 /**
  * Eine Zeile unter der Überschrift: wie alt sind die Daten dieser Seite.
@@ -21,6 +21,9 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "short" });
  * die niemand liest, solange alles frisch ist.
  */
 export function Datenstand({ bereich }: { bereich: string }) {
+  const t = useTexte();
+  const sprache = useSprache();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[sprache], { dateStyle: "short" });
   const { data, isLoading } = useQuery({
     queryKey: datenstandKeys.alle(),
     queryFn: datenstand,
@@ -28,33 +31,32 @@ export function Datenstand({ bereich }: { bereich: string }) {
   });
   if (isLoading) return null;
 
-  const liste = staende(bereich, data);
+  const liste = staende(bereich, data, t.datenstand.arten);
   if (liste.length === 0) return null;
   const fehlende = liste.filter((s) => s.zuletzt === null);
   const aeltest = aeltester(liste);
 
   return (
     <p className="mt-1 text-xs text-[var(--fg-muted)]" title={aufzaehlung(liste)}>
-      {fehlende.length > 0 ? (
-        <>
-          Datenstand unvollständig — {nenne(fehlende)}{" "}
-          {fehlende.length === 1 ? "fehlt" : "fehlen"}
-        </>
-      ) : (
-        <>
-          Datenstand {DATUM.format(new Date(aeltest!))} ({alterText(aeltest!)})
-        </>
-      )}
+      {fehlende.length > 0
+        ? t.datenstand.unvollstaendig(nenne(fehlende), fehlende.length)
+        : t.datenstand.stand(DATUM.format(new Date(aeltest!)), alter(alterInTagen(aeltest!)))}
     </p>
   );
-}
 
-function nenne(liste: Stand[]): string {
-  return liste.map((s) => s.label).join(", ");
-}
+  function alter(tage: number): string {
+    if (tage === 0) return t.datenstand.heute;
+    if (tage === 1) return t.datenstand.gestern;
+    return t.datenstand.vorTagen(tage);
+  }
 
-function aufzaehlung(liste: Stand[]): string {
-  return liste
-    .map((s) => `${s.label}: ${s.zuletzt ? DATUM.format(new Date(s.zuletzt)) : "nie"}`)
-    .join("\n");
+  function nenne(liste: Stand[]): string {
+    return liste.map((s) => s.label).join(", ");
+  }
+
+  function aufzaehlung(liste: Stand[]): string {
+    return liste
+      .map((s) => `${s.label}: ${s.zuletzt ? DATUM.format(new Date(s.zuletzt)) : t.datenstand.nie}`)
+      .join("\n");
+  }
 }

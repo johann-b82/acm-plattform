@@ -3,16 +3,9 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { useTexte } from "@/components/sprache/anbieter";
 import type { Zeitraum } from "@/lib/kpi/gemeinsam";
 import { vergleichsfenster } from "@/lib/kpi/vergleich";
-
-const LABEL: Record<Zeitraum, string> = {
-  monat: "zum Vormonat",
-  quartal: "zum Vorquartal",
-  jahr: "zur Vorperiode",
-  alles: "zur Vorperiode",
-  frei: "zum Zeitraum davor",
-};
 
 /**
  * Dieselbe Kennzahl noch einmal — für Vorperiode und Vorjahr.
@@ -32,6 +25,14 @@ export function useVergleich<T>(
   bis: string | null,
   hole: (von: string, bis: string) => Promise<T>,
 ): { vorperiode: T | undefined; vorjahr: T | undefined; label: string } {
+  const t = useTexte();
+  const label: Record<Zeitraum, string> = {
+    monat: t.vergleich.vormonat,
+    quartal: t.vergleich.vorquartal,
+    jahr: t.vergleich.vorperiode,
+    alles: t.vergleich.vorperiode,
+    frei: t.vergleich.zeitraumDavor,
+  };
   const fenster = useMemo(
     () => vergleichsfenster(zeitraum, von, bis),
     [zeitraum, von, bis],
@@ -51,6 +52,6 @@ export function useVergleich<T>(
   return {
     vorperiode: vorperiode.data,
     vorjahr: vorjahr.data,
-    label: LABEL[zeitraum],
+    label: label[zeitraum],
   };
 }

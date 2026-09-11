@@ -33,23 +33,6 @@ export const QUELLEN: Record<string, string[]> = {
   finanzen: ["umsatz", "lagerbewegungen", "wareneingaenge"],
 };
 
-/** Wie eine Dateiart heißt, wenn man sie jemandem nennt. */
-export const ART_LABEL: Record<string, string> = {
-  umsatz: "Umsatz",
-  auftraege: "Aufträge",
-  angebote: "Angebote",
-  interessenten: "Interessenten",
-  kontakte: "Kontakte",
-  liefertreue: "Liefertreue",
-  lagerbewegungen: "Lagerbewegungen",
-  lagerpreise: "Lagerpreise",
-  auftragspositionen: "Auftragspositionen",
-  lieferscheine: "Lieferscheine",
-  pruefungen: "Prüfungen",
-  acht_d: "8D-Berichte",
-  wareneingaenge: "Wareneingänge",
-};
-
 export interface Stand {
   art: string;
   label: string;
@@ -61,12 +44,16 @@ export interface Stand {
  * Der Stand je Quelle eines Bereichs, älteste zuerst — denn so alt ist die
  * Seite. Eine Art, die nie kam, steht ganz oben: nichts ist älter als nie.
  */
-export function staende(bereich: string, zeilen: Standzeile[] | undefined): Stand[] {
+export function staende(
+  bereich: string,
+  zeilen: Standzeile[] | undefined,
+  label: Record<string, string> = {},
+): Stand[] {
   const nach = new Map((zeilen ?? []).map((z) => [z.art, z.zuletzt]));
   return (QUELLEN[bereich] ?? [])
     .map((art) => ({
       art,
-      label: ART_LABEL[art] ?? art,
+      label: label[art] ?? art,
       zuletzt: nach.get(art) ?? null,
     }))
     .sort((a, b) => {
@@ -86,16 +73,16 @@ export function aeltester(staende: Stand[]): string | null {
 const TAG = 24 * 60 * 60 * 1000;
 
 /**
- * „heute", „gestern", „vor 5 Tagen" — gezählt in Kalendertagen, nicht in
- * 24-Stunden-Schritten: ein Upload von gestern Abend ist gestern, auch wenn
- * er zehn Stunden her ist.
+ * Wie viele Kalendertage her — nicht 24-Stunden-Schritte: ein Upload von
+ * gestern Abend ist gestern, auch wenn er zehn Stunden her ist. Ein Zeitpunkt
+ * in der Zukunft ist 0 und nicht „vor -1 Tagen".
+ *
+ * Wie daraus ein Satz wird, steht im Wörterbuch — „vor 5 Tagen" und
+ * „5 days ago" bauen ihre Zahl verschieden ein.
  */
-export function alterText(zeitpunkt: string, jetzt: Date = new Date()): string {
+export function alterInTagen(zeitpunkt: string, jetzt: Date = new Date()): number {
   const dann = new Date(zeitpunkt);
-  const tage = Math.round((mitternacht(jetzt) - mitternacht(dann)) / TAG);
-  if (tage <= 0) return "heute";
-  if (tage === 1) return "gestern";
-  return `vor ${tage} Tagen`;
+  return Math.max(0, Math.round((mitternacht(jetzt) - mitternacht(dann)) / TAG));
 }
 
 function mitternacht(d: Date): number {

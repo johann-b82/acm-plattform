@@ -34,13 +34,6 @@ export interface AuditOhneLevel {
 /** Die vier Audit-Codes, wie sie in der Quelldatei stehen. */
 export const AUDIT_ARTEN = ["BH AUD", "EX AUD", "IN AUD", "KU AUD"] as const;
 
-export const AUDIT_LABEL: Record<string, string> = {
-  "BH AUD": "Behörde",
-  "EX AUD": "Extern",
-  "IN AUD": "Intern",
-  "KU AUD": "Kunde",
-};
-
 export const qualitaetApi = {
   audits: async (von: string | null, bis: string | null, arten: string[] | null): Promise<AuditSumme> => {
     const rows = await rpc<AuditSumme[]>("kpi_qualitaet_audits", { von, bis, arten });
@@ -80,26 +73,6 @@ export function verlaufJeBucket(
 
 export type ReklamationsArt = "kunde" | "intern" | "lieferant" | "werkbank";
 export type Mengenart = "gesamt" | "akzeptiert";
-
-export const REKLAMATION_LABEL: Record<ReklamationsArt, string> = {
-  kunde: "Kunde",
-  intern: "intern",
-  lieferant: "Material-Lieferanten",
-  werkbank: "Werkbänke",
-};
-
-/** Bezugsgröße je Art — steht in der Kachel, sonst rät man. */
-export const REKLAMATION_BEZUG: Record<ReklamationsArt, string> = {
-  kunde: "gelieferte Menge",
-  intern: "gelieferte Menge",
-  lieferant: "Wareneingang ohne Dienstleistung",
-  werkbank: "Wareneingang der Warengruppen DIENST und SERVIC",
-};
-
-export const MENGENART_LABEL: Record<Mengenart, string> = {
-  gesamt: "gemeldete Menge",
-  akzeptiert: "akzeptierte Menge",
-};
 
 export interface ReklamationSumme {
   quote: number | null;
@@ -196,11 +169,6 @@ export interface BuchungsZeile {
   ausschuss_menge: number | null;
   excluded: boolean;
 }
-
-export const KLASSE_LABEL: Record<"large" | "small", string> = {
-  large: "groß",
-  small: "klein",
-};
 
 export const pruefungApi = {
   mengen: async (von: string | null, bis: string | null): Promise<Pruefmengen> => {

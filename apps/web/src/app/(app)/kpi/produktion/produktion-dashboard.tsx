@@ -16,17 +16,17 @@ import {
 } from "recharts";
 
 import {
-  bucketLabel,
-  fmt,
   takt,
 } from "@/lib/kpi/gemeinsam";
-import { ART_LABEL, produktionApi } from "@/lib/kpi/produktion";
+import { produktionApi } from "@/lib/kpi/produktion";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Badge, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 
 
@@ -36,6 +36,8 @@ function datum(iso: string | null): string {
 }
 
 export function ProduktionDashboard() {
+  const worte = useTexte();
+  const fmt = useFormate();
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
@@ -66,11 +68,11 @@ export function ProduktionDashboard() {
   const chartDaten = useMemo(
     () =>
       (verlaufDaten ?? []).map((p) => ({
-        label: bucketLabel(p.bucket, t),
+        label: fmt.bucket(p.bucket, t),
         quote: p.quote == null ? null : Number(p.quote) * 100,
         gesamt: p.gesamt,
       })),
-    [verlaufDaten, t],
+    [verlaufDaten, t, fmt],
   );
 
   const zeilenDaten = liste.data;
@@ -88,11 +90,11 @@ export function ProduktionDashboard() {
             href="/kpi"
             className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
           >
-            <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Produktion</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/produktion"]}</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Aufträge in Verzug. Gezählt wird ein Auftrag erst, wenn sein Ausgang feststeht.
+            {worte.produktion.einleitung}
           </p>
           <Datenstand bereich="produktion" />
         </div>
@@ -101,30 +103,29 @@ export function ProduktionDashboard() {
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Kennzahlen konnten nicht geladen werden: {(fehler as Error).message}
+          {worte.dashboard.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {keineDaten && (
         <Card className="p-8 text-center">
-          <p className="font-medium">Für diesen Zeitraum liegt kein Auftrag mit feststehendem Ausgang vor</p>
+          <p className="font-medium">{worte.produktion.keineDaten}</p>
           <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--fg-muted)]">
-            Lade die Auftragspositionen und die Lieferscheine unter{" "}
+            {worte.produktion.ladeVor}
             <Link href="/uploads" className="underline underline-offset-4">
-              Uploads
-            </Link>{" "}
-            hoch. Beide werden gebraucht: die eine Datei trägt den Zieltermin, die andere das
-            Ist-Datum.
+              {worte.pfad.seiten["/uploads"]}
+            </Link>
+            {worte.produktion.ladeNach}
           </p>
         </Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kennzahl
-          titel="Verzugsquote"
+          titel={worte.produktion.quote}
           erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.prozent(verzug.data?.quote == null ? null : Number(verzug.data.quote))}
-          hinweis={`Höchstens ${fmt.prozent(ziel)}`}
+          hinweis={worte.produktion.quoteHinweis(fmt.prozent(ziel))}
           laedt={verzug.isLoading}
           vergleich={
             <Vergleiche
@@ -137,7 +138,7 @@ export function ProduktionDashboard() {
           }
         />
         <Kennzahl
-          titel="Aufträge in Verzug"
+          titel={worte.produktion.inVerzug}
           erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.zahl(verzug.data?.in_verzug)}
           hinweis={offene > 0 ? `davon ${offene} offen und überfällig` : undefined}
@@ -153,14 +154,14 @@ export function ProduktionDashboard() {
           }
         />
         <Kennzahl
-          titel="Aufträge gesamt"
+          titel={worte.produktion.gesamt}
           erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.zahl(verzug.data?.gesamt)}
-          hinweis="ohne noch nicht fällige offene Aufträge"
+          hinweis={worte.produktion.gesamtHinweis}
           laedt={verzug.isLoading}
         />
         <Kennzahl
-          titel="Ø Verzug"
+          titel={worte.produktion.verzugSchnitt}
           erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={
             verzug.data?.verzug_schnitt == null
@@ -169,16 +170,16 @@ export function ProduktionDashboard() {
                   Math.round(Number(verzug.data.verzug_schnitt) * 10) / 10
                 ).toLocaleString("de-DE")} d`
           }
-          hinweis="pünktliche Aufträge gehen negativ ein"
+          hinweis={worte.produktion.verzugHinweis}
           laedt={verzug.isLoading}
         />
       </div>
 
       {chartDaten.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Verzugsquote im Zeitverlauf</h2>
+          <h2 className="font-medium">{worte.produktion.verlauf}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Nach Zieltermin. Lücken sind Zeiträume ohne gezählte Aufträge.
+            {worte.produktion.verlaufHinweis}
           </p>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -208,7 +209,12 @@ export function ProduktionDashboard() {
                   y={ziel * 100}
                   stroke="var(--fg-muted)"
                   strokeDasharray="4 4"
-                  label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
+                  label={{
+                    value: worte.produktion.ziellinie,
+                    position: "right",
+                    fontSize: 11,
+                    fill: "var(--fg-muted)",
+                  }}
                 />
                 )}
                 <Line
@@ -228,21 +234,20 @@ export function ProduktionDashboard() {
 
       {zeilen.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Aufträge in Verzug</h2>
+          <h2 className="font-medium">{worte.produktion.liste}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Größter Verzug zuerst. Bei offenen Aufträgen wächst er täglich weiter. Höchstens 500
-            Zeilen.
+            {worte.produktion.listeHinweis}
           </p>
           <TableWrap className="mt-4">
             <Table>
               <thead>
                 <tr>
-                  <Th>Auftrag</Th>
-                  <Th>Kunde</Th>
-                  <Th>Stand</Th>
-                  <Th className="text-right">Zieltermin</Th>
-                  <Th className="text-right">Geliefert</Th>
-                  <Th className="text-right">Verzug</Th>
+                  <Th>{worte.produktion.auftrag}</Th>
+                  <Th>{worte.produktion.kunde}</Th>
+                  <Th>{worte.produktion.stand}</Th>
+                  <Th className="text-right">{worte.produktion.zieltermin}</Th>
+                  <Th className="text-right">{worte.produktion.geliefert}</Th>
+                  <Th className="text-right">{worte.produktion.verzug}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -252,7 +257,7 @@ export function ProduktionDashboard() {
                     <Td>{z.customer_name ?? "—"}</Td>
                     <Td>
                       <Badge variant={z.art === "offen" ? "secondary" : undefined}>
-                        {ART_LABEL[z.art]}
+                        {worte.produktion[z.art]}
                       </Badge>
                     </Td>
                     <Td className="text-right tabular-nums">{datum(z.ziel)}</Td>
