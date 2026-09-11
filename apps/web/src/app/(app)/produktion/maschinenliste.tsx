@@ -78,7 +78,7 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             />
           </div>
           <Button disabled={!neu.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.wartung.anlegen}
           </Button>
         </Card>

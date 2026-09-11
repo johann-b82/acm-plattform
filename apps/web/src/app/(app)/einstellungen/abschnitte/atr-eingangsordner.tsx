@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/primitives";
 import { Hinweis } from "@/components/ui/hinweis";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import type { Texte } from "@/texte";
 
 
@@ -52,7 +52,7 @@ const FELDER: {
  */
 export function Eingangsordner() {
   const worte = useTexte();
-  const ZEIT = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], {
+  const ZEIT = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -123,17 +123,17 @@ export function Eingangsordner() {
               )
             : worte.atrEinstellungen.nochNichtGelaufen}
         </span>
-        <div className="ml-auto flex gap-2">
+        <div className="ms-auto flex gap-2">
           <Button
             variant="outline"
             onClick={() => pruefen.mutate()}
             disabled={pruefen.isPending}
           >
-            <PlugZap className="mr-1.5 h-4 w-4" aria-hidden />
+            <PlugZap className="me-1.5 h-4 w-4" aria-hidden />
             {pruefen.isPending ? worte.atrEinstellungen.prueft : worte.atrEinstellungen.verbindungPruefen}
           </Button>
           <Button onClick={() => lauf.mutate()} disabled={lauf.isPending}>
-            <FolderSearch className="mr-1.5 h-4 w-4" aria-hidden />
+            <FolderSearch className="me-1.5 h-4 w-4" aria-hidden />
             {lauf.isPending ? worte.atrEinstellungen.laeuftGerade : worte.atrEinstellungen.jetztDurchsehen}
           </Button>
         </div>

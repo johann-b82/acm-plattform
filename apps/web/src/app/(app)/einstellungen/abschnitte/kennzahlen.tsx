@@ -103,7 +103,7 @@ export function Kennzahlen() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") absenden(z);
                     }}
-                    className="max-w-32 text-right tabular-nums"
+                    className="max-w-32 text-end tabular-nums"
                   />
                   <span className="text-sm text-[var(--fg-muted)]">
                     {z.einheit === "anteil" ? "%" : "Stück"}

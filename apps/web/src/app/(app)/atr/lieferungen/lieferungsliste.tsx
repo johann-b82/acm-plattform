@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 
 
@@ -37,7 +37,7 @@ import { Seitenkopf } from "@/components/seitenkopf";
  */
 export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [bericht, setBericht] = useState<LieferscheinErgebnis | null>(null);
 
@@ -107,7 +107,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 "focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
             >
-              <FileUp className="mr-2 h-4 w-4" aria-hidden />
+              <FileUp className="me-2 h-4 w-4" aria-hidden />
               {einlesen.isPending ? worte.lieferungen.wirdGelesen : worte.lieferungen.einlesen}
               <input
                 type="file"
@@ -128,7 +128,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               onClick={() => durchsehen.mutate()}
               disabled={durchsehen.isPending}
             >
-              <FolderSearch className="mr-2 h-4 w-4" aria-hidden />
+              <FolderSearch className="me-2 h-4 w-4" aria-hidden />
               {durchsehen.isPending ? worte.lieferungen.laeuft : worte.lieferungen.eingangDurchsehen}
             </Button>
           </div>
@@ -142,7 +142,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               </p>
               <p className="mt-1 text-[var(--fg-muted)]">{bericht.programm_grund}</p>
               {bericht.hinweise.length > 0 && (
-                <ul className="mt-1 list-disc pl-5 text-[var(--fg-muted)]">
+                <ul className="mt-1 list-disc ps-5 text-[var(--fg-muted)]">
                   {bericht.hinweise.map((h, i) => (
                     <li key={i}>{h}</li>
                   ))}
@@ -192,7 +192,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                       {l.lieferschein_nr ?? l.quelle_dateiname}
                     </Link>
                     {l.hinweise.length > 0 && (
-                      <span className="ml-2 text-xs text-[var(--warn)]">
+                      <span className="ms-2 text-xs text-[var(--warn)]">
                         {l.hinweise.length} Hinweis
                         {l.hinweise.length === 1 ? "" : "e"}
                       </span>
@@ -208,7 +208,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                       <Badge>{worte.lieferungen.freigegeben}</Badge>
                     )}
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     {darfSchreiben && (
                       <ConfirmDeleteButton
                         itemLabel={l.lieferschein_nr ?? l.quelle_dateiname}

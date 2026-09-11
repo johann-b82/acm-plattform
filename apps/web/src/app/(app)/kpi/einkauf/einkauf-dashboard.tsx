@@ -235,10 +235,10 @@ export function EinkaufDashboard() {
                 <tr>
                   <Th>{worte.einkauf.artikel}</Th>
                   <Th>{worte.einkauf.bezeichnung}</Th>
-                  <Th className="text-right">{worte.einkauf.bestand}</Th>
-                  <Th className="text-right">{worte.einkauf.liegtSeit}</Th>
-                  <Th className="text-right">{worte.einkauf.stueckpreis}</Th>
-                  <Th className="text-right">{worte.einkauf.wert}</Th>
+                  <Th className="text-end">{worte.einkauf.bestand}</Th>
+                  <Th className="text-end">{worte.einkauf.liegtSeit}</Th>
+                  <Th className="text-end">{worte.einkauf.stueckpreis}</Th>
+                  <Th className="text-end">{worte.einkauf.wert}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -246,10 +246,10 @@ export function EinkaufDashboard() {
                   <tr key={z.artnr}>
                     <Td className="font-mono text-xs">{z.artnr}</Td>
                     <Td className="max-w-sm truncate">{z.article_name ?? "—"}</Td>
-                    <Td className="text-right tabular-nums">{fmt.zahl(z.bestand)}</Td>
-                    <Td className="text-right tabular-nums">{fmt.zahl(z.tage_liegend)} d</Td>
-                    <Td className="text-right tabular-nums">{fmt.eurGenau(z.stueckpreis)}</Td>
-                    <Td className="text-right tabular-nums">{fmt.eur(z.wert)}</Td>
+                    <Td className="text-end tabular-nums">{fmt.zahl(z.bestand)}</Td>
+                    <Td className="text-end tabular-nums">{fmt.zahl(z.tage_liegend)} d</Td>
+                    <Td className="text-end tabular-nums">{fmt.eurGenau(z.stueckpreis)}</Td>
+                    <Td className="text-end tabular-nums">{fmt.eur(z.wert)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -271,9 +271,9 @@ export function EinkaufDashboard() {
                   <Th>{worte.einkauf.auftrag}</Th>
                   <Th>{worte.einkauf.lieferant}</Th>
                   <Th>{worte.einkauf.artikel}</Th>
-                  <Th className="text-right">{worte.einkauf.zieltermin}</Th>
-                  <Th className="text-right">{worte.einkauf.geliefert}</Th>
-                  <Th className="text-right">{worte.einkauf.verzug}</Th>
+                  <Th className="text-end">{worte.einkauf.zieltermin}</Th>
+                  <Th className="text-end">{worte.einkauf.geliefert}</Th>
+                  <Th className="text-end">{worte.einkauf.verzug}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -285,11 +285,11 @@ export function EinkaufDashboard() {
                     </Td>
                     <Td>{z.supplier_name ?? "—"}</Td>
                     <Td>{z.article_name ?? z.article_number ?? "—"}</Td>
-                    <Td className="text-right tabular-nums">{datum(z.target_date)}</Td>
-                    <Td className="text-right tabular-nums">{datum(z.delivered_date)}</Td>
+                    <Td className="text-end tabular-nums">{datum(z.target_date)}</Td>
+                    <Td className="text-end tabular-nums">{datum(z.delivered_date)}</Td>
                     <Td
                       className={cn(
-                        "text-right tabular-nums",
+                        "text-end tabular-nums",
                         z.verzug_tage != null && z.verzug_tage > 0 && "text-[var(--danger)]",
                       )}
                     >

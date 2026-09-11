@@ -296,9 +296,9 @@ export function SchedulesAdmin() {
               <Th>{worte.signage.playlist}</Th>
               <Th>{worte.signage.tage}</Th>
               <Th>{worte.signage.zeitfenster}</Th>
-              <Th className="text-right">{worte.signage.prioritaet}</Th>
+              <Th className="text-end">{worte.signage.prioritaet}</Th>
               <Th>{worte.signage.aktiv}</Th>
-              <Th className="text-right">{worte.signage.aktionen}</Th>
+              <Th className="text-end">{worte.signage.aktionen}</Th>
             </tr>
           </thead>
           <tbody>
@@ -311,7 +311,7 @@ export function SchedulesAdmin() {
                 <Td className="font-mono tabular-nums">
                   {hhmmToString(s.start_hhmm)} – {hhmmToString(s.end_hhmm)}
                 </Td>
-                <Td className="text-right font-mono tabular-nums">{s.priority}</Td>
+                <Td className="text-end font-mono tabular-nums">{s.priority}</Td>
                 <Td>
                   <Switch
                     checked={s.enabled}

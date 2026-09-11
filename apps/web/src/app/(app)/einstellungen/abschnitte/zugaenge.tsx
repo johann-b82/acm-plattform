@@ -463,7 +463,7 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
                   <span>
                     {nutzerNach.get(id)?.email ?? id}
                     {id === eigeneId && (
-                      <span className="ml-2 text-xs text-[var(--fg-muted)]">(du)</span>
+                      <span className="ms-2 text-xs text-[var(--fg-muted)]">(du)</span>
                     )}
                   </span>
                   <span className="flex items-center gap-1">

@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 
 
@@ -44,7 +44,7 @@ const LEER = { name: "", abteilung: "", position: "", eintritt: "" };
  */
 export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [offen, setOffen] = useState<number | null>(null);
   const [neu, setNeu] = useState({ ...LEER });
@@ -212,11 +212,11 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                   <Td>
                     {e.name}
                     {e.extern_id && (
-                      <Badge variant="outline" className="ml-2">
+                      <Badge variant="outline" className="ms-2">
                         {worte.onboarding.nichtInPersonio}
                       </Badge>
                     )}
-                    {istNeu(e) && <Badge className="ml-2">neu</Badge>}
+                    {istNeu(e) && <Badge className="ms-2">neu</Badge>}
                   </Td>
                   <Td>
                     {e.employee_id !== null ? (
@@ -247,14 +247,14 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                       DATUM.format(new Date(e.heruntergeladen_am))
                     ) : darfSchreiben ? (
                       <Button size="sm" variant="outline" onClick={() => paket.mutate(e)}>
-                        <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        <Check className="me-1.5 h-3.5 w-3.5" aria-hidden />
                         {worte.onboarding.vermerken}
                       </Button>
                     ) : (
                       "—"
                     )}
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Button
                         size="sm"
@@ -263,7 +263,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                         disabled={paketDrucken.isPending}
                         onClick={() => paketDrucken.mutate(e)}
                       >
-                        <FileDown className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        <FileDown className="me-1.5 h-3.5 w-3.5" aria-hidden />
                         {worte.onboarding.paket}
                       </Button>
                       <Button
@@ -339,7 +339,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
                 <span>{r.position}</span>
                 <Badge variant="outline">{r.abteilung_kuerzel}</Badge>
                 {darfSchreiben && (
-                  <span className="ml-auto">
+                  <span className="ms-auto">
                     <ConfirmDeleteButton
                       itemLabel={r.position}
                       onConfirm={() => rolleWeg.mutateAsync(r.id).then(() => undefined)}
@@ -430,7 +430,7 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               disabled={!neu.name.trim() || externAnlegen.isPending}
               onClick={() => externAnlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               {worte.onboarding.anlegen}
             </Button>
           </div>

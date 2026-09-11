@@ -84,12 +84,12 @@ export function AtrVorlagen() {
               <h4 className="font-medium">{v.programm}</h4>
               <label
                 className={
-                  "ml-auto inline-flex h-8 cursor-pointer items-center rounded-md " +
+                  "ms-auto inline-flex h-8 cursor-pointer items-center rounded-md " +
                   "border border-[var(--border)] px-3 text-xs font-medium " +
                   "hover:bg-[var(--muted)] focus-within:outline-2 focus-within:outline-[var(--ring)]"
                 }
               >
-                <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                <FileUp className="me-1.5 h-3.5 w-3.5" aria-hidden />
                 {v.geruest_dateiname ? worte.atrEinstellungen.geruestErsetzen : worte.atrEinstellungen.geruestWaehlen}
                 <input
                   type="file"

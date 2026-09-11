@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { useDringlichkeit } from "@/lib/tafeln";
 
 
@@ -49,7 +49,7 @@ export function SchulungAnsicht({
 }) {
   const worte = useTexte();
   const dringlichkeitLabel = useDringlichkeit();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState("");
   const [neuePflicht, setNeuePflicht] = useState<Record<string, string>>({});
@@ -234,7 +234,7 @@ export function SchulungAnsicht({
                     {darfSchreiben && (
                       <button
                         type="button"
-                        className="ml-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
+                        className="ms-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
                         aria-label={worte.schulung.entfernen(p.abteilung)}
                         onClick={() =>
                           pflichtSetzen.mutate({
@@ -315,7 +315,7 @@ export function SchulungAnsicht({
                         {t.mitarbeiter_name ?? t.personalnummer ?? "—"}
                         {t.employee_id === null && (
                           <span
-                            className="ml-2 text-xs text-[var(--fg-muted)]"
+                            className="ms-2 text-xs text-[var(--fg-muted)]"
                             title={worte.schulung.keinTreffer}
                           >
                             {worte.schulung.nichtInPersonio}
@@ -352,7 +352,7 @@ export function SchulungAnsicht({
                       <Td>
                         {s?.faellig_am ? DATUM.format(new Date(s.faellig_am)) : "—"}
                         {t.naechste_faellig && (
-                          <span className="ml-2 text-xs text-[var(--fg-muted)]">
+                          <span className="ms-2 text-xs text-[var(--fg-muted)]">
                             {worte.schulung.exzel(t.naechste_faellig)}
                           </span>
                         )}
@@ -364,7 +364,7 @@ export function SchulungAnsicht({
                           </Badge>
                         )}
                       </Td>
-                      <Td className="text-right">
+                      <Td className="text-end">
                         {darfSchreiben && (
                           <ConfirmDeleteButton
                             itemLabel={t.mitarbeiter_name ?? worte.schulung.dieseTeilnahme}
@@ -395,7 +395,7 @@ export function SchulungAnsicht({
               disabled={!neu.trim() || teilnahmeAnlegen.isPending}
               onClick={() => teilnahmeAnlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               {worte.schulung.hinzufuegen}
             </Button>
           </div>

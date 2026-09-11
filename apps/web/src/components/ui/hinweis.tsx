@@ -47,9 +47,9 @@ export function Hinweis({ text }: { text: string }) {
         role="tooltip"
         className={
           offen
-            ? "absolute left-0 top-full z-20 mt-1 w-[min(20rem,calc(100vw-3rem))] " +
+            ? "absolute start-0 top-full z-20 mt-1 w-[min(20rem,calc(100vw-3rem))] " +
               "rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 " +
-              "text-left text-xs font-normal leading-relaxed text-[var(--fg-muted)] shadow-md"
+              "text-start text-xs font-normal leading-relaxed text-[var(--fg-muted)] shadow-md"
             : "sr-only"
         }
       >

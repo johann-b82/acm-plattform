@@ -216,8 +216,8 @@ export function VertriebDashboard() {
               <thead>
                 <tr>
                   <Th>{worte.vertrieb.kunde}</Th>
-                  <Th className="text-right">{worte.vertrieb.umsatz}</Th>
-                  <Th className="text-right">{worte.vertrieb.anteil}</Th>
+                  <Th className="text-end">{worte.vertrieb.umsatz}</Th>
+                  <Th className="text-end">{worte.vertrieb.anteil}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -226,8 +226,8 @@ export function VertriebDashboard() {
                     <Td className={k.kunde === "Übrige" ? "text-[var(--fg-muted)]" : ""}>
                       {k.kunde === "Übrige" ? worte.vertrieb.uebrige : k.kunde}
                     </Td>
-                    <Td className="text-right font-mono tabular-nums">{fmt.eur(Number(k.wert))}</Td>
-                    <Td className="text-right font-mono tabular-nums">{fmt.prozent(Number(k.anteil))}</Td>
+                    <Td className="text-end font-mono tabular-nums">{fmt.eur(Number(k.wert))}</Td>
+                    <Td className="text-end font-mono tabular-nums">{fmt.prozent(Number(k.anteil))}</Td>
                   </tr>
                 ))}
                 {kunden.data?.length === 0 && (
@@ -249,16 +249,16 @@ export function VertriebDashboard() {
               <thead>
                 <tr>
                   <Th>{worte.vertrieb.erfasser}</Th>
-                  <Th className="text-right">{worte.vertrieb.anzahl}</Th>
-                  <Th className="text-right">{worte.vertrieb.summe}</Th>
+                  <Th className="text-end">{worte.vertrieb.anzahl}</Th>
+                  <Th className="text-end">{worte.vertrieb.summe}</Th>
                 </tr>
               </thead>
               <tbody>
                 {(erfasser.data ?? []).map((e) => (
                   <tr key={e.erfasser}>
                     <Td>{e.erfasser}</Td>
-                    <Td className="text-right font-mono tabular-nums">{fmt.zahl(e.auftraege_anzahl)}</Td>
-                    <Td className="text-right font-mono tabular-nums">{fmt.eur(Number(e.wert_summe))}</Td>
+                    <Td className="text-end font-mono tabular-nums">{fmt.zahl(e.auftraege_anzahl)}</Td>
+                    <Td className="text-end font-mono tabular-nums">{fmt.eur(Number(e.wert_summe))}</Td>
                   </tr>
                 ))}
                 {erfasser.data?.length === 0 && (

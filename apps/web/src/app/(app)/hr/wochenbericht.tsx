@@ -172,32 +172,32 @@ export function Wochenbericht() {
               <thead>
                 <tr>
                   <Th>{worte.mitarbeiter.person}</Th>
-                  <Th className="text-right">{worte.wochenbericht.ist}</Th>
-                  <Th className="text-right">{worte.wochenbericht.soll}</Th>
-                  <Th className="text-right">{worte.wochenbericht.saldoSpalte}</Th>
-                  <Th className="text-right">{worte.wochenbericht.krankheit}</Th>
+                  <Th className="text-end">{worte.wochenbericht.ist}</Th>
+                  <Th className="text-end">{worte.wochenbericht.soll}</Th>
+                  <Th className="text-end">{worte.wochenbericht.saldoSpalte}</Th>
+                  <Th className="text-end">{worte.wochenbericht.krankheit}</Th>
                 </tr>
               </thead>
               <tbody>
                 {zeilen.map((z) => (
                   <tr key={z.employee_id}>
                     <Td>{z.name ?? `#${z.employee_id}`}</Td>
-                    <Td className="text-right font-mono tabular-nums">
+                    <Td className="text-end font-mono tabular-nums">
                       {z.ist_stunden.toFixed(2)}
                     </Td>
-                    <Td className="text-right font-mono tabular-nums">
+                    <Td className="text-end font-mono tabular-nums">
                       {z.soll_stunden.toFixed(2)}
                     </Td>
                     <Td
                       className={cn(
-                        "text-right font-mono tabular-nums",
+                        "text-end font-mono tabular-nums",
                         z.netto < -0.01 && "text-[var(--danger)]",
                       )}
                     >
                       {z.netto > 0 ? "+" : ""}
                       {z.netto.toFixed(2)}
                     </Td>
-                    <Td className="text-right font-mono tabular-nums text-[var(--fg-muted)]">
+                    <Td className="text-end font-mono tabular-nums text-[var(--fg-muted)]">
                       {einheit === "tage"
                         ? z.krank_tage > 0
                           ? z.krank_tage.toFixed(2)

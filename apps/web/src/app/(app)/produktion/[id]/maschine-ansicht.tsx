@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { useIntervall } from "@/lib/tafeln";
 import type { Texte } from "@/texte";
 
@@ -59,7 +59,7 @@ export function MaschineAnsicht({
 }) {
   const worte = useTexte();
   const intervall = useIntervall();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const router = useRouter();
   const jetzt = laufendesHalbjahr();
@@ -272,7 +272,7 @@ export function MaschineAnsicht({
               </Select>
             </div>
             <Button onClick={() => bogen.mutate()} disabled={bogen.isPending}>
-              <FileDown className="mr-1.5 h-4 w-4" aria-hidden />
+              <FileDown className="me-1.5 h-4 w-4" aria-hidden />
               {bogen.isPending ? worte.maschine.wirdGebaut : worte.maschine.nachweisbogen}
             </Button>
           </div>
@@ -324,7 +324,7 @@ export function MaschineAnsicht({
               disabled={!neu.titel.trim() || anlegen.isPending}
               onClick={() => anlegen.mutate()}
             >
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+              <Plus className="me-1.5 h-4 w-4" aria-hidden />
               Hinzufügen
             </Button>
           </div>
@@ -341,7 +341,7 @@ export function MaschineAnsicht({
                 <tr>
                   <Th>{worte.maschine.aufgabe}</Th>
                   <Th>{worte.maschine.intervall}</Th>
-                  <Th className="text-right" />
+                  <Th className="text-end" />
                 </tr>
               </thead>
               <tbody>
@@ -363,7 +363,7 @@ export function MaschineAnsicht({
                       />
                     </Td>
                     <Td>{intervallText(a, intervall, worte.maschine.alleNWochenZahl)}</Td>
-                    <Td className="text-right">
+                    <Td className="text-end">
                       {darfSchreiben && (
                         <ConfirmDeleteButton
                           itemLabel={a.titel}
@@ -417,7 +417,7 @@ export function MaschineAnsicht({
                   {DATUM.format(new Date(d.hochgeladen_am))}
                 </span>
                 {darfSchreiben && (
-                  <span className="ml-auto">
+                  <span className="ms-auto">
                     <ConfirmDeleteButton
                       itemLabel={d.dateiname}
                       onConfirm={() => dateiWeg.mutateAsync(d).then(() => undefined)}
@@ -451,7 +451,7 @@ function DateiWahl({
         "focus-within:outline-2 focus-within:outline-[var(--ring)]"
       }
     >
-      <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
+      <FileUp className="me-1.5 h-4 w-4" aria-hidden />
       {hochladen.isPending ? worte.maschine.laedt : label}
       <input
         type="file"

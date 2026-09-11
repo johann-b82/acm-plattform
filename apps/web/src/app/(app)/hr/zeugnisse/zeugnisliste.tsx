@@ -22,7 +22,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useZeugnisart } from "@/lib/tafeln";
 
@@ -38,7 +38,7 @@ import { useZeugnisart } from "@/lib/tafeln";
 export function Zeugnisliste() {
   const worte = useTexte();
   const artLabel = useZeugnisart();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const router = useRouter();
   const [person, setPerson] = useState("");
@@ -108,7 +108,7 @@ export function Zeugnisliste() {
           </Select>
         </div>
         <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
-          <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+          <Plus className="me-1.5 h-4 w-4" aria-hidden />
           {worte.zeugnisse.anlegen}
         </Button>
       </Card>

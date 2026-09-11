@@ -199,7 +199,7 @@ export function Sensoren() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={!bereit || anlegen.isPending} onClick={() => anlegen.mutate()}>
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.sensorEinstellungen.anlegen}
           </Button>
           <Button
@@ -207,7 +207,7 @@ export function Sensoren() {
             disabled={!bereit || ausprobieren.isPending}
             onClick={() => ausprobieren.mutate()}
           >
-            <PlugZap className="mr-1.5 h-4 w-4" aria-hidden />
+            <PlugZap className="me-1.5 h-4 w-4" aria-hidden />
             {ausprobieren.isPending ? worte.sensorEinstellungen.fragt : worte.sensorEinstellungen.ausprobieren}
           </Button>
           {probe && <span className="text-sm text-[var(--fg-muted)]">{probe}</span>}
@@ -226,7 +226,7 @@ export function Sensoren() {
           <Card key={s.id} className="space-y-4 p-5">
             <div className="flex flex-wrap items-center gap-3">
               <h3 className="font-medium">{s.name}</h3>
-              <div className="ml-auto flex items-center gap-3">
+              <div className="ms-auto flex items-center gap-3">
                 <Switch
                   checked={s.aktiv}
                   label={worte.sensorEinstellungen.wirdAbgefragt(s.name)}

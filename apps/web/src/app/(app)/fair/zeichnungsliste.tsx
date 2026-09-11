@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 
 
@@ -34,7 +34,7 @@ import { Seitenkopf } from "@/components/seitenkopf";
  */
 export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
 
@@ -88,7 +88,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               "focus-within:outline-2 focus-within:outline-[var(--ring)]"
             }
           >
-            <FileUp className="mr-2 h-4 w-4" aria-hidden />
+            <FileUp className="me-2 h-4 w-4" aria-hidden />
             {hochladen.isPending ? worte.fair.wirdGeladen : worte.fair.zeichnungWaehlen}
             <input
               type="file"
@@ -145,7 +145,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                   <Td>{z.teilenummer ?? "—"}</Td>
                   <Td>{z.kunde ?? "—"}</Td>
                   <Td>{DATUM.format(new Date(z.erstellt_am))}</Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     {darfSchreiben && (
                       <ConfirmDeleteButton
                         itemLabel={z.name}

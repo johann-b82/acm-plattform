@@ -243,12 +243,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           href="/fair"
           className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" aria-hidden />
+          <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
           Zeichnungen
         </Link>
         <h2 className="text-lg font-semibold">{z.name}</h2>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1">
           {seiten > 1 && (
             <Select
               aria-label={worte.fair.seite}

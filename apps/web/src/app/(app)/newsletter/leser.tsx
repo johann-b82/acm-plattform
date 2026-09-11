@@ -104,7 +104,7 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
             </Select>
           )}
           <Button variant="outline" onClick={exportieren} disabled={pdfSeite !== null}>
-            <FileDown className="mr-2 h-4 w-4" aria-hidden />
+            <FileDown className="me-2 h-4 w-4" aria-hidden />
             {pdfSeite === null
               ? worte.newsletter.alsPdf
               : pdfSeite.gesamt === 0
@@ -114,7 +114,7 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
           {darfSchreiben && (
             <Link href="/newsletter/redaktion">
               <Button variant="outline">
-                <PencilLine className="mr-2 h-4 w-4" aria-hidden />
+                <PencilLine className="me-2 h-4 w-4" aria-hidden />
                 {worte.newsletter.redaktion}
               </Button>
             </Link>

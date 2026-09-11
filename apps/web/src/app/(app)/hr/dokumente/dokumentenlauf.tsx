@@ -29,7 +29,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useDokumentworte } from "@/lib/tafeln";
 
@@ -50,7 +50,7 @@ import { useDokumentworte } from "@/lib/tafeln";
 export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
   const dokumentworte = useDokumentworte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "short" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "short" });
   const queryClient = useQueryClient();
   const [art, setArt] = useState<Art>("einarbeitung");
   const [person, setPerson] = useState<string>("");
@@ -178,7 +178,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
             </Select>
           </div>
           <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {anlegen.isPending ? worte.dokumentenlauf.erzeugt : worte.dokumentenlauf.blattErzeugen}
           </Button>
         </Card>
@@ -196,7 +196,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
             {s === "alle" ? worte.dokumentenlauf.alle : dokumentworte.stand[s as Stand]}
           </Button>
         ))}
-        <span className="ml-auto text-[var(--fg-muted)]">
+        <span className="ms-auto text-[var(--fg-muted)]">
           {worte.dokumentenlauf.vonGesamt(liste.length, vorgaenge.data?.length ?? 0)}
         </span>
       </Card>
@@ -250,14 +250,14 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                       umkehren={(wert) => urteilen.mutate({ id: v.id, wert })}
                     />
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => oeffnen.mutate({ id: v.id, was: "blatt.pdf" })}
                       >
-                        <FileDown className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        <FileDown className="me-1.5 h-3.5 w-3.5" aria-hidden />
                         {worte.dokumentenlauf.blatt}
                       </Button>
                       {v.scan_pfad && (
@@ -290,7 +290,7 @@ export function Dokumentenlauf({ darfSchreiben }: { darfSchreiben: boolean }) {
                             "focus-within:outline-[var(--ring)]"
                           }
                         >
-                          <ScanLine className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                          <ScanLine className="me-1.5 h-3.5 w-3.5" aria-hidden />
                           {scan.isPending ? worte.dokumentenlauf.prueft : worte.dokumentenlauf.scan}
                           <input
                             type="file"
@@ -389,7 +389,7 @@ function Urteil({
 function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: boolean }) {
   const worte = useTexte();
   const dokumentworte = useDokumentworte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "short" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "short" });
   const queryClient = useQueryClient();
   const [zeile, setZeile] = useState("");
 
@@ -408,7 +408,7 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
   });
 
   return (
-    <div className="mt-3 space-y-3 rounded-md border border-[var(--border)] p-3 text-left">
+    <div className="mt-3 space-y-3 rounded-md border border-[var(--border)] p-3 text-start">
       <div className="flex flex-wrap gap-4 text-xs text-[var(--fg-muted)]">
         {WEG.map((s) => {
           const wann = vorgang[STEMPEL[s]];
@@ -472,7 +472,7 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
                 "focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
             >
-              <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              <FileUp className="me-1.5 h-3.5 w-3.5" aria-hidden />
               {hochladen.isPending ? worte.dokumentenlauf.laedt : worte.dokumentenlauf.nachweis}
               <input
                 type="file"

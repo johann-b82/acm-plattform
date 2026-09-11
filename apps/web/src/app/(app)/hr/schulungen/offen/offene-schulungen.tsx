@@ -22,7 +22,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useDringlichkeit } from "@/lib/tafeln";
 import type { Texte } from "@/texte";
@@ -53,7 +53,7 @@ const FILTER: { wert: Dringlichkeit | "alle"; wort: keyof Texte["offeneSchulunge
  */
 export function OffeneSchulungen() {
   const worte = useTexte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const dringlichkeitLabel = useDringlichkeit();
   const [filter, setFilter] = useState<Dringlichkeit | "alle">("alle");
   const [suche, setSuche] = useState("");

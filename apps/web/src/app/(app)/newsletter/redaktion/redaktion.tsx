@@ -189,13 +189,13 @@ export function Redaktion({
           </Select>
         </div>
         <Button onClick={() => ausgabeAnlegen.mutate(undefined as never)}>
-          <Plus className="mr-2 h-4 w-4" aria-hidden />
+          <Plus className="me-2 h-4 w-4" aria-hidden />
           {worte.newsletter.ausgabeAnlegen}
         </Button>
         {liste.length > 0 && (
           <Select
             aria-label={worte.newsletter.ausgabeBearbeiten}
-            className="ml-auto w-56"
+            className="ms-auto w-56"
             value={aktiv?.id ?? ""}
             onChange={(e) => setGewaehlt(e.target.value)}
           >
@@ -256,7 +256,7 @@ export function Redaktion({
                   onDatei={(datei) => deckblatt.mutate({ feld, datei })}
                 />
               ))}
-              <div className="ml-auto">
+              <div className="ms-auto">
                 <ConfirmDeleteButton
                   itemLabel={worte.newsletter.ausgabeLoeschen(aktiv.quartal, aktiv.jahr)}
                   onConfirm={() =>
@@ -320,7 +320,7 @@ export function Redaktion({
                   }}
                 />
                 <span className="text-xs text-[var(--fg-muted)]">{kapitelart[k.art]}</span>
-                <div className="ml-auto flex items-center gap-1">
+                <div className="ms-auto flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -435,7 +435,7 @@ export function Redaktion({
                     </div>
                   ))}
                   <Button variant="outline" size="sm" onClick={() => eintragAnlegen.mutate(k)}>
-                    <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                    <Plus className="me-1.5 h-3.5 w-3.5" aria-hidden />
                     {worte.newsletter.eintrag}
                   </Button>
                 </>
@@ -475,7 +475,7 @@ function BildKnopf({
         "focus-within:outline-[var(--ring)]"
       }
     >
-      <ImagePlus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+      <ImagePlus className="me-1.5 h-3.5 w-3.5" aria-hidden />
       {beschriftung}
       <input
         type="file"
@@ -525,7 +525,7 @@ function EingefrorenerStand({
     <div className="space-y-2">
       <p className="text-sm text-[var(--fg-muted)]">{stand}</p>
       <Button variant="outline" size="sm" onClick={onEinfrieren} disabled={!darf}>
-        <Snowflake className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+        <Snowflake className="me-1.5 h-3.5 w-3.5" aria-hidden />
         {nieEingefroren ? worte.newsletter.einfrieren : worte.newsletter.neuEinfrieren}
       </Button>
       {!darf && (

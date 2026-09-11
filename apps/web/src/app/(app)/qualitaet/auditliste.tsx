@@ -28,7 +28,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useAuditworte } from "@/lib/tafeln";
 
@@ -40,7 +40,7 @@ const LAEUFT = new Set(["geplant", "in_vorbereitung", "in_durchfuehrung", "beric
 export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
   const auditworte = useAuditworte();
-  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
+  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const router = useRouter();
   const [neu, setNeu] = useState({ nummer: "", titel: "", art: "intern", vorlage: "" });
@@ -145,7 +145,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             disabled={!neu.nummer.trim() || !neu.titel.trim() || anlegen.isPending}
             onClick={() => anlegen.mutate()}
           >
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden />
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.audit.anlegen}
           </Button>
         </Card>
@@ -199,7 +199,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                       <Td className="tabular-nums">
                         {prozent === null ? "—" : `${prozent} %`}
                         {s && s.ueberfaellig > 0 && (
-                          <span className="ml-2 text-[var(--danger)]">
+                          <span className="ms-2 text-[var(--danger)]">
                             {worte.audit.ueberfaellig(s.ueberfaellig)}
                           </span>
                         )}

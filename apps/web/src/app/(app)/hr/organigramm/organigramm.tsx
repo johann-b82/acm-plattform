@@ -177,15 +177,15 @@ function Ast({
         <div className="min-w-0">
           <span className="font-medium">{anzeigename(knoten)}</span>
           {(knoten.position || knoten.department) && (
-            <span className="ml-2 text-sm text-[var(--fg-muted)]">
+            <span className="ms-2 text-sm text-[var(--fg-muted)]">
               {[knoten.position, knoten.department].filter(Boolean).join(" · ")}
             </span>
           )}
           {knoten.standort && (
-            <span className="ml-2 text-xs text-[var(--fg-muted)]">{knoten.standort}</span>
+            <span className="ms-2 text-xs text-[var(--fg-muted)]">{knoten.standort}</span>
           )}
           {hatKinder && (
-            <span className="ml-2 text-xs text-[var(--fg-muted)]">
+            <span className="ms-2 text-xs text-[var(--fg-muted)]">
               {worte.organigramm.direkt(knoten.kinder.length)}
             </span>
           )}

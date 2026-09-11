@@ -161,7 +161,7 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
                       onClick={() => setGewaehlt(z.schluessel)}
                       aria-current={z.schluessel === aktiv}
                       className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm",
+                        "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-start text-sm",
                         z.schluessel === aktiv
                           ? "bg-[var(--fg)] text-[var(--bg)]"
                           : "hover:bg-[var(--muted)]",

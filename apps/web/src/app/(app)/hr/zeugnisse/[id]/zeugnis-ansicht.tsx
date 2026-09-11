@@ -307,18 +307,18 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
               disabled={baukasten.isPending}
               onClick={() => baukasten.mutate()}
             >
-              <Wrench className="mr-1.5 h-4 w-4" aria-hidden />
+              <Wrench className="me-1.5 h-4 w-4" aria-hidden />
               {baukasten.isPending ? worte.zeugnis.baut : worte.zeugnis.ausBausteinen}
             </Button>
             <Button variant="outline" disabled={ki.isPending} onClick={() => ki.mutate()}>
-              <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
+              <Sparkles className="me-1.5 h-4 w-4" aria-hidden />
               {ki.isPending ? worte.zeugnis.formuliert : worte.zeugnis.mitKi}
             </Button>
             <Button
               disabled={dokument.isPending}
               onClick={() => dokument.mutate("pdf")}
             >
-              <FileDown className="mr-1.5 h-4 w-4" aria-hidden />
+              <FileDown className="me-1.5 h-4 w-4" aria-hidden />
               PDF
             </Button>
             <Button
@@ -326,7 +326,7 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
               disabled={dokument.isPending}
               onClick={() => dokument.mutate("docx")}
             >
-              <FileText className="mr-1.5 h-4 w-4" aria-hidden />
+              <FileText className="me-1.5 h-4 w-4" aria-hidden />
               Word
             </Button>
           </div>

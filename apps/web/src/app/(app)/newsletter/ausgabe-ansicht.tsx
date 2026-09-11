@@ -172,7 +172,7 @@ function KpiSeite({ titel, stand }: { titel: string; stand: KpiStand }) {
                       style={{ width: `${(z.anzahl / summe) * 100}%` }}
                     />
                   </span>
-                  <span className="w-8 shrink-0 text-right tabular-nums">{z.anzahl}</span>
+                  <span className="w-8 shrink-0 text-end tabular-nums">{z.anzahl}</span>
                 </li>
               ))}
             </ul>

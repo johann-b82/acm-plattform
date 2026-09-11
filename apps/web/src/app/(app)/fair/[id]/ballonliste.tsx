@@ -102,14 +102,14 @@ export function Ballonliste({
         <span className="text-sm text-[var(--fg-muted)]">
           {ballons.length === 1 ? worte.fair.einMass : worte.fair.masse(ballons.length)}
         </span>
-        <div className="ml-auto flex gap-2">
+        <div className="ms-auto flex gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={inZwischenablage}
             disabled={ballons.length === 0}
           >
-            <ClipboardCopy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            <ClipboardCopy className="me-1.5 h-3.5 w-3.5" aria-hidden />
             {worte.fair.kopieren}
           </Button>
           <Button
@@ -118,7 +118,7 @@ export function Ballonliste({
             onClick={alsDatei}
             disabled={ballons.length === 0}
           >
-            <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            <Download className="me-1.5 h-3.5 w-3.5" aria-hidden />
             {worte.fair.csv}
           </Button>
         </div>
@@ -161,7 +161,7 @@ export function Ballonliste({
                       }}
                     />
                   </Td>
-                  <Td className="text-right">
+                  <Td className="text-end">
                     {darfSchreiben && (
                       <div className="flex justify-end gap-1">
                         <Button

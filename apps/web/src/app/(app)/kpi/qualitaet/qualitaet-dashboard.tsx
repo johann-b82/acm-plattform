@@ -40,7 +40,7 @@ import { Datenstand } from "@/components/kpi/datenstand";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
-import { SPRACHE_TAG } from "@/lib/sprache";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
@@ -49,7 +49,7 @@ import { cn } from "@/lib/cn";
 export function QualitaetDashboard() {
   const worte = useTexte();
   const fmt = useFormate();
-  const tag = SPRACHE_TAG[useSprache()];
+  const tag = ZAHL_TAG[useSprache()];
   // Die Schlüssel kommen aus der Datenbank, die Namen aus dem Wörterbuch.
   const auditLabel: Record<string, string> = {
     "BH AUD": worte.qualitaet.behoerde,
@@ -493,8 +493,8 @@ export function QualitaetDashboard() {
                   <Th>{worte.qualitaet.pruefer}</Th>
                   <Th>{worte.qualitaet.produkt}</Th>
                   <Th>{worte.qualitaet.groesse}</Th>
-                  <Th className="text-right">{worte.qualitaet.menge}</Th>
-                  <Th className="text-right">{worte.qualitaet.ausschuss}</Th>
+                  <Th className="text-end">{worte.qualitaet.menge}</Th>
+                  <Th className="text-end">{worte.qualitaet.ausschuss}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -520,8 +520,8 @@ export function QualitaetDashboard() {
                     <Td>{b.benutzer ?? "—"}</Td>
                     <Td className="max-w-sm truncate">{b.bezeichnung ?? "—"}</Td>
                     <Td>{klasseLabel[b.size_class]}</Td>
-                    <Td className="text-right tabular-nums">{fmt.zahl(b.buchungs_menge)}</Td>
-                    <Td className="text-right tabular-nums">{fmt.zahl(b.ausschuss_menge)}</Td>
+                    <Td className="text-end tabular-nums">{fmt.zahl(b.buchungs_menge)}</Td>
+                    <Td className="text-end tabular-nums">{fmt.zahl(b.ausschuss_menge)}</Td>
                   </tr>
                 ))}
               </tbody>

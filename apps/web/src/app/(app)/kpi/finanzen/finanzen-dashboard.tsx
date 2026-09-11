@@ -224,9 +224,9 @@ export function FinanzenDashboard() {
               <thead>
                 <tr>
                   <Th>{worte.finanzen.abteilung}</Th>
-                  <Th className="text-right">{worte.finanzen.personen}</Th>
-                  <Th className="text-right">{worte.finanzen.kosten}</Th>
-                  <Th className="text-right">{worte.finanzen.anteil}</Th>
+                  <Th className="text-end">{worte.finanzen.personen}</Th>
+                  <Th className="text-end">{worte.finanzen.kosten}</Th>
+                  <Th className="text-end">{worte.finanzen.anteil}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -235,9 +235,9 @@ export function FinanzenDashboard() {
                     <Td className={z.gebuendelt ? "text-[var(--fg-muted)]" : ""}>
                       {z.abteilung}
                     </Td>
-                    <Td className="text-right font-mono tabular-nums">{fmt.zahl(z.personen)}</Td>
-                    <Td className="text-right font-mono tabular-nums">{fmt.eur(z.kosten)}</Td>
-                    <Td className="text-right font-mono tabular-nums">
+                    <Td className="text-end font-mono tabular-nums">{fmt.zahl(z.personen)}</Td>
+                    <Td className="text-end font-mono tabular-nums">{fmt.eur(z.kosten)}</Td>
+                    <Td className="text-end font-mono tabular-nums">
                       {personal.data && personal.data.personalkosten > 0
                         ? fmt.prozent(z.kosten / personal.data.personalkosten)
                         : "—"}
@@ -318,9 +318,9 @@ export function FinanzenDashboard() {
                 <tr>
                   <Th>{worte.finanzen.artikel}</Th>
                   <Th>{worte.finanzen.bezeichnung}</Th>
-                  <Th className="text-right">{worte.finanzen.menge}</Th>
-                  <Th className="text-right">{worte.finanzen.stueckpreis}</Th>
-                  <Th className="text-right">{worte.finanzen.kosten}</Th>
+                  <Th className="text-end">{worte.finanzen.menge}</Th>
+                  <Th className="text-end">{worte.finanzen.stueckpreis}</Th>
+                  <Th className="text-end">{worte.finanzen.kosten}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -328,15 +328,15 @@ export function FinanzenDashboard() {
                   <tr key={z.artikelnr}>
                     <Td className="font-mono text-xs">{z.artikelnr}</Td>
                     <Td className="max-w-sm truncate">{z.article_name ?? "—"}</Td>
-                    <Td className="text-right tabular-nums">{fmt.zahl(z.menge)}</Td>
-                    <Td className="text-right tabular-nums">
+                    <Td className="text-end tabular-nums">{fmt.zahl(z.menge)}</Td>
+                    <Td className="text-end tabular-nums">
                       {z.stueckpreis == null ? (
                         <span className="text-[var(--danger)]">{worte.finanzen.keinPreis}</span>
                       ) : (
                         fmt.eurGenau(z.stueckpreis)
                       )}
                     </Td>
-                    <Td className="text-right tabular-nums">{fmt.eur(z.kosten)}</Td>
+                    <Td className="text-end tabular-nums">{fmt.eur(z.kosten)}</Td>
                   </tr>
                 ))}
               </tbody>
