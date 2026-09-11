@@ -73,9 +73,13 @@ PAARE: list[Paar] = [
     Paar("Personal", "schulung_rolle", "schulung_rollen"),
     Paar("Personal", "schulung_teilnahme", "schulung_teilnahmen"),
     Paar("Personal", "schulung_import", "schulung_importe"),
-    Paar("Personal", "schulung_dokument", "schulung_unterlagen",
-         erwartet="ein offener Formblatt-Vorgang; sein Zuhause sind die "
-         "Dokumentvorgänge, und die Datei liegt nicht im Abzug"),
+    Paar("Personal", "schulung_unterlage", "schulung_unterlagen"),
+    Paar("Personal", "schulung_dokument", None,
+         "ein offener Formblatt-Vorgang; sein Zuhause sind die Dokumentvorgänge"),
+    Paar("Personal", "schulung_zertifikat", None,
+         "im neuen Stack ist ein Nachweis eine Unterlage an der Schulung"),
+    Paar("Personal", "onboarding_dokument", None,
+         "der Einarbeitungsplan wird jetzt gerechnet statt abgelegt"),
     Paar("Personal", "kompetenz_matrix", "kompetenz_matrizen"),
     Paar("Personal", "kompetenz_kategorie", "kompetenz_kategorien"),
     Paar("Personal", "kompetenz_qualifikation", "kompetenz_qualifikationen"),
@@ -84,8 +88,8 @@ PAARE: list[Paar] = [
     Paar("Personal", "einarbeitung_katalog", "einarbeitung_katalog"),
     Paar("Personal", "einarbeitung_pflicht", "einarbeitung_pflicht"),
     Paar("Personal", "einarbeitung_dokument", "dokument_nachweise",
-         erwartet="derselbe Fall wie beim Schulungsdokument: ein Formblatt-"
-         "Vorgang ohne Datei im Abzug"),
+         erwartet="ein Formblatt-Vorgang mitsamt Prüfergebnis; im neuen Stack "
+         "ist ein Nachweis eine Datei am Vorgang, und die liegt nicht im Abzug"),
     Paar("Personal", "onboarding_abteilung", "onboarding_abteilung"),
     Paar("Personal", "onboarding_paket_download", "onboarding_paket"),
     Paar("Personal", "onboarding_extern", "externe_personen"),
@@ -105,6 +109,7 @@ PAARE: list[Paar] = [
     Paar("Produktion", "maintenance_files", "wartungsdateien"),
     Paar("Produktion", "sensors", "sensoren"),
     Paar("Produktion", "sensor_readings", "sensor_messungen"),
+    Paar("Produktion", "sensor_poll_log", "sensor_versuche"),
     # --- FAIR ---------------------------------------------------------------
     Paar("FAIR", "fair_projects", "fair_zeichnungen"),
     Paar("FAIR", "fair_balloons", "fair_ballons"),
@@ -125,6 +130,12 @@ PAARE: list[Paar] = [
     Paar("Nicht portiert", "signage_playlists", None, "Signage liegt im Repo acm-signage"),
     Paar("Nicht portiert", "signage_devices", None, "Signage liegt im Repo acm-signage"),
     Paar("Nicht portiert", "signage_schedules", None, "Signage liegt im Repo acm-signage"),
+    Paar("Nicht portiert", "signage_playlist_items", None, "Signage liegt im Repo acm-signage"),
+    Paar("Nicht portiert", "signage_device_tags", None, "Signage liegt im Repo acm-signage"),
+    Paar("Nicht portiert", "signage_device_tag_map", None, "Signage liegt im Repo acm-signage"),
+    Paar("Nicht portiert", "signage_playlist_tag_map", None, "Signage liegt im Repo acm-signage"),
+    Paar("Nicht portiert", "signage_pairing_sessions", None, "Signage liegt im Repo acm-signage"),
+    Paar("Nicht portiert", "signage_heartbeat_event", None, "Signage liegt im Repo acm-signage"),
 ]
 
 
