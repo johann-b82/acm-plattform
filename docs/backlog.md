@@ -29,6 +29,30 @@ nicht zu raten.
 | Zweisprachigkeit (DE/EN, 1.951 i18n-Schlüssel) | Der neue Stack ist einsprachig deutsch. Alle Beschriftungen stehen im Klartext im Markup; ein Sprachschalter war nie in Gebrauch. Wenn er gebraucht wird, ist er nachrüstbar — aber nicht als Nebenprodukt der Portierung. |
 | Directus, Forward-Auth, Phase-Guards | Siehe Löschliste in `docs/inventory.md`. |
 
+## Der Abgleich, zuletzt gemacht am 2026-09-11
+
+Der Altstack lief dafür noch einmal in Docker (Port-Overlay, Caddy auf 8081).
+Seine OpenAPI: **274 Pfade, 337 Operationen** — identisch zum Abzug vom Beginn
+des Durchgangs, es hat sich also nichts unter der Hand geändert.
+
+Verglichen wurde Domäne für Domäne gegen den neuen Stand: 56 compute-Routen und
+87 Tabellen und Sichten. **Jede Alt-Domäne hat eine Entsprechung.** Die Tabelle
+darüber („Bewusst nicht übernommen") und die zwei offenen Punkte sind der ganze
+Rest.
+
+Zwei Dinge, die beim Vergleichen auffielen und hier festgehalten gehören:
+
+* Drei Routen, die ich zunächst als fehlend notiert hatte, gibt es — unter
+  anderen Pfaden: `/api/atr/lieferungen/{id}/erzeugen`,
+  `/api/kompetenzen/{bereich}/vorschau`,
+  `/api/wartung/maschinen/{id}/bogen.pdf`. Ein Abgleich über geratene Namen
+  taugt nichts; gezählt wurde deshalb gegen die tatsächliche Liste.
+* **Befund 4 im direkten Vergleich:** die alte Route
+  `GET /api/hr/embed/birthdays/this-week` antwortet auf dem laufenden Altstack
+  ohne jede Anmeldung mit 200. Die neue Entsprechung
+  `GET /api/anzeige/geburtstage` verweigert ohne Token. Nachgemessen, nicht
+  behauptet.
+
 ## Abgeglichen und vollständig
 
 Vertrieb, Einkauf, Produktion (Kennzahlen), Qualität (Kennzahlen), Finanzen,
