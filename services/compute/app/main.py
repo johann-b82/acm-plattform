@@ -18,6 +18,7 @@ from app.routers.sensoren import router as sensoren_router
 from app.routers.uploads import router as uploads_router
 from app.routers.wartung import router as wartung_router
 from app.routers.verwaltung import router as verwaltung_router
+from app.routers.zeugnisse import router as zeugnisse_router
 
 # Ein echter Handler (docs/logging.md Regel 4): WARNING nach stdout, sonst Stille.
 logging.basicConfig(
@@ -38,6 +39,7 @@ app.include_router(sensoren_router)
 app.include_router(sensoren_geplant)
 app.include_router(wartung_router)
 app.include_router(verwaltung_router)
+app.include_router(zeugnisse_router)
 
 
 @app.get("/api/health")
