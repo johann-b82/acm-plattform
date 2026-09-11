@@ -99,3 +99,65 @@ class TestPronomen:
 
     def test_text_ohne_platzhalter_bleibt_unberuehrt(self):
         assert ersetze_pronomen("Ein Satz ohne alles.", "m") == "Ein Satz ohne alles."
+
+
+class TestDokument:
+    """Das Dokument selbst — und die Umwandlung, die daran hängt."""
+
+    @pytest.mark.asyncio
+    async def test_das_docx_entsteht_auf_der_briefvorlage(self):
+        from types import SimpleNamespace
+
+        from docx import Document
+        from io import BytesIO
+
+        from app.zeugnis.dokument import baue_docx
+
+        zeugnis = SimpleNamespace(
+            name="Dana Neu",
+            art="qualifiziert",
+            austritt=date(2026, 8, 31),
+            ausstellungsdatum=None,
+            abschnitte={
+                "einleitung": "Frau Neu war bei uns tätig.",
+                "taetigkeitsbeschreibung": "Zu ihren Aufgaben gehörten:\nFräsen",
+                "leistungsbeurteilung": "Stets zu unserer vollsten Zufriedenheit.",
+                "sozialverhalten": "Einwandfrei.",
+                "schlussformel": "Wir wünschen alles Gute.",
+            },
+        )
+        aussteller = SimpleNamespace(
+            firma="Aircraft Cabin Modification GmbH",
+            standort="Memmingen",
+            unterzeichner1_name="M. Brose",
+            unterzeichner1_titel="QM/CMM",
+            unterzeichner2_name=None,
+            unterzeichner2_titel=None,
+        )
+        daten = baue_docx(zeugnis, aussteller, None, dateiname="Zeugnis Dana Neu")
+        dokument = Document(BytesIO(daten))
+        texte = "\n".join(p.text for p in dokument.paragraphs)
+        assert "Endzeugnis" in texte
+        assert "Frau Neu war bei uns tätig." in texte
+        assert "Wir wünschen alles Gute." in texte
+
+    @pytest.mark.asyncio
+    async def test_die_umwandlung_nach_pdf_laeuft(self):
+        """Der Beleg dafür, dass `libreoffice-writer` im Abbild steckt: Calc
+        allein öffnet keine `.docx` und meldet „source file could not be
+        loaded" — was nach einer kaputten Datei klingt und keine ist."""
+        from io import BytesIO
+        from types import SimpleNamespace
+
+        from app.zeugnis.dokument import baue_docx, baue_pdf
+
+        zeugnis = SimpleNamespace(
+            name="Dana Neu",
+            art="qualifiziert",
+            austritt=None,
+            ausstellungsdatum=None,
+            abschnitte={"einleitung": "Kurz."},
+        )
+        pdf = await baue_pdf(baue_docx(zeugnis, None, None))
+        assert pdf[:5] == b"%PDF-"
+        assert len(pdf) > 1000
