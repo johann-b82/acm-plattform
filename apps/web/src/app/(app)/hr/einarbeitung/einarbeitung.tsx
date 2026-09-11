@@ -27,6 +27,8 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
  * Einarbeitung: die Inhalte, ihre Abteilungen und der persönliche Bogen.
@@ -36,6 +38,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
  * Inhalt für jede Abteilung noch einmal da.
  */
 export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState("");
   const [neueAbteilung, setNeueAbteilung] = useState<Record<string, string>>({});
@@ -121,31 +124,25 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Einarbeitung</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Was eine neue Person lernen muss und wer es ihr zeigt. Der Bogen
-            entsteht aus den Inhalten, die für ihre Abteilung hinterlegt sind.
-          </p>
-        </div>
-        <div className="flex gap-4 text-sm">
-          <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
-            Onboarding
-          </Link>
-          <Link href="/hr" className="underline-offset-4 hover:underline">
-            Personal
-          </Link>
-        </div>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr/einarbeitung"]}
+        untertitel={worte.einarbeitung.einleitung}
+        unter={
+          <div className="mt-2 flex justify-center gap-4 text-sm">
+            <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
+              {worte.pfad.seiten["/hr/onboarding"]}
+            </Link>
+          </div>
+        }
+      />
 
       <Card className="space-y-3 p-5">
-        <h2 className="font-medium">Bogen erzeugen</h2>
+        <h2 className="font-medium">{worte.einarbeitung.bogenErzeugen}</h2>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-56 flex-col gap-1">
-            <Label htmlFor="person">Person</Label>
+            <Label htmlFor="person">{worte.einarbeitung.person}</Label>
             <Select id="person" value={fuer} onChange={(e) => setFuer(e.target.value)}>
-              <option value="">— wählen —</option>
+              <option value="">{worte.einarbeitung.waehlen}</option>
               {personen.map((p) => (
                 <option key={p.employee_id} value={String(p.employee_id)}>
                   {p.name}
@@ -159,13 +156,13 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
             onClick={() => bogen.mutate({ employee_id: fuer })}
           >
             <FileDown className="mr-1.5 h-4 w-4" aria-hidden />
-            {bogen.isPending ? "Wird gebaut …" : "Einarbeitungsplan"}
+            {bogen.isPending ? worte.einarbeitung.wirdGebaut : worte.einarbeitung.einarbeitungsplan}
           </Button>
           {gewaehlt && (
             <span className="text-sm text-[var(--fg-muted)]">
               {pflichten.size === 0
-                ? "Noch keine Inhalte hinterlegt — der Bogen bliebe leer."
-                : `Abteilung ${gewaehlt.abteilung ?? "—"}`}
+                ? worte.einarbeitung.keineInhalte
+                : worte.einarbeitung.abteilungVon(gewaehlt.abteilung ?? "—")}
             </span>
           )}
         </div>
@@ -174,11 +171,11 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
       {darfSchreiben && (
         <Card className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex min-w-56 flex-1 flex-col gap-1">
-            <Label htmlFor="neu">Neuer Inhalt</Label>
+            <Label htmlFor="neu">{worte.einarbeitung.neuerInhalt}</Label>
             <Input
               id="neu"
               value={neu}
-              placeholder="z. B. Sicherheitsunterweisung an der Fräse"
+              placeholder={worte.einarbeitung.beispiel}
               onChange={(e) => setNeu(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && neu.trim()) anlegen.mutate();
@@ -187,27 +184,27 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
           </div>
           <Button disabled={!neu.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Anlegen
+            {worte.einarbeitung.anlegen}
           </Button>
         </Card>
       )}
 
       {katalog.isLoading ? (
-        <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
+        <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>
       ) : inhalte.length === 0 ? (
         <EmptyState
-          title="Noch kein Inhalt"
-          body="Leg fest, was eine neue Person lernen muss — und für welche Abteilungen das gilt."
+          title={worte.einarbeitung.keinInhalt}
+          body={worte.einarbeitung.keinInhaltText}
         />
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Inhalt</Th>
-                <Th>Ansprechpartner</Th>
-                <Th>Bereich</Th>
-                <Th>Für welche Abteilungen</Th>
+                <Th>{worte.einarbeitung.inhalt}</Th>
+                <Th>{worte.einarbeitung.ansprechpartner}</Th>
+                <Th>{worte.einarbeitung.bereich}</Th>
+                <Th>{worte.einarbeitung.fuerAbteilungen}</Th>
                 <Th />
               </tr>
             </thead>
@@ -244,8 +241,8 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
                     <Input
                       className="w-32"
                       defaultValue={i.bereich ?? ""}
-                      placeholder="Abteilung"
-                      title="Leer heißt: die Abteilung aus der Matrix einsetzen"
+                      placeholder={worte.einarbeitung.abteilung}
+                      title={worte.einarbeitung.bereichLeer}
                       disabled={!darfSchreiben}
                       onBlur={(e) => {
                         const wert = e.target.value.trim() || null;
@@ -264,7 +261,7 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
                             <button
                               type="button"
                               className="ml-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
-                              aria-label={`${a} entfernen`}
+                              aria-label={worte.einarbeitung.entfernen(a)}
                               onClick={() =>
                                 pflichtSetzen.mutate({ id: i.id, abteilung: a, an: false })
                               }
@@ -278,8 +275,8 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
                         <Input
                           className="w-32"
                           value={neueAbteilung[i.id] ?? ""}
-                          placeholder="+ Abteilung"
-                          aria-label={`Abteilung für ${i.inhalt}`}
+                          placeholder={worte.einarbeitung.abteilungHinzu}
+                          aria-label={worte.einarbeitung.abteilungFuer(i.inhalt)}
                           onChange={(e) =>
                             setNeueAbteilung((s) => ({ ...s, [i.id]: e.target.value }))
                           }

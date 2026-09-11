@@ -7,8 +7,6 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import {
-  BEREICH_LABEL,
-  LEVEL_TEXT,
   istLuecke,
   kompetenzApi,
   kompetenzKeys,
@@ -29,8 +27,11 @@ import {
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { cn } from "@/lib/cn";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { useKompetenzbereich, useStufentext } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 /**
  * Die Matrix als Raster.
@@ -46,6 +47,10 @@ export function MatrixAnsicht({
   id: string;
   darfSchreiben: boolean;
 }) {
+  const worte = useTexte();
+  const bereichLabel = useKompetenzbereich();
+  const stufentext = useStufentext();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState({ bezeichnung: "", kategorie: "" });
   const [neuePerson, setNeuePerson] = useState("");
@@ -152,10 +157,10 @@ export function MatrixAnsicht({
   const spalten = personen.data ?? [];
 
   if (matrizen.isLoading) {
-    return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
+    return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>;
   }
   if (!matrix) {
-    return <EmptyState title="Diese Matrix gibt es nicht" body="Vermutlich wurde sie ersetzt." />;
+    return <EmptyState title={worte.matrix.gibtEsNicht} body={worte.matrix.gibtEsNichtText} />;
   }
 
   return (
@@ -166,14 +171,14 @@ export function MatrixAnsicht({
             {matrix.titel ?? matrix.blatt}
           </h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            <Badge variant="outline">{BEREICH_LABEL[matrix.bereich]}</Badge>{" "}
-            Blatt {matrix.blatt}
-            {matrix.stand && ` · Stand ${DATUM.format(new Date(matrix.stand))}`} ·{" "}
-            {reihen.length} Qualifikationen, {spalten.length} Personen
+            <Badge variant="outline">{bereichLabel[matrix.bereich]}</Badge>{" "}
+            {worte.matrix.blattStand(matrix.blatt)}
+            {matrix.stand && worte.matrix.stand(DATUM.format(new Date(matrix.stand)))}
+            {worte.matrix.umfang(reihen.length, spalten.length)}
           </p>
         </div>
         <Link href="/hr/kompetenzen" className="text-sm underline-offset-4 hover:underline">
-          Zur Übersicht
+          {worte.matrix.zurUebersicht}
         </Link>
       </div>
 
@@ -188,7 +193,7 @@ export function MatrixAnsicht({
                     "bg-[var(--muted)] px-3 py-2 text-left font-medium"
                   }
                 >
-                  Qualifikation
+                  {worte.matrix.qualifikation}
                 </th>
                 <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-right font-medium">
                   Ø
@@ -278,48 +283,46 @@ export function MatrixAnsicht({
         </div>
         {reihen.length === 0 && (
           <p className="p-5 text-sm text-[var(--fg-muted)]">
-            Diese Matrix hat noch keine Zeilen.
+            {worte.matrix.keineZeilen}
           </p>
         )}
       </Card>
 
       <Card className="space-y-2 p-5">
-        <h2 className="font-medium">Was die Stufen bedeuten</h2>
+        <h2 className="font-medium">{worte.matrix.stufenBedeuten}</h2>
         <ul className="grid gap-1 text-sm text-[var(--fg-muted)] sm:grid-cols-2">
-          {Object.entries(LEVEL_TEXT).map(([stufe, text]) => (
+          {Object.entries(stufentext).map(([stufe, text]) => (
             <li key={stufe}>
               <span className="font-medium text-[var(--fg)]">{stufe}</span> — {text}
             </li>
           ))}
         </ul>
         <p className="text-sm text-[var(--fg-muted)]">
-          Die zweite Zahl ist der Erfüllungsgrad in Prozent. Eine Zelle mit
-          Anforderung und weniger als 100 % ist eine Lücke und steht in
-          Warnfarbe.
+          {worte.matrix.erfuellungsgradHinweis}
         </p>
       </Card>
 
       {darfSchreiben && (
         <Card className="space-y-4 p-5">
-          <h2 className="font-medium">Ergänzen</h2>
+          <h2 className="font-medium">{worte.matrix.ergaenzen}</h2>
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="bezeichnung">Neue Qualifikation</Label>
+              <Label htmlFor="bezeichnung">{worte.matrix.neueQualifikation}</Label>
               <Input
                 id="bezeichnung"
                 value={neu.bezeichnung}
-                placeholder="z. B. Drehmaschine"
+                placeholder={worte.matrix.beispiel}
                 onChange={(e) => setNeu({ ...neu, bezeichnung: e.target.value })}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="kategorie">Kategorie</Label>
+              <Label htmlFor="kategorie">{worte.matrix.kategorie}</Label>
               <Select
                 id="kategorie"
                 value={neu.kategorie}
                 onChange={(e) => setNeu({ ...neu, kategorie: e.target.value })}
               >
-                <option value="">ohne</option>
+                <option value="">{worte.matrix.ohne}</option>
                 {[...new Set(reihen.map((q) => q.kategorie).filter(Boolean))].map((k) => (
                   <option key={k} value={k as string}>
                     {k}
@@ -332,16 +335,16 @@ export function MatrixAnsicht({
               onClick={() => qualifikationAnlegen.mutate()}
             >
               <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-              Zeile
+              {worte.matrix.zeile}
             </Button>
           </div>
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="neue-person">Neue Person</Label>
+              <Label htmlFor="neue-person">{worte.matrix.neuePerson}</Label>
               <Input
                 id="neue-person"
                 value={neuePerson}
-                placeholder="Vorname Nachname"
+                placeholder={worte.matrix.namensform}
                 onChange={(e) => setNeuePerson(e.target.value)}
               />
             </div>
@@ -351,7 +354,7 @@ export function MatrixAnsicht({
               onClick={() => personAnlegen.mutate()}
             >
               <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-              Spalte
+              {worte.matrix.spalte}
             </Button>
           </div>
         </Card>
@@ -370,6 +373,7 @@ function Zelle({
   darfSchreiben: boolean;
   setzen: (level: number | null, grad: number | null) => void;
 }) {
+  const worte = useTexte();
   const luecke = istLuecke(wert);
 
   function zahl(roh: string, oben: number): number | null {
@@ -389,7 +393,7 @@ function Zelle({
     >
       <div className="flex w-24 gap-1">
         <Input
-          aria-label="Anforderungslevel"
+          aria-label={worte.matrix.anforderungslevel}
           className="h-8 w-10 px-1 text-center tabular-nums"
           defaultValue={wert?.anforderungslevel ?? ""}
           disabled={!darfSchreiben}
@@ -401,7 +405,7 @@ function Zelle({
           }}
         />
         <Input
-          aria-label="Erfüllungsgrad in Prozent"
+          aria-label={worte.matrix.erfuellungsgrad}
           className="h-8 w-12 px-1 text-center tabular-nums"
           defaultValue={wert?.erfuellungsgrad ?? ""}
           disabled={!darfSchreiben}

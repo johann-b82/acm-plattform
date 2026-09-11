@@ -8,7 +8,6 @@ import { FileUp } from "lucide-react";
 
 import {
   BEREICHE,
-  BEREICH_LABEL,
   kompetenzApi,
   kompetenzKeys,
   type Bereich,
@@ -26,8 +25,12 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitives";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { Seitenkopf } from "@/components/seitenkopf";
+import { useKompetenzbereich } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
+
 
 /**
  * Die Qualifikationsmatrizen.
@@ -37,6 +40,9 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
  * hat, verlöre das.
  */
 export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const bereichLabel = useKompetenzbereich();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [bereich, setBereich] = useState<Bereich>("produktion");
   const [vorschau, setVorschau] = useState<{ datei: File; ergebnis: ImportErgebnis } | null>(
@@ -71,25 +77,16 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Kompetenzen</h1>
-          <p className="mt-1 max-w-prose text-sm text-[var(--fg-muted)]">
-            Was eine Stelle verlangt und wie weit es erfüllt ist — je Bereich
-            eine Matrix. Eingelesen aus der Bereichsdatei, danach hier
-            gepflegt.
-          </p>
-        </div>
-        <Link href="/hr" className="text-sm underline-offset-4 hover:underline">
-          Zum Personal-Dashboard
-        </Link>
-      </div>
+      <Seitenkopf
+        titel={worte.pfad.seiten["/hr/kompetenzen"]}
+        untertitel={worte.kompetenzen.einleitung}
+      />
 
       {darfSchreiben && (
         <Card className="space-y-3 p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
-              <Label htmlFor="bereich">Bereich</Label>
+              <Label htmlFor="bereich">{worte.kompetenzen.bereich}</Label>
               <Select
                 id="bereich"
                 value={bereich}
@@ -100,7 +97,7 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               >
                 {BEREICHE.map((b) => (
                   <option key={b.wert} value={b.wert}>
-                    {b.label}
+                    {bereichLabel[b.wert]}
                   </option>
                 ))}
               </Select>
@@ -113,12 +110,12 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               }
             >
               <FileUp className="mr-1.5 h-4 w-4" aria-hidden />
-              {zeigen.isPending ? "Wird gelesen …" : "Bereichsdatei einlesen"}
+              {zeigen.isPending ? worte.kompetenzen.wirdGelesen : worte.kompetenzen.einlesen}
               <input
                 type="file"
                 accept=".xlsx"
                 className="sr-only"
-                aria-label="Bereichsdatei einlesen"
+                aria-label={worte.kompetenzen.einlesen}
                 disabled={zeigen.isPending}
                 onChange={(e) => {
                   const datei = e.target.files?.[0];
@@ -132,23 +129,18 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           {vorschau && (
             <div className="space-y-3 rounded-md bg-[var(--muted)] p-4 text-sm">
               <p className="font-medium">
-                {vorschau.ergebnis.dateiname} — so sähe {BEREICH_LABEL[bereich]} danach aus:
+                {worte.kompetenzen.vorschauKopf(vorschau.ergebnis.dateiname, bereichLabel[bereich])}
               </p>
               <ul className="space-y-2">
                 {vorschau.ergebnis.matrizen.map((m) => (
                   <li key={m.blatt}>
-                    <span className="font-medium">{m.blatt}</span>: {m.qualifikationen}{" "}
-                    Qualifikationen, {m.personen} Personen, {m.bewertungen} Bewertungen.{" "}
-                    {m.zugeordnet} von {m.personen} Personen in Personio gefunden
-                    {m.platzhalter > 0 &&
-                      `, ${m.platzhalter} ${
-                        m.platzhalter === 1 ? "Platzhalterspalte" : "Platzhalterspalten"
-                      }`}
-                    .
+                    <span className="font-medium">{m.blatt}</span>:{" "}
+                    {worte.kompetenzen.blattZeile(m.qualifikationen, m.personen, m.bewertungen)}{" "}
+                    {worte.kompetenzen.gefunden(m.zugeordnet, m.personen)}
+                    {m.platzhalter > 0 && worte.kompetenzen.platzhalter(m.platzhalter)}.
                     {m.nicht_zugeordnet.length > 0 && (
                       <span className="text-[var(--fg-muted)]">
-                        {" "}
-                        Ohne Zuordnung: {m.nicht_zugeordnet.join(", ")}.
+                        {worte.kompetenzen.ohneZuordnung(m.nicht_zugeordnet.join(", "))}
                       </span>
                     )}
                   </li>
@@ -160,18 +152,17 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 </p>
               ))}
               <p className="text-[var(--fg-muted)]">
-                Die betroffenen Blätter werden vollständig ersetzt — hier
-                gepflegte Änderungen gehen dabei verloren.
+                {worte.kompetenzen.ersetztWarnung}
               </p>
               <div className="flex gap-2">
                 <Button
                   disabled={uebernehmen.isPending}
                   onClick={() => uebernehmen.mutate()}
                 >
-                  {uebernehmen.isPending ? "Wird übernommen …" : "Übernehmen"}
+                  {uebernehmen.isPending ? worte.kompetenzen.wirdUebernommen : worte.kompetenzen.uebernehmen}
                 </Button>
                 <Button variant="outline" onClick={() => setVorschau(null)}>
-                  Abbrechen
+                  {worte.kompetenzen.abbrechen}
                 </Button>
               </div>
             </div>
@@ -183,26 +174,26 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
         <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>
       ) : liste.length === 0 ? (
         <EmptyState
-          title="Noch keine Matrix"
-          body="Lies eine Bereichsdatei ein — die Blätter darin werden je eine Matrix."
+          title={worte.kompetenzen.keineMatrix}
+          body={worte.kompetenzen.keineMatrixText}
         />
       ) : (
         <TableWrap>
           <Table>
             <thead>
               <tr>
-                <Th>Bereich</Th>
-                <Th>Blatt</Th>
-                <Th>Titel</Th>
-                <Th>Stand</Th>
-                <Th>Eingelesen</Th>
+                <Th>{worte.kompetenzen.bereich}</Th>
+                <Th>{worte.kompetenzen.blatt}</Th>
+                <Th>{worte.kompetenzen.titelSpalte}</Th>
+                <Th>{worte.kompetenzen.stand}</Th>
+                <Th>{worte.kompetenzen.eingelesen}</Th>
               </tr>
             </thead>
             <tbody>
               {liste.map((m) => (
                 <tr key={m.id}>
                   <Td>
-                    <Badge variant="outline">{BEREICH_LABEL[m.bereich]}</Badge>
+                    <Badge variant="outline">{bereichLabel[m.bereich]}</Badge>
                   </Td>
                   <Td>
                     <Link

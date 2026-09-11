@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import {
-  DRINGLICHKEIT_LABEL,
   dringlichkeit,
   schulungApi,
   schulungKeys,
@@ -30,20 +29,15 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { SPRACHE_TAG } from "@/lib/sprache";
+import { useDringlichkeit } from "@/lib/tafeln";
 
-const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 
-const EBENEN: { wert: Pflicht["ebene"]; titel: string; hinweis: string }[] = [
-  {
-    wert: "kuerzel",
-    titel: "Abteilungskürzel",
-    hinweis: "Das feine Schema aus der Excel (NÄH, CUT, WVK …).",
-  },
-  {
-    wert: "personio",
-    titel: "Personio-Abteilung",
-    hinweis: "Die grobe Abteilung, wie Personio sie führt.",
-  },
+
+const EBENEN: { wert: Pflicht["ebene"]; wort: "kuerzel" | "personioAbteilung" }[] = [
+  { wert: "kuerzel", wort: "kuerzel" },
+  { wert: "personio", wort: "personioAbteilung" },
 ];
 
 export function SchulungAnsicht({
@@ -53,6 +47,9 @@ export function SchulungAnsicht({
   id: string;
   darfSchreiben: boolean;
 }) {
+  const worte = useTexte();
+  const dringlichkeitLabel = useDringlichkeit();
+  const DATUM = new Intl.DateTimeFormat(SPRACHE_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState("");
   const [neuePflicht, setNeuePflicht] = useState<Record<string, string>>({});
@@ -116,10 +113,10 @@ export function SchulungAnsicht({
   const meinePflichten = (pflicht.data ?? []).filter((p) => p.schulung_id === id);
 
   if (katalog.isLoading) {
-    return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
+    return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>;
   }
   if (!schulung) {
-    return <EmptyState title="Diese Schulung gibt es nicht" body="Vermutlich wurde sie entfernt." />;
+    return <EmptyState title={worte.schulung.gibtEsNicht} body={worte.schulung.gibtEsNichtText} />;
   }
 
   return (
@@ -129,25 +126,26 @@ export function SchulungAnsicht({
           <h1 className="text-2xl font-semibold tracking-tight">{schulung.name}</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             <Badge variant="outline">{schulung.bereich}</Badge>{" "}
-            {schulung.turnus ?? "ohne Turnus"}
-            {schulung.turnus && schulung.turnus_monate === null &&
-              " — daraus lässt sich keine Fälligkeit rechnen"}
+            {schulung.turnus ?? worte.schulung.ohneTurnus}
+            {schulung.turnus &&
+              schulung.turnus_monate === null &&
+              worte.schulung.keineFaelligkeit}
           </p>
         </div>
         <Link href="/hr/schulungen" className="text-sm underline-offset-4 hover:underline">
-          Zum Katalog
+          {worte.schulung.zumKatalog}
         </Link>
       </div>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">Stammdaten</h2>
+        <h2 className="font-medium">{worte.schulung.stammdaten}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="turnus">Turnus</Label>
+            <Label htmlFor="turnus">{worte.schulung.turnus}</Label>
             <Input
               id="turnus"
               defaultValue={schulung.turnus ?? ""}
-              placeholder="z. B. jährlich"
+              placeholder={worte.schulung.turnusBeispiel}
               disabled={!darfSchreiben}
               onBlur={(e) => {
                 const wert = e.target.value.trim() || null;
@@ -155,11 +153,11 @@ export function SchulungAnsicht({
               }}
             />
             <span className="text-xs text-[var(--fg-muted)]">
-              Der Text; die Monatszahl kommt aus dem Einlesen.
+              {worte.schulung.turnusHinweis}
             </span>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="monate">Turnus in Monaten</Label>
+            <Label htmlFor="monate">{worte.schulung.turnusMonate}</Label>
             <Input
               id="monate"
               className="tabular-nums"
@@ -171,7 +169,7 @@ export function SchulungAnsicht({
                 const roh = e.target.value.trim();
                 const wert = roh === "" ? null : Number(roh);
                 if (wert !== null && (!Number.isFinite(wert) || wert <= 0)) {
-                  toast.error("Bitte eine Zahl größer als 0.");
+                  toast.error(worte.schulungen.zahlGroesserNull);
                   e.target.value = String(schulung.turnus_monate ?? "");
                   return;
                 }
@@ -181,11 +179,11 @@ export function SchulungAnsicht({
               }}
             />
             <span className="text-xs text-[var(--fg-muted)]">
-              Leer heißt: keine Fälligkeit berechenbar.
+              {worte.schulung.monateHinweis}
             </span>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="verantwortlicher">Verantwortlich</Label>
+            <Label htmlFor="verantwortlicher">{worte.schulung.verantwortlich}</Label>
             <Input
               id="verantwortlicher"
               defaultValue={schulung.verantwortlicher ?? ""}
@@ -201,7 +199,7 @@ export function SchulungAnsicht({
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <Label htmlFor="beschreibung">Beschreibung</Label>
+          <Label htmlFor="beschreibung">{worte.schulung.beschreibung}</Label>
           <Textarea
             id="beschreibung"
             rows={3}
@@ -216,14 +214,18 @@ export function SchulungAnsicht({
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">Für wen ist sie Pflicht?</h2>
+        <h2 className="font-medium">{worte.schulung.fuerWen}</h2>
         {EBENEN.map((ebene) => {
           const gesetzt = meinePflichten.filter((p) => p.ebene === ebene.wert);
           return (
             <div key={ebene.wert} className="space-y-2">
               <div>
-                <h3 className="text-sm font-medium">{ebene.titel}</h3>
-                <p className="text-xs text-[var(--fg-muted)]">{ebene.hinweis}</p>
+                <h3 className="text-sm font-medium">{worte.schulung[ebene.wort]}</h3>
+                <p className="text-xs text-[var(--fg-muted)]">
+                  {ebene.wort === "kuerzel"
+                    ? worte.schulung.kuerzelHinweis
+                    : worte.schulung.personioHinweis}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {gesetzt.map((p) => (
@@ -233,7 +235,7 @@ export function SchulungAnsicht({
                       <button
                         type="button"
                         className="ml-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
-                        aria-label={`${p.abteilung} entfernen`}
+                        aria-label={worte.schulung.entfernen(p.abteilung)}
                         onClick={() =>
                           pflichtSetzen.mutate({
                             ebene: ebene.wert,
@@ -248,7 +250,7 @@ export function SchulungAnsicht({
                   </Badge>
                 ))}
                 {gesetzt.length === 0 && (
-                  <span className="text-sm text-[var(--fg-muted)]">keine</span>
+                  <span className="text-sm text-[var(--fg-muted)]">{worte.schulung.keine}</span>
                 )}
               </div>
               {darfSchreiben && (
@@ -257,7 +259,7 @@ export function SchulungAnsicht({
                     className="w-48"
                     value={neuePflicht[ebene.wert] ?? ""}
                     placeholder={ebene.wert === "kuerzel" ? "NÄH" : "Production"}
-                    aria-label={`${ebene.titel} ergänzen`}
+                    aria-label={worte.schulung.ergaenzen(worte.schulung[ebene.wort])}
                     onChange={(e) =>
                       setNeuePflicht((s) => ({ ...s, [ebene.wert]: e.target.value }))
                     }
@@ -274,7 +276,7 @@ export function SchulungAnsicht({
                       })
                     }
                   >
-                    Hinzufügen
+                    {worte.schulung.hinzufuegen}
                   </Button>
                 </div>
               )}
@@ -284,22 +286,22 @@ export function SchulungAnsicht({
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">Teilnahmen</h2>
+        <h2 className="font-medium">{worte.schulung.teilnahmen}</h2>
         {meineTeilnahmen.length === 0 ? (
           <p className="text-sm text-[var(--fg-muted)]">
-            Noch niemand — lies die Schulungsübersicht ein oder trag jemanden ein.
+            {worte.schulung.nochNiemand}
           </p>
         ) : (
           <TableWrap>
             <Table>
               <thead>
                 <tr>
-                  <Th>Person</Th>
-                  <Th>Abt.</Th>
-                  <Th>Erstschulung</Th>
-                  <Th>Zuletzt</Th>
-                  <Th>Fällig</Th>
-                  <Th>Stand</Th>
+                  <Th>{worte.schulung.person}</Th>
+                  <Th>{worte.schulung.abteilungKurz}</Th>
+                  <Th>{worte.schulung.erstschulung}</Th>
+                  <Th>{worte.schulung.zuletzt}</Th>
+                  <Th>{worte.schulung.faellig}</Th>
+                  <Th>{worte.schulung.stand}</Th>
                   <Th />
                 </tr>
               </thead>
@@ -314,9 +316,9 @@ export function SchulungAnsicht({
                         {t.employee_id === null && (
                           <span
                             className="ml-2 text-xs text-[var(--fg-muted)]"
-                            title="Kein Treffer in Personio — die Zeile bleibt trotzdem erhalten"
+                            title={worte.schulung.keinTreffer}
                           >
-                            nicht in Personio
+                            {worte.schulung.nichtInPersonio}
                           </span>
                         )}
                       </Td>
@@ -351,21 +353,21 @@ export function SchulungAnsicht({
                         {s?.faellig_am ? DATUM.format(new Date(s.faellig_am)) : "—"}
                         {t.naechste_faellig && (
                           <span className="ml-2 text-xs text-[var(--fg-muted)]">
-                            Excel: {t.naechste_faellig}
+                            {worte.schulung.exzel(t.naechste_faellig)}
                           </span>
                         )}
                       </Td>
                       <Td>
                         {d && (
                           <Badge variant={d === "offen" ? "outline" : "secondary"}>
-                            {DRINGLICHKEIT_LABEL[d]}
+                            {dringlichkeitLabel[d]}
                           </Badge>
                         )}
                       </Td>
                       <Td className="text-right">
                         {darfSchreiben && (
                           <ConfirmDeleteButton
-                            itemLabel={t.mitarbeiter_name ?? "diese Teilnahme"}
+                            itemLabel={t.mitarbeiter_name ?? worte.schulung.dieseTeilnahme}
                             onConfirm={() => teilnahmeWeg.mutateAsync(t).then(() => undefined)}
                           />
                         )}
@@ -381,11 +383,11 @@ export function SchulungAnsicht({
         {darfSchreiben && (
           <div className="flex flex-wrap items-end gap-2 border-t border-[var(--border)] pt-4">
             <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Label htmlFor="neue-teilnahme">Person ergänzen</Label>
+              <Label htmlFor="neue-teilnahme">{worte.schulung.personErgaenzen}</Label>
               <Input
                 id="neue-teilnahme"
                 value={neu}
-                placeholder="Nachname, Vorname"
+                placeholder={worte.schulung.nameForm}
                 onChange={(e) => setNeu(e.target.value)}
               />
             </div>
@@ -394,7 +396,7 @@ export function SchulungAnsicht({
               onClick={() => teilnahmeAnlegen.mutate()}
             >
               <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-              Hinzufügen
+              {worte.schulung.hinzufuegen}
             </Button>
           </div>
         )}
