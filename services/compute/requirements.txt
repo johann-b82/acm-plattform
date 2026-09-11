@@ -21,3 +21,5 @@ pysnmp==7.1.23
 cryptography==46.0.7
 # Formblätter: das Logo einbetten. openpyxl braucht Pillow für Bilder.
 pillow==11.3.0
+# Zeugnisse: die KI-Textbildung. Ohne API-Schluessel bleibt sie inaktiv.
+anthropic==1.0.0

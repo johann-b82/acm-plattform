@@ -1,4 +1,4 @@
-"""Eine Excel-Mappe nach PDF wandeln.
+"""Eine Excel-Mappe oder ein Word-Dokument nach PDF wandeln.
 
 LibreOffice im Kopflos-Betrieb. Zwei Dinge sind dabei zu wissen:
 
@@ -28,13 +28,15 @@ class PdfFehlgeschlagen(RuntimeError):
     """LibreOffice kam nicht durch."""
 
 
-async def nach_pdf(xlsx: bytes, name: str = "dokument") -> bytes:
+async def nach_pdf(
+    daten: bytes, name: str = "dokument", endung: str = "xlsx"
+) -> bytes:
     async with _EINER:
         ordner = Path(f"/tmp/{name}_{uuid.uuid4()}")
         try:
             ordner.mkdir(parents=True, exist_ok=True)
-            quelle = ordner / f"{name}.xlsx"
-            quelle.write_bytes(xlsx)
+            quelle = ordner / f"{name}.{endung}"
+            quelle.write_bytes(daten)
             prozess = await asyncio.create_subprocess_exec(
                 "soffice",
                 "--headless",

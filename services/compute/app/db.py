@@ -692,6 +692,76 @@ plattform_logo = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+zeugnis_aussteller = sa.Table(
+    "zeugnis_aussteller",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("firma", sa.Text, nullable=False),
+    sa.Column("standort", sa.Text),
+    sa.Column("unterzeichner1_name", sa.Text),
+    sa.Column("unterzeichner1_titel", sa.Text),
+    sa.Column("unterzeichner2_name", sa.Text),
+    sa.Column("unterzeichner2_titel", sa.Text),
+    sa.Column("hr_employee_id", sa.Integer),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+zeugnisse = sa.Table(
+    "zeugnisse",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("employee_id", sa.Integer),
+    sa.Column("extern_id", UUID(as_uuid=False)),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("geschlecht", sa.String(1)),
+    sa.Column("geburtsdatum", sa.Date),
+    sa.Column("personalnummer", sa.Text),
+    sa.Column("abteilung", sa.Text),
+    sa.Column("taetigkeit", sa.Text),
+    sa.Column("eintritt", sa.Date),
+    sa.Column("austritt", sa.Date),
+    sa.Column("art", sa.String(20), nullable=False),
+    sa.Column("anlass", sa.Text),
+    sa.Column("fuehrungskraft", sa.Boolean, nullable=False),
+    sa.Column("ausstellungsdatum", sa.Date),
+    sa.Column("taetigkeit_stichpunkte", sa.Text),
+    sa.Column("besondere_kompetenzen", sa.Text),
+    sa.Column("besondere_erfolge", sa.Text),
+    sa.Column("schlussnote", sa.Numeric(2, 1)),
+    sa.Column("abschnitte", JSONB),
+    sa.Column("status", sa.String(20), nullable=False),
+    sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+zeugnis_bewertungen = sa.Table(
+    "zeugnis_bewertungen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("zeugnis_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("dimension", sa.String(30), nullable=False),
+    sa.Column("note", sa.Integer, nullable=False),
+)
+
+zeugnis_notenvorlagen = sa.Table(
+    "zeugnis_notenvorlagen",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("name", sa.Text, nullable=False),
+    sa.Column("noten", JSONB, nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+zeugnis_bausteine = sa.Table(
+    "zeugnis_bausteine",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("dimension", sa.String(30), nullable=False),
+    sa.Column("note", sa.Integer, nullable=False),
+    sa.Column("text", sa.Text, nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -736,4 +806,9 @@ TABLES = {
     "einarbeitung_pflicht": einarbeitung_pflicht,
     "plattform_logo": plattform_logo,
     "onboarding_abteilung": onboarding_abteilung,
+    "zeugnis_aussteller": zeugnis_aussteller,
+    "zeugnisse": zeugnisse,
+    "zeugnis_bewertungen": zeugnis_bewertungen,
+    "zeugnis_notenvorlagen": zeugnis_notenvorlagen,
+    "zeugnis_bausteine": zeugnis_bausteine,
 }

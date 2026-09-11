@@ -10,12 +10,16 @@ FROM base AS deps
 # Spaltenerhalt ist dabei nicht Beiwerk, sondern das, woran der Parser die
 # Felder erkennt — eine reine Textextraktion in Python liefert eine andere
 # Reihenfolge und damit andere Ergebnisse.
-# libreoffice-calc: wandelt die ATR-Mappe nach PDF. Bewusst nur Calc, ohne
-# Writer, Impress und Java — 207 MB statt weit über einem halben Gigabyte.
+# libreoffice-calc: wandelt die Mappen nach PDF (ATR, Wartungsnachweis,
+# Einarbeitungsplan).
+# libreoffice-writer: dasselbe für das Zeugnis — das entsteht als .docx auf der
+# echten Briefvorlage, und Calc kann eine .docx nicht öffnen („source file
+# could not be loaded"). Impress und Java bleiben draußen.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         poppler-utils \
         libreoffice-calc \
+        libreoffice-writer \
         fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .

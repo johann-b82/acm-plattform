@@ -1,6 +1,6 @@
 # Backlog: was noch aus `lumeapps` fehlt
 
-Stand 2026-09-10. Grundlage ist die OpenAPI des laufenden Altsystems (337
+Stand 2026-09-11. Grundlage ist die OpenAPI des laufenden Altsystems (337
 Operationen auf 274 Pfaden), abgeglichen gegen `acm-plattform`. Jede Zeile ist
 ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 
@@ -10,11 +10,12 @@ ein Arbeitspaket mit eigener Migration, eigenen Seiten und eigenem PR.
 |---|---|---|---|
 | 3 | Dokumentenlauf (Schulungsnachweis **und** Einarbeitungsbogen) | ~30 | Dieselbe Mechanik für beide: QR-Code zur Zuordnung, Laufweg (erstellt → übergeben → zurück → geprüft), Scan-Upload, halbautomatische Vollständigkeitsprüfung. Dazu Unterlagen je Schulung und die Zertifikate. Einmal bauen, zweimal benutzen. |
 | 4 | Onboarding: Dokumente | ~4 | Das Onboarding-Paket als PDF (Formblatt 71, Dokumentmappe). Eintritte, Schulungsplan, Abteilungs-Übersteuerung und Rollenzuordnung stehen (PR #47). |
-| 6 | Zeugnisse | 19 | Arbeitszeugnis auf der ACM-Briefvorlage, Textbausteine, Notenskala. |
-| 7 | HR-Embeds | 3 | Geburtstage und Neuzugänge für die Bildschirme. **Nicht 1:1**: signierter Token statt offener Route, kein Geburtsdatum (Befund 4). |
-| 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. Querschnitt; wird von Onboarding und Schulungen gebraucht. |
+| 6 | Zeugnisse: Vorgesetzten-Vorschlag | 1 | Die zweite Unterschrift abteilungsabhängig aus Personio vorschlagen. Zeugnis, Baukasten, KI und Dokument stehen (PR #49). |
+| 7 | HR-Embeds | 3 | Geburtstage und Neuzugänge für die Bildschirme. **Nicht 1:1**: Das Altsystem liefert sie über sitzungslose Routen; seine eigene Doku nennt den signierten Token je Playlist-Eintrag „die richtige Lösung, die in der neuen Plattform liegt". Zu bauen sind: Token-Erzeugung in den Einstellungen, zwei öffentliche Seiten außerhalb der angemeldeten Hülle und der Foto-Weg über die Personio-Zugangsdaten (nur für gerade gezeigte Personen, mit Zwischenspeicher und Ratsperre). |
+| 8 | E-Mail (MS Graph) | 5 | Versand über Microsoft Graph. **Beim Abgleich aufgefallen: im Altsystem ruft ihn niemand auf** — `send_email` hat dort außerhalb des eigenen Routers keinen Aufrufer. Portiert würde ein delegierter OAuth-Ablauf samt Token-Ablage und Einstellungsmaske für etwas, das nichts benutzt. Empfehlung: bauen, wenn der erste Verbraucher da ist (Schulungserinnerungen sind der naheliegende). |
 | 9 | Einstellungen: Personio-Auswahllisten | 1 | Die Auswahllisten aus Personio (Abwesenheitsarten) in der Einstellungsmaske vorschlagen, statt IDs abzutippen. Das Logo steht (PR #48). |
 | 10 | In-App-Dokumentation | — | 22 Markdown-Seiten aus `frontend/src/docs/`. Zuletzt, weil sie den fertigen Stand beschreibt. |
+| 11 | Schulungsmatrix (Ansicht) | 2 | Die Kreuztabelle aller Personen gegen alle Schulungen. Die Liste „was offen ist" deckt das Handeln ab; die Matrix ist die Übersicht für den Aushang. |
 
 ### Innerhalb des Audit-Moduls offen
 

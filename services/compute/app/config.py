@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     # Gemeinsames Geheimnis für den Anstoss aus pg_cron.
     SENSOR_TOKEN: str = ""
 
+    # Zeugnisse: die KI-Textbildung. Ohne Schlüssel bleibt sie inaktiv — der
+    # Baukasten schreibt dann den Text, vollständig und ohne Netz.
+    ANTHROPIC_API_KEY: str = ""
+    ZEUGNIS_MODELL: str = "claude-opus-5"
+
     COMPUTE_LOG_LEVEL: str = "warning"
     # Größte angenommene Upload-Datei. Wird beim Lesen geprüft, nicht danach.
     MAX_UPLOAD_BYTES: int = 60 * 1024 * 1024
