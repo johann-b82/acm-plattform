@@ -1636,6 +1636,33 @@ export const en: Texte = {
     schrittErgaenzen: "Add step",
     schrittBeispiel: "e.g. opening meeting",
   },
+  personioZugang: {
+    titel: "Personio credentials",
+    einleitung:
+      "Credentials of a Personio API application. Without them the sync, the " +
+      "profile pictures and the suggestion lists stay empty.",
+    kennung: "Client ID",
+    geheimnis: "Client secret",
+    feldHinweis:
+      "Stored encrypted and never shown again. To change them, enter new ones.",
+    speichern: "Save",
+    gespeichert: "Credentials stored.",
+    speichernFehler: (meldung: string) => `Saving failed: ${meldung}`,
+    entfernen: "Remove",
+    entfernt: "Credentials removed.",
+    pruefen: "Test connection",
+    prueftGerade: "Testing …",
+    verbindungSteht: "Personio accepts the credentials.",
+    verbindungFehlt: "Personio does not answer.",
+    laedt: "Loading …",
+    keineHinterlegt: "No credentials are stored.",
+    ausDerUmgebung: "The credentials from the server environment (.env) apply.",
+    hinterlegtSeit: (zeitpunkt: string, wer: string | null) =>
+      wer ? `Stored on ${zeitpunkt} by ${wer}.` : `Stored on ${zeitpunkt}.`,
+    ohneSchluessel:
+      "No GEHEIM_SCHLUESSEL is set on the server. Until it is, nothing can be " +
+      "stored encrypted.",
+  },
   sensorEinstellungen: {
     neuesGeraet: "New device",
     name: "Name",

@@ -78,15 +78,14 @@ async def _personio_sprachen(args) -> None:
 
     quelle = "abgeglichener Bestand"
     if not rohdaten:
-        from app.config import settings
-        from app.personio.client import PersonioClient
+        from app.personio import zugang
 
-        if not (settings.PERSONIO_CLIENT_ID and settings.PERSONIO_CLIENT_SECRET):
-            print("Kein Abgleich vorhanden und keine Personio-Zugangsdaten gesetzt.")
-            print("Entweder einmal abgleichen lassen oder PERSONIO_CLIENT_ID und")
-            print("PERSONIO_CLIENT_SECRET setzen.")
+        client = await zugang.klient()
+        if client is None:
+            print("Kein Abgleich vorhanden und keine Personio-Zugangsdaten hinterlegt.")
+            print("Entweder einmal abgleichen lassen oder die Zugangsdaten unter")
+            print("Einstellungen → Personal eintragen.")
             return
-        client = PersonioClient(settings.PERSONIO_CLIENT_ID, settings.PERSONIO_CLIENT_SECRET)
         try:
             rohdaten = await client.mitarbeiter()
         finally:

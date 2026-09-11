@@ -46,10 +46,14 @@ class Settings(BaseSettings):
     # Personio-Abgleich.
     ATR_SCAN_TOKEN: str = ""
 
-    # Sensoren (SNMP). Der Schlüssel verschlüsselt die Community je Gerät;
-    # ohne ihn lässt sich kein Sensor anlegen. Erzeugen mit:
+    # Der Schlüssel für alles, was verschlüsselt in der Datenbank liegt: die
+    # SNMP-Community je Gerät und die Personio-Zugangsdaten. Erzeugen mit:
     #   python -c "from cryptography.fernet import Fernet; \
     #              print(Fernet.generate_key().decode())"
+    GEHEIM_SCHLUESSEL: str = ""
+    # Der frühere Name. Gilt weiter, solange er gesetzt ist — er steht in
+    # laufenden Umgebungen, und ein Namenswechsel, der beim Ausrollen die
+    # Sensoren stumm schaltet, wäre ein schlechter Tausch.
     SENSOR_SCHLUESSEL: str = ""
     # Befund 16, zweiter Fall: welche Geräte der Dienst ansprechen darf.
     SNMP_ERLAUBT: str = ""

@@ -1609,6 +1609,36 @@ export const de = {
     schrittErgaenzen: "Schritt ergänzen",
     schrittBeispiel: "z. B. Eröffnungsgespräch",
   },
+  personioZugang: {
+    titel: "Personio-Zugangsdaten",
+    einleitung:
+      "Zugangsdaten einer Personio-API-Anwendung. Ohne sie bleiben Abgleich, " +
+      "Profilbilder und die Vorschlagslisten leer.",
+    kennung: "Client-ID",
+    geheimnis: "Client-Secret",
+    feldHinweis:
+      "Werden verschlüsselt abgelegt und nie wieder angezeigt. Wer sie wechseln " +
+      "will, trägt neue ein.",
+    speichern: "Speichern",
+    gespeichert: "Zugangsdaten hinterlegt.",
+    speichernFehler: (meldung: string) => `Speichern fehlgeschlagen: ${meldung}`,
+    entfernen: "Entfernen",
+    entfernt: "Zugangsdaten entfernt.",
+    pruefen: "Verbindung prüfen",
+    prueftGerade: "Prüft …",
+    verbindungSteht: "Personio nimmt die Zugangsdaten an.",
+    verbindungFehlt: "Personio antwortet nicht.",
+    laedt: "Lädt …",
+    keineHinterlegt: "Es sind keine Zugangsdaten hinterlegt.",
+    ausDerUmgebung: "Es gelten die Zugangsdaten aus der Umgebung des Servers (.env).",
+    hinterlegtSeit: (zeitpunkt: string, wer: string | null) =>
+      wer
+        ? `Hinterlegt am ${zeitpunkt} von ${wer}.`
+        : `Hinterlegt am ${zeitpunkt}.`,
+    ohneSchluessel:
+      "Auf dem Server ist kein GEHEIM_SCHLUESSEL gesetzt. Solange er fehlt, " +
+      "lässt sich nichts verschlüsselt ablegen.",
+  },
   sensorEinstellungen: {
     neuesGeraet: "Neues Gerät",
     name: "Name",

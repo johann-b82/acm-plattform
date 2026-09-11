@@ -34,7 +34,8 @@ def geheimnis(monkeypatch):
 @pytest.fixture
 def ohne_personio(monkeypatch):
     """Ohne Zugangsdaten kommt der Abgleich bis zur 503 — genau weit genug,
-    um zu zeigen, dass die Tür offen war."""
+    um zu zeigen, dass die Tür offen war. Die Umgebung reicht dafür: in der
+    Testdatenbank liegt nichts in `geheimnisse`."""
     monkeypatch.setattr(settings, "PERSONIO_CLIENT_ID", "")
     monkeypatch.setattr(settings, "PERSONIO_CLIENT_SECRET", "")
 
@@ -62,7 +63,7 @@ class TestVonHand:
         )
         # 503: die Tür war offen, es fehlen nur die Personio-Zugangsdaten.
         assert r.status_code == 503
-        assert "PERSONIO_CLIENT_ID" in r.json()["detail"]
+        assert "Zugangsdaten" in r.json()["detail"]
 
     async def test_plattform_admin_kommt_durch(self, client, ohne_personio):
         r = await client.post("/api/hr/sync", headers={"Authorization": f"Bearer {mint_admin()}"})

@@ -32,8 +32,11 @@ ein Weg, RLS zu umgehen.
 Beim ATR-Dateiserver liegt das Passwort in der Umgebung — es gibt genau eines.
 Hier hat jedes Gerät sein eigenes Geheimnis, und eine Umgebungsvariable je
 Gerät wäre eine Verwaltungsaufgabe mehr. Also Fernet: der Geheimtext in der
-Spalte, der Schlüssel (`SENSOR_SCHLUESSEL`) in der Umgebung von `compute`. Ein
-Abzug der Datenbank allein gibt die Community nicht her.
+Spalte, der Schlüssel (`GEHEIM_SCHLUESSEL`, früher `SENSOR_SCHLUESSEL` — der
+gilt weiter) in der Umgebung von `compute`. Ein Abzug der Datenbank allein gibt
+die Community nicht her. Denselben Weg gehen inzwischen die
+Personio-Zugangsdaten aus den Einstellungen; der gemeinsame Helfer heißt
+`app/geheim.py`.
 
 Dazu zwei Riegel, die zusammengehören:
 

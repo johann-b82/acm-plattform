@@ -5,6 +5,7 @@ import { Hinweis } from "@/components/ui/hinweis";
 
 import { Kennzahlen } from "./abschnitte/kennzahlen";
 import { Personal } from "./abschnitte/personal";
+import { PersonioZugang } from "./abschnitte/personio-zugang";
 import { AtrVorlagen } from "./abschnitte/atr-vorlagen";
 import { Eingangsordner } from "./abschnitte/atr-eingangsordner";
 import { Logo } from "./abschnitte/logo";
@@ -77,7 +78,12 @@ function Inhalt({ gruppe, eigeneId }: { gruppe: Gruppe; eigeneId: string }) {
     case "kennzahlen":
       return <Kennzahlen />;
     case "personal":
-      return <Personal />;
+      return (
+        <div className="space-y-4">
+          <Personal />
+          <PersonioZugang />
+        </div>
+      );
     case "atr":
       return (
         <div className="space-y-4">
