@@ -14,8 +14,6 @@ import {
 } from "recharts";
 
 import {
-  bucketLabel,
-  fmt,
   takt,
 } from "@/lib/kpi/gemeinsam";
 import { vertriebApi } from "@/lib/kpi/vertrieb";
@@ -24,6 +22,8 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { AktivitaetKarte } from "./aktivitaet-karte";
 
@@ -32,6 +32,8 @@ import { AktivitaetKarte } from "./aktivitaet-karte";
 export function VertriebDashboard() {
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
+  const worte = useTexte();
+  const fmt = useFormate();
   const t = takt(von, bis);
 
   const summe = useQuery({
@@ -60,7 +62,7 @@ export function VertriebDashboard() {
   });
 
   const chartDaten = (verlauf.data ?? []).map((p) => ({
-    label: bucketLabel(p.bucket, t),
+    label: fmt.bucket(p.bucket, t),
     umsatz: Number(p.umsatz),
   }));
 
@@ -77,9 +79,9 @@ export function VertriebDashboard() {
             href="/kpi"
             className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
           >
-            <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Vertrieb</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/vertrieb"]}</h1>
           <Datenstand bereich="vertrieb" />
         </div>
         <Zeitraumwahl wahl={wahl} />
@@ -87,29 +89,29 @@ export function VertriebDashboard() {
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Kennzahlen konnten nicht geladen werden: {(fehler as Error).message}
+          {worte.dashboard.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {keineDaten && (
         <Card className="p-8 text-center">
-          <p className="font-medium">Für diesen Zeitraum liegen keine Daten vor</p>
+          <p className="font-medium">{worte.dashboard.keineDatenTitel}</p>
           <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--fg-muted)]">
-            Lade die ERP-Exporte unter{" "}
+            {worte.dashboard.keineDatenVor}
             <Link href="/uploads" className="underline underline-offset-4">
-              Uploads
-            </Link>{" "}
-            hoch, oder wähle einen größeren Zeitraum.
+              {worte.pfad.seiten["/uploads"]}
+            </Link>
+            {worte.dashboard.keineDatenNach}
           </p>
         </Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Kennzahl
-          titel="Umsatz"
+          titel={worte.vertrieb.umsatz}
           erklaerung={{ seite: "vertrieb", abschnitt: "Die Kacheln" }}
           wert={fmt.eur(summe.data?.umsatz)}
-          hinweis="Rechnungen abzüglich Gutschriften"
+          hinweis={worte.vertrieb.umsatzHinweis}
           laedt={summe.isLoading}
           vergleich={
             <Vergleiche
@@ -121,10 +123,10 @@ export function VertriebDashboard() {
           }
         />
         <Kennzahl
-          titel="Ø Auftragswert"
+          titel={worte.vertrieb.auftragswert}
           erklaerung={{ seite: "vertrieb", abschnitt: "Die Kacheln" }}
           wert={fmt.eur(summe.data?.auftragswert_avg)}
-          hinweis="Aufträge über 0 €"
+          hinweis={worte.vertrieb.ueberNull}
           laedt={summe.isLoading}
           vergleich={
             <Vergleiche
@@ -136,10 +138,10 @@ export function VertriebDashboard() {
           }
         />
         <Kennzahl
-          titel="Aufträge gesamt"
+          titel={worte.vertrieb.auftraege}
           erklaerung={{ seite: "vertrieb", abschnitt: "Die Kacheln" }}
           wert={fmt.zahl(summe.data?.auftraege_anzahl)}
-          hinweis="Aufträge über 0 €"
+          hinweis={worte.vertrieb.ueberNull}
           laedt={summe.isLoading}
           vergleich={
             <Vergleiche
@@ -153,14 +155,20 @@ export function VertriebDashboard() {
       </div>
 
       <Card className="p-4">
-        <h2 className="text-base font-semibold">Umsatzverlauf</h2>
+        <h2 className="text-base font-semibold">{worte.vertrieb.verlauf}</h2>
         <p className="mt-1 text-xs text-[var(--fg-muted)]">
-          {t === "day" ? "je Tag" : t === "week" ? "je Woche" : "je Monat"}, Gutschriften abgezogen
+          {worte.vertrieb.verlaufHinweis(
+            t === "day"
+              ? worte.dashboard.jeTag
+              : t === "week"
+                ? worte.dashboard.jeWoche
+                : worte.dashboard.jeMonat,
+          )}
         </p>
         <div className="mt-4 h-72">
           {chartDaten.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-[var(--fg-muted)]">
-              {verlauf.isLoading ? "wird geladen …" : "keine Werte im Zeitraum"}
+              {verlauf.isLoading ? worte.dashboard.laedt : worte.dashboard.keineWerte}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -189,7 +197,7 @@ export function VertriebDashboard() {
                     borderRadius: 8,
                     color: "var(--fg)",
                   }}
-                  formatter={(v) => [fmt.eurGenau(Number(v)), "Umsatz"] as [string, string]}
+                  formatter={(v) => [fmt.eurGenau(Number(v)), worte.vertrieb.umsatz] as [string, string]}
                 />
                 {/* Ohne Animation: die Abfragen lösen zu unterschiedlichen Zeiten
                     aus, das Neurendern lässt die Einblendung hängen und die Balken
@@ -211,20 +219,22 @@ export function VertriebDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
-          <h2 className="mb-2 text-base font-semibold">Kundenanteil am Umsatz</h2>
+          <h2 className="mb-2 text-base font-semibold">{worte.vertrieb.kundenanteil}</h2>
           <TableWrap>
             <Table>
               <thead>
                 <tr>
-                  <Th>Kunde</Th>
-                  <Th className="text-right">Umsatz</Th>
-                  <Th className="text-right">Anteil</Th>
+                  <Th>{worte.vertrieb.kunde}</Th>
+                  <Th className="text-right">{worte.vertrieb.umsatz}</Th>
+                  <Th className="text-right">{worte.vertrieb.anteil}</Th>
                 </tr>
               </thead>
               <tbody>
                 {(kunden.data ?? []).map((k) => (
                   <tr key={k.kunde}>
-                    <Td className={k.kunde === "Übrige" ? "text-[var(--fg-muted)]" : ""}>{k.kunde}</Td>
+                    <Td className={k.kunde === "Übrige" ? "text-[var(--fg-muted)]" : ""}>
+                      {k.kunde === "Übrige" ? worte.vertrieb.uebrige : k.kunde}
+                    </Td>
                     <Td className="text-right font-mono tabular-nums">{fmt.eur(Number(k.wert))}</Td>
                     <Td className="text-right font-mono tabular-nums">{fmt.prozent(Number(k.anteil))}</Td>
                   </tr>
@@ -232,7 +242,7 @@ export function VertriebDashboard() {
                 {kunden.data?.length === 0 && (
                   <tr>
                     <Td colSpan={3} className="text-[var(--fg-muted)]">
-                      keine Werte im Zeitraum
+                      {worte.dashboard.keineWerte}
                     </Td>
                   </tr>
                 )}
@@ -242,14 +252,14 @@ export function VertriebDashboard() {
         </div>
 
         <div>
-          <h2 className="mb-2 text-base font-semibold">Aufträge je Erfasser</h2>
+          <h2 className="mb-2 text-base font-semibold">{worte.vertrieb.jeErfasser}</h2>
           <TableWrap>
             <Table>
               <thead>
                 <tr>
-                  <Th>Erfasser</Th>
-                  <Th className="text-right">Aufträge</Th>
-                  <Th className="text-right">Summe</Th>
+                  <Th>{worte.vertrieb.erfasser}</Th>
+                  <Th className="text-right">{worte.vertrieb.anzahl}</Th>
+                  <Th className="text-right">{worte.vertrieb.summe}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -263,7 +273,7 @@ export function VertriebDashboard() {
                 {erfasser.data?.length === 0 && (
                   <tr>
                     <Td colSpan={3} className="text-[var(--fg-muted)]">
-                      keine Werte im Zeitraum
+                      {worte.dashboard.keineWerte}
                     </Td>
                   </tr>
                 )}

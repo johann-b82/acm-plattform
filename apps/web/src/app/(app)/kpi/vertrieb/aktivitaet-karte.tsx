@@ -13,9 +13,11 @@ import {
   YAxis,
 } from "recharts";
 
-import { fmt } from "@/lib/kpi/gemeinsam";
+
 import { vertriebApi, wochenfenster, type AktivitaetZeile } from "@/lib/kpi/vertrieb";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 import { Card } from "@/components/ui/primitives";
 
 /**
@@ -47,8 +49,8 @@ type Feld = "erstkontakte" | "besuche" | "angebote_eur" | "auftraege_eur" | "int
 
 const DIAGRAMME: {
   feld: Feld;
-  titel: string;
-  hinweis: string;
+  /** Schlüssel im Wörterbuch; `<name>Hinweis` ist die Zeile darunter. */
+  wort: "erstkontakte" | "besuche" | "interessenten" | "angebote" | "auftragseingang";
   zielSchluessel: string;
   einheit: "anzahl" | "eur";
   /** Interessenten kommen ohne Vertriebler — dort gibt es nichts aufzuteilen. */
@@ -56,40 +58,35 @@ const DIAGRAMME: {
 }[] = [
   {
     feld: "erstkontakte",
-    titel: "Erstkontakte",
-    hinweis: "erledigte Kontakte vom Typ ERS",
+    wort: "erstkontakte",
     zielSchluessel: "vertrieb_erstkontakte",
     einheit: "anzahl",
     mitAnteilen: true,
   },
   {
     feld: "besuche",
-    titel: "Besuche",
-    hinweis: "vor Ort und online zusammen",
+    wort: "besuche",
     zielSchluessel: "vertrieb_besuche",
     einheit: "anzahl",
     mitAnteilen: true,
   },
   {
     feld: "interessenten",
-    titel: "Interessenten",
-    hinweis: "neu erfasst, ohne Vertriebler-Zuordnung",
+    wort: "interessenten",
     zielSchluessel: "vertrieb_interessenten",
     einheit: "anzahl",
     mitAnteilen: false,
   },
   {
     feld: "angebote_eur",
-    titel: "Angebote",
-    hinweis: "Summe der geschriebenen Angebote",
+    wort: "angebote",
     zielSchluessel: "vertrieb_angebote_eur",
     einheit: "eur",
     mitAnteilen: true,
   },
   {
     feld: "auftraege_eur",
-    titel: "Auftragseingang",
-    hinweis: "Stornos gegengerechnet",
+    wort: "auftragseingang",
     zielSchluessel: "vertrieb_auftraege_eur",
     einheit: "eur",
     mitAnteilen: true,
@@ -119,7 +116,7 @@ export function verdichte(
     if (!w) {
       w = {
         schluessel,
-        label: `KW ${String(woche).padStart(2, "0")}`,
+        label: String(woche).padStart(2, "0"),
         erstkontakte: 0,
         besuche_ort: 0,
         besuche_onl: 0,
@@ -177,6 +174,8 @@ function Diagramm({
   einheit: "anzahl" | "eur";
   mitAnteilen: boolean;
 }) {
+  const worte = useTexte();
+  const fmt = useFormate();
   const zeige = einheit === "eur" ? fmt.eur : fmt.zahl;
   const zeigeGenau = einheit === "eur" ? fmt.eurGenau : fmt.zahl;
 
@@ -185,7 +184,7 @@ function Diagramm({
       <h3 className="text-sm font-semibold">{titel}</h3>
       <p className="mt-0.5 text-xs text-[var(--fg-muted)]">
         {hinweis}
-        {ziel != null && <> · Ziel {zeige(ziel)} / Woche</>}
+        {ziel != null && <> · {worte.aktivitaet.ziel(zeige(ziel))}</>}
       </p>
       <div className="mt-3 h-44">
         <ResponsiveContainer width="100%" height="100%">
@@ -193,6 +192,7 @@ function Diagramm({
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="label"
+              tickFormatter={(w: string) => worte.aktivitaet.kw(w)}
               stroke="var(--fg-muted)"
               fontSize={11}
               tickLine={false}
@@ -235,7 +235,9 @@ function Diagramm({
               }}
               labelFormatter={(label, nutzlast) => {
                 const woche = nutzlast?.[0]?.payload as Woche | undefined;
-                return woche ? `${label} / ${woche.schluessel.slice(0, 4)}` : String(label);
+                return woche
+                  ? `${worte.aktivitaet.kw(String(label))} / ${woche.schluessel.slice(0, 4)}`
+                  : String(label);
               }}
             />
             {ziel != null && (
@@ -268,6 +270,7 @@ function Diagramm({
 }
 
 export function AktivitaetKarte({ von, bis }: { von: string | null; bis: string | null }) {
+  const worte = useTexte();
   const fenster = useMemo(() => wochenfenster(von, bis), [von, bis]);
 
   const aktivitaet = useQuery({
@@ -292,23 +295,21 @@ export function AktivitaetKarte({ von, bis }: { von: string | null; bis: string 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold">Vertriebsaktivität</h2>
+        <h2 className="text-base font-semibold">{worte.aktivitaet.titel}</h2>
         <p className="text-xs text-[var(--fg-muted)]">
-          je Kalenderwoche, {fenster.von} bis {fenster.bis}
+          {worte.aktivitaet.jeWoche(fenster.von, fenster.bis)}
         </p>
       </div>
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Vertriebsaktivität konnte nicht geladen werden: {(fehler as Error).message}
+          {worte.aktivitaet.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {!fehler && daten.length === 0 && (
         <Card className="p-6 text-center text-sm text-[var(--fg-muted)]">
-          {laedt
-            ? "wird geladen …"
-            : "Keine Kontakte, Angebote oder Interessenten in diesem Zeitraum."}
+          {laedt ? worte.dashboard.laedt : worte.aktivitaet.leer}
         </Card>
       )}
 
@@ -319,8 +320,8 @@ export function AktivitaetKarte({ von, bis }: { von: string | null; bis: string 
               key={d.feld}
               daten={daten}
               feld={d.feld}
-              titel={d.titel}
-              hinweis={d.hinweis}
+              titel={worte.aktivitaet[d.wort]}
+              hinweis={worte.aktivitaet[`${d.wort}Hinweis`]}
               ziel={zielNach[d.zielSchluessel]}
               einheit={d.einheit}
               mitAnteilen={d.mitAnteilen}

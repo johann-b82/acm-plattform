@@ -58,7 +58,9 @@ describe("Wochenzeilen verdichten", () => {
   it("legt eine Woche an, die es nur bei den Interessenten gibt", () => {
     const wochen = verdichte([], [{ iso_jahr: 2026, iso_woche: 9, anzahl: 2 }]);
     expect(wochen).toHaveLength(1);
-    expect(wochen[0].label).toBe("KW 09");
+    // Nur die Nummer, zweistellig: „KW" bzw. „W" kommt erst beim Zeichnen
+    // dazu, damit das Diagramm in beiden Sprachen dasselbe Feld beschriftet.
+    expect(wochen[0].label).toBe("09");
     expect(wochen[0].erstkontakte).toBe(0);
   });
 

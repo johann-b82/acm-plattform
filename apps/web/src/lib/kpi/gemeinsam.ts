@@ -64,25 +64,60 @@ export async function rpc<T>(name: string, args: Record<string, unknown>): Promi
   return data as T;
 }
 
-const EUR = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
-const EUR_GENAU = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
-const PROZENT = new Intl.NumberFormat("de-DE", { style: "percent", maximumFractionDigits: 1 });
-const ZAHL = new Intl.NumberFormat("de-DE");
+/**
+ * Zahlen und Beträge in einer Sprache.
+ *
+ * Die Währung bleibt der Euro — er ist keine Frage der Anzeigesprache,
+ * sondern die Währung, in der die Zahlen vorliegen. Trennzeichen und
+ * Stellung des Zeichens folgen der Sprache: „1.234 €" liest sich für jemanden
+ * mit englischer Oberfläche als eintausendzweihundertvierunddreißig
+ * Tausendstel.
+ *
+ * Je Sprache einmal gebaut und gemerkt: `Intl.NumberFormat` ist nicht billig,
+ * und ein Dashboard ruft es tausendfach.
+ */
+const GEMERKT = new Map<string, Formate>();
 
-export const fmt = {
-  eur: (v: number | null | undefined) => (v == null ? "—" : EUR.format(v)),
-  eurGenau: (v: number | null | undefined) => (v == null ? "—" : EUR_GENAU.format(v)),
-  prozent: (v: number | null | undefined) => (v == null ? "—" : PROZENT.format(v)),
-  zahl: (v: number | null | undefined) => (v == null ? "—" : ZAHL.format(v)),
-};
+export interface Formate {
+  eur: (v: number | null | undefined) => string;
+  eurGenau: (v: number | null | undefined) => string;
+  prozent: (v: number | null | undefined) => string;
+  zahl: (v: number | null | undefined) => string;
+  /** Bucket-Beschriftung für die Achse, abhängig vom Takt. */
+  bucket: (iso: string, t: "day" | "week" | "month") => string;
+}
+
+export function formate(tag: string): Formate {
+  const schon = GEMERKT.get(tag);
+  if (schon) return schon;
+  const EUR = new Intl.NumberFormat(tag, {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  });
+  const EUR_GENAU = new Intl.NumberFormat(tag, { style: "currency", currency: "EUR" });
+  const PROZENT = new Intl.NumberFormat(tag, { style: "percent", maximumFractionDigits: 1 });
+  const ZAHL = new Intl.NumberFormat(tag);
+  const gebaut: Formate = {
+    eur: (v) => (v == null ? "—" : EUR.format(v)),
+    eurGenau: (v) => (v == null ? "—" : EUR_GENAU.format(v)),
+    prozent: (v) => (v == null ? "—" : PROZENT.format(v)),
+    zahl: (v) => (v == null ? "—" : ZAHL.format(v)),
+    bucket: (iso, t) => {
+      const d = new Date(iso);
+      return t === "month"
+        ? d.toLocaleDateString(tag, { month: "short", year: "2-digit" })
+        : d.toLocaleDateString(tag, { day: "2-digit", month: "2-digit" });
+    },
+  };
+  GEMERKT.set(tag, gebaut);
+  return gebaut;
+}
+
+/** Deutsch — für alles, was noch nicht übersetzt ist. */
+export const fmt = formate("de-DE");
 
 /** Bucket-Beschriftung für die Achse, abhängig vom Takt. */
 export function bucketLabel(iso: string, t: "day" | "week" | "month"): string {
-  const d = new Date(iso);
-  if (t === "month") return d.toLocaleDateString("de-DE", { month: "short", year: "2-digit" });
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  return fmt.bucket(iso, t);
 }

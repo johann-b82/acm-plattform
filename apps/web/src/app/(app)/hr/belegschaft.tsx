@@ -4,14 +4,15 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
-import { fmt } from "@/lib/kpi/gemeinsam";
+
 import {
-  KATEGORIE_LABEL,
   personalApi,
   personalKeys,
   prozente,
 } from "@/lib/kpi/personal";
 import { Card } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 
 /**
  * Belegschaft und Kompetenzentwicklung — beides Stichtagswerte.
@@ -33,6 +34,19 @@ function Balken({
   zeilen: { kategorie: string; anzahl: number }[];
   alsProzent: boolean;
 }) {
+  const worte = useTexte();
+  const fmt = useFormate();
+  // Die Schlüssel kommen aus Personio, die Namen aus dem Wörterbuch.
+  const kategorie: Record<string, string> = {
+    maennlich: worte.belegschaft.maennlich,
+    weiblich: worte.belegschaft.weiblich,
+    divers: worte.belegschaft.divers,
+    unbekannt: worte.belegschaft.unbekannt,
+    vollzeit: worte.belegschaft.vollzeit,
+    teilzeit: worte.belegschaft.teilzeit,
+    geringfuegig: worte.belegschaft.geringfuegig,
+    extern: worte.belegschaft.extern,
+  };
   const mitAnteil = useMemo(() => prozente(zeilen), [zeilen]);
   const groesste = Math.max(1, ...zeilen.map((z) => z.anzahl));
 
@@ -45,7 +59,7 @@ function Balken({
         {mitAnteil.map((z) => (
           <li key={z.kategorie} className="text-sm">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate">{KATEGORIE_LABEL[z.kategorie] ?? z.kategorie}</span>
+              <span className="truncate">{kategorie[z.kategorie] ?? z.kategorie}</span>
               <span className="shrink-0 font-mono tabular-nums text-[var(--fg-muted)]">
                 {alsProzent ? `${z.prozent} %` : fmt.zahl(z.anzahl)}
               </span>
@@ -64,6 +78,8 @@ function Balken({
 }
 
 export function Belegschaft() {
+  const worte = useTexte();
+  const fmt = useFormate();
   const kopf = useQuery({
     queryKey: personalKeys.belegschaft(),
     queryFn: () => personalApi.belegschaft(),
@@ -86,45 +102,42 @@ export function Belegschaft() {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold">Belegschaft</h2>
+        <h2 className="text-base font-semibold">{worte.belegschaft.titel}</h2>
         <p className="max-w-prose text-xs text-[var(--fg-muted)]">
-          Stand heute. Die Verteilungen zeigen die aktuellen Stammdaten, nicht die von damals —
-          Personio liefert keine Historie. Dass {"„Beschäftigte“"} und die Kompetenzquote
-          verschiedene Nenner haben, ist Absicht: die eine Zahl folgt dem Personio-Status,
-          die andere Ein- und Austrittsdatum. Beide Wege stammen aus dem Altprojekt.
+          {worte.belegschaft.hinweis}
         </p>
       </div>
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Belegschaft konnte nicht geladen werden: {(fehler as Error).message}
+          {worte.belegschaft.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">Beschäftigte</div>
+          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.beschaeftigte}</div>
           <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
             {kopf.isLoading ? "…" : fmt.zahl(kopf.data?.gesamt)}
           </div>
           <div className="mt-1 text-xs text-[var(--fg-muted)]">
-            nach Personio-Status {"„aktiv“"}
+            {worte.belegschaft.beschaeftigteHinweis}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">Neu im Quartal</div>
+          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.neuImQuartal}</div>
           <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
             {kopf.isLoading ? "…" : fmt.zahl(kopf.data?.neu)}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">Bestand</div>
+          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.bestand}</div>
           <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
             {kopf.isLoading ? "…" : fmt.zahl(kopf.data?.bestand)}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">Kompetenzen gepflegt</div>
+          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.kompetenzen}</div>
           <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
             {kompetenz.isLoading
               ? "…"
@@ -135,22 +148,29 @@ export function Belegschaft() {
           <div className="mt-1 text-xs text-[var(--fg-muted)]">
             {kompetenz.data?.eingerichtet === false ? (
               <>
-                Felder nicht hinterlegt —{" "}
+                {worte.belegschaft.felderFehlen}
                 <Link href="/einstellungen" className="underline underline-offset-4">
-                  Einstellungen
+                  {worte.pfad.seiten["/einstellungen"]}
                 </Link>
               </>
             ) : (
-              `${fmt.zahl(kompetenz.data?.mit_kompetenz)} von ${fmt.zahl(kompetenz.data?.aktive)} nach Ein- und Austritt`
+              worte.belegschaft.kompetenzHinweis(
+                fmt.zahl(kompetenz.data?.mit_kompetenz),
+                fmt.zahl(kompetenz.data?.aktive),
+              )
             )}
           </div>
         </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Balken titel="Geschlecht" zeilen={je("geschlecht")} alsProzent />
-        <Balken titel="Beschäftigungsart" zeilen={je("beschaeftigung")} alsProzent={false} />
-        <Balken titel="Abteilungen" zeilen={je("abteilung")} alsProzent={false} />
+        <Balken titel={worte.belegschaft.geschlecht} zeilen={je("geschlecht")} alsProzent />
+        <Balken
+          titel={worte.belegschaft.beschaeftigungsart}
+          zeilen={je("beschaeftigung")}
+          alsProzent={false}
+        />
+        <Balken titel={worte.belegschaft.abteilungen} zeilen={je("abteilung")} alsProzent={false} />
       </div>
     </section>
   );

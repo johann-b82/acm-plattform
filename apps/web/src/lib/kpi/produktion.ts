@@ -31,11 +31,6 @@ export interface VerzugZeile {
   art: "verspaetet" | "offen";
 }
 
-export const ART_LABEL: Record<VerzugZeile["art"], string> = {
-  verspaetet: "zu spät geliefert",
-  offen: "offen, überfällig",
-};
-
 export const produktionApi = {
   verzug: async (von: string | null, bis: string | null): Promise<VerzugSumme> => {
     const rows = await rpc<VerzugSumme[]>("kpi_produktion_verzug", { von, bis });

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-import { ZEITRAUM_LABEL, fenster, type Zeitraum } from "@/lib/kpi/gemeinsam";
+import { useTexte } from "@/components/sprache/anbieter";
+import { fenster, type Zeitraum } from "@/lib/kpi/gemeinsam";
 import { cn } from "@/lib/cn";
 
 /** Die üblichen Stufen. Das Personal-Dashboard lässt „Alles" weg — ohne
@@ -65,6 +66,7 @@ export function Zeitraumwahl({
   wahl: Zeitraumwahl;
   stufen?: Zeitraum[];
 }) {
+  const t = useTexte();
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="inline-flex rounded-md border border-[var(--border)] p-0.5">
@@ -81,7 +83,7 @@ export function Zeitraumwahl({
                 : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
             )}
           >
-            {ZEITRAUM_LABEL[z]}
+            {t.zeitraum[z]}
           </button>
         ))}
       </div>
@@ -89,29 +91,29 @@ export function Zeitraumwahl({
       {wahl.zeitraum === "frei" && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="flex items-center gap-1.5">
-            <span className="text-[var(--fg-muted)]">von</span>
+            <span className="text-[var(--fg-muted)]">{t.zeitraum.von}</span>
             <input
               type="date"
               value={wahl.frei.von}
               max={wahl.frei.bis}
-              aria-label="Zeitraum von"
+              aria-label={t.zeitraum.vonAria}
               onChange={(e) => wahl.setFrei({ ...wahl.frei, von: e.target.value })}
               className="h-8 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
             />
           </label>
           <label className="flex items-center gap-1.5">
-            <span className="text-[var(--fg-muted)]">bis</span>
+            <span className="text-[var(--fg-muted)]">{t.zeitraum.bis}</span>
             <input
               type="date"
               value={wahl.frei.bis}
               min={wahl.frei.von}
-              aria-label="Zeitraum bis"
+              aria-label={t.zeitraum.bisAria}
               onChange={(e) => wahl.setFrei({ ...wahl.frei, bis: e.target.value })}
               className="h-8 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
             />
           </label>
           {wahl.verdreht && (
-            <span className="text-[var(--danger)]">Das Ende liegt vor dem Anfang.</span>
+            <span className="text-[var(--danger)]">{t.zeitraum.verdreht}</span>
           )}
         </div>
       )}

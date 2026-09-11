@@ -3,14 +3,9 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  ART_LABEL,
-  QUELLEN,
-  aeltester,
-  alterText,
-  staende,
-  type Standzeile,
-} from "@/lib/datenstand";
+import { QUELLEN, aeltester, alterInTagen, staende, type Standzeile } from "@/lib/datenstand";
+import { SPRACHEN } from "@/lib/sprache";
+import { texteFuer } from "@/texte";
 
 const ZEILEN: Standzeile[] = [
   { art: "umsatz", zuletzt: "2026-09-09T11:46:44Z", laeufe: 2 },
@@ -59,31 +54,32 @@ describe("aeltester", () => {
   });
 });
 
-describe("alterText", () => {
+describe("alterInTagen", () => {
   const jetzt = new Date(2026, 8, 11, 9, 0); // 11.09.2026, 09:00 Ortszeit
 
   it("zählt Kalendertage, nicht Stunden", () => {
     // Gestern Abend ist gestern, auch wenn es zehn Stunden her ist.
-    expect(alterText(new Date(2026, 8, 10, 23, 0).toISOString(), jetzt)).toBe("gestern");
+    expect(alterInTagen(new Date(2026, 8, 10, 23, 0).toISOString(), jetzt)).toBe(1);
   });
 
-  it("nennt heute heute", () => {
-    expect(alterText(new Date(2026, 8, 11, 1, 0).toISOString(), jetzt)).toBe("heute");
+  it("zählt heute als null", () => {
+    expect(alterInTagen(new Date(2026, 8, 11, 1, 0).toISOString(), jetzt)).toBe(0);
   });
 
   it("zählt darüber in Tagen", () => {
-    expect(alterText(new Date(2026, 8, 6, 12, 0).toISOString(), jetzt)).toBe("vor 5 Tagen");
+    expect(alterInTagen(new Date(2026, 8, 6, 12, 0).toISOString(), jetzt)).toBe(5);
   });
 
-  it("nennt einen Zeitpunkt in der Zukunft nicht „vor -1 Tagen“", () => {
-    expect(alterText(new Date(2026, 8, 12, 8, 0).toISOString(), jetzt)).toBe("heute");
+  it("macht aus einem Zeitpunkt in der Zukunft keine negative Zahl", () => {
+    expect(alterInTagen(new Date(2026, 8, 12, 8, 0).toISOString(), jetzt)).toBe(0);
   });
 });
 
 describe("Zuordnung", () => {
-  it("gibt jeder Quelle einen Namen", () => {
-    for (const arten of Object.values(QUELLEN)) {
-      for (const art of arten) expect(ART_LABEL[art]).toBeTruthy();
+  it.each(SPRACHEN)("%s benennt jede Quelle", (s) => {
+    const arten = texteFuer(s).datenstand.arten as Record<string, string>;
+    for (const liste of Object.values(QUELLEN)) {
+      for (const art of liste) expect(arten[art], art).toBeTruthy();
     }
   });
 });

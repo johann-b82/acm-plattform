@@ -20,17 +20,10 @@ import {
 } from "recharts";
 
 import {
-  bucketLabel,
-  fmt,
   takt,
 } from "@/lib/kpi/gemeinsam";
 import {
   AUDIT_ARTEN,
-  AUDIT_LABEL,
-  MENGENART_LABEL,
-  REKLAMATION_BEZUG,
-  REKLAMATION_LABEL,
-  KLASSE_LABEL,
   onQuality,
   pruefungApi,
   qualitaetApi,
@@ -45,12 +38,45 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
+import { SPRACHE_TAG } from "@/lib/sprache";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
 
 
 export function QualitaetDashboard() {
+  const worte = useTexte();
+  const fmt = useFormate();
+  const tag = SPRACHE_TAG[useSprache()];
+  // Die Schlüssel kommen aus der Datenbank, die Namen aus dem Wörterbuch.
+  const auditLabel: Record<string, string> = {
+    "BH AUD": worte.qualitaet.behoerde,
+    "EX AUD": worte.qualitaet.extern,
+    "IN AUD": worte.qualitaet.intern,
+    "KU AUD": worte.qualitaet.kunde,
+  };
+  const reklLabel: Record<ReklamationsArt, string> = {
+    kunde: worte.qualitaet.reklKunde,
+    intern: worte.qualitaet.reklIntern,
+    lieferant: worte.qualitaet.reklLieferant,
+    werkbank: worte.qualitaet.reklWerkbank,
+  };
+  const bezugLabel: Record<ReklamationsArt, string> = {
+    kunde: worte.qualitaet.bezugKunde,
+    intern: worte.qualitaet.bezugIntern,
+    lieferant: worte.qualitaet.bezugLieferant,
+    werkbank: worte.qualitaet.bezugWerkbank,
+  };
+  const mengeLabel: Record<Mengenart, string> = {
+    gesamt: worte.qualitaet.mengeGesamt,
+    akzeptiert: worte.qualitaet.mengeAkzeptiert,
+  };
+  const klasseLabel: Record<"large" | "small", string> = {
+    large: worte.qualitaet.klasseGross,
+    small: worte.qualitaet.klasseKlein,
+  };
   const queryClient = useQueryClient();
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
@@ -122,23 +148,23 @@ export function QualitaetDashboard() {
   const chartDaten = useMemo(
     () =>
       verlaufJeBucket(verlaufDaten ?? []).map((p) => ({
-        label: bucketLabel(p.bucket, t),
+        label: fmt.bucket(p.bucket, t),
         "Level 1": p.level_1,
         "Level 2": p.level_2,
       })),
-    [verlaufDaten, t],
+    [verlaufDaten, t, fmt],
   );
 
   const reklVerlaufDaten = reklVerlauf.data;
   const reklChart = useMemo(
     () =>
       (reklVerlaufDaten ?? []).map((p) => ({
-        label: bucketLabel(p.bucket, t),
+        label: fmt.bucket(p.bucket, t),
         // Angezeigt wird On Quality, nicht die Fehlerquote — hoch ist gut.
         onQuality: p.quote == null ? null : onQuality(p.quote)! * 100,
         bezugsmenge: p.bezugsmenge,
       })),
-    [reklVerlaufDaten, t],
+    [reklVerlaufDaten, t, fmt],
   );
   const zielFehlerquote = zielNach[`qualitaet_reklamation_${reklArt}`];
   const zielOnQuality = zielFehlerquote == null ? undefined : (1 - zielFehlerquote) * 100;
@@ -180,11 +206,11 @@ export function QualitaetDashboard() {
             href="/kpi"
             className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
           >
-            <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Qualität</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/qualitaet"]}</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Audit-Findings, Reklamationsquote und Prüfmengen.
+            {worte.qualitaet.einleitung}
           </p>
           <Datenstand bereich="qualitaet" />
         </div>
@@ -192,7 +218,7 @@ export function QualitaetDashboard() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-[var(--fg-muted)]">Auditart:</span>
+        <span className="text-sm text-[var(--fg-muted)]">{worte.qualitaet.auditart}</span>
         {AUDIT_ARTEN.map((art) => (
           <button
             key={art}
@@ -206,65 +232,65 @@ export function QualitaetDashboard() {
                 : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
             )}
           >
-            {AUDIT_LABEL[art]}
+            {auditLabel[art]}
           </button>
         ))}
       </div>
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Kennzahlen konnten nicht geladen werden: {(fehler as Error).message}
+          {worte.dashboard.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {arten.length === 0 && (
         <Card className="p-4 text-sm text-[var(--fg-muted)]">
-          Keine Auditart ausgewählt. Wähle mindestens eine, sonst gibt es nichts zu zählen.
+          {worte.qualitaet.keineArt}
         </Card>
       )}
 
       {keineDaten && arten.length > 0 && (
         <Card className="p-8 text-center">
-          <p className="font-medium">Für diesen Zeitraum liegen keine Audit-Befunde vor</p>
+          <p className="font-medium">{worte.qualitaet.keineDaten}</p>
           <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--fg-muted)]">
-            Lade den 8D-Export unter{" "}
+            {worte.qualitaet.ladeVor}
             <Link href="/uploads" className="underline underline-offset-4">
-              Uploads
-            </Link>{" "}
-            hoch.
+              {worte.pfad.seiten["/uploads"]}
+            </Link>
+            {worte.qualitaet.ladeNach}
           </p>
         </Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Kennzahl
-          titel="Audit-Findings Level 1"
+          titel={worte.qualitaet.level1}
           erklaerung={{ seite: "qualitaet", abschnitt: "Audits" }}
           wert={fmt.zahl(summe.data?.level_1)}
-          hinweis={zielL1 == null ? undefined : `Höchstens ${zielL1}`}
+          hinweis={zielL1 == null ? undefined : worte.qualitaet.hoechstens(zielL1)}
           warnung={zielL1 != null && (summe.data?.level_1 ?? 0) > zielL1}
           laedt={summe.isLoading}
         />
         <Kennzahl
-          titel="Audit-Findings Level 2"
+          titel={worte.qualitaet.level2}
           erklaerung={{ seite: "qualitaet", abschnitt: "Audits" }}
           wert={fmt.zahl(summe.data?.level_2)}
-          hinweis={zielL2 == null ? undefined : `Höchstens ${zielL2}`}
+          hinweis={zielL2 == null ? undefined : worte.qualitaet.hoechstens(zielL2)}
           warnung={zielL2 != null && (summe.data?.level_2 ?? 0) > zielL2}
           laedt={summe.isLoading}
         />
         <Kennzahl
-          titel="Ohne erkennbares Level"
+          titel={worte.qualitaet.ohneLevel}
           erklaerung={{ seite: "qualitaet", abschnitt: "Audits" }}
           wert={fmt.zahl(summe.data?.ohne_level)}
-          hinweis="zählt in keiner Kachel"
+          hinweis={worte.qualitaet.ohneLevelHinweis}
           laedt={summe.isLoading}
         />
       </div>
 
       {chartDaten.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Audit-Findings im Zeitverlauf</h2>
+          <h2 className="font-medium">{worte.qualitaet.auditVerlauf}</h2>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartDaten} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
@@ -284,15 +310,14 @@ export function QualitaetDashboard() {
       <Card className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="font-medium">On Quality</h2>
+            <h2 className="font-medium">{worte.qualitaet.onQuality}</h2>
             <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-              Anteil der Menge ohne Beanstandung. Bezugsgröße:{" "}
-              {REKLAMATION_BEZUG[reklArt]}.
+              {worte.qualitaet.onQualityHinweis(bezugLabel[reklArt])}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
-              {(Object.keys(REKLAMATION_LABEL) as ReklamationsArt[]).map((a) => (
+              {(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => (
                 <button
                   key={a}
                   type="button"
@@ -305,12 +330,12 @@ export function QualitaetDashboard() {
                       : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
                   )}
                 >
-                  {REKLAMATION_LABEL[a]}
+                  {reklLabel[a]}
                 </button>
               ))}
             </div>
             <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
-              {(Object.keys(MENGENART_LABEL) as Mengenart[]).map((m) => (
+              {(Object.keys(mengeLabel) as Mengenart[]).map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -323,7 +348,7 @@ export function QualitaetDashboard() {
                       : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
                   )}
                 >
-                  {MENGENART_LABEL[m]}
+                  {mengeLabel[m]}
                 </button>
               ))}
             </div>
@@ -332,13 +357,16 @@ export function QualitaetDashboard() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <Kennzahl
-            titel="On Quality"
+            titel={worte.qualitaet.onQuality}
             erklaerung={{ seite: "qualitaet", abschnitt: "Reklamationsquote" }}
             wert={fmt.prozent(onQuality(rekl.data?.quote ?? null))}
             hinweis={
               zielFehlerquote == null
-                ? `Fehlerquote: ${fmt.prozent(rekl.data?.quote ?? null)}`
-                : `Fehlerquote: ${fmt.prozent(rekl.data?.quote ?? null)} · Ziel ${fmt.prozent(1 - zielFehlerquote)}`
+                ? worte.qualitaet.fehlerquote(fmt.prozent(rekl.data?.quote ?? null))
+                : worte.qualitaet.fehlerquoteZiel(
+                    fmt.prozent(rekl.data?.quote ?? null),
+                    fmt.prozent(1 - zielFehlerquote),
+                  )
             }
             warnung={
               zielFehlerquote != null &&
@@ -356,25 +384,23 @@ export function QualitaetDashboard() {
             }
           />
           <Kennzahl
-            titel="Reklamierte Menge"
+            titel={worte.qualitaet.reklamiert}
             erklaerung={{ seite: "qualitaet", abschnitt: "Reklamationsquote" }}
             wert={fmt.zahl(rekl.data?.reklamiert)}
             laedt={rekl.isLoading}
           />
           <Kennzahl
-            titel="Bezugsmenge"
+            titel={worte.qualitaet.bezugsmenge}
             erklaerung={{ seite: "qualitaet", abschnitt: "Reklamationsquote" }}
             wert={fmt.zahl(rekl.data?.bezugsmenge)}
-            hinweis={rekl.data?.bezugsmenge === 0 ? "ohne sie gibt es keine Quote" : undefined}
+            hinweis={rekl.data?.bezugsmenge === 0 ? worte.qualitaet.bezugsmengeNull : undefined}
             laedt={rekl.isLoading}
           />
         </div>
 
         {(rekl.data?.quote ?? 0) > 1 && (
           <p className="mt-3 text-sm text-[var(--danger)]">
-            Es ist mehr reklamiert als bezogen worden. Das kann die Rechnung nicht auflösen:
-            Zähler und Nenner kommen aus verschiedenen Dateien mit eigenen Datumsfeldern. Prüfe,
-            ob die Bezugsdatei für diesen Zeitraum vollständig hochgeladen ist.
+            {worte.qualitaet.mehrAlsBezogen}
           </p>
         )}
 
@@ -403,7 +429,7 @@ export function QualitaetDashboard() {
                       (eintrag?.payload as { bezugsmenge?: number } | undefined)?.bezugsmenge ?? 0;
                     return [
                       zahl == null ? "—" : `${zahl.toFixed(2)} %`,
-                      `On Quality (Bezug ${menge})`,
+                      worte.qualitaet.onQualityBezug(String(menge)),
                     ] as [string, string];
                   }}
                 />
@@ -412,7 +438,12 @@ export function QualitaetDashboard() {
                     y={zielOnQuality}
                     stroke="var(--fg-muted)"
                     strokeDasharray="4 4"
-                    label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
+                    label={{
+                      value: worte.qualitaet.ziellinie,
+                      position: "right",
+                      fontSize: 11,
+                      fill: "var(--fg-muted)",
+                    }}
                   />
                 )}
                 <Line
@@ -431,25 +462,27 @@ export function QualitaetDashboard() {
       </Card>
 
       <Card className="p-5">
-        <h2 className="font-medium">Geprüfte Produkte</h2>
+        <h2 className="font-medium">{worte.qualitaet.geprueft}</h2>
         <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-          Menge je Prüfer und Prüftag. Der Teiler ist für beide Größen derselbe:{" "}
-          {mengen.data?.pruefer ?? 0} Prüfer an {mengen.data?.prueftage ?? 0} Tagen.
+          {worte.qualitaet.geprueftHinweis(
+            String(mengen.data?.pruefer ?? 0),
+            String(mengen.data?.prueftage ?? 0),
+          )}
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Kennzahl
-            titel="Große Produkte"
+            titel={worte.qualitaet.gross}
             erklaerung={{ seite: "qualitaet", abschnitt: "Prüfmengen und Ausschuss" }}
             wert={fmt.zahl(mengen.data?.gross)}
-            hinweis={zielGross == null ? undefined : `Mindestens ${zielGross} je Tag und Prüfer`}
+            hinweis={zielGross == null ? undefined : worte.qualitaet.mindestens(zielGross)}
             warnung={zielGross != null && (mengen.data?.gross ?? 0) < zielGross}
             laedt={mengen.isLoading}
           />
           <Kennzahl
-            titel="Kleine Produkte"
+            titel={worte.qualitaet.klein}
             erklaerung={{ seite: "qualitaet", abschnitt: "Prüfmengen und Ausschuss" }}
             wert={fmt.zahl(mengen.data?.klein)}
-            hinweis={zielKlein == null ? undefined : `Mindestens ${zielKlein} je Tag und Prüfer`}
+            hinweis={zielKlein == null ? undefined : worte.qualitaet.mindestens(zielKlein)}
             warnung={zielKlein != null && (mengen.data?.klein ?? 0) < zielKlein}
             laedt={mengen.isLoading}
           />
@@ -458,22 +491,21 @@ export function QualitaetDashboard() {
 
       {buchungsListe.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Buchungen der Qualitätsprüfung</h2>
+          <h2 className="font-medium">{worte.qualitaet.buchungen}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Eine abgewählte Buchung bleibt stehen, zählt aber in keiner Kachel. Größte Menge
-            zuerst, höchstens 500 Zeilen.
+            {worte.qualitaet.buchungenHinweis}
           </p>
           <TableWrap className="mt-4">
             <Table>
               <thead>
                 <tr>
-                  <Th className="w-20">Zählt mit</Th>
-                  <Th>Datum</Th>
-                  <Th>Prüfer</Th>
-                  <Th>Produkt</Th>
-                  <Th>Größe</Th>
-                  <Th className="text-right">Menge</Th>
-                  <Th className="text-right">Ausschuss</Th>
+                  <Th className="w-20">{worte.qualitaet.zaehltMit}</Th>
+                  <Th>{worte.qualitaet.datum}</Th>
+                  <Th>{worte.qualitaet.pruefer}</Th>
+                  <Th>{worte.qualitaet.produkt}</Th>
+                  <Th>{worte.qualitaet.groesse}</Th>
+                  <Th className="text-right">{worte.qualitaet.menge}</Th>
+                  <Th className="text-right">{worte.qualitaet.ausschuss}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -484,7 +516,9 @@ export function QualitaetDashboard() {
                         type="checkbox"
                         checked={!b.excluded}
                         disabled={ausschluss.isPending}
-                        aria-label={`Buchung vom ${new Date(b.pruef_datum).toLocaleDateString("de-DE")} mitzählen`}
+                        aria-label={worte.qualitaet.mitzaehlen(
+                          new Date(b.pruef_datum).toLocaleDateString(tag),
+                        )}
                         onChange={(e) =>
                           ausschluss.mutate({ id: b.id, excluded: !e.target.checked })
                         }
@@ -492,11 +526,11 @@ export function QualitaetDashboard() {
                       />
                     </Td>
                     <Td className="tabular-nums">
-                      {new Date(b.pruef_datum).toLocaleDateString("de-DE")}
+                      {new Date(b.pruef_datum).toLocaleDateString(tag)}
                     </Td>
                     <Td>{b.benutzer ?? "—"}</Td>
                     <Td className="max-w-sm truncate">{b.bezeichnung ?? "—"}</Td>
-                    <Td>{KLASSE_LABEL[b.size_class]}</Td>
+                    <Td>{klasseLabel[b.size_class]}</Td>
                     <Td className="text-right tabular-nums">{fmt.zahl(b.buchungs_menge)}</Td>
                     <Td className="text-right tabular-nums">{fmt.zahl(b.ausschuss_menge)}</Td>
                   </tr>
@@ -509,20 +543,19 @@ export function QualitaetDashboard() {
 
       {diagnose.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Befunde ohne erkennbares Level</h2>
+          <h2 className="font-medium">{worte.qualitaet.diagnose}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Das Level steht in der Quelldatei im Freitext. Steht dort weder {"„Major … Level 1“"} noch{" "}
-            {"„Minor … Level 2“"}, zählt der Befund nirgends. Diese Liste zeigt, wo nachzubessern ist.
+            {worte.qualitaet.diagnoseHinweis}
           </p>
           <TableWrap className="mt-4">
             <Table>
               <thead>
                 <tr>
-                  <Th>Bericht</Th>
-                  <Th>Datum</Th>
-                  <Th>Art</Th>
-                  <Th>Adresse</Th>
-                  <Th>Bezeichnung</Th>
+                  <Th>{worte.qualitaet.bericht}</Th>
+                  <Th>{worte.qualitaet.datum}</Th>
+                  <Th>{worte.qualitaet.art}</Th>
+                  <Th>{worte.qualitaet.adresse}</Th>
+                  <Th>{worte.qualitaet.bezeichnung}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -532,7 +565,7 @@ export function QualitaetDashboard() {
                     <Td className="tabular-nums">
                       {new Date(z.report_date).toLocaleDateString("de-DE")}
                     </Td>
-                    <Td>{z.art ? (AUDIT_LABEL[z.art] ?? z.art) : "—"}</Td>
+                    <Td>{z.art ? (auditLabel[z.art] ?? z.art) : "—"}</Td>
                     <Td>{z.customer_name ?? "—"}</Td>
                     <Td className="max-w-md truncate">{z.designation ?? "—"}</Td>
                   </tr>

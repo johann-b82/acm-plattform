@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button, Textarea } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { feedbackApi } from "@/lib/feedback";
+import { useTexte } from "@/components/sprache/anbieter";
 
 /**
  * Der Melde-Knopf, der in jeder angemeldeten Ansicht unten rechts sitzt.
@@ -26,6 +27,7 @@ import { feedbackApi } from "@/lib/feedback";
  * ohnehin das, was zählt.
  */
 export function MeldeKnopf() {
+  const t = useTexte();
   const [offen, setOffen] = useState(false);
   const [nimmtAuf, setNimmtAuf] = useState(false);
   const [beschreibung, setBeschreibung] = useState("");
@@ -103,8 +105,8 @@ export function MeldeKnopf() {
     onSuccess: ({ mitBild }) => {
       toast.success(
         mitBild
-          ? "Danke — die Meldung ist angekommen."
-          : "Danke — die Meldung ist angekommen, ohne Bild der Seite.",
+          ? t.melden.dankeMitBild
+          : t.melden.dankeOhneBild,
       );
       setOffen(false);
       aufraeumen();
@@ -117,7 +119,7 @@ export function MeldeKnopf() {
       <div data-feedback-ui="true" className="fixed bottom-4 right-4 z-40">
         <Button variant="outline" onClick={oeffnen} className="shadow-sm">
           <MessageSquareWarning className="mr-2 h-4 w-4" aria-hidden />
-          Melden
+          {t.melden.knopf}
         </Button>
       </div>
 
@@ -128,18 +130,18 @@ export function MeldeKnopf() {
             setOffen(o);
             if (!o) aufraeumen();
           }}
-          title="Etwas melden"
-          description="Was stimmt auf dieser Seite nicht? Ein Bild der Seite geht mit."
+          title={t.melden.titel}
+          description={t.melden.frage}
           footer={
             <>
               <Button variant="outline" onClick={() => setOffen(false)}>
-                Abbrechen
+                {t.melden.abbrechen}
               </Button>
               <Button
                 onClick={() => senden.mutate()}
                 disabled={!beschreibung.trim() || senden.isPending || nimmtAuf}
               >
-                {senden.isPending ? "Wird gesendet …" : "Senden"}
+                {senden.isPending ? t.melden.sendet : t.melden.senden}
               </Button>
             </>
           }
@@ -149,30 +151,30 @@ export function MeldeKnopf() {
             onChange={(e) => setBeschreibung(e.target.value)}
             rows={5}
             autoFocus
-            placeholder="Zum Beispiel: Die Kachel zeigt einen leeren Wert, obwohl Daten da sind."
-            aria-label="Beschreibung"
+            placeholder={t.melden.beispiel}
+            aria-label={t.melden.beschreibung}
           />
           {bildUrl && (
             <figure className="m-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={bildUrl}
-                alt="Aufnahme der Seite"
+                alt={t.melden.aufnahme}
                 className="max-h-48 w-full rounded-md border border-[var(--border)] object-contain"
               />
               <figcaption className="mt-1 text-xs text-[var(--fg-muted)]">
-                Diese Aufnahme geht mit.
+                {t.melden.gehtMit}
               </figcaption>
             </figure>
           )}
           {nimmtAuf && (
             <p className="text-xs text-[var(--fg-muted)]">
-              Die Seite wird aufgenommen …
+              {t.melden.nimmtAuf}
             </p>
           )}
           {aufnahmeMisslungen && (
             <p className="text-xs text-[var(--fg-muted)]">
-              Die Seite ließ sich nicht aufnehmen — die Meldung geht ohne Bild.
+              {t.melden.misslungen}
             </p>
           )}
         </Dialog>

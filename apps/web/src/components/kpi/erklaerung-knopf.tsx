@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Info } from "lucide-react";
 
 import { Dialog } from "@/components/ui/dialog";
+import { useTexte } from "@/components/sprache/anbieter";
 import { erklaerungText, type Erklaerung } from "@/lib/erklaerung";
 
 /** So klein, dass die Zeile neben dem Kacheltitel nicht höher wird. */
@@ -29,6 +30,7 @@ export function ErklaerungKnopf({
   titel: string;
   erklaerung: Erklaerung;
 }) {
+  const t = useTexte();
   const [offen, setOffen] = useState(false);
   const text = erklaerungText(erklaerung);
   // Kein Knopf ohne Text: ein leeres Fenster ist schlimmer als kein Knopf.
@@ -39,8 +41,8 @@ export function ErklaerungKnopf({
       <button
         type="button"
         onClick={() => setOffen(true)}
-        aria-label={`Wie wird „${titel}“ gerechnet?`}
-        title="Rechenweg"
+        aria-label={t.erklaerung.frage(titel)}
+        title={t.erklaerung.knopf}
         className={KNOPF}
       >
         <Info className="h-3.5 w-3.5" aria-hidden />
@@ -49,14 +51,14 @@ export function ErklaerungKnopf({
         open={offen}
         onOpenChange={setOffen}
         title={titel}
-        description="So wird gerechnet"
+        description={t.erklaerung.untertitel}
         className="max-w-2xl"
         footer={
           <Link
             href={`/hilfe/${erklaerung.seite}`}
             className="text-sm underline-offset-4 hover:underline"
           >
-            Ganze Hilfeseite
+            {t.erklaerung.ganzeSeite}
           </Link>
         }
       >

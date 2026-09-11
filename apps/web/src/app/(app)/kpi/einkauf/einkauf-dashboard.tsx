@@ -16,8 +16,6 @@ import {
 } from "recharts";
 
 import {
-  bucketLabel,
-  fmt,
   takt,
 } from "@/lib/kpi/gemeinsam";
 import {
@@ -33,6 +31,8 @@ import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { cn } from "@/lib/cn";
 
@@ -43,6 +43,8 @@ function datum(iso: string | null): string {
 }
 
 export function EinkaufDashboard() {
+  const worte = useTexte();
+  const fmt = useFormate();
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
@@ -72,13 +74,13 @@ export function EinkaufDashboard() {
   const chartDaten = useMemo(
     () =>
       (verlaufDaten ?? []).map((p) => ({
-        label: bucketLabel(p.bucket, t),
+        label: fmt.bucket(p.bucket, t),
         // Recharts unterbricht die Linie bei null — genau das ist gewollt:
         // ein Bucket ohne Positionen hat keine Quote, keine gerade Linie.
         quote: p.quote == null ? null : Number(p.quote) * 100,
         gesamt: p.gesamt,
       })),
-    [verlaufDaten, t],
+    [verlaufDaten, t, fmt],
   );
 
   const zeilenDaten = positionen.data;
@@ -97,11 +99,11 @@ export function EinkaufDashboard() {
             href="/kpi"
             className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
           >
-            <ArrowLeft className="h-4 w-4" /> KPI-Dashboard
+            <ArrowLeft className="h-4 w-4" /> {worte.pfad.seiten["/kpi"]}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Einkauf</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/kpi/einkauf"]}</h1>
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            Liefertermintreue der Lieferanten. Gezählt wird, was im Zeitraum angekommen ist.
+            {worte.einkauf.einleitung}
           </p>
           <Datenstand bereich="einkauf" />
         </div>
@@ -110,29 +112,29 @@ export function EinkaufDashboard() {
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
-          Kennzahlen konnten nicht geladen werden: {(fehler as Error).message}
+          {worte.dashboard.ladeFehler((fehler as Error).message)}
         </Card>
       )}
 
       {keineDaten && (
         <Card className="p-8 text-center">
-          <p className="font-medium">Für diesen Zeitraum liegen keine Lieferpositionen vor</p>
+          <p className="font-medium">{worte.einkauf.keineDaten}</p>
           <p className="mx-auto mt-2 max-w-prose text-sm text-[var(--fg-muted)]">
-            Lade den Liefertreue-Export unter{" "}
+            {worte.einkauf.ladeVor}
             <Link href="/uploads" className="underline underline-offset-4">
-              Uploads
-            </Link>{" "}
-            hoch.
+              {worte.pfad.seiten["/uploads"]}
+            </Link>
+            {worte.einkauf.ladeNach}
           </p>
         </Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kennzahl
-          titel="OTD-Quote"
+          titel={worte.einkauf.otd}
           erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={fmt.prozent(otd.data?.quote == null ? null : Number(otd.data.quote))}
-          hinweis={`Ziel ${fmt.prozent(ziel)} · pünktlich heißt Verzug ≤ 0`}
+          hinweis={worte.einkauf.otdHinweis(fmt.prozent(ziel))}
           laedt={otd.isLoading}
           vergleich={
             <Vergleiche
@@ -144,22 +146,22 @@ export function EinkaufDashboard() {
           }
         />
         <Kennzahl
-          titel="Pünktliche Positionen"
+          titel={worte.einkauf.puenktlich}
           erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={fmt.zahl(otd.data?.puenktlich)}
           laedt={otd.isLoading}
         />
         <Kennzahl
-          titel="Positionen gesamt"
+          titel={worte.einkauf.gesamt}
           erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={fmt.zahl(otd.data?.gesamt)}
           laedt={otd.isLoading}
         />
         <Kennzahl
-          titel="Ø Verzug"
+          titel={worte.einkauf.verzugSchnitt}
           erklaerung={{ seite: "einkauf", abschnitt: "Liefertermintreue" }}
           wert={verzugText(otd.data?.verzug_schnitt == null ? null : Number(otd.data.verzug_schnitt))}
-          hinweis="Positionen ohne Verzugswert zählen hier nicht mit"
+          hinweis={worte.einkauf.verzugHinweis}
           laedt={otd.isLoading}
           vergleich={
             <Vergleiche
@@ -177,9 +179,9 @@ export function EinkaufDashboard() {
 
       {chartDaten.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">OTD-Quote im Zeitverlauf</h2>
+          <h2 className="font-medium">{worte.einkauf.verlauf}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Lücken sind Zeiträume ohne Lieferpositionen.
+            {worte.einkauf.verlaufHinweis}
           </p>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -230,26 +232,24 @@ export function EinkaufDashboard() {
       {lager.length > 0 && (
         <Card className="p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-medium">Bestellung auf Lager — Ladenhüter</h2>
+            <h2 className="font-medium">{worte.einkauf.ladenhueter}</h2>
             <span className="text-sm text-[var(--fg-muted)]">
-              Gebundenes Kapital: {fmt.eur(gebundenesKapital(lager))}
+              {worte.einkauf.kapital(fmt.eur(gebundenesKapital(lager)))}
             </span>
           </div>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Lagerartikel ohne Bewegung seit mindestens {LIEGETAGE} Tagen, höchster Wert zuerst.
-            Stichtag ist heute — der Zeitraum oben gilt hier nicht, weil ein Bestand kein
-            Zeitraum ist.
+            {worte.einkauf.ladenhueterHinweis(LIEGETAGE)}
           </p>
           <TableWrap className="mt-4">
             <Table>
               <thead>
                 <tr>
-                  <Th>Artikel</Th>
-                  <Th>Bezeichnung</Th>
-                  <Th className="text-right">Bestand</Th>
-                  <Th className="text-right">Liegt seit</Th>
-                  <Th className="text-right">Stückpreis</Th>
-                  <Th className="text-right">Wert</Th>
+                  <Th>{worte.einkauf.artikel}</Th>
+                  <Th>{worte.einkauf.bezeichnung}</Th>
+                  <Th className="text-right">{worte.einkauf.bestand}</Th>
+                  <Th className="text-right">{worte.einkauf.liegtSeit}</Th>
+                  <Th className="text-right">{worte.einkauf.stueckpreis}</Th>
+                  <Th className="text-right">{worte.einkauf.wert}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -271,20 +271,20 @@ export function EinkaufDashboard() {
 
       {zeilen.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">Lieferpositionen</h2>
+          <h2 className="font-medium">{worte.einkauf.positionen}</h2>
           <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Größter Verzug zuerst, Positionen ohne Verzugswert ganz oben. Höchstens 500 Zeilen.
+            {worte.einkauf.positionenHinweis}
           </p>
           <TableWrap className="mt-4">
             <Table>
               <thead>
                 <tr>
-                  <Th>Auftrag</Th>
-                  <Th>Lieferant</Th>
-                  <Th>Artikel</Th>
-                  <Th className="text-right">Zieltermin</Th>
-                  <Th className="text-right">Geliefert</Th>
-                  <Th className="text-right">Verzug</Th>
+                  <Th>{worte.einkauf.auftrag}</Th>
+                  <Th>{worte.einkauf.lieferant}</Th>
+                  <Th>{worte.einkauf.artikel}</Th>
+                  <Th className="text-right">{worte.einkauf.zieltermin}</Th>
+                  <Th className="text-right">{worte.einkauf.geliefert}</Th>
+                  <Th className="text-right">{worte.einkauf.verzug}</Th>
                 </tr>
               </thead>
               <tbody>

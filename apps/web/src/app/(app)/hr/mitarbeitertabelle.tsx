@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { fmt } from "@/lib/kpi/gemeinsam";
 import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { useTexte } from "@/components/sprache/anbieter";
+import { useFormate } from "@/lib/kpi/use-formate";
 import { cn } from "@/lib/cn";
 
 /**
@@ -17,6 +18,8 @@ import { cn } from "@/lib/cn";
  * Anwesenheitssegment und mit pauschalem Tagessoll rechnet.
  */
 export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
+  const worte = useTexte();
+  const fmt = useFormate();
   const [nurMitUeberstunden, setNurMitUeberstunden] = useState(true);
 
   const zeilen = useQuery({
@@ -40,7 +43,7 @@ export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold">Mitarbeiter</h2>
+        <h2 className="text-base font-semibold">{worte.mitarbeiter.titel}</h2>
         <label className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
           <input
             type="checkbox"
@@ -48,8 +51,8 @@ export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
             onChange={(e) => setNurMitUeberstunden(e.target.checked)}
             className="h-3.5 w-3.5"
           />
-          nur mit Überstunden
-          {ohne > 0 && nurMitUeberstunden && <span>({ohne} ausgeblendet)</span>}
+          {worte.mitarbeiter.nurMitUeberstunden}
+          {ohne > 0 && nurMitUeberstunden && <span>{worte.mitarbeiter.ausgeblendet(ohne)}</span>}
         </label>
       </div>
 
@@ -57,11 +60,11 @@ export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
         <Table>
           <thead>
             <tr>
-              <Th>Person</Th>
-              <Th>Abteilung</Th>
-              <Th className="text-right">Ist-Std.</Th>
-              <Th className="text-right">Überstunden</Th>
-              <Th className="text-right">ÜS %</Th>
+              <Th>{worte.mitarbeiter.person}</Th>
+              <Th>{worte.mitarbeiter.abteilung}</Th>
+              <Th className="text-right">{worte.mitarbeiter.istStunden}</Th>
+              <Th className="text-right">{worte.mitarbeiter.ueberstunden}</Th>
+              <Th className="text-right">{worte.mitarbeiter.quote}</Th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +93,7 @@ export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
       </TableWrap>
 
       {zeilen.isLoading && (
-        <p className="text-sm text-[var(--fg-muted)]">wird geladen …</p>
+        <p className="text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</p>
       )}
     </section>
   );

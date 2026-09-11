@@ -1,5 +1,6 @@
 "use client";
 
+import { useTexte } from "@/components/sprache/anbieter";
 import {
   alsProzent,
   bewertung,
@@ -57,7 +58,7 @@ export function Vergleiche({
   aktuell,
   vorperiode,
   vorjahr,
-  vorperiodeLabel = "zur Vorperiode",
+  vorperiodeLabel,
   richtung,
 }: {
   aktuell: number | null | undefined;
@@ -66,6 +67,7 @@ export function Vergleiche({
   vorperiodeLabel?: string;
   richtung?: Richtung;
 }) {
+  const t = useTexte();
   const eines =
     delta(aktuell, vorperiode) !== null || delta(aktuell, vorjahr) !== null;
   if (!eines) return null;
@@ -75,10 +77,10 @@ export function Vergleiche({
       <Vergleich
         aktuell={aktuell}
         vorher={vorperiode}
-        was={vorperiodeLabel}
+        was={vorperiodeLabel ?? t.vergleich.vorperiode}
         richtung={richtung}
       />
-      <Vergleich aktuell={aktuell} vorher={vorjahr} was="zum Vorjahr" richtung={richtung} />
+      <Vergleich aktuell={aktuell} vorher={vorjahr} was={t.vergleich.vorjahr} richtung={richtung} />
     </div>
   );
 }
