@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { logoAdresse } from "@/lib/logo-server";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/providers";
+import { Brotkrumen } from "@/components/brotkrumen";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
 import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umschalter";
 
@@ -19,7 +20,11 @@ const KNOPF =
  * kommt aus Cookies), deshalb werden hier die Laufzeitwerte für den
  * Supabase-Client im Browser gelesen und an die Provider gereicht.
  */
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const session = await requireSession();
   const logo = await logoAdresse();
   return (
@@ -29,7 +34,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     >
       <div className="min-h-screen">
         <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 py-3">
-          <Link href="/" className="flex items-center gap-2" aria-label="Zur Übersicht">
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+            aria-label="Zur Übersicht"
+          >
             {logo ? (
               // Eine signierte Adresse auf eine hochgeladene Datei; `next/image`
               // bräuchte dafür eine Host-Freigabe und brächte hier nichts.
@@ -40,7 +49,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 className="h-8 w-auto max-w-44 object-contain"
               />
             ) : (
-              <span className="font-semibold tracking-tight">ACM-Plattform</span>
+              <span className="font-semibold tracking-tight">
+                ACM-Plattform
+              </span>
             )}
           </Link>
           {/* Zeichen statt Beschriftungen: drei Wörter nebeneinander drängten
@@ -54,7 +65,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {session.email}
             </span>
             <ErscheinungsbildUmschalter />
-            <Link href="/hilfe" aria-label="Hilfe" title="Hilfe" className={KNOPF}>
+            <Link
+              href="/hilfe"
+              aria-label="Hilfe"
+              title="Hilfe"
+              className={KNOPF}
+            >
               <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
             </Link>
             {session.apps.platform === "admin" && (
@@ -68,13 +84,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </Link>
             )}
             <form action={signOut}>
-              <button type="submit" aria-label="Abmelden" title="Abmelden" className={KNOPF}>
+              <button
+                type="submit"
+                aria-label="Abmelden"
+                title="Abmelden"
+                className={KNOPF}
+              >
                 <LogOut className="h-[18px] w-[18px]" aria-hidden />
               </button>
             </form>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl p-6">{children}</main>
+        <main className="mx-auto max-w-7xl p-6">
+          <Brotkrumen />
+          {children}
+        </main>
         <MeldeKnopf />
       </div>
     </Providers>
