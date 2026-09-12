@@ -16,17 +16,21 @@ abgeglichen und stehen in keiner Tabelle.
 Der Cron-Weg braucht ein eigenes Verfahren, weil ein SQL-Job kein Nutzer-Token
 besitzt und keins erzeugen kann, ohne den JWT-Schlüssel in der Datenbank zu
 haben. Ohne gesetztes `HR_SYNC_TOKEN` ist diese Route zu.
+
+Und `GET /api/hr/foto/{id}`: das Profilbild fürs Organigramm, durchgereicht
+von Personio.
 """
 from __future__ import annotations
 
 import hmac
 import logging
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from pydantic import BaseModel
 
 from app.auth import require_app
 from app.config import settings
+from app.personio import zugang
 from app.personio.client import PersonioFehler
 from app.personio.listen import sammeln
 from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
@@ -132,4 +136,31 @@ async def auswahllisten() -> ListenRead:
         felder=listen.felder,
         hinweis=listen.hinweis,
         arten_aus_bestand=listen.arten_aus_bestand,
+    )
+
+
+@router.get("/foto/{employee_id}", dependencies=[Depends(require_app("hr"))])
+async def foto(employee_id: int) -> Response:
+    """Das Personio-Profilbild einer Person, gefunden über ihre Personio-Kennung.
+
+    Kein Bild, kein Zugang zu Personio — beides ist 404: das Organigramm zeigt
+    dann die Initialen. Zwischengespeichert wird im Browser, nicht hier; der
+    Dienst bleibt ohne Zustand.
+    """
+    klient = await zugang.klient()
+    if klient is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein Bild.")
+    try:
+        bild = await klient.profilbild(employee_id)
+    except PersonioFehler as fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Personio antwortet nicht.") from fehler
+    finally:
+        await klient.schliessen()
+    if bild is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein Bild.")
+    daten, typ = bild
+    return Response(
+        content=daten,
+        media_type=typ,
+        headers={"Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff"},
     )
