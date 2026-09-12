@@ -212,3 +212,61 @@ class TestZielwerte:
             "qualitaet_reklamation_lieferant": 0.02,
             "qualitaet_reklamation_werkbank": 0.05,
         }
+
+
+class TestListe:
+    """Die Tabelle unter der On-Quality-Kurve: die Reklamationen der gewählten Art."""
+
+    async def test_beide_schreibweisen_und_nur_die_gewaehlte_art(self, leer):
+        await _reklamation("R-1", "KUNRE", dt.date(2026, 3, 1), "30", akzeptiert="10")
+        await _reklamation("R-2", "KUN RE", dt.date(2026, 3, 5), "20")
+        await _reklamation("R-3", "INT RE", dt.date(2026, 3, 2), "5")
+        zeilen = await _funktion("kpi_qualitaet_reklamationen_liste", ("kunde", S), (None, D), (None, D))
+        assert [z["report_nr"] for z in zeilen] == ["R-2", "R-1"]   # neueste zuerst
+        r1 = zeilen[1]
+        assert (float(r1["quantity"]), float(r1["accepted_quantity"])) == (30.0, 10.0)
+        assert zeilen[0]["accepted_quantity"] is None
+
+    async def test_dasselbe_fenster_wie_der_zaehler(self, leer):
+        await _reklamation("R-1", "KUNRE", dt.date(2026, 3, 31), "30")
+        await _reklamation("R-2", "KUNRE", dt.date(2026, 4, 1), "20")
+        zeilen = await _funktion(
+            "kpi_qualitaet_reklamationen_liste", ("kunde", S), (dt.date(2026, 4, 1), D), (dt.date(2026, 4, 30), D)
+        )
+        (quote,) = await _funktion(
+            "kpi_qualitaet_reklamationen", ("kunde", S), ("gesamt", S), (dt.date(2026, 4, 1), D), (dt.date(2026, 4, 30), D)
+        )
+        assert [z["report_nr"] for z in zeilen] == ["R-2"]
+        assert sum(float(z["quantity"]) for z in zeilen) == float(quote["reklamiert"])
+
+    async def test_traegt_die_referenzspalten(self, leer):
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(quality_records).values(
+                        report_nr="R-9", report_date=dt.date(2026, 3, 1), art="LIERE",
+                        issuer="Wareneingang", customer_name="Stoff GmbH", customer_id="L-3",
+                        designation="Farbe falsch", status_code="CAR MA 4", quantity=Decimal("12"),
+                        accepted_quantity=Decimal("8"), imported_at=JETZT,
+                    )
+                )
+        (zeile,) = await _funktion("kpi_qualitaet_reklamationen_liste", ("lieferant", S), (None, D), (None, D))
+        assert set(zeile) == {
+            "report_nr", "report_date", "customer_name", "customer_id", "designation",
+            "quantity", "accepted_quantity", "issuer", "status_code",
+        }
+        assert (zeile["issuer"], zeile["customer_name"], zeile["status_code"]) == ("Wareneingang", "Stoff GmbH", "CAR MA 4")
+
+    async def test_ohne_obergrenze(self, leer):
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(quality_records),
+                    [
+                        {"report_nr": f"R-{i}", "report_date": dt.date(2026, 3, 1), "art": "KUNRE",
+                         "quantity": Decimal("1"), "imported_at": JETZT}
+                        for i in range(501)
+                    ],
+                )
+        zeilen = await _funktion("kpi_qualitaet_reklamationen_liste", ("kunde", S), (None, D), (None, D))
+        assert len(zeilen) == 501
