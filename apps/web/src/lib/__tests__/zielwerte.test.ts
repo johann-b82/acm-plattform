@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { alsAnzeige, ausAnzeige, nachSchluessel, verfehlt } from "../zielwerte";
+import { alsAnzeige, ausAnzeige, ladeZielwerte, nachSchluessel, verfehlt, zielwertAusEingabe } from "../zielwerte";
+
+const antwort = vi.hoisted(() => ({ data: [] as unknown[] }));
+
+vi.mock("@/lib/supabase/client", () => ({
+  supabaseBrowser: () => ({
+    from: () => ({ select: () => ({ order: async () => ({ data: antwort.data, error: null }) }) }),
+  }),
+}));
 
 describe("Umrechnung", () => {
   it("zeigt Anteile als Prozent", () => {
@@ -52,5 +60,42 @@ describe("nachSchluessel", () => {
       { schluessel: "b", wert: 2 },
     ] as never);
     expect(tabelle).toEqual({ a: 1, b: 2 });
+  });
+
+  it("lässt leere Zielwerte aus — ohne Ziel keine Ziellinie", () => {
+    const tabelle = nachSchluessel([
+      { schluessel: "a", wert: 1 },
+      { schluessel: "b", wert: null },
+    ] as never);
+    expect(tabelle).toEqual({ a: 1 });
+    expect(tabelle.b).toBeUndefined();
+  });
+});
+
+describe("ladeZielwerte", () => {
+  it("macht aus einem leeren Zielwert keine Null", async () => {
+    antwort.data = [
+      { schluessel: "qualitaet_pruefung_gross", wert: "150" },
+      { schluessel: "qualitaet_pruefung_gesamt", wert: null, leer_erlaubt: true },
+    ];
+    const werte = await ladeZielwerte();
+    expect(werte.map((z) => z.wert)).toEqual([150, null]);
+  });
+});
+
+describe("zielwertAusEingabe", () => {
+  it("liest Zahlen mit Komma oder Punkt", () => {
+    expect(zielwertAusEingabe("150", "anzahl", false)).toBe(150);
+    expect(zielwertAusEingabe("2,5", "anteil", false)).toBe(0.025);
+  });
+
+  it("nimmt ein leeres Feld nur, wo leer erlaubt ist", () => {
+    expect(zielwertAusEingabe("  ", "anzahl", true)).toBeNull();
+    expect(zielwertAusEingabe("", "anzahl", false)).toBe("ungueltig");
+  });
+
+  it("weist Unsinn und negative Werte ab", () => {
+    expect(zielwertAusEingabe("abc", "anzahl", true)).toBe("ungueltig");
+    expect(zielwertAusEingabe("-1", "anzahl", true)).toBe("ungueltig");
   });
 });

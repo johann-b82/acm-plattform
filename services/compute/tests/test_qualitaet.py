@@ -213,15 +213,64 @@ class TestVerlauf:
         assert gesamt == row["level_1"] + row["level_2"]
 
 
-class TestDiagnoseliste:
-    async def test_zeigt_nur_audits_ohne_level(self, bestand):
-        zeilen = await _funktion("kpi_qualitaet_audits_ohne_level", (None, D), (None, D), (500, I), (None, T))
-        assert [z["report_nr"] for z in zeilen] == ["A-4"]
+class TestFindingsListe:
+    """Die Tabelle unter den Audit-Kacheln: alle Audit-Berichte im Fenster, auch
+    die ohne erkanntes Level — aus ihnen liest die Oberfläche die Diagnoseliste."""
 
-    async def test_folgt_dem_artfilter(self, bestand):
-        """Sonst zeigte die Liste mehr Zeilen, als die Kachel darueber zaehlt."""
-        zeilen = await _funktion("kpi_qualitaet_audits_ohne_level", (None, D), (None, D), (500, I), (["BH AUD"], T))
-        assert zeilen == []
+    async def test_alle_audits_auch_ohne_level(self, bestand):
+        zeilen = await _funktion("kpi_qualitaet_audits_liste", (None, D), (None, D), (None, T))
+        assert sorted(z["report_nr"] for z in zeilen) == ["A-1", "A-2", "A-3", "A-4"]
+        nach = {z["report_nr"]: z["level"] for z in zeilen}
+        assert nach["A-4"] is None and nach["A-1"] == 1
+
+    async def test_so_viele_zeilen_wie_die_kacheln_zaehlen(self, bestand):
+        zeilen = await _funktion("kpi_qualitaet_audits_liste", (None, D), (None, D), (None, T))
+        (row,) = await _funktion("kpi_qualitaet_audits", (None, D), (None, D), (None, T))
+        assert len(zeilen) == row["level_1"] + row["level_2"] + row["ohne_level"]
+
+    async def test_folgt_dem_artfilter_und_dem_fenster(self, bestand):
+        zeilen = await _funktion(
+            "kpi_qualitaet_audits_liste", (dt.date(2026, 1, 1), D), (dt.date(2026, 1, 31), D), (["BH AUD"], T)
+        )
+        assert [z["report_nr"] for z in zeilen] == ["A-2", "A-1"]   # neueste zuerst
+
+    async def test_traegt_die_referenzspalten(self, bestand):
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(quality_records).values(
+                        report_nr="A-9", report_date=dt.date(2026, 4, 1), art="IN AUD", level=2,
+                        issuer="Qualität", customer_name="Werk Nord", customer_id="K-7",
+                        designation="Kennzeichnung fehlt", status_code="isignal_flag_green",
+                        imported_at=dt.datetime.now(dt.timezone.utc),
+                    )
+                )
+        (zeile,) = await _funktion(
+            "kpi_qualitaet_audits_liste", (dt.date(2026, 4, 1), D), (dt.date(2026, 4, 1), D), (None, T)
+        )
+        assert zeile == {
+            "report_nr": "A-9", "report_date": dt.date(2026, 4, 1), "art": "IN AUD", "level": 2,
+            "issuer": "Qualität", "customer_name": "Werk Nord", "customer_id": "K-7",
+            "designation": "Kennzeichnung fehlt", "status_code": "isignal_flag_green",
+        }
+
+    async def test_ohne_obergrenze(self, bestand):
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(quality_records),
+                    [
+                        {
+                            "report_nr": f"V-{i}", "report_date": dt.date(2025, 6, 1), "art": "EX AUD",
+                            "imported_at": dt.datetime.now(dt.timezone.utc),
+                        }
+                        for i in range(501)
+                    ],
+                )
+        zeilen = await _funktion(
+            "kpi_qualitaet_audits_liste", (dt.date(2025, 1, 1), D), (dt.date(2025, 12, 31), D), (None, T)
+        )
+        assert len(zeilen) == 501
 
 
 class TestRechte:

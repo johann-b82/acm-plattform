@@ -7,7 +7,8 @@ import { rpc, takt } from "@/lib/kpi/gemeinsam";
  * Gezählt werden Zeilen, nicht Mengen: ein Befund ist ein Befund, unabhängig
  * davon, wie viele Teile betroffen sind. Das Level steht in der Quelldatei
  * nicht in einer Spalte, sondern im Freitext; wo es nicht zu erkennen war,
- * zählt die Zeile nirgends und taucht in der Diagnoseliste auf.
+ * zählt die Zeile nirgends und taucht in der Diagnoseliste auf. Liste und
+ * Diagnoseliste in Alembic 0044.
  */
 
 export interface AuditSumme {
@@ -23,12 +24,17 @@ export interface AuditVerlaufZeile {
   level_2: number;
 }
 
-export interface AuditOhneLevel {
+/** Eine Zeile der Findings-Übersicht (QUA-07). */
+export interface AuditFinding {
   report_nr: string;
   report_date: string;
   art: string | null;
+  level: 1 | 2 | null;
+  issuer: string | null;
   customer_name: string | null;
+  customer_id: string | null;
   designation: string | null;
+  status_code: string | null;
 }
 
 /** Die vier Audit-Codes, wie sie in der Quelldatei stehen. */
@@ -46,9 +52,15 @@ export const qualitaetApi = {
       takt: takt(von, bis),
       arten,
     }),
-  ohneLevel: (von: string | null, bis: string | null, arten: string[] | null, grenze = 500) =>
-    rpc<AuditOhneLevel[]>("kpi_qualitaet_audits_ohne_level", { von, bis, grenze, arten }),
+  liste: (von: string | null, bis: string | null, arten: string[] | null) =>
+    rpc<AuditFinding[]>("kpi_qualitaet_audits_liste", { von, bis, arten }),
 };
+
+/** Die Befunde ohne erkanntes Level — aus derselben Menge wie die Übersicht,
+ *  damit Diagnoseliste und Kachel „Ohne erkennbares Level“ nie auseinanderlaufen. */
+export function ohneLevel(liste: readonly AuditFinding[]): AuditFinding[] {
+  return liste.filter((z) => z.level == null);
+}
 
 /**
  * Die nach Art aufgeschlüsselten Verlaufszeilen zu einem Punkt je Bucket
@@ -85,6 +97,19 @@ export interface ReklamationVerlaufPunkt {
   quote: number | null;
   reklamiert: number;
   bezugsmenge: number;
+}
+
+/** Eine Zeile der Reklamationstabelle (QUA-08). */
+export interface ReklamationZeile {
+  report_nr: string;
+  report_date: string;
+  customer_name: string | null;
+  customer_id: string | null;
+  designation: string | null;
+  quantity: number | null;
+  accepted_quantity: number | null;
+  issuer: string | null;
+  status_code: string | null;
 }
 
 export const reklamationApi = {
@@ -129,6 +154,14 @@ export const reklamationApi = {
       bezugsmenge: Number(r.bezugsmenge),
     }));
   },
+  liste: async (p_art: ReklamationsArt, von: string | null, bis: string | null): Promise<ReklamationZeile[]> => {
+    const rows = await rpc<ReklamationZeile[]>("kpi_qualitaet_reklamationen_liste", { p_art, von, bis });
+    return rows.map((r) => ({
+      ...r,
+      quantity: r.quantity == null ? null : Number(r.quantity),
+      accepted_quantity: r.accepted_quantity == null ? null : Number(r.accepted_quantity),
+    }));
+  },
 };
 
 /**
@@ -144,11 +177,44 @@ export function onQuality(fehlerquote: number | null): number | null {
 // Prüfmengen und Ausschussquote
 // ---------------------------------------------------------------------------
 
+/**
+ * Prüfleistung: geprüfte Menge je Prüfer-Tag. Rechenweg in Alembic 0044 —
+ * jede Größe teilt durch die Prüfer-Tage, an denen sie geprüft wurde, Gesamt
+ * durch alle. Groß und klein ergeben zusammen deshalb nicht Gesamt.
+ */
+export type Artikelart = "fertig" | "halbfertig" | "alle";
+export type Pruefklasse = "gross" | "klein" | "gesamt";
+export const PRUEFKLASSEN: readonly Pruefklasse[] = ["gross", "klein", "gesamt"];
+
 export interface Pruefmengen {
   gross: number;
   klein: number;
-  pruefer: number;
-  prueftage: number;
+  gesamt: number;
+  personentage_gross: number;
+  personentage_klein: number;
+  personentage_gesamt: number;
+}
+
+export interface PruefVerlaufPunkt extends Pruefmengen {
+  bucket: string;
+}
+
+function alsPruefmengen(roh: Partial<Record<keyof Pruefmengen, unknown>> | undefined): Pruefmengen {
+  return {
+    gross: Number(roh?.gross ?? 0),
+    klein: Number(roh?.klein ?? 0),
+    gesamt: Number(roh?.gesamt ?? 0),
+    personentage_gross: Number(roh?.personentage_gross ?? 0),
+    personentage_klein: Number(roh?.personentage_klein ?? 0),
+    personentage_gesamt: Number(roh?.personentage_gesamt ?? 0),
+  };
+}
+
+/** Der Wert für die Vergleichszeilen. Ohne Prüfer-Tage im Vergleichsfenster
+ *  steht in der Kachel zwar 0, aber es gibt nichts zu vergleichen. */
+export function pruefleistungVergleich(m: Pruefmengen | undefined, klasse: Pruefklasse): number | null {
+  if (!m || m[`personentage_${klasse}`] === 0) return null;
+  return m[klasse];
 }
 
 export interface AusschussZeile {
@@ -163,6 +229,7 @@ export interface BuchungsZeile {
   id: number;
   pruef_datum: string;
   benutzer: string | null;
+  artikel: string | null;
   bezeichnung: string | null;
   size_class: "large" | "small";
   buchungs_menge: number | null;
@@ -171,17 +238,18 @@ export interface BuchungsZeile {
 }
 
 export const pruefungApi = {
-  mengen: async (von: string | null, bis: string | null): Promise<Pruefmengen> => {
-    const rows = await rpc<Pruefmengen[]>("kpi_qualitaet_pruefmengen", { von, bis });
-    const roh = rows[0];
-    return roh
-      ? {
-          gross: Number(roh.gross),
-          klein: Number(roh.klein),
-          pruefer: Number(roh.pruefer),
-          prueftage: Number(roh.prueftage),
-        }
-      : { gross: 0, klein: 0, pruefer: 0, prueftage: 0 };
+  mengen: async (von: string | null, bis: string | null, artikelart: Artikelart): Promise<Pruefmengen> => {
+    const rows = await rpc<Pruefmengen[]>("kpi_qualitaet_pruefmengen", { von, bis, artikelart });
+    return alsPruefmengen(rows[0]);
+  },
+  verlauf: async (von: string | null, bis: string | null, artikelart: Artikelart): Promise<PruefVerlaufPunkt[]> => {
+    const rows = await rpc<PruefVerlaufPunkt[]>("kpi_qualitaet_pruefmengen_verlauf", {
+      von,
+      bis,
+      takt: takt(von, bis),
+      artikelart,
+    });
+    return rows.map((r) => ({ bucket: r.bucket, ...alsPruefmengen(r) }));
   },
   ausschuss: async (von: string | null, bis: string | null, grenze = 500) => {
     const rows = await rpc<AusschussZeile[]>("kpi_qualitaet_ausschuss", { von, bis, grenze });
@@ -192,8 +260,8 @@ export const pruefungApi = {
       quote: z.quote == null ? null : Number(z.quote),
     }));
   },
-  buchungen: async (von: string | null, bis: string | null, grenze = 500) => {
-    const rows = await rpc<BuchungsZeile[]>("kpi_qualitaet_buchungen", { von, bis, grenze });
+  buchungen: async (von: string | null, bis: string | null, artikelart: Artikelart) => {
+    const rows = await rpc<BuchungsZeile[]>("kpi_qualitaet_buchungen", { von, bis, artikelart });
     return rows.map((z) => ({
       ...z,
       buchungs_menge: z.buchungs_menge == null ? null : Number(z.buchungs_menge),
