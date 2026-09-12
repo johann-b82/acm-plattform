@@ -187,15 +187,57 @@ class TestVerlauf:
 
 class TestPositionen:
     async def test_spaeteste_zuerst(self, bestand):
-        zeilen = await _funktion("kpi_einkauf_positionen", dt.date(2026, 1, 1), dt.date(2026, 1, 31), 500)
+        zeilen = await _funktion("kpi_einkauf_positionen", dt.date(2026, 1, 1), dt.date(2026, 1, 31))
         # Ohne Verzugswert steht vorn: die Zeile braucht am ehesten einen Blick.
         assert zeilen[0]["verzug_tage"] is None
         assert zeilen[1]["verzug_tage"] == 10
 
-    async def test_grenze_wird_gedeckelt(self, bestand):
-        """Auch eine höhere Angabe bringt nicht mehr als 500 Zeilen."""
-        zeilen = await _funktion("kpi_einkauf_positionen", None, None, 100000)
+    async def test_menge_einheit_und_adressnummer(self, bestand):
+        """Die Liefermenge der Position (EIN-03) — nicht der Lagerbestand."""
+        zeilen = await _funktion("kpi_einkauf_positionen", dt.date(2026, 2, 1), dt.date(2026, 2, 28))
+        (zeile,) = zeilen
+        assert float(zeile["quantity"]) == 1.0
+        assert zeile["unit"] == "Stk"
+        assert zeile["adr_nr"] == "700"
+
+    async def test_keine_grenze(self, bestand):
+        """Die Tabelle blättert selbst; die Funktion schneidet nichts ab (TAB-01)."""
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(delivery_reliability),
+                    [
+                        {
+                            "auftrag": "V-9",
+                            "pos": i,
+                            "upos": 0,
+                            "delivered_date": dt.date(2025, 6, 1),
+                            "verzug_tage": 1,
+                            "imported_at": dt.datetime.now(dt.timezone.utc),
+                        }
+                        for i in range(1, 502)
+                    ],
+                )
+        zeilen = await _funktion("kpi_einkauf_positionen", None, None)
+        assert len(zeilen) == 5 + 501
+
+
+class TestGesamterBestand:
+    """PRF-01/E-03: „Alles" heißt beide Grenzen offen — nicht der laufende Monat."""
+
+    async def test_otd_ohne_grenzen_zaehlt_alle_positionen(self, bestand):
+        (row,) = await _funktion("kpi_einkauf_otd", None, None)
+        assert row["gesamt"] == 5
+        assert row["puenktlich"] == 2
+
+    async def test_positionen_ohne_grenzen_sind_alle(self, bestand):
+        zeilen = await _funktion("kpi_einkauf_positionen", None, None)
+        assert {z["auftrag"] for z in zeilen} == {"A-1", "A-2", "A-3"}
         assert len(zeilen) == 5
+
+    async def test_verlauf_ohne_grenzen_umfasst_alle_monate(self, bestand):
+        zeilen = await _funktion("kpi_einkauf_otd_verlauf", None, None, "month")
+        assert sum(z["gesamt"] for z in zeilen) == 5
 
 
 class TestRechte:

@@ -180,22 +180,94 @@ class TestListe:
         await _position("A-1", 10, tage(-30))
         await _lieferung("L-1", 10, tage(-20), "A-1")   # geliefert, zu spät
         await _position("A-2", 10, tage(-9))            # offen, überfällig
-        zeilen = await _funktion("kpi_produktion_verzug_liste", None, None, 500)
+        zeilen = await _funktion("kpi_produktion_verzug_liste", None, None)
         nach_auftrag = {z["vorgang_nr"]: z for z in zeilen}
         assert nach_auftrag["A-1"]["art"] == "verspaetet"
+        assert nach_auftrag["A-1"]["verzug_tage"] == 10   # Ist − Ziel
         assert nach_auftrag["A-2"]["art"] == "offen"
         assert nach_auftrag["A-2"]["ist"] is None
+        assert nach_auftrag["A-2"]["verzug_tage"] == 9    # heute − Ziel
 
     async def test_puenktliche_stehen_nicht_drin(self, leer):
         await _position("A-1", 10, tage(-10))
         await _lieferung("L-1", 10, tage(-10), "A-1")
-        assert await _funktion("kpi_produktion_verzug_liste", None, None, 500) == []
+        assert await _funktion("kpi_produktion_verzug_liste", None, None) == []
+
+    async def test_offener_auftrag_mit_termin_in_der_zukunft_steht_nicht_drin(self, leer):
+        await _position("A-1", 10, tage(3))
+        assert await _funktion("kpi_produktion_verzug_liste", None, None) == []
 
     async def test_groesster_verzug_zuerst(self, leer):
         await _position("A-1", 10, tage(-5))
         await _position("A-2", 10, tage(-40))
-        zeilen = await _funktion("kpi_produktion_verzug_liste", None, None, 500)
+        zeilen = await _funktion("kpi_produktion_verzug_liste", None, None)
         assert [z["vorgang_nr"] for z in zeilen] == ["A-2", "A-1"]
+
+    async def test_adressnummer_des_kunden(self, leer):
+        """Die Referenz zeigt den Kunden mit Adress-Nr. (PRO-02)."""
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(auftrag_positionen).values(
+                        vorgang_nr="A-1", pos=10, upos=0, typ="AUF", lieferdatum=tage(-5),
+                        customer_id="10042", customer_name="Kunde",
+                        imported_at=dt.datetime.now(dt.timezone.utc),
+                    )
+                )
+        (zeile,) = await _funktion("kpi_produktion_verzug_liste", None, None)
+        assert zeile["adr_nr"] == "10042"
+
+    async def test_keine_grenze(self, leer):
+        """Die Tabelle blättert selbst; die Funktion schneidet nichts ab (TAB-01)."""
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(auftrag_positionen),
+                    [
+                        {
+                            "vorgang_nr": f"A-{i}", "pos": 10, "upos": 0, "typ": "AUF",
+                            "lieferdatum": tage(-5),
+                            "imported_at": dt.datetime.now(dt.timezone.utc),
+                        }
+                        for i in range(501)
+                    ],
+                )
+        zeilen = await _funktion("kpi_produktion_verzug_liste", None, None)
+        assert len(zeilen) == 501
+
+
+class TestOffeneZaehlung:
+    """„davon N offen" kommt aus SQL, nicht aus einer gekappten Liste (PRO-02)."""
+
+    async def test_offen_zaehlt_ueberfaellige_ohne_lieferschein(self, leer):
+        await _position("A-1", 10, tage(-30))
+        await _lieferung("L-1", 10, tage(-20), "A-1")   # zu spät geliefert
+        await _position("A-2", 10, tage(-9))            # offen, überfällig
+        await _position("A-3", 10, tage(-4))            # offen, überfällig
+        await _position("A-4", 10, tage(8))             # offen, noch nicht fällig
+        (row,) = await _funktion("kpi_produktion_verzug", None, None)
+        assert (row["in_verzug"], row["offen"], row["gesamt"]) == (3, 2, 3)
+
+    async def test_offen_im_fenster_ueber_den_zieltermin(self, leer):
+        await _position("A-1", 10, dt.date(2025, 1, 15))
+        await _position("A-2", 10, dt.date(2025, 3, 15))
+        (row,) = await _funktion("kpi_produktion_verzug", dt.date(2025, 1, 1), dt.date(2025, 1, 31))
+        assert row["offen"] == 1
+
+
+class TestGesamterBestand:
+    """PRF-01/E-03: „Alles" heißt beide Grenzen offen — nicht der laufende Monat."""
+
+    async def test_alles_umfasst_alte_und_neue_auftraege(self, leer):
+        await _position("A-1", 10, dt.date(2019, 5, 1))
+        await _lieferung("L-1", 10, dt.date(2019, 5, 20), "A-1")
+        await _position("A-2", 10, tage(-2))
+        (row,) = await _funktion("kpi_produktion_verzug", None, None)
+        assert (row["gesamt"], row["in_verzug"]) == (2, 2)
+        zeilen = await _funktion("kpi_produktion_verzug_liste", None, None)
+        assert {z["vorgang_nr"] for z in zeilen} == {"A-1", "A-2"}
+        verlauf = await _funktion("kpi_produktion_verzug_verlauf", None, None, "month")
+        assert sum(z["gesamt"] for z in verlauf) == 2
 
 
 class TestVerlauf:
