@@ -209,7 +209,7 @@ export const pl: Texte = {
     erstkontakte: "Pierwsze kontakty",
     erstkontakteHinweis: "zamknięte kontakty typu ERS",
     besuche: "Wizyty",
-    besucheHinweis: "u klienta i online razem",
+    besucheHinweis: "u klienta i online osobno",
     besucheOrt: "u klienta",
     besucheOnline: "online",
     interessenten: "Potencjalni klienci",

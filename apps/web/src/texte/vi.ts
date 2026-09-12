@@ -209,7 +209,7 @@ export const vi: Texte = {
     erstkontakte: "Liên hệ lần đầu",
     erstkontakteHinweis: "liên hệ đã hoàn tất thuộc loại ERS",
     besuche: "Lượt thăm",
-    besucheHinweis: "tại chỗ và trực tuyến gộp lại",
+    besucheHinweis: "tại chỗ và trực tuyến tách riêng",
     besucheOrt: "tại chỗ",
     besucheOnline: "trực tuyến",
     interessenten: "Khách hàng tiềm năng",

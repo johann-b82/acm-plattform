@@ -208,7 +208,7 @@ export const ar: Texte = {
     erstkontakte: "الاتصالات الأولى",
     erstkontakteHinweis: "الاتصالات المنجزة من النوع ERS",
     besuche: "الزيارات",
-    besucheHinweis: "الميدانية وعبر الإنترنت معاً",
+    besucheHinweis: "الميدانية وعبر الإنترنت كلٌّ على حدة",
     besucheOrt: "ميدانية",
     besucheOnline: "عبر الإنترنت",
     interessenten: "المهتمّون",

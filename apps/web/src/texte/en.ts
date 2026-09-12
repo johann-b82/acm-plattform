@@ -212,7 +212,7 @@ export const en: Texte = {
     erstkontakte: "First contacts",
     erstkontakteHinweis: "completed contacts of type ERS",
     besuche: "Visits",
-    besucheHinweis: "on site and online together",
+    besucheHinweis: "on site and online shown separately",
     besucheOrt: "on site",
     besucheOnline: "online",
     interessenten: "Leads",

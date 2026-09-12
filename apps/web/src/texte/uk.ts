@@ -210,7 +210,7 @@ export const uk: Texte = {
     erstkontakte: "Перші контакти",
     erstkontakteHinweis: "завершені контакти типу ERS",
     besuche: "Візити",
-    besucheHinweis: "на місці та онлайн разом",
+    besucheHinweis: "на місці та онлайн окремо",
     besucheOrt: "на місці",
     besucheOnline: "онлайн",
     interessenten: "Потенційні клієнти",

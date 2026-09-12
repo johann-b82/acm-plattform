@@ -142,6 +142,16 @@ export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
     [sprachTag],
   );
 
+  const kundenGesamt = useMemo(
+    () => (kunden.data ?? []).reduce((summe, k) => summe + Number(k.wert), 0),
+    [kunden.data],
+  );
+  const anteilVon = (k: KundenAnteil) => (kundenGesamt === 0 ? 0 : Number(k.wert) / kundenGesamt);
+  const prozentGenau = useMemo(
+    () => new Intl.NumberFormat(sprachTag, { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    [sprachTag],
+  );
+
   const kundenSpalten: Tabellenspalte<KundenAnteil>[] = [
     { schluessel: "kunde", titel: worte.vertrieb.kunde, typ: "text", wert: (k) => k.kunde },
     {
@@ -157,8 +167,10 @@ export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
       schluessel: "anteil",
       titel: worte.vertrieb.anteil,
       typ: "zahl",
-      wert: (k) => Number(k.anteil),
-      zelle: (k) => fmt.prozent(Number(k.anteil)),
+      // Aus dem ungerundeten Betrag, nicht aus der in SQL gerundeten Spalte:
+      // sonst stünde hier 5,3 % und im Diagramm darüber 5,2 %.
+      wert: (k) => anteilVon(k),
+      zelle: (k) => prozentGenau.format(anteilVon(k) || 0),
       ausrichtung: "end",
       className: "font-mono",
     },
