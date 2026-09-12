@@ -110,6 +110,7 @@ export function VertriebDashboard() {
               vorperiode={vgl.vorperiode?.umsatz}
               vorjahr={vgl.vorjahr?.umsatz}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
             />
           }
         />
@@ -125,6 +126,7 @@ export function VertriebDashboard() {
               vorperiode={vgl.vorperiode?.auftragswert_avg}
               vorjahr={vgl.vorjahr?.auftragswert_avg}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
             />
           }
         />
@@ -140,6 +142,7 @@ export function VertriebDashboard() {
               vorperiode={vgl.vorperiode?.auftraege_anzahl}
               vorjahr={vgl.vorjahr?.auftraege_anzahl}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
             />
           }
         />

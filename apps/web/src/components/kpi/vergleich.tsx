@@ -1,86 +1,98 @@
 "use client";
 
-import { useTexte } from "@/components/sprache/anbieter";
-import {
-  alsProzent,
-  bewertung,
-  delta,
-  type Richtung,
-} from "@/lib/kpi/vergleich";
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
+
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { ZAHL_TAG } from "@/lib/sprache";
+import { alsProzent, bewertung, delta, type Richtung } from "@/lib/kpi/vergleich";
+
+const FARBE = {
+  gut: "text-[var(--ok)]",
+  schlecht: "text-[var(--danger)]",
+  neutral: "text-[var(--fg-muted)]",
+} as const;
 
 /**
- * Ein Abzeichen an der Kachel: wie viel mehr oder weniger als vorher.
+ * Eine Vergleichszeile (KPI-05/06): kleiner diagonaler Pfeil, farbiger
+ * Prozentwert, grauer Vergleichszeitraum — ohne Hinterlegung.
  *
- * Die Farbe folgt der **Bedeutung**, nicht dem Vorzeichen. Bei Verzugsquote
- * und Reklamationsquote ist weniger besser; dort wird ein Rückgang grün.
- *
- * Gibt es keinen Vergleichswert, erscheint gar nichts — kein Strich, kein
- * Platzhalter. Eine Kachel soll nicht nach Fehler aussehen, nur weil der
- * Vorjahreszeitraum vor dem ersten Upload liegt.
+ * Der Pfeil folgt der Zahl, die Farbe der Bedeutung: eine steigende
+ * Personalkostenquote zeigt nach oben und ist rot. Unverändert steht als
+ * waagerechter Pfeil in Grau, fehlend als Strich mit Erklärung — beides ist
+ * etwas anderes als eine Veränderung.
  */
-export function Vergleich({
+export function Vergleichszeile({
   aktuell,
   vorher,
-  was,
+  label,
   richtung = "mehr_ist_besser",
 }: {
   aktuell: number | null | undefined;
   vorher: number | null | undefined;
-  /** „zum Vormonat", „zum Vorjahr" — steht im Tooltip. */
-  was: string;
+  label: string;
   richtung?: Richtung;
 }) {
+  const t = useTexte();
+  const tag = ZAHL_TAG[useSprache()];
   const wert = delta(aktuell, vorher);
-  if (wert === null) return null;
 
-  const stufe = bewertung(wert, richtung);
-  const farbe =
-    stufe === "gut" ? "status-ok" : stufe === "schlecht" ? "status-bad" : "status-none";
+  if (wert === null) {
+    return (
+      <div className="flex items-baseline gap-1.5 whitespace-nowrap" title={t.vergleich.keinWert}>
+        <span className="w-3.5 text-center text-[var(--fg-muted)]" aria-hidden>
+          —
+        </span>
+        <span className="sr-only">{t.vergleich.keinWert}</span>
+        <span className="text-[var(--fg-muted)]">{label}</span>
+      </div>
+    );
+  }
+
+  const Pfeil = wert > 0 ? ArrowUpRight : wert < 0 ? ArrowDownRight : ArrowRight;
+  const farbe = FARBE[bewertung(wert, richtung)];
+  const bewegung = wert > 0 ? t.vergleich.gestiegen : wert < 0 ? t.vergleich.gesunken : t.vergleich.unveraendert;
 
   return (
-    <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs tabular-nums ${farbe}`}
-      title={`${alsProzent(wert)} ${was}`}
-    >
-      {alsProzent(wert)}
-      <span className="ms-1 opacity-70">{was}</span>
-    </span>
+    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+      <span className={`inline-flex items-baseline gap-0.5 font-medium tabular-nums ${farbe}`}>
+        <Pfeil className="h-3.5 w-3.5 self-center" aria-hidden />
+        <span className="sr-only">{bewegung}</span>
+        {alsProzent(wert, tag)}
+      </span>
+      <span className="text-[var(--fg-muted)]">{label}</span>
+    </div>
   );
 }
 
 /**
- * Die Zeile unter dem Wert: Vorperiode und Vorjahr nebeneinander.
- *
- * Zwei Abzeichen, weil beide etwas anderes sagen. „Mehr als im Vormonat"
- * kann saisonal sein; „mehr als im Vorjahresmonat" ist es nicht.
+ * Die beiden Zeilen rechts neben der Hauptzahl: oben die Vorperiode, darunter
+ * das Vorjahr. Eine Zeile ohne Vergleichszeitraum (Vorperiode bei „Dieses
+ * Jahr“) entfällt; ohne jeden Zeitraum („Alles“) entfällt der Block.
  */
 export function Vergleiche({
   aktuell,
   vorperiode,
   vorjahr,
   vorperiodeLabel,
+  vorjahrLabel,
   richtung,
 }: {
   aktuell: number | null | undefined;
   vorperiode: number | null | undefined;
   vorjahr: number | null | undefined;
-  vorperiodeLabel?: string;
+  vorperiodeLabel: string | null;
+  vorjahrLabel: string | null;
   richtung?: Richtung;
 }) {
-  const t = useTexte();
-  const eines =
-    delta(aktuell, vorperiode) !== null || delta(aktuell, vorjahr) !== null;
-  if (!eines) return null;
-
+  if (vorperiodeLabel === null && vorjahrLabel === null) return null;
   return (
-    <div className="mt-2 flex flex-wrap gap-1.5">
-      <Vergleich
-        aktuell={aktuell}
-        vorher={vorperiode}
-        was={vorperiodeLabel ?? t.vergleich.vorperiode}
-        richtung={richtung}
-      />
-      <Vergleich aktuell={aktuell} vorher={vorjahr} was={t.vergleich.vorjahr} richtung={richtung} />
+    <div className="flex flex-col items-start gap-0.5 text-xs">
+      {vorperiodeLabel !== null && (
+        <Vergleichszeile aktuell={aktuell} vorher={vorperiode} label={vorperiodeLabel} richtung={richtung} />
+      )}
+      {vorjahrLabel !== null && (
+        <Vergleichszeile aktuell={aktuell} vorher={vorjahr} label={vorjahrLabel} richtung={richtung} />
+      )}
     </div>
   );
 }

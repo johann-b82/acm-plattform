@@ -102,11 +102,13 @@ export const pl: Texte = {
     verdreht: "Koniec wypada przed początkiem.",
   },
   vergleich: {
-    vorperiode: "do poprzedniego okresu",
-    vormonat: "do poprzedniego miesiąca",
-    vorquartal: "do poprzedniego kwartału",
-    vorjahr: "do poprzedniego roku",
-    zeitraumDavor: "do okresu wcześniejszego",
+    zu: (was: string) => `w porównaniu z: ${was}`,
+    quartal: (q: number) => `${q}. kwartał`,
+    jahr: (j: number) => `rok ${j}`,
+    keinWert: "Brak wartości porównawczej: brak danych w okresie porównania lub wartość wynosiła zero.",
+    gestiegen: "wzrost",
+    gesunken: "spadek",
+    unveraendert: "bez zmian",
   },
   tabelle: {
     suche: "Szukaj",

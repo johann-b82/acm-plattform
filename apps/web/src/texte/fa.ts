@@ -102,11 +102,13 @@ export const fa: Texte = {
     verdreht: "پایان پیش از آغاز است.",
   },
   vergleich: {
-    vorperiode: "نسبت به دورهٔ پیش",
-    vormonat: "نسبت به ماه پیش",
-    vorquartal: "نسبت به فصل پیش",
-    vorjahr: "نسبت به سال پیش",
-    zeitraumDavor: "نسبت به بازهٔ پیش از آن",
+    zu: (was: string) => `نسبت به ${was}`,
+    quartal: (q: number) => `فصل ${q}`,
+    jahr: (j: number) => `${j}`,
+    keinWert: "مقداری برای مقایسه نیست: داده‌های دورهٔ مقایسه ناقص است یا مقدار صفر بوده است.",
+    gestiegen: "افزایش",
+    gesunken: "کاهش",
+    unveraendert: "بدون تغییر",
   },
   tabelle: {
     suche: "جستجو",

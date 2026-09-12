@@ -103,11 +103,13 @@ export const uk: Texte = {
     verdreht: "Кінець раніше за початок.",
   },
   vergleich: {
-    vorperiode: "до попереднього періоду",
-    vormonat: "до попереднього місяця",
-    vorquartal: "до попереднього кварталу",
-    vorjahr: "до попереднього року",
-    zeitraumDavor: "до періоду перед тим",
+    zu: (was: string) => `порівняно з: ${was}`,
+    quartal: (q: number) => `${q}-й квартал`,
+    jahr: (j: number) => `${j} рік`,
+    keinWert: "Немає значення для порівняння: у періоді порівняння бракує даних або значення дорівнювало нулю.",
+    gestiegen: "зросло",
+    gesunken: "знизилося",
+    unveraendert: "без змін",
   },
   tabelle: {
     suche: "Пошук",

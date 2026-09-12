@@ -147,6 +147,7 @@ export function FinanzenDashboard() {
               vorperiode={vglMaterial.vorperiode?.quote}
               vorjahr={vglMaterial.vorjahr?.quote}
               vorperiodeLabel={vglMaterial.label}
+              vorjahrLabel={vglMaterial.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -169,6 +170,7 @@ export function FinanzenDashboard() {
               vorperiode={vglMaterial.vorperiode?.umsatz}
               vorjahr={vglMaterial.vorjahr?.umsatz}
               vorperiodeLabel={vglMaterial.label}
+              vorjahrLabel={vglMaterial.labelVorjahr}
             />
           }
         />
@@ -198,6 +200,7 @@ export function FinanzenDashboard() {
               vorperiode={vglPersonal.vorperiode?.quote}
               vorjahr={vglPersonal.vorjahr?.quote}
               vorperiodeLabel={vglPersonal.label}
+              vorjahrLabel={vglPersonal.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }

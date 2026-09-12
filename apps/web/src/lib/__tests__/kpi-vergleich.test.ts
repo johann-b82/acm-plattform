@@ -1,90 +1,128 @@
 /**
- * Vergleichswerte an den Kacheln.
+ * Vergleichswerte an den Kacheln (KPI-05/06, VER-02).
+ *
+ * Die Fenster folgen dem Kalender wie im Altsystem: „Dieser Monat“ bis zum
+ * 12. wird mit dem Vormonat bis zum 12. verglichen, nicht mit den zwölf Tagen
+ * unmittelbar davor. Nur so stimmt die Beschriftung „zum August“.
  *
  * Die Fenster sind der Teil, bei dem man sich leicht um einen Tag vertut —
- * und ein um einen Tag verschobener Vergleich fällt niemandem auf, er ist nur
- * falsch. Deshalb steht hier jedes Fenster ausgeschrieben.
+ * deshalb steht hier jedes Fenster ausgeschrieben.
  */
 import { describe, expect, it } from "vitest";
 
 import {
   alsProzent,
+  beschriftungen,
   bewertung,
   delta,
   vergleichsfenster,
-  vorjahr,
-  vorperiode,
 } from "@/lib/kpi/vergleich";
 
-describe("Vorperiode", () => {
-  it("endet am Tag vor dem Zeitraum und ist gleich lang", () => {
-    // 1.–31. März sind 31 Tage; davor also 29. Januar bis 28. Februar.
-    expect(vorperiode("2026-03-01", "2026-03-31")).toEqual({
-      von: "2026-01-29",
+const WORTE = {
+  zu: (was: string) => `zum ${was}`,
+  quartal: (q: number) => `${q}. Quartal`,
+  jahr: (j: number) => `Jahr ${j}`,
+};
+
+describe("Monat", () => {
+  it("vergleicht mit dem Vormonat bis zum selben Tag und dem Vorjahresmonat", () => {
+    expect(vergleichsfenster("monat", "2026-09-01", "2026-09-12")).toEqual({
+      vorperiode: { von: "2026-08-01", bis: "2026-08-12" },
+      vorjahr: { von: "2025-09-01", bis: "2025-09-12" },
+    });
+    expect(beschriftungen("monat", "2026-09-01", "2026-09-12", "de-DE", WORTE)).toEqual({
+      vorperiode: "zum August",
+      vorjahr: "zum September 2025",
+    });
+  });
+
+  it("bleibt am Monatsende im Vormonat", () => {
+    // Der 31. März hat im Februar keine Entsprechung; das Altsystem lief hier
+    // in den März hinein.
+    expect(vergleichsfenster("monat", "2026-03-01", "2026-03-31").vorperiode).toEqual({
+      von: "2026-02-01",
       bis: "2026-02-28",
     });
   });
 
-  it("rechnet auch über den Jahreswechsel",  () => {
-    expect(vorperiode("2026-01-01", "2026-01-31")).toEqual({
+  it("nennt über den Jahreswechsel das Jahr", () => {
+    expect(vergleichsfenster("monat", "2026-01-01", "2026-01-10").vorperiode).toEqual({
       von: "2025-12-01",
-      bis: "2025-12-31",
+      bis: "2025-12-10",
+    });
+    expect(beschriftungen("monat", "2026-01-01", "2026-01-10", "de-DE", WORTE).vorperiode).toBe(
+      "zum Dezember 2025",
+    );
+  });
+});
+
+describe("Quartal", () => {
+  it("vergleicht mit dem Vorquartal bis zum selben Tag", () => {
+    expect(vergleichsfenster("quartal", "2026-07-01", "2026-09-12")).toEqual({
+      vorperiode: { von: "2026-04-01", bis: "2026-06-13" },
+      vorjahr: { von: "2025-07-01", bis: "2025-09-12" },
+    });
+    expect(beschriftungen("quartal", "2026-07-01", "2026-09-12", "de-DE", WORTE)).toEqual({
+      vorperiode: "zum 2. Quartal",
+      vorjahr: "zum 3. Quartal 2025",
     });
   });
 
-  it("kommt mit einem einzigen Tag zurecht", () => {
-    expect(vorperiode("2026-03-05", "2026-03-05")).toEqual({
-      von: "2026-03-04",
-      bis: "2026-03-04",
+  it("rollt vom ersten ins vierte Quartal des Vorjahres", () => {
+    expect(beschriftungen("quartal", "2026-01-01", "2026-03-31", "de-DE", WORTE).vorperiode).toBe(
+      "zum 4. Quartal 2025",
+    );
+    expect(vergleichsfenster("quartal", "2026-01-01", "2026-03-31").vorperiode).toEqual({
+      von: "2025-10-01",
+      bis: "2025-12-29",
+    });
+  });
+});
+
+describe("Jahr", () => {
+  it("hat nur den Vorjahresvergleich", () => {
+    expect(vergleichsfenster("jahr", "2026-01-01", "2026-09-12")).toEqual({
+      vorperiode: null,
+      vorjahr: { von: "2025-01-01", bis: "2025-09-12" },
+    });
+    expect(beschriftungen("jahr", "2026-01-01", "2026-09-12", "de-DE", WORTE)).toEqual({
+      vorperiode: null,
+      vorjahr: "zum Jahr 2025",
+    });
+  });
+
+  it("macht aus dem 29. Februar im Vorjahr den 28.", () => {
+    expect(vergleichsfenster("jahr", "2024-01-01", "2024-02-29").vorjahr).toEqual({
+      von: "2023-01-01",
+      bis: "2023-02-28",
+    });
+  });
+});
+
+describe("Freier Zeitraum", () => {
+  it("vergleicht mit dem gleich langen Zeitraum davor und nennt ihn", () => {
+    expect(vergleichsfenster("frei", "2026-03-10", "2026-03-19")).toEqual({
+      vorperiode: { von: "2026-02-28", bis: "2026-03-09" },
+      vorjahr: { von: "2025-03-10", bis: "2025-03-19" },
+    });
+    expect(beschriftungen("frei", "2026-03-10", "2026-03-19", "de-DE", WORTE)).toEqual({
+      vorperiode: "zum 28.02.2026–09.03.2026",
+      vorjahr: "zum 10.03.2025–19.03.2025",
     });
   });
 
   it("stolpert nicht über die Sommerzeitumstellung", () => {
-    // In der Nacht zum 29. März 2026 wird umgestellt. Mit Mitternacht als
-    // Bezug verschöbe sich das Fenster um einen Tag.
-    expect(vorperiode("2026-03-29", "2026-04-05")).toEqual({
+    expect(vergleichsfenster("frei", "2026-03-29", "2026-04-05").vorperiode).toEqual({
       von: "2026-03-21",
       bis: "2026-03-28",
     });
   });
 });
 
-describe("Vorjahr", () => {
-  it("sind 365 Tage, nicht derselbe Kalendertag", () => {
-    // 2024 hatte 366 Tage. 365 Tage vor dem 1.1.2025 ist deshalb der 2.1.2024
-    // und nicht der 1.1. — genau die Verschiebung, die bewusst hingenommen
-    // wird, damit beide Fenster gleich viele Tage umfassen.
-    expect(vorjahr("2025-01-01", "2025-01-31")).toEqual({
-      von: "2024-01-02",
-      bis: "2024-02-01",
-    });
-  });
-
-  it("ohne Schaltjahr trifft es den Kalendertag", () => {
-    expect(vorjahr("2026-06-01", "2026-06-30")).toEqual({
-      von: "2025-06-01",
-      bis: "2025-06-30",
-    });
-  });
-});
-
-describe("Welche Vergleiche passen", () => {
-  it("beim Jahr nur das Vorjahr", () => {
-    // Die Vorperiode wäre ein Stück des Vorjahres gleicher Länge — eine Zahl,
-    // die niemand erwartet.
-    const f = vergleichsfenster("jahr", "2026-01-01", "2026-09-11");
-    expect(f.vorperiode).toBeNull();
-    expect(f.vorjahr).not.toBeNull();
-  });
-
-  it("beim Monat beide", () => {
-    const f = vergleichsfenster("monat", "2026-09-01", "2026-09-11");
-    expect(f.vorperiode).not.toBeNull();
-    expect(f.vorjahr).not.toBeNull();
-  });
-
-  it("bei „Alles“ keinen", () => {
-    expect(vergleichsfenster("alles", null, null)).toEqual({
+describe("Alles", () => {
+  it("hat keinen Vergleich", () => {
+    expect(vergleichsfenster("alles", null, null)).toEqual({ vorperiode: null, vorjahr: null });
+    expect(beschriftungen("alles", null, null, "de-DE", WORTE)).toEqual({
       vorperiode: null,
       vorjahr: null,
     });
@@ -97,48 +135,44 @@ describe("Veränderung", () => {
     expect(delta(90, 100)).toBeCloseTo(-0.1);
   });
 
-  it("gibt nichts zurück, wenn der Vorwert null ist", () => {
-    // Von null auf irgendetwas ist keine Prozentangabe.
+  it("unterscheidet unverändert von fehlend", () => {
+    expect(delta(100, 100)).toBe(0);
     expect(delta(50, 0)).toBeNull();
-  });
-
-  it("gibt nichts zurück, wenn ein Wert fehlt", () => {
     expect(delta(null, 100)).toBeNull();
     expect(delta(100, undefined)).toBeNull();
   });
 
   it("rechnet auch bei negativem Vorwert richtig herum", () => {
-    // Von -100 auf -50 ist eine Verbesserung um die Hälfte, nicht eine
-    // Verschlechterung. Deshalb der Betrag im Nenner.
+    // Von -100 auf -50 ist eine Verbesserung um die Hälfte.
     expect(delta(-50, -100)).toBeCloseTo(0.5);
   });
 });
 
 describe("Bewertung", () => {
-  it("mehr ist meistens besser", () => {
+  it("mehr ist besser, wo es so gemeint ist", () => {
     expect(bewertung(0.1)).toBe("gut");
     expect(bewertung(-0.1)).toBe("schlecht");
   });
 
-  it("bei Verzug und Reklamationen andersherum", () => {
-    expect(bewertung(-0.1, "weniger_ist_besser")).toBe("gut");
+  it("steigende Personalkostenquote ist schlecht, fallende gut", () => {
     expect(bewertung(0.1, "weniger_ist_besser")).toBe("schlecht");
+    expect(bewertung(-0.1, "weniger_ist_besser")).toBe("gut");
   });
 
-  it("ohne Veränderung ohne Farbe", () => {
+  it("ohne fachliche Bewertung, ohne Veränderung oder ohne Wert bleibt es neutral", () => {
+    expect(bewertung(0.5, "neutral")).toBe("neutral");
     expect(bewertung(0)).toBe("neutral");
     expect(bewertung(null)).toBe("neutral");
   });
 });
 
 describe("Darstellung", () => {
-  it("zeigt das Vorzeichen auch bei Zuwachs", () => {
-    // `Intl` setzt vor dem Prozentzeichen ein geschütztes Leerzeichen.
-    expect(alsProzent(0.124)).toBe("+12,4\u00a0%");
-    expect(alsProzent(-0.124)).toBe("-12,4\u00a0%");
+  it("zeigt den Betrag der Veränderung ohne Vorzeichen — die Richtung trägt der Pfeil", () => {
+    expect(alsProzent(0.124, "de-DE")).toBe("12,4 %");
+    expect(alsProzent(-0.124, "de-DE")).toBe("12,4 %");
   });
 
   it("zeigt einen Strich, wenn es nichts zu vergleichen gibt", () => {
-    expect(alsProzent(null)).toBe("—");
+    expect(alsProzent(null, "de-DE")).toBe("—");
   });
 });

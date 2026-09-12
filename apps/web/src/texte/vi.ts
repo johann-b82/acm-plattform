@@ -102,11 +102,13 @@ export const vi: Texte = {
     verdreht: "Ngày kết thúc nằm trước ngày bắt đầu.",
   },
   vergleich: {
-    vorperiode: "so với kỳ trước",
-    vormonat: "so với tháng trước",
-    vorquartal: "so với quý trước",
-    vorjahr: "so với năm trước",
-    zeitraumDavor: "so với khoảng thời gian liền trước",
+    zu: (was: string) => `so với ${was}`,
+    quartal: (q: number) => `Quý ${q}`,
+    jahr: (j: number) => `năm ${j}`,
+    keinWert: "Không có giá trị so sánh: thiếu dữ liệu trong kỳ so sánh hoặc giá trị bằng không.",
+    gestiegen: "tăng",
+    gesunken: "giảm",
+    unveraendert: "không đổi",
   },
   tabelle: {
     suche: "Tìm kiếm",

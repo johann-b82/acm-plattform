@@ -102,11 +102,13 @@ export const bg: Texte = {
     verdreht: "Краят е преди началото.",
   },
   vergleich: {
-    vorperiode: "спрямо предходния период",
-    vormonat: "спрямо предходния месец",
-    vorquartal: "спрямо предходното тримесечие",
-    vorjahr: "спрямо предходната година",
-    zeitraumDavor: "спрямо периода преди това",
+    zu: (was: string) => `спрямо ${was}`,
+    quartal: (q: number) => `${q}. тримесечие`,
+    jahr: (j: number) => `${j} г.`,
+    keinWert: "Няма стойност за сравнение: липсват данни за периода на сравнение или стойността е нула.",
+    gestiegen: "нараснало",
+    gesunken: "намаляло",
+    unveraendert: "без промяна",
   },
   tabelle: {
     suche: "Търсене",

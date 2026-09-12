@@ -216,6 +216,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               vorperiode={vglUeber.vorperiode?.quote}
               vorjahr={vglUeber.vorjahr?.quote}
               vorperiodeLabel={vglUeber.label}
+              vorjahrLabel={vglUeber.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -243,6 +244,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               vorperiode={vglKrank.vorperiode?.quote}
               vorjahr={vglKrank.vorjahr?.quote}
               vorperiodeLabel={vglKrank.label}
+              vorjahrLabel={vglKrank.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -266,6 +268,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               vorperiode={vglFluk.vorperiode?.quote}
               vorjahr={vglFluk.vorjahr?.quote}
               vorperiodeLabel={vglFluk.label}
+              vorjahrLabel={vglFluk.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }

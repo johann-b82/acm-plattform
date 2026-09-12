@@ -101,11 +101,13 @@ export const ar: Texte = {
     verdreht: "النهاية قبل البداية.",
   },
   vergleich: {
-    vorperiode: "مقارنةً بالفترة السابقة",
-    vormonat: "مقارنةً بالشهر السابق",
-    vorquartal: "مقارنةً بالربع السابق",
-    vorjahr: "مقارنةً بالسنة السابقة",
-    zeitraumDavor: "مقارنةً بالفترة التي قبلها",
+    zu: (was: string) => `مقارنةً بـ ${was}`,
+    quartal: (q: number) => `الربع ${q}`,
+    jahr: (j: number) => `${j}`,
+    keinWert: "لا توجد قيمة للمقارنة: البيانات ناقصة في فترة المقارنة أو كانت القيمة صفرًا.",
+    gestiegen: "ارتفاع",
+    gesunken: "انخفاض",
+    unveraendert: "دون تغيير",
   },
   tabelle: {
     suche: "بحث",

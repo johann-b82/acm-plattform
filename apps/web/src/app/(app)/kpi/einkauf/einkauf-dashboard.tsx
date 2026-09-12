@@ -131,6 +131,7 @@ export function EinkaufDashboard() {
               vorperiode={vgl.vorperiode?.quote == null ? null : Number(vgl.vorperiode.quote)}
               vorjahr={vgl.vorjahr?.quote == null ? null : Number(vgl.vorjahr.quote)}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
             />
           }
         />
@@ -160,6 +161,7 @@ export function EinkaufDashboard() {
               }
               vorjahr={vgl.vorjahr?.verzug_schnitt == null ? null : Number(vgl.vorjahr.verzug_schnitt)}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }

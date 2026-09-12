@@ -122,6 +122,7 @@ export function ProduktionDashboard() {
               vorperiode={vgl.vorperiode?.quote == null ? null : Number(vgl.vorperiode.quote)}
               vorjahr={vgl.vorjahr?.quote == null ? null : Number(vgl.vorjahr.quote)}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -138,6 +139,7 @@ export function ProduktionDashboard() {
               vorperiode={vgl.vorperiode?.in_verzug}
               vorjahr={vgl.vorjahr?.in_verzug}
               vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }

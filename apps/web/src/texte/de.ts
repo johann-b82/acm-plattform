@@ -70,11 +70,13 @@ export const de = {
     verdreht: "Das Ende liegt vor dem Anfang.",
   },
   vergleich: {
-    vorperiode: "zur Vorperiode",
-    vormonat: "zum Vormonat",
-    vorquartal: "zum Vorquartal",
-    vorjahr: "zum Vorjahr",
-    zeitraumDavor: "zum Zeitraum davor",
+    zu: (was: string) => `zum ${was}`,
+    quartal: (q: number) => `${q}. Quartal`,
+    jahr: (j: number) => `Jahr ${j}`,
+    keinWert: "Kein Vergleichswert: im Vergleichszeitraum fehlen Daten, oder der Wert war null.",
+    gestiegen: "gestiegen",
+    gesunken: "gesunken",
+    unveraendert: "unverändert",
   },
   tabelle: {
     suche: "Suchen",

@@ -369,6 +369,7 @@ export function QualitaetDashboard() {
                 vorperiode={onQuality(vglRekl.vorperiode?.quote ?? null)}
                 vorjahr={onQuality(vglRekl.vorjahr?.quote ?? null)}
                 vorperiodeLabel={vglRekl.label}
+                vorjahrLabel={vglRekl.labelVorjahr}
               />
             }
           />

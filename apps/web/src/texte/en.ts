@@ -105,11 +105,13 @@ export const en: Texte = {
     verdreht: "The end is before the start.",
   },
   vergleich: {
-    vorperiode: "vs. previous period",
-    vormonat: "vs. previous month",
-    vorquartal: "vs. previous quarter",
-    vorjahr: "vs. last year",
-    zeitraumDavor: "vs. the period before",
+    zu: (was: string) => `vs. ${was}`,
+    quartal: (q: number) => `Q${q}`,
+    jahr: (j: number) => `${j}`,
+    keinWert: "No comparison value: data is missing for the comparison period, or the value was zero.",
+    gestiegen: "up",
+    gesunken: "down",
+    unveraendert: "unchanged",
   },
   tabelle: {
     suche: "Search",
