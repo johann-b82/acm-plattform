@@ -114,6 +114,11 @@ export const uk: Texte = {
     gesunken: "знизилося",
     unveraendert: "без змін",
   },
+  diagramm: {
+    art: "Тип діаграми",
+    balken: "Стовпці",
+    flaeche: "Площа",
+  },
   tabelle: {
     suche: "Пошук",
     sucheAria: "Пошук у таблиці",

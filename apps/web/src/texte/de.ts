@@ -81,6 +81,11 @@ export const de = {
     gesunken: "gesunken",
     unveraendert: "unverändert",
   },
+  diagramm: {
+    art: "Darstellung",
+    balken: "Balken",
+    flaeche: "Fläche",
+  },
   tabelle: {
     suche: "Suchen",
     sucheAria: "Tabelle durchsuchen",

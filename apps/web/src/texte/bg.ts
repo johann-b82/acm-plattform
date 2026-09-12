@@ -113,6 +113,11 @@ export const bg: Texte = {
     gesunken: "намаляло",
     unveraendert: "без промяна",
   },
+  diagramm: {
+    art: "Вид диаграма",
+    balken: "Колони",
+    flaeche: "Площ",
+  },
   tabelle: {
     suche: "Търсене",
     sucheAria: "Търсене в таблицата",

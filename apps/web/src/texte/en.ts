@@ -116,6 +116,11 @@ export const en: Texte = {
     gesunken: "down",
     unveraendert: "unchanged",
   },
+  diagramm: {
+    art: "Chart type",
+    balken: "Bars",
+    flaeche: "Area",
+  },
   tabelle: {
     suche: "Search",
     sucheAria: "Search table",

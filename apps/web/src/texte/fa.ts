@@ -113,6 +113,11 @@ export const fa: Texte = {
     gesunken: "کاهش",
     unveraendert: "بدون تغییر",
   },
+  diagramm: {
+    art: "نوع نمودار",
+    balken: "ستونی",
+    flaeche: "سطحی",
+  },
   tabelle: {
     suche: "جستجو",
     sucheAria: "جستجو در جدول",

@@ -113,6 +113,11 @@ export const pl: Texte = {
     gesunken: "spadek",
     unveraendert: "bez zmian",
   },
+  diagramm: {
+    art: "Rodzaj wykresu",
+    balken: "Słupki",
+    flaeche: "Obszar",
+  },
   tabelle: {
     suche: "Szukaj",
     sucheAria: "Przeszukaj tabelę",

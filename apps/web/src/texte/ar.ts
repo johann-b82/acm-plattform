@@ -112,6 +112,11 @@ export const ar: Texte = {
     gesunken: "انخفاض",
     unveraendert: "دون تغيير",
   },
+  diagramm: {
+    art: "نوع الرسم",
+    balken: "أعمدة",
+    flaeche: "مساحة",
+  },
   tabelle: {
     suche: "بحث",
     sucheAria: "البحث في الجدول",

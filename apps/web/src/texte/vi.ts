@@ -113,6 +113,11 @@ export const vi: Texte = {
     gesunken: "giảm",
     unveraendert: "không đổi",
   },
+  diagramm: {
+    art: "Kiểu biểu đồ",
+    balken: "Cột",
+    flaeche: "Vùng",
+  },
   tabelle: {
     suche: "Tìm kiếm",
     sucheAria: "Tìm trong bảng",
