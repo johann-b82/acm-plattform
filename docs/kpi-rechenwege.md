@@ -520,18 +520,21 @@ Level-Ableitung im Parser: Text enthält `Major … Level 1` → Level 1, `Minor
 - **Sonderfälle**: Nenner ≤ 0 → `rate = None` → „—", im Chart Lücke. `NULL`-Mengen zählen als 0. Zähler- und Nennerdatum sind verschiedene Felder (`report_date` vs. `delivery_date`), eine Reklamation kann in einem anderen Bucket liegen als die zugehörige Lieferung.
 - **Code**: `complaint_rate_aggregation.py`; `ComplaintRateCardGrid.tsx`, `ComplaintRateChart.tsx`.
 
-### Große Produkte (geprüft) / Kleine Produkte (geprüft)
+### Große Produkte (geprüft) / Kleine Produkte (geprüft) / Gesamt (geprüft)
 
-- **Anzeige**: Kacheln „Große Produkte (geprüft)" und „Kleine Produkte (geprüft)", Einheit „Produkte/Tag/Mitarbeiter". `GET /api/quality/inspections` → `large_count`, `small_count`. Registry-Key `quality.inspections`.
+- **Anzeige**: Kacheln „Große Produkte (geprüft)", „Kleine Produkte (geprüft)" und „Gesamt (geprüft)", Einheit „Produkte/Tag/Mitarbeiter", je Klasse ein Verlauf. `GET /api/quality/inspections` → `large_per_person_day`, `small_per_person_day`, `total_per_person_day`. Registry-Keys `quality.inspection_large|small|total`.
 - **Daten**: `inspection_records`. Klassifikation beim Parsen: Produktgruppe enthält `DIEHL` → klein; Bezeichnung enthält `LITERATURE POCKET`, `LIT POCKET`, `STRAP `, `STRAP,`, `LEDERRIEMEN`, `STOWAGE POUCH`, `AUFBEWAHRUNGSTASCHE` → klein; Regex `net|netz` als Wortanfang → klein; sonst groß. `Typ = WKZ` wird verworfen.
-- **Rechenweg**:
-  1. Filter: `pruef_datum` im Fenster, `rsc = '70000'` (echte Qualitätsprüfung), `excluded = false`.
-  2. Zähler je Klasse = `SUM(buchungs_menge)`.
-  3. **Gemeinsamer** Nenner über beide Klassen = `COUNT(DISTINCT benutzer) × COUNT(DISTINCT pruef_datum)`.
-  4. `count = round(Zähler / Nenner)` (Python-`round`, Banker's Rounding, Integer).
-- **Zielwerte**: `target_inspection_large` (Fallback 150), `target_inspection_small` (Fallback 400).
+- **Rechenweg** (`inspection_aggregation.py`, Stand `ffc9ba0`):
+  1. Filter: `pruef_datum` im Fenster, `rsc = '70000'` (echte Qualitätsprüfung), `excluded = false`, Artikelart.
+  2. Artikelart `artikel_filter`: `fertig` (Default) = Artikel beginnt **nicht** mit „H" (NULL zählt als fertig), `halbfertig` = `artikel ILIKE 'H%'`, `alle` = kein Filter. Unabhängig von groß/klein.
+  3. Zähler je Klasse = `SUM(buchungs_menge)`; Gesamt über alle Buchungen.
+  4. Nenner **je Klasse** = `COUNT(DISTINCT (benutzer, pruef_datum))` über die Buchungen dieser Klasse; Gesamt hat einen eigenen Nenner über alle Buchungen. Groß + Klein ≠ Gesamt, Gesamt ist auch kein Mittel.
+  5. Wert = `round(Zähler / Nenner, 1)`.
+  6. Vorperiode/Vorjahr auf demselben Wert; ohne Prüfer-Tage im Vergleichsfenster kein Vergleich.
+- **Früherer Stand**: ein gemeinsamer Nenner `COUNT(DISTINCT benutzer) × COUNT(DISTINCT pruef_datum)` und ganzzahlige Rundung. Das Kreuzprodukt zählt Paare mit, an denen niemand geprüft hat, und rechnete drei- bis sechsfach zu klein; im Altsystem ersetzt.
+- **Zielwerte**: `target_inspection_large` (Fallback 150), `target_inspection_small` (Fallback 400), `target_inspection_total` (leer = keine Linie).
 - **Sonderfälle**: Nenner ≤ 0 → **0**, nicht `None` (Kachel zeigt „0"). Per Admin-Häkchen ausgeschlossene Buchungen (`PATCH /api/quality/inspections/bookings/{id}`) fallen aus Zähler und Nenner. Re-Upload ersetzt alle Zeilen im Datumsbereich der Datei; dabei gehen gesetzte `excluded`-Häkchen im Bereich verloren.
-- **Code**: `inspection_aggregation.py`, `inspection_parser.py`; `QualityInspectionCardGrid.tsx`, `QualityInspectionCharts.tsx`.
+- **Code**: `inspection_aggregation.py`, `inspection_parser.py`; `QualityInspectionCardGrid.tsx`, `QualityInspectionCharts.tsx`. Plattform: Alembic `0044_qualitaet_abgleich`.
 
 ### Ausschussquote je Produkt (nur Tabelle)
 
