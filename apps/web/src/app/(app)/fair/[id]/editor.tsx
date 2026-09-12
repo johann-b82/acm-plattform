@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Maximize, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, CircleDot, Maximize, Minus, Plus, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
 
 import { fairApi, fairKeys, type Ballon, type Drehung } from "@/lib/fair";
 import {
@@ -21,10 +21,20 @@ import {
   type Punkt,
   type Rechteck,
 } from "@/lib/fair/geometrie";
+import {
+  BALLON_GROESSE_MAX,
+  BALLON_GROESSE_MIN,
+  groesser,
+  kleiner,
+  useBallonGroesse,
+} from "@/lib/fair/ballon-groesse";
+import { beendeOcr, liesFeld } from "@/lib/fair/ocr";
 import { Button, Card, Select } from "@/components/ui/primitives";
 import { Zeichenflaeche } from "./zeichenflaeche";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
+import { Projektkopf, type Kopffeld } from "./projektkopf";
+import { feldAlsLeinwand, seitenAlsBilder } from "./raster";
 import { useTexte } from "@/components/sprache/anbieter";
 
 /**
@@ -37,11 +47,20 @@ import { useTexte } from "@/components/sprache/anbieter";
  * Zoom und Verschieben liegen als eine Transformation über Zeichnung und
  * Ballonebene gemeinsam. Dadurch stimmen die Koordinaten von selbst, und die
  * PDF-Leinwand muss beim Zoomen nicht neu gerastert werden.
+ *
+ * Die Prüfliste steht rechts neben der Zeichnung (FAI-02), auf schmalen
+ * Bildschirmen darunter. Die Zeichnung bleibt dabei stehen, während man
+ * durch eine lange Liste blättert.
  */
 type Schritt =
   | { art: "ruht" }
   | { art: "zieht"; von: Punkt; bis: Punkt }
   | { art: "wartet_auf_blase"; bereich: Rechteck };
+
+/** Nur Zeichen, die jedes Dateisystem als Dateinamen annimmt. */
+function dateiname(text: string): string {
+  return text.replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "") || "zeichnung";
+}
 
 export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boolean }) {
   const worte = useTexte();
@@ -55,6 +74,8 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   const [schritt, setSchritt] = useState<Schritt>({ art: "ruht" });
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [schiebt, setSchiebt] = useState<{ x: number; y: number } | null>(null);
+  const [groesse, setGroesse] = useBallonGroesse();
+  const [pdfLaeuft, setPdfLaeuft] = useState(false);
   const eingepasst = useRef(false);
 
   const zeichnung = useQuery({
@@ -95,6 +116,17 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   const drehen = useMutation({
     mutationFn: (d: Drehung) => fairApi.zeichnungAendern(id, { drehung: d }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: fairKeys.zeichnung(id) }),
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  const kopfAendern = useMutation({
+    mutationFn: ({ feld, wert }: { feld: Kopffeld; wert: string | null }) =>
+      fairApi.zeichnungAendern(id, { [feld]: wert }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: fairKeys.zeichnung(id) }),
+        queryClient.invalidateQueries({ queryKey: fairKeys.zeichnungen() }),
+      ]),
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
@@ -139,6 +171,54 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     el.addEventListener("wheel", beiRad, { passive: false });
     return () => el.removeEventListener("wheel", beiRad);
   }, []);
+
+  // Der OCR-Arbeiter lebt so lange wie der Editor.
+  useEffect(() => beendeOcr, []);
+
+  /** OCR für eine Zeile: das gespeicherte Feld frisch aus der Datei lesen. */
+  const ocr = useCallback(
+    async (b: Ballon): Promise<string> => {
+      if (!z || !datei.data) throw new Error(worte.fair.ladefehler);
+      const feld = await feldAlsLeinwand(datei.data, z.art, b.seite, {
+        x: b.bereich_x,
+        y: b.bereich_y,
+        b: b.bereich_b,
+        h: b.bereich_h,
+      });
+      return liesFeld(feld);
+    },
+    [z, datei.data, worte],
+  );
+
+  const pdfErstellen = async () => {
+    if (!z || !datei.data) return;
+    setPdfLaeuft(true);
+    try {
+      // jsPDF erst laden, wenn jemand ein PDF will.
+      const [{ pruefberichtPdf }, bilder] = await Promise.all([
+        import("@/lib/fair/pdf"),
+        seitenAlsBilder(datei.data, z.art, drehung),
+      ]);
+      pruefberichtPdf({
+        name: z.name,
+        kopf: [
+          [worte.fair.kunde, z.kunde],
+          [worte.fair.artikelnummer, z.artikelnummer],
+          [worte.fair.pn, z.teilenummer],
+        ],
+        spalten: { nr: worte.fair.nr, seite: worte.fair.seite, wert: worte.fair.wert },
+        pruefliste: worte.fair.pruefliste,
+        seiten: bilder,
+        ballons: alleBallons,
+        drehung,
+        groesse,
+      }).save(`${dateiname(z.teilenummer || z.name)}_balloniert.pdf`);
+    } catch (fehler) {
+      toast.error(worte.fair.pdfFehler(fehler instanceof Error ? fehler.message : String(fehler)));
+    } finally {
+      setPdfLaeuft(false);
+    }
+  };
 
   /** Zeigerposition → kanonischer, normierter Punkt. */
   const punkt = useCallback(
@@ -248,7 +328,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         </Link>
         <h2 className="text-lg font-semibold">{z.name}</h2>
 
-        <div className="ms-auto flex items-center gap-1">
+        <div className="ms-auto flex flex-wrap items-center gap-1">
           {seiten > 1 && (
             <Select
               aria-label={worte.fair.seite}
@@ -291,8 +371,38 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           <Button variant="ghost" size="icon" aria-label={worte.fair.einpassen} onClick={einpassenJetzt}>
             <Maximize className="h-4 w-4" />
           </Button>
+
+          {/* Bubblegröße (FAI-04): eigenes Paar, unabhängig vom Zoom. */}
+          <span className="mx-1 h-6 w-px bg-[var(--border)]" aria-hidden />
+          <CircleDot className="h-4 w-4 text-[var(--fg-muted)]" aria-hidden />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={worte.fair.bubblesKleiner}
+            title={worte.fair.bubblesKleiner}
+            disabled={groesse <= BALLON_GROESSE_MIN}
+            onClick={() => setGroesse(kleiner)}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={worte.fair.bubblesGroesser}
+            title={worte.fair.bubblesGroesser}
+            disabled={groesse >= BALLON_GROESSE_MAX}
+            onClick={() => setGroesse(groesser)}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+
+      <Projektkopf
+        werte={z}
+        darfSchreiben={darfSchreiben}
+        onSpeichern={(feld, wert) => kopfAendern.mutate({ feld, wert })}
+      />
 
       {darfSchreiben && (
         <p className="text-sm text-[var(--fg-muted)]">
@@ -302,71 +412,78 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         </p>
       )}
 
-      <Card
-        ref={fenster}
-        className="relative h-[62vh] touch-none overflow-hidden bg-[var(--muted)]"
-        onPointerDown={beiDruck}
-        onPointerMove={beiBewegung}
-        onPointerUp={beiLoslassen}
-        onPointerLeave={beiLoslassen}
-        onContextMenu={(e) => e.preventDefault()}
-        style={{ cursor: schiebt ? "grabbing" : darfSchreiben ? "crosshair" : "default" }}
-      >
-        {datei.isError && (
-          // Ohne diesen Hinweis bliebe die Fläche einfach weiß, und niemand
-          // wüsste, ob die Zeichnung fehlt oder das Laden noch läuft.
-          <div className="absolute inset-0 flex items-center justify-center p-6">
-            <p className="max-w-prose text-center text-sm text-[var(--fg-muted)]">
-              {worte.fair.dateiFehlt((datei.error as Error).message)}
-            </p>
-          </div>
-        )}
-        {datei.data && (
-          <div
-            className="absolute left-0 top-0 origin-top-left"
-            style={{
-              transform: `translate(${ansicht.tx}px, ${ansicht.ty}px) scale(${ansicht.skala})`,
-            }}
-          >
-            <div
-              className="relative origin-top-left"
-              style={{ transform: masse ? drehungCss(masse.b, masse.h, drehung) : undefined }}
-            >
-              <Zeichenflaeche
-                url={datei.data}
-                art={z.art}
-                seite={seite}
-                breite={masse?.b ?? null}
-                hoehe={masse?.h ?? null}
-                renderDpr={Math.min(4, Math.max(1, ansicht.skala))}
-                onMasse={setMasse}
-                onSeiten={setSeiten}
-              />
-              {masse && (
-                <BallonEbene
-                  ballons={ballons}
-                  breite={masse.b}
-                  hoehe={masse.h}
-                  hervorgehoben={gewaehlt}
-                  vorschau={vorschau}
-                  onWaehlen={setGewaehlt}
-                />
-              )}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_30rem]">
+        <Card
+          ref={fenster}
+          className="relative h-[62vh] touch-none overflow-hidden bg-[var(--muted)] lg:sticky lg:top-4 lg:h-[78vh]"
+          onPointerDown={beiDruck}
+          onPointerMove={beiBewegung}
+          onPointerUp={beiLoslassen}
+          onPointerLeave={beiLoslassen}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ cursor: schiebt ? "grabbing" : darfSchreiben ? "crosshair" : "default" }}
+        >
+          {datei.isError && (
+            // Ohne diesen Hinweis bliebe die Fläche einfach weiß, und niemand
+            // wüsste, ob die Zeichnung fehlt oder das Laden noch läuft.
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <p className="max-w-prose text-center text-sm text-[var(--fg-muted)]">
+                {worte.fair.dateiFehlt((datei.error as Error).message)}
+              </p>
             </div>
-          </div>
-        )}
-      </Card>
+          )}
+          {datei.data && (
+            <div
+              className="absolute left-0 top-0 origin-top-left"
+              style={{
+                transform: `translate(${ansicht.tx}px, ${ansicht.ty}px) scale(${ansicht.skala})`,
+              }}
+            >
+              <div
+                className="relative origin-top-left"
+                style={{ transform: masse ? drehungCss(masse.b, masse.h, drehung) : undefined }}
+              >
+                <Zeichenflaeche
+                  url={datei.data}
+                  art={z.art}
+                  seite={seite}
+                  breite={masse?.b ?? null}
+                  hoehe={masse?.h ?? null}
+                  renderDpr={Math.min(4, Math.max(1, ansicht.skala))}
+                  onMasse={setMasse}
+                  onSeiten={setSeiten}
+                />
+                {masse && (
+                  <BallonEbene
+                    ballons={ballons}
+                    breite={masse.b}
+                    hoehe={masse.h}
+                    groesse={groesse}
+                    hervorgehoben={gewaehlt}
+                    vorschau={vorschau}
+                    onWaehlen={setGewaehlt}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
 
-      <Ballonliste
-        zeichnungId={id}
-        ballons={alleBallons}
-        gewaehlt={gewaehlt}
-        darfSchreiben={darfSchreiben}
-        onWaehlen={(b) => {
-          setGewaehlt(b.id);
-          setSeite(b.seite);
-        }}
-      />
+        <Ballonliste
+          zeichnungId={id}
+          ballons={alleBallons}
+          gewaehlt={gewaehlt}
+          darfSchreiben={darfSchreiben}
+          mehrereSeiten={seiten > 1}
+          pdfLaeuft={pdfLaeuft}
+          onWaehlen={(b) => {
+            setGewaehlt(b.id);
+            setSeite(b.seite);
+          }}
+          onOcr={ocr}
+          onPdf={() => void pdfErstellen()}
+        />
+      </div>
     </div>
   );
 }
