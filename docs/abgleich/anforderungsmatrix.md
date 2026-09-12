@@ -10,6 +10,7 @@ Status je Zeile getrennt: **Umsetzung** (offen / in Arbeit / umgesetzt / bewusst
 |---|---|
 | Lesender Zugriff auf die Produktionsdatenbank ist in dieser Sitzung nicht freigegeben | Datenparität nur über die Referenzoberfläche (lesend) und den Referenzcode; Rohwertvergleiche gegen die lokale Kopie |
 | Referenzoberfläche nur lesend, in der vom Nutzer freigegebenen und angemeldeten Browsersitzung | Keine schreibenden Abläufe in der Referenz; Referenzverhalten schreibender Masken aus dem Code des Altsystems |
+| Referenzhost `192.9.201.9` war ab ca. 22:15 (12.09.2026) nicht mehr erreichbar (Zeitüberschreitung, auch per `curl`) | Weitere UI-Referenzwerte erst bei erneuter Erreichbarkeit; bis dahin Referenzcode und Werte der Periodenprüfung |
 | Kein Produktivdeployment freigegeben | Handbuch-Screenshots des abgenommenen Produktivstands (HIL-02) bleiben offen |
 | Keine autorisierte Test-Integration für Microsoft 365 / Personio-Schreibzugriff | Integrationen nur mit lokalen Tests und Attrappen der Gegenstelle abgesichert |
 | Keine unabhängige Prüfinstanz außer einem getrennten Prüf-Agenten | Nutzerabnahme bleibt offen |
