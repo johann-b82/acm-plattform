@@ -20,6 +20,21 @@ Die Zeile hält nur den Pfad. Im Altprojekt steckt der Screenshot als `bytea`
 in der Tabelle (`page_feedback.screenshot_data`); jede Liste, jede Sicherung
 und jeder `pg_dump` schleppt ihn mit.
 
+## Die Liste
+
+`/platform/feedback` zeigt die Meldungen als Tabelle wie im Altsystem
+(Datum, Von, Seite, Beschreibung, Screenshot, Status, Aktionen) oder als
+Kanban mit einer Spalte je Status (MEL-01). Beide Ansichten zeigen dieselbe
+Menge mit denselben Aktionen: Bild öffnen, erledigen bzw. wieder öffnen,
+löschen.
+
+**Gesehen ist kein Status.** Die Spalten sind `neu` („offen“) und
+`erledigt`; ungesehen ist ein Punkt an der Meldung. Abgehakt wird er, wenn
+jemand den Punkt anklickt, das Bild öffnet oder den Status ändert — wie im
+Altsystem, wo ein Klick auf die Zeile ihn abhakt. Das bloße Öffnen der Seite
+hakt nichts ab; sonst wäre die Markierung beim nächsten Besuch weg, ohne dass
+jemand die Meldung gelesen hat.
+
 ## Rechte
 
 | | Recht |
