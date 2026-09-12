@@ -41,7 +41,7 @@ Rechte wie bisher: lesen `kpi`, schreiben `settings: editor`.
 from alembic import op
 
 revision = "0050_kpi_bubbles"
-down_revision = "0040_bereich_hr"
+down_revision = "0042_einkauf_produktion"
 branch_labels = None
 depends_on = None
 
