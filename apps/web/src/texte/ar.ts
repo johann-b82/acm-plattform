@@ -89,6 +89,7 @@ export const ar: Texte = {
     loeschenKnopf: (was: string) => `حذف ${was}`,
   },
   zeitraum: {
+    aria: "الفترة",
     monat: "هذا الشهر",
     quartal: "هذا الربع",
     jahr: "هذه السنة",

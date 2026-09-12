@@ -90,6 +90,7 @@ export const pl: Texte = {
     loeschenKnopf: (was: string) => `Usuń ${was}`,
   },
   zeitraum: {
+    aria: "Okres",
     monat: "Ten miesiąc",
     quartal: "Ten kwartał",
     jahr: "Ten rok",

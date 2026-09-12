@@ -202,8 +202,7 @@ export function QualitaetDashboard() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.qualitaet.einleitung}
-        unter={<Datenstand bereich="qualitaet" />}
-        bedienung={<Zeitraumwahl wahl={wahl} />}
+        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="qualitaet" />} />}
       />
 
       <div className="flex flex-wrap items-center gap-2">

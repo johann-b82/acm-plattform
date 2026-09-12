@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { useTexte } from "@/components/sprache/anbieter";
 import { fenster, type Zeitraum } from "@/lib/kpi/gemeinsam";
-import { cn } from "@/lib/cn";
 
 /** Die üblichen Stufen. Das Personal-Dashboard lässt „Alles" weg — ohne
  *  Fenster wäre der Nenner seiner Quoten unbestimmt. */
@@ -30,12 +30,8 @@ export interface Zeitraumwahl {
 /**
  * Zeitraumwahl mit Zustand.
  *
- * Stand vorher in jedem Dashboard einmal — vier Knöpfe und ein `useState`.
- * Der freie Zeitraum kam nicht dazu, weil er sechsmal hätte gebaut werden
- * müssen.
- *
  * Das freie Fenster hat einen eigenen Zustand, der beim Umschalten auf einen
- * Vorschlag **nicht** verlorengeht: wer versehentlich auf „Dieses Jahr" tippt,
+ * Vorschlag **nicht** verlorengeht: wer versehentlich auf „Dieses Jahr" geht,
  * findet seine Daten danach noch vor.
  */
 export function useZeitraumwahl(vorgabe: Zeitraum = "jahr"): Zeitraumwahl {
@@ -58,38 +54,58 @@ export function useZeitraumwahl(vorgabe: Zeitraum = "jahr"): Zeitraumwahl {
   return { zeitraum, setZeitraum, frei, setFrei, von, bis, verdreht };
 }
 
-/** Die Knöpfe — und bei freier Wahl zwei Datumsfelder darunter. */
+const FELD =
+  "h-9 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm " +
+  "focus-visible:outline-2 focus-visible:outline-[var(--ring)]";
+
+/**
+ * Die Zeitraumwahl als Auswahlliste — auf allen Seiten dieselbe (KPI-07).
+ *
+ * Ein `<select>` und kein nachgebautes Menü: mit Tastatur, auf dem Telefon und
+ * mit Screenreader ist das Eingebaute besser bedienbar. „Zeitraum wählen" ist
+ * ein Eintrag der Liste und öffnet die beiden Datumsfelder darunter.
+ *
+ * Direkt darunter steht der Datenstand der Seite (KPI-08) — die Frage „wie
+ * aktuell ist das?" gehört zu der Frage „welcher Zeitraum?".
+ */
 export function Zeitraumwahl({
   wahl,
   stufen = STUFEN,
+  datenstand,
 }: {
   wahl: Zeitraumwahl;
   stufen?: Zeitraum[];
+  /** Der Datenstand dieser Seite, unter der Auswahl. */
+  datenstand?: ReactNode;
 }) {
   const t = useTexte();
+  const id = useId();
   return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="inline-flex rounded-md border border-[var(--border)] p-0.5">
-        {stufen.map((z) => (
-          <button
-            key={z}
-            type="button"
-            onClick={() => wahl.setZeitraum(z)}
-            aria-pressed={wahl.zeitraum === z}
-            className={cn(
-              "rounded px-3 py-1 text-sm transition-colors",
-              wahl.zeitraum === z
-                ? "bg-[var(--fg)] text-[var(--bg)]"
-                : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-            )}
-          >
-            {t.zeitraum[z]}
-          </button>
-        ))}
+    <div className="flex flex-col items-end gap-1">
+      <label htmlFor={id} className="sr-only">
+        {t.zeitraum.aria}
+      </label>
+      <div className="relative">
+        <select
+          id={id}
+          value={wahl.zeitraum}
+          onChange={(e) => wahl.setZeitraum(e.target.value as Zeitraum)}
+          className={`${FELD} w-48 cursor-pointer appearance-none pe-8 font-medium`}
+        >
+          {stufen.map((z) => (
+            <option key={z} value={z}>
+              {t.zeitraum[z]}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
+          aria-hidden
+        />
       </div>
 
       {wahl.zeitraum === "frei" && (
-        <div className="flex flex-wrap items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
           <label className="flex items-center gap-1.5">
             <span className="text-[var(--fg-muted)]">{t.zeitraum.von}</span>
             <input
@@ -98,7 +114,7 @@ export function Zeitraumwahl({
               max={wahl.frei.bis}
               aria-label={t.zeitraum.vonAria}
               onChange={(e) => wahl.setFrei({ ...wahl.frei, von: e.target.value })}
-              className="h-8 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+              className={FELD}
             />
           </label>
           <label className="flex items-center gap-1.5">
@@ -109,14 +125,14 @@ export function Zeitraumwahl({
               min={wahl.frei.von}
               aria-label={t.zeitraum.bisAria}
               onChange={(e) => wahl.setFrei({ ...wahl.frei, bis: e.target.value })}
-              className="h-8 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+              className={FELD}
             />
           </label>
-          {wahl.verdreht && (
-            <span className="text-[var(--danger)]">{t.zeitraum.verdreht}</span>
-          )}
+          {wahl.verdreht && <span className="w-full text-end text-[var(--danger)]">{t.zeitraum.verdreht}</span>}
         </div>
       )}
+
+      {datenstand && <div className="text-end">{datenstand}</div>}
     </div>
   );
 }

@@ -90,6 +90,7 @@ export const vi: Texte = {
     loeschenKnopf: (was: string) => `Xóa ${was}`,
   },
   zeitraum: {
+    aria: "Khoảng thời gian",
     monat: "Tháng này",
     quartal: "Quý này",
     jahr: "Năm nay",

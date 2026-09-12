@@ -155,7 +155,7 @@ export function Redaktion({
       <Seitenkopf
         untertitel={worte.newsletter.redaktionEinleitung}
         unter={
-          <div className="mt-2 flex justify-center text-sm">
+          <div className="mt-2 flex justify-start text-sm">
             <Link href="/newsletter" className="underline-offset-4 hover:underline">
               {worte.newsletter.zurLeseransicht}
             </Link>

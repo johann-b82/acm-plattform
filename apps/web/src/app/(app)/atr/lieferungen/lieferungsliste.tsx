@@ -89,7 +89,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       <Seitenkopf
         untertitel={worte.lieferungen.einleitung}
         unter={
-          <div className="mt-2 flex justify-center text-sm">
+          <div className="mt-2 flex justify-start text-sm">
             <Link href="/atr" className="underline-offset-4 hover:underline">
               {worte.lieferungen.zumKatalog}
             </Link>

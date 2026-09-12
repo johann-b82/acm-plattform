@@ -58,6 +58,7 @@ export const de = {
     loeschenKnopf: (was: string) => `${was} löschen`,
   },
   zeitraum: {
+    aria: "Zeitraum",
     monat: "Dieser Monat",
     quartal: "Dieses Quartal",
     jahr: "Dieses Jahr",

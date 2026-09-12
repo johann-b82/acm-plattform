@@ -74,8 +74,7 @@ export function VertriebDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        unter={<Datenstand bereich="vertrieb" />}
-        bedienung={<Zeitraumwahl wahl={wahl} />}
+        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="vertrieb" />} />}
       />
 
       {fehler && (

@@ -90,6 +90,7 @@ export const fa: Texte = {
     loeschenKnopf: (was: string) => `حذف ${was}`,
   },
   zeitraum: {
+    aria: "بازهٔ زمانی",
     monat: "این ماه",
     quartal: "این فصل",
     jahr: "امسال",

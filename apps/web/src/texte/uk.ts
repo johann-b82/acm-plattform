@@ -91,6 +91,7 @@ export const uk: Texte = {
     loeschenKnopf: (was: string) => `Видалити ${was}`,
   },
   zeitraum: {
+    aria: "Період",
     monat: "Цей місяць",
     quartal: "Цей квартал",
     jahr: "Цей рік",

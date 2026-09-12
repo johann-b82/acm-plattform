@@ -55,7 +55,7 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       <Seitenkopf
         untertitel={worte.wartung.einleitung}
         unter={
-          <div className="mt-2 flex justify-center text-sm">
+          <div className="mt-2 flex justify-start text-sm">
             <Link href="/kpi/produktion" className="underline-offset-4 hover:underline">
               {worte.wartung.zuKennzahlen}
             </Link>

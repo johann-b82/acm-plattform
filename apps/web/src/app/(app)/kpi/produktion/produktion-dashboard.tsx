@@ -86,8 +86,7 @@ export function ProduktionDashboard() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.produktion.einleitung}
-        unter={<Datenstand bereich="produktion" />}
-        bedienung={<Zeitraumwahl wahl={wahl} />}
+        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="produktion" />} />}
       />
 
       {fehler && (

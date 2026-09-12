@@ -127,7 +127,7 @@ export function Einarbeitung({ darfSchreiben }: { darfSchreiben: boolean }) {
       <Seitenkopf
         untertitel={worte.einarbeitung.einleitung}
         unter={
-          <div className="mt-2 flex justify-center gap-4 text-sm">
+          <div className="mt-2 flex justify-start gap-4 text-sm">
             <Link href="/hr/onboarding" className="underline-offset-4 hover:underline">
               {worte.pfad.seiten["/hr/onboarding"]}
             </Link>

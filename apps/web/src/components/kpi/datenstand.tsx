@@ -37,7 +37,7 @@ export function Datenstand({ bereich }: { bereich: string }) {
   const aeltest = aeltester(liste);
 
   return (
-    <p className="mt-1 text-xs text-[var(--fg-muted)]" title={aufzaehlung(liste)}>
+    <p className="text-xs text-[var(--fg-muted)]" title={aufzaehlung(liste)}>
       {fehlende.length > 0
         ? t.datenstand.unvollstaendig(nenne(fehlende), fehlende.length)
         : t.datenstand.stand(DATUM.format(new Date(aeltest!)), alter(alterInTagen(aeltest!)))}

@@ -107,8 +107,7 @@ export function FinanzenDashboard() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.finanzen.einleitung}
-        unter={<Datenstand bereich="finanzen" />}
-        bedienung={<Zeitraumwahl wahl={wahl} />}
+        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="finanzen" />} />}
       />
 
       {fehler && (

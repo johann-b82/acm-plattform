@@ -84,7 +84,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       <Seitenkopf
         untertitel={worte.audit.einleitung}
         unter={
-          <div className="mt-2 flex justify-center text-sm">
+          <div className="mt-2 flex justify-start text-sm">
             <Link href="/kpi/qualitaet" className="underline-offset-4 hover:underline">
               {worte.audit.zuKennzahlen}
             </Link>

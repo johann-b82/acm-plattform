@@ -90,6 +90,7 @@ export const bg: Texte = {
     loeschenKnopf: (was: string) => `Изтрий ${was}`,
   },
   zeitraum: {
+    aria: "Период",
     monat: "Този месец",
     quartal: "Това тримесечие",
     jahr: "Тази година",

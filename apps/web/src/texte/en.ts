@@ -93,6 +93,7 @@ export const en: Texte = {
     loeschenKnopf: (was: string) => `Delete ${was}`,
   },
   zeitraum: {
+    aria: "Period",
     monat: "This month",
     quartal: "This quarter",
     jahr: "This year",

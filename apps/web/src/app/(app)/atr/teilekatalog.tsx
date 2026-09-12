@@ -110,7 +110,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
       <Seitenkopf
         untertitel={worte.atr.einleitung}
         unter={
-          <div className="mt-2 flex justify-center text-sm">
+          <div className="mt-2 flex justify-start text-sm">
             <Link href="/atr/lieferungen" className="underline-offset-4 hover:underline">
               {worte.atr.zuLieferungen}
             </Link>

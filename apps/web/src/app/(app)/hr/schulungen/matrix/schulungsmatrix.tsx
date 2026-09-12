@@ -102,7 +102,7 @@ export function Schulungsmatrix() {
       <Seitenkopf
         untertitel={worte.schulungsmatrix.einleitung}
         unter={
-          <div className="mt-2 flex justify-center gap-4 text-sm">
+          <div className="mt-2 flex justify-start gap-4 text-sm">
             <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
               {worte.schulungsmatrix.wasOffenIst}
             </Link>

@@ -123,7 +123,7 @@ export function Schulungsuebersicht({ darfSchreiben }: { darfSchreiben: boolean 
       <Seitenkopf
         untertitel={worte.schulungen.einleitung}
         unter={
-          <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm">
+          <div className="mt-2 flex flex-wrap justify-start gap-4 text-sm">
             <Link href="/hr/schulungen/offen" className="underline-offset-4 hover:underline">
               {worte.schulungsmatrix.wasOffenIst}
             </Link>
