@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -12,16 +12,9 @@ import {
   fairKeys,
   type Zeichnung,
 } from "@/lib/fair";
-import {
-  Card,
-  EmptyState,
-  Input,
-  Label,
-  Table,
-  TableWrap,
-  Td,
-  Th,
-} from "@/components/ui/primitives";
+import { kundenAuswahl, nachKunde, OHNE_KUNDE } from "@/lib/fair/kunden";
+import { Card, EmptyState, Input, Label, Select } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -42,7 +35,10 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     queryKey: fairKeys.zeichnungen(),
     queryFn: fairApi.zeichnungen,
   });
-  const liste = zeichnungen.data ?? [];
+  const liste = useMemo(() => zeichnungen.data ?? [], [zeichnungen.data]);
+  const [kunde, setKunde] = useState("");
+  const auswahl = useMemo(() => kundenAuswahl(liste), [liste]);
+  const gefiltert = useMemo(() => nachKunde(liste, kunde), [liste, kunde]);
 
   const neuLaden = () =>
     queryClient.invalidateQueries({ queryKey: fairKeys.zeichnungen() });
@@ -65,6 +61,46 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
+
+  const spalten: Tabellenspalte<Zeichnung>[] = [
+    {
+      schluessel: "name",
+      titel: worte.fair.bezeichnung,
+      typ: "text",
+      wert: (z) => z.name,
+      zelle: (z) => (
+        <Link href={`/fair/${z.id}`} className="font-medium underline-offset-4 hover:underline">
+          {z.name}
+        </Link>
+      ),
+    },
+    { schluessel: "teilenummer", titel: worte.fair.teilenummer, typ: "text", wert: (z) => z.teilenummer },
+    { schluessel: "kunde", titel: worte.fair.kunde, typ: "text", wert: (z) => z.kunde?.trim() },
+    {
+      schluessel: "erstellt_am",
+      titel: worte.fair.hochgeladen,
+      typ: "datum",
+      wert: (z) => z.erstellt_am,
+      zelle: (z) => DATUM.format(new Date(z.erstellt_am)),
+      suchtext: (z) => DATUM.format(new Date(z.erstellt_am)),
+    },
+    {
+      schluessel: "aktion",
+      titel: "",
+      typ: "text",
+      wert: () => null,
+      sortierbar: false,
+      suchtext: false,
+      ausrichtung: "end",
+      zelle: (z) =>
+        darfSchreiben && (
+          <ConfirmDeleteButton
+            itemLabel={z.name}
+            onConfirm={() => loeschen.mutateAsync(z).then(() => undefined)}
+          />
+        ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -120,44 +156,28 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {liste.length > 0 && (
-        <TableWrap>
-          <Table>
-            <thead>
-              <tr>
-                <Th>{worte.fair.bezeichnung}</Th>
-                <Th>{worte.fair.teilenummer}</Th>
-                <Th>{worte.fair.kunde}</Th>
-                <Th>{worte.fair.hochgeladen}</Th>
-                <Th />
-              </tr>
-            </thead>
-            <tbody>
-              {liste.map((z) => (
-                <tr key={z.id}>
-                  <Td>
-                    <Link
-                      href={`/fair/${z.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {z.name}
-                    </Link>
-                  </Td>
-                  <Td>{z.teilenummer ?? "—"}</Td>
-                  <Td>{z.kunde ?? "—"}</Td>
-                  <Td>{DATUM.format(new Date(z.erstellt_am))}</Td>
-                  <Td className="text-end">
-                    {darfSchreiben && (
-                      <ConfirmDeleteButton
-                        itemLabel={z.name}
-                        onConfirm={() => loeschen.mutateAsync(z).then(() => undefined)}
-                      />
-                    )}
-                  </Td>
-                </tr>
+        <Datentabelle
+          zeilen={gefiltert}
+          spalten={spalten}
+          zeilenSchluessel={(z) => z.id}
+          beschriftung={worte.pfad.seiten["/fair"]}
+          werkzeuge={
+            <Select
+              aria-label={worte.fair.kundenfilter}
+              className="w-56"
+              value={kunde}
+              onChange={(e) => setKunde(e.target.value)}
+            >
+              <option value="">{worte.fair.alleKunden}</option>
+              {auswahl.kunden.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
               ))}
-            </tbody>
-          </Table>
-        </TableWrap>
+              {auswahl.ohneKunde && <option value={OHNE_KUNDE}>{worte.fair.ohneKunde}</option>}
+            </Select>
+          }
+        />
       )}
     </div>
   );
