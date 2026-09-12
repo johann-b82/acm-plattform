@@ -109,6 +109,21 @@ export const uk: Texte = {
     vorjahr: "до попереднього року",
     zeitraumDavor: "до періоду перед тим",
   },
+  tabelle: {
+    suche: "Пошук",
+    sucheAria: "Пошук у таблиці",
+    sucheLeeren: "Очистити пошук",
+    keineTreffer: "За цим запитом нічого не знайдено.",
+    leer: "Немає записів.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} з ${gesamt}`,
+    seite: (seite: number, seiten: number) => `Сторінка ${seite} з ${seiten}`,
+    zurueck: "Попередня сторінка",
+    weiter: "Наступна сторінка",
+    sortieren: (spalte: string) => `Сортувати за «${spalte}»`,
+    seitengroesse: "Рядків таблиці на сторінці",
+    seitengroesseText: "Діє для всіх таблиць платформи та для всіх користувачів.",
+    gespeichert: "Розмір сторінки збережено.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `Дані станом на ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

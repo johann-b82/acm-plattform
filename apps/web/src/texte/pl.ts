@@ -108,6 +108,21 @@ export const pl: Texte = {
     vorjahr: "do poprzedniego roku",
     zeitraumDavor: "do okresu wcześniejszego",
   },
+  tabelle: {
+    suche: "Szukaj",
+    sucheAria: "Przeszukaj tabelę",
+    sucheLeeren: "Wyczyść wyszukiwanie",
+    keineTreffer: "Brak wyników dla tego wyszukiwania.",
+    leer: "Brak wpisów.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} z ${gesamt}`,
+    seite: (seite: number, seiten: number) => `Strona ${seite} z ${seiten}`,
+    zurueck: "Poprzednia strona",
+    weiter: "Następna strona",
+    sortieren: (spalte: string) => `Sortuj według „${spalte}”`,
+    seitengroesse: "Wierszy tabeli na stronę",
+    seitengroesseText: "Dotyczy wszystkich tabel platformy i wszystkich osób.",
+    gespeichert: "Zapisano rozmiar strony.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `Dane z ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

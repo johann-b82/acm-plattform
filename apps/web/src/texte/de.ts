@@ -76,6 +76,21 @@ export const de = {
     vorjahr: "zum Vorjahr",
     zeitraumDavor: "zum Zeitraum davor",
   },
+  tabelle: {
+    suche: "Suchen",
+    sucheAria: "Tabelle durchsuchen",
+    sucheLeeren: "Suche leeren",
+    keineTreffer: "Keine Treffer für diese Suche.",
+    leer: "Keine Einträge.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} von ${gesamt}`,
+    seite: (seite: number, seiten: number) => `Seite ${seite} von ${seiten}`,
+    zurueck: "Vorherige Seite",
+    weiter: "Nächste Seite",
+    sortieren: (spalte: string) => `Nach „${spalte}“ sortieren`,
+    seitengroesse: "Tabelleneinträge pro Seite",
+    seitengroesseText: "Gilt für alle Tabellen der Plattform, für alle Personen.",
+    gespeichert: "Seitengröße gespeichert.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `Datenstand ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

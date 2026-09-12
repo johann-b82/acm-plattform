@@ -107,6 +107,21 @@ export const ar: Texte = {
     vorjahr: "مقارنةً بالسنة السابقة",
     zeitraumDavor: "مقارنةً بالفترة التي قبلها",
   },
+  tabelle: {
+    suche: "بحث",
+    sucheAria: "البحث في الجدول",
+    sucheLeeren: "مسح البحث",
+    keineTreffer: "لا توجد نتائج لهذا البحث.",
+    leer: "لا توجد إدخالات.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} من ${gesamt}`,
+    seite: (seite: number, seiten: number) => `الصفحة ${seite} من ${seiten}`,
+    zurueck: "الصفحة السابقة",
+    weiter: "الصفحة التالية",
+    sortieren: (spalte: string) => `الترتيب حسب «${spalte}»`,
+    seitengroesse: "عدد صفوف الجدول في الصفحة",
+    seitengroesseText: "ينطبق على جميع جداول المنصة ولجميع الأشخاص.",
+    gespeichert: "تم حفظ حجم الصفحة.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `حالة البيانات ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

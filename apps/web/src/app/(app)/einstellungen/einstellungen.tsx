@@ -9,6 +9,7 @@ import { PersonioZugang } from "./abschnitte/personio-zugang";
 import { AtrVorlagen } from "./abschnitte/atr-vorlagen";
 import { Eingangsordner } from "./abschnitte/atr-eingangsordner";
 import { Logo } from "./abschnitte/logo";
+import { Tabellen } from "./abschnitte/tabellen";
 import { Anzeigen } from "./abschnitte/anzeigen";
 import { Zeugnisse } from "./abschnitte/zeugnisse";
 import { Qualitaet } from "./abschnitte/qualitaet";
@@ -98,7 +99,12 @@ function Inhalt({ gruppe, eigeneId }: { gruppe: Gruppe; eigeneId: string }) {
     case "zeugnisse":
       return <Zeugnisse />;
     case "erscheinung":
-      return <Logo />;
+      return (
+        <div className="space-y-4">
+          <Logo />
+          <Tabellen />
+        </div>
+      );
     case "anzeigen":
       return <Anzeigen />;
     case "zugaenge":

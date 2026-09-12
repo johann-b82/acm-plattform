@@ -108,6 +108,21 @@ export const fa: Texte = {
     vorjahr: "نسبت به سال پیش",
     zeitraumDavor: "نسبت به بازهٔ پیش از آن",
   },
+  tabelle: {
+    suche: "جستجو",
+    sucheAria: "جستجو در جدول",
+    sucheLeeren: "پاک کردن جستجو",
+    keineTreffer: "برای این جستجو نتیجه‌ای نیست.",
+    leer: "موردی وجود ندارد.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} از ${gesamt}`,
+    seite: (seite: number, seiten: number) => `صفحه ${seite} از ${seiten}`,
+    zurueck: "صفحه قبل",
+    weiter: "صفحه بعد",
+    sortieren: (spalte: string) => `مرتب‌سازی بر اساس «${spalte}»`,
+    seitengroesse: "تعداد ردیف جدول در هر صفحه",
+    seitengroesseText: "برای همه جدول‌های پلتفرم و همه افراد اعمال می‌شود.",
+    gespeichert: "اندازه صفحه ذخیره شد.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `داده‌ها تا ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

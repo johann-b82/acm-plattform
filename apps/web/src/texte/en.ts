@@ -111,6 +111,21 @@ export const en: Texte = {
     vorjahr: "vs. last year",
     zeitraumDavor: "vs. the period before",
   },
+  tabelle: {
+    suche: "Search",
+    sucheAria: "Search table",
+    sucheLeeren: "Clear search",
+    keineTreffer: "No matches for this search.",
+    leer: "No entries.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} of ${gesamt}`,
+    seite: (seite: number, seiten: number) => `Page ${seite} of ${seiten}`,
+    zurueck: "Previous page",
+    weiter: "Next page",
+    sortieren: (spalte: string) => `Sort by “${spalte}”`,
+    seitengroesse: "Table rows per page",
+    seitengroesseText: "Applies to every table on the platform, for everyone.",
+    gespeichert: "Page size saved.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `Data as of ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

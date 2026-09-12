@@ -108,6 +108,21 @@ export const vi: Texte = {
     vorjahr: "so với năm trước",
     zeitraumDavor: "so với khoảng thời gian liền trước",
   },
+  tabelle: {
+    suche: "Tìm kiếm",
+    sucheAria: "Tìm trong bảng",
+    sucheLeeren: "Xóa tìm kiếm",
+    keineTreffer: "Không có kết quả cho tìm kiếm này.",
+    leer: "Không có mục nào.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} / ${gesamt}`,
+    seite: (seite: number, seiten: number) => `Trang ${seite} / ${seiten}`,
+    zurueck: "Trang trước",
+    weiter: "Trang sau",
+    sortieren: (spalte: string) => `Sắp xếp theo “${spalte}”`,
+    seitengroesse: "Số dòng bảng mỗi trang",
+    seitengroesseText: "Áp dụng cho mọi bảng trên nền tảng, cho mọi người.",
+    gespeichert: "Đã lưu số dòng mỗi trang.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `Dữ liệu đến ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>

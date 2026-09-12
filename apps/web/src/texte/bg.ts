@@ -108,6 +108,21 @@ export const bg: Texte = {
     vorjahr: "спрямо предходната година",
     zeitraumDavor: "спрямо периода преди това",
   },
+  tabelle: {
+    suche: "Търсене",
+    sucheAria: "Търсене в таблицата",
+    sucheLeeren: "Изчистване на търсенето",
+    keineTreffer: "Няма резултати за това търсене.",
+    leer: "Няма записи.",
+    bereich: (von: number, bis: number, gesamt: number) => `${von}–${bis} от ${gesamt}`,
+    seite: (seite: number, seiten: number) => `Страница ${seite} от ${seiten}`,
+    zurueck: "Предишна страница",
+    weiter: "Следваща страница",
+    sortieren: (spalte: string) => `Сортиране по „${spalte}“`,
+    seitengroesse: "Редове на таблица на страница",
+    seitengroesseText: "Важи за всички таблици на платформата, за всички потребители.",
+    gespeichert: "Размерът на страницата е запазен.",
+  },
   datenstand: {
     stand: (datum: string, alter: string) => `Данни към ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
