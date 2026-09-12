@@ -30,11 +30,12 @@ from typing import Any
 from app.uebernahme.motor import Umzug
 
 #: Die alten Sorten heißen im neuen Stack wie die Kacheln der Hochladeseite.
-#: Alle sechzehn Sorten aus der Produktion stehen hier; zwei Altsorten fallen
+#: Alle sechzehn Sorten aus der Produktion stehen hier; eine Altsorte fällt
 #: mit ihrem Nachfolger zusammen, weil auch die Tabellen zusammengefallen sind:
 #: `orders` schrieb in `sales_records`, das im neuen Stack in `revenues`
-#: aufgegangen ist, und `material_prices` in eine eigene Preistabelle, deren
-#: Inhalt jetzt in `stock_article_prices` steht.
+#: aufgegangen ist. `material_prices` hat wieder eine eigene Tabelle und eine
+#: eigene Kachel — die Preisquelle der Materialkostenquote, nicht die
+#: Artikel-Preisliste des Lagers.
 KIND_ABBILDUNG = {
     "revenues": "umsatz",
     "orders": "umsatz",
@@ -45,7 +46,7 @@ KIND_ABBILDUNG = {
     "delivery_reliability": "liefertreue",
     "material_movements": "lagerbewegungen",
     "stock_prices": "lagerpreise",
-    "material_prices": "lagerpreise",
+    "material_prices": "materialpreise",
     "quality": "acht_d",
     "inspections": "pruefungen",
     "contacts": "kontakte",
@@ -240,6 +241,21 @@ UMZUEGE: list[Umzug] = [
             "article_version", "article_name", "quantity", "unit", "price",
             "position_value", "order_nr", "material_group", "purchase_account",
             "upload_batch_id", "raw",
+        ),
+        id_aus=None,
+        verweise=PROTOKOLL,
+        schluessel=("vorgang_nr", "pos", "upos"),
+    ),
+    # Die Preisquelle der Materialkostenquote. Dieselbe Datei wie die
+    # Wareneingänge darüber, aber ein eigener Upload mit eigenem Stand — darum
+    # eine eigene Tabelle, sonst rechnete die Quote mit anderen Preisen als
+    # das Altsystem. Schlüssel wie beim Upload.
+    Umzug(
+        alt="material_prices",
+        neu="material_prices",
+        spalten=_gleich(
+            "vorgang_nr", "pos", "upos", "typ", "datum", "artnr", "article_name",
+            "menge", "unit", "preis", "pos_wert", "upload_batch_id", "raw",
         ),
         id_aus=None,
         verweise=PROTOKOLL,

@@ -34,6 +34,7 @@ from app.db import (
     inspection_records,
     interessenten,
     material_movements,
+    material_prices,
     offers,
     quality_records,
     sales_contacts,
@@ -45,6 +46,7 @@ from app.parsing.aktivitaet import parse_angebote, parse_interessenten, parse_ko
 from app.parsing.einkauf import parse_liefertreue
 from app.parsing.lagerpreise import parse_lagerpreise
 from app.parsing.material import parse_lagerbewegungen
+from app.parsing.materialpreise import parse_materialpreise
 from app.parsing.positionen import (
     parse_auftrag_positionen,
     parse_lieferscheine,
@@ -72,6 +74,7 @@ ARTEN = (
     "acht_d",
     "pruefungen",
     "lagerbewegungen",
+    "materialpreise",
     "lagerpreise",
     "kontakte",
     "angebote",
@@ -458,6 +461,30 @@ async def upload_lagerbewegungen(
         parser=parse_lagerbewegungen,
         claims=claims,
         datumsspalte="buch_datum",
+    )
+
+
+@router.post("/materialpreise", response_model=UploadErgebnis)
+async def upload_materialpreise(
+    file: UploadFile,
+    claims: Claims = Depends(require_app("uploads", "admin")),
+) -> UploadErgebnis:
+    """AswKpf_WE.txt — Materialpreise (Wareneingang), die Preisquelle der
+    Materialkostenquote.
+
+    Dieselbe Datei wie der Wareneingang, aber ein eigener Import wie im
+    Altsystem: welcher Preisstand gilt, entscheidet dieser Upload, nicht der
+    Wareneingang der Reklamationsquote. Upsert auf die Position — eine erneut
+    hochgeladene Zeile wird aktualisiert, eine neue ergänzt, und was in der
+    Datei fehlt, bleibt stehen.
+    """
+    return await _import(
+        file=file,
+        kind="materialpreise",
+        tabelle=material_prices,
+        parser=parse_materialpreise,
+        claims=claims,
+        schluessel=("vorgang_nr", "pos", "upos"),
     )
 
 

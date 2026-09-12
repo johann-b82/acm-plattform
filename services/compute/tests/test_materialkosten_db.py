@@ -1,5 +1,10 @@
 """Materialkostenquote.
 
+Die Preise kommen aus dem eigenen Import „Materialpreise (Wareneingang)"
+(`material_prices`), wie im Altsystem — nicht aus dem Wareneingangsimport der
+Reklamationsquote. Beide lesen dieselbe Datei, werden aber getrennt
+hochgeladen, und nur die Preistabelle bestimmt die Bewertung.
+
 Vier Stellen, an denen der Rechenweg eine Entscheidung trifft:
 
 * Die Preisliste ist **fensterunabhängig**: auch eine Auswertung über den
@@ -20,10 +25,10 @@ import pytest
 import pytest_asyncio
 import sqlalchemy as sa
 
-from app.db import SessionLocal, goods_receipt_records, material_movements, revenues
+from app.db import SessionLocal, goods_receipt_records, material_movements, material_prices, revenues
 
 JETZT = dt.datetime.now(dt.timezone.utc)
-D, I = "date", "int"
+D = "date"
 
 
 async def _funktion(name: str, *args: tuple[object, str]) -> list[dict]:
@@ -48,13 +53,26 @@ async def _bewegung(artikel: str, datum: dt.date, menge: str, buchtyp: str = "M"
             )
 
 
-async def _preiszeile(artikel: str, datum: dt.date, menge: str, wert: str, nr: str):
+async def _preiszeile(artikel: str, datum: dt.date | None, menge: str, wert: str, nr: str):
+    async with SessionLocal() as session:
+        async with session.begin():
+            await session.execute(
+                sa.insert(material_prices).values(
+                    vorgang_nr=nr, pos=10, upos=0, typ="WE",
+                    datum=datum, artnr=artikel,
+                    menge=Decimal(menge), pos_wert=Decimal(wert),
+                    imported_at=JETZT,
+                )
+            )
+
+
+async def _wareneingang(artikel: str, datum: dt.date, menge: str, wert: str, nr: str):
     async with SessionLocal() as session:
         async with session.begin():
             await session.execute(
                 sa.insert(goods_receipt_records).values(
                     vorgang_nr=nr, pos=10, upos=0, typ="WE",
-                    receipt_date=datum, article_number=artikel,
+                    entry_date=datum, receipt_date=datum, article_number=artikel,
                     quantity=Decimal(menge), position_value=Decimal(wert),
                     imported_at=JETZT,
                 )
@@ -80,6 +98,7 @@ async def leer(datenbank_da):
         async with session.begin():
             await session.execute(sa.delete(material_movements))
             await session.execute(sa.delete(goods_receipt_records))
+            await session.execute(sa.delete(material_prices))
             await session.execute(sa.delete(revenues))
     return True
 
@@ -103,6 +122,39 @@ class TestPreisliste:
                 sa.text("select stueckpreis from public.artikel_preise where artikelnr = 'A-1'")
             )
         assert float(preis) == 5.0
+
+    async def test_gleiches_datum_spaetere_zeile_gewinnt(self, leer):
+        """Gleichstand nach Datum löst das Altsystem über die höhere id."""
+        await _preiszeile("A-1", dt.date(2026, 5, 10), "100", "500", "W-1")
+        await _preiszeile("A-1", dt.date(2026, 5, 10), "100", "600", "W-2")
+        async with SessionLocal() as session:
+            preis = await session.scalar(
+                sa.text("select stueckpreis from public.artikel_preise where artikelnr = 'A-1'")
+            )
+        assert float(preis) == 6.0
+
+    async def test_zeile_ohne_datum_liefert_keinen_preis(self, leer):
+        """Ohne Wareneingangsdatum ist nicht zu sagen, ob es der neueste Preis ist."""
+        await _preiszeile("A-1", None, "100", "900", "W-1")
+        await _preiszeile("A-1", dt.date(2026, 1, 10), "100", "500", "W-2")
+        await _preiszeile("A-2", None, "100", "900", "W-3")
+        async with SessionLocal() as session:
+            preise = dict(
+                (await session.execute(
+                    sa.text("select artikelnr, stueckpreis from public.artikel_preise")
+                )).all()
+            )
+        assert {k: float(v) for k, v in preise.items()} == {"A-1": 5.0}
+
+    async def test_wareneingaenge_bewerten_nicht(self, leer):
+        """Kein stiller Rückfall auf den Wareneingangsimport: fehlt der Preis in
+        den Materialpreisen, zählt der Artikel als „ohne Preis" — wie im Altsystem."""
+        await _wareneingang("A-1", dt.date(2026, 1, 10), "100", "500", "W-1")
+        await _bewegung("A-1", dt.date(2026, 3, 1), "-10")
+        await _umsatz("R-1", dt.date(2026, 3, 5), "1000")
+        (row,) = await _funktion("kpi_finanzen_materialkosten", (None, D), (None, D))
+        assert float(row["materialkosten"]) == 0.0
+        assert row["ohne_preis"] == 1
 
     async def test_preisliste_ist_fensterunabhaengig(self, leer):
         """Der Januar wird mit dem Maipreis bewertet — wie im Altprojekt."""
@@ -157,9 +209,37 @@ class TestArtikelOhnePreis:
         await _preiszeile("A-1", dt.date(2026, 1, 1), "100", "500", "W-1")
         await _bewegung("A-1", dt.date(2026, 3, 1), "-10")
         await _bewegung("A-2", dt.date(2026, 3, 1), "-99")
-        zeilen = await _funktion("kpi_finanzen_materialverbrauch", (None, D), (None, D), (500, I))
+        zeilen = await _funktion("kpi_finanzen_materialverbrauch", (None, D), (None, D))
         assert [z["artikelnr"] for z in zeilen] == ["A-1", "A-2"]
         assert zeilen[1]["stueckpreis"] is None
+
+
+class TestPruefliste:
+    async def test_keine_grenze_bei_500_zeilen(self, leer):
+        """Die Tabelle blättert selbst; eine Grenze in SQL schnitte still ab (TAB-01)."""
+        async with SessionLocal() as session:
+            async with session.begin():
+                await session.execute(
+                    sa.insert(material_movements),
+                    [
+                        {"artikelnr": f"A-{i:04d}", "buch_datum": dt.date(2026, 3, 1),
+                         "bewegungsmenge": Decimal("-1"), "buchtyp": "M", "imported_at": JETZT}
+                        for i in range(501)
+                    ],
+                )
+        zeilen = await _funktion("kpi_finanzen_materialverbrauch", (None, D), (None, D))
+        assert len(zeilen) == 501
+
+    async def test_gleiche_kosten_stehen_fest_nach_artikelnummer(self, leer):
+        """Die Oberfläche lädt über 1000 Zeilen seitenweise — die Reihenfolge
+        muss dafür eindeutig sein, sonst stünde ein Artikel doppelt oder gar nicht da."""
+        for artikel in ("A-3", "A-1", "A-2"):
+            await _preiszeile(artikel, dt.date(2026, 1, 1), "100", "500", f"W-{artikel}")
+            await _bewegung(artikel, dt.date(2026, 3, 1), "-10")
+        for artikel in ("B-2", "B-1"):
+            await _bewegung(artikel, dt.date(2026, 3, 1), "-10")
+        zeilen = await _funktion("kpi_finanzen_materialverbrauch", (None, D), (None, D))
+        assert [z["artikelnr"] for z in zeilen] == ["A-1", "A-2", "A-3", "B-1", "B-2"]
 
 
 class TestQuote:
