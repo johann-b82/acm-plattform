@@ -176,3 +176,23 @@ class TestEinDurchgang:
         messung, fehler = await messen._einen(Zeile("fremd"))
         assert messung is None
         assert "SNMP_ERLAUBT" in fehler
+
+
+class TestKeineGrenzenJeGeraet:
+    """SET-11: Grenzen gibt es nur noch global. Die alten Spalten bleiben
+    stehen, aber über `compute` lässt sich dort nichts mehr eintragen."""
+
+    def test_die_aenderung_nimmt_keine_grenze_mehr_an(self):
+        from app.routers.sensoren import SensorAenderung
+
+        aenderung = SensorAenderung(temperatur_min=5, feuchte_max=90, name="Lager")
+        assert aenderung.model_dump(exclude_unset=True) == {"name": "Lager"}
+
+    def test_das_anlegen_auch_nicht(self):
+        from app.routers.sensoren import SensorEingabe
+
+        eingabe = SensorEingabe(
+            name="Lager", rechner="x", community="c", temperatur_oid="1.1",
+            temperatur_min=5, temperatur_max=9,
+        )
+        assert "temperatur_min" not in eingabe.model_dump()

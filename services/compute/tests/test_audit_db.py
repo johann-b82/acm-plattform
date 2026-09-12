@@ -6,6 +6,8 @@ handelnde Person, und er lässt sich nicht mehr ändern.
 """
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
@@ -274,3 +276,94 @@ class TestRechte:
         )
         with pytest.raises(Exception, match="violates foreign key|restrict"):
             await sql("delete from public.audit_normen where id = :n", n=norm)
+
+
+ANLEGEN = (
+    "select public.audit_anlegen("
+    " p_nummer => :nummer, p_titel => 'Management and Sales', p_art => 'intern',"
+    " p_kategorien => cast(:kategorien as text[]),"
+    " p_bereich => 'Management / VBL, IT', p_leitender_auditor => 'Gerhardt',"
+    " p_geplant_von => cast(:von as date), p_geplant_bis => cast(:bis as date),"
+    " p_vorlage_id => cast(:vorlage as uuid)) as id"
+)
+
+
+class TestAnlegen:
+    """AUD-03: alles, was die Anlage im Altsystem fragt, in einem Schritt."""
+
+    @pytest.mark.asyncio
+    async def test_alle_felder_und_kategorien_stehen_danach_drin(self, db):
+        await vorlage_mit_schritten()
+        neu = (
+            await sql(
+                ANLEGEN, nummer="IA-2026-9", kategorien=["prozess", "produkt"],
+                von=date(2026, 4, 1), bis=date(2026, 4, 2), vorlage=VORLAGE,
+            )
+        )[0]["id"]
+        audit = (
+            await sql(
+                "select nummer, titel, art, bereich, leitender_auditor, geplant_von::text,"
+                " geplant_bis::text, status from public.audits where id = :a",
+                a=neu,
+            )
+        )[0]
+        assert audit == {
+            "nummer": "IA-2026-9", "titel": "Management and Sales", "art": "intern",
+            "bereich": "Management / VBL, IT", "leitender_auditor": "Gerhardt",
+            "geplant_von": "2026-04-01", "geplant_bis": "2026-04-02", "status": "geplant",
+        }
+        kategorien = await sql(
+            "select kategorie from public.audit_kategorien where audit_id = :a order by 1", a=neu
+        )
+        assert [k["kategorie"] for k in kategorien] == ["produkt", "prozess"]
+        # Die Vorlage bringt ihre Phasen weiterhin mit.
+        assert (await sql("select count(*) as n from public.audit_phasen"))[0]["n"] == 3
+
+    @pytest.mark.asyncio
+    async def test_ohne_kategorie_geht_es_nicht(self, db):
+        with pytest.raises(Exception, match="Kategorie"):
+            await sql(ANLEGEN, nummer="X-1", kategorien=[], von=None, bis=None, vorlage=None)
+        assert await sql("select nummer from public.audits") == []
+
+    @pytest.mark.asyncio
+    async def test_eine_unbekannte_kategorie_nimmt_das_audit_mit(self, db):
+        """Scheitert die Kategorie, darf kein Audit ohne Kategorie stehen bleiben."""
+        with pytest.raises(Exception, match="audit_kategorien|check"):
+            await sql(ANLEGEN, nummer="X-1", kategorien=["prozess", "unsinn"],
+                      von=None, bis=None, vorlage=None)
+        assert await sql("select nummer from public.audits") == []
+
+    @pytest.mark.asyncio
+    async def test_das_ende_liegt_nicht_vor_dem_beginn(self, db):
+        with pytest.raises(Exception, match="audits_zeitraum"):
+            await sql(ANLEGEN, nummer="X-1", kategorien=["prozess"],
+                      von=date(2026, 4, 2), bis=date(2026, 4, 1), vorlage=None)
+
+    @pytest.mark.asyncio
+    async def test_leere_angaben_werden_zu_nichts(self, db):
+        neu = (
+            await sql(
+                "select public.audit_anlegen(p_nummer => ' X-2 ', p_titel => ' T ',"
+                " p_art => 'extern', p_kategorien => array['system'],"
+                " p_bereich => '  ', p_leitender_auditor => '  ') as id"
+            )
+        )[0]["id"]
+        audit = (
+            await sql(
+                "select nummer, titel, bereich, leitender_auditor from public.audits where id = :a",
+                a=neu,
+            )
+        )[0]
+        assert audit == {"nummer": "X-2", "titel": "T", "bereich": "", "leitender_auditor": None}
+
+    @pytest.mark.asyncio
+    async def test_ein_leser_darf_nicht_anlegen(self, db):
+        with pytest.raises(Exception, match="row-level security|violates"):
+            await als(LESER, ANLEGEN, nummer="X-1", kategorien=["prozess"],
+                      von=None, bis=None, vorlage=None)
+
+    @pytest.mark.asyncio
+    async def test_ein_pfleger_darf(self, db):
+        zeilen = await als(PFLEGER, ANLEGEN, nummer="X-1", kategorien=["prozess"],
+                           von=None, bis=None, vorlage=None)
+        assert zeilen[0]["id"] is not None
