@@ -53,4 +53,4 @@ Gesamt Aufträge 4.906.285,15 €, Rechnungen 4.760.703,11 € (= Kachel Umsatz)
 
 **Besuche.** `sales_contacts`, `status = 1`, `ORT` vor Ort, `ONL` online, gestapelt; Ziel „3 / Woche“ gilt der Summe (`SalesActivityCard.tsx`, `sales_kpi_aggregation.py:57,85-88`).
 
-**KPI-06.** Umsatz und Aufträge gesamt: mehr ist günstig. Ø Auftragswert: mehr ist günstig (KPI-05: Rückgänge rot) — offen zur fachlichen Entscheidung, weil er auch steigt, wenn kleine Aufträge wegfallen.
+**KPI-06.** Umsatz und Aufträge gesamt: mehr ist günstig. Ø Auftragswert: mehr ist günstig (KPI-05: Rückgänge rot).
