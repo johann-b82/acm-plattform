@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# FAIR-OCR: Arbeiter und Kern kopiert scripts/tesseract-dateien.mjs aus node_modules;
+# nur die Sprachdaten sind eingecheckt.
+/public/tesseract/*
+!/public/tesseract/lang/

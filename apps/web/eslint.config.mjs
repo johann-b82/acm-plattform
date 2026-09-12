@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Aus node_modules kopierte OCR-Laufzeit (scripts/tesseract-dateien.mjs).
+    "public/tesseract/**",
   ]),
 ]);
 
