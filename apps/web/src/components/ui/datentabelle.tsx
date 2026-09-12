@@ -46,6 +46,8 @@ export function Datentabelle<T>({
   zeilenKlasse,
   unterZeile,
   beschriftung,
+  zeile,
+  huelle,
 }: {
   zeilen: readonly T[];
   spalten: readonly Tabellenspalte<T>[];
@@ -61,6 +63,18 @@ export function Datentabelle<T>({
   unterZeile?: (zeile: T) => ReactNode;
   /** Zugänglicher Name der Tabelle. */
   beschriftung?: string;
+  /** Eigene `<tr>` um die fertigen Zellen — etwa eine ziehbare Zeile. */
+  zeile?: (zeile: T, zellen: ReactNode) => ReactNode;
+  /** Umhüllt die Tabelle (z. B. mit einem Drag-and-drop-Kontext) und erfährt,
+   *  welche Zeilen sichtbar sind und ob Suche oder Sortierung wirken. */
+  huelle?: (
+    tabelle: ReactNode,
+    ansicht: {
+      sichtbar: readonly T[];
+      sortierung: { spalte: string; richtung: Richtung } | null;
+      suchtext: string;
+    },
+  ) => ReactNode;
 }) {
   const t = useTexte();
   const groesse = useSeitengroesse();
@@ -132,6 +146,7 @@ export function Datentabelle<T>({
         </div>
       )}
 
+      {(huelle ?? ((tabelle: ReactNode) => tabelle))(
       <TableWrap>
         <Table aria-label={beschriftung}>
           <thead>
@@ -188,15 +203,14 @@ export function Datentabelle<T>({
             ) : (
               fenster.zeilen.map((z) => {
                 const unter = unterZeile?.(z);
+                const zellen = spalten.map((s) => (
+                  <Td key={s.schluessel} className={cn(s.ausrichtung === "end" && "text-end tabular-nums", s.className)}>
+                    {s.zelle ? s.zelle(z) : alsText(s.wert(z))}
+                  </Td>
+                ));
                 return (
                   <FragmentZeile key={zeilenSchluessel(z)}>
-                    <tr className={zeilenKlasse?.(z)}>
-                      {spalten.map((s) => (
-                        <Td key={s.schluessel} className={cn(s.ausrichtung === "end" && "text-end tabular-nums", s.className)}>
-                          {s.zelle ? s.zelle(z) : alsText(s.wert(z))}
-                        </Td>
-                      ))}
-                    </tr>
+                    {zeile ? zeile(z, zellen) : <tr className={zeilenKlasse?.(z)}>{zellen}</tr>}
                     {unter && (
                       <tr>
                         <Td colSpan={spalten.length} className="bg-[var(--muted)]/40">
@@ -210,7 +224,9 @@ export function Datentabelle<T>({
             )}
           </tbody>
         </Table>
-      </TableWrap>
+      </TableWrap>,
+        { sichtbar: fenster.zeilen, sortierung, suchtext },
+      )}
 
       {!laedt && fenster.gesamt > 0 && (
         <nav

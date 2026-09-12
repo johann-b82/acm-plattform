@@ -83,4 +83,43 @@ describe("Datentabelle", () => {
     neu(menge(40));
     expect(screen.getByText("Seite 1 von 2")).toBeInTheDocument();
   });
+
+  it("lässt die Zeile selbst rendern und meldet sichtbare Zeilen, Sortierung und Suche", () => {
+    const ansichten: { sichtbar: number[]; sortierung: string | null; suchtext: string }[] = [];
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SprachAnbieter sprache="de">
+          <Datentabelle
+            zeilen={menge(30)}
+            spalten={SPALTEN}
+            zeilenSchluessel={(x) => x.id}
+            beschriftung="Test"
+            zeile={(z, zellen) => (
+              <tr data-testid="eigen" data-id={z.id}>
+                {zellen}
+              </tr>
+            )}
+            huelle={(tabelle, a) => {
+              ansichten.push({
+                sichtbar: a.sichtbar.map((z) => z.id),
+                sortierung: a.sortierung && `${a.sortierung.spalte}:${a.sortierung.richtung}`,
+                suchtext: a.suchtext,
+              });
+              return <section aria-label="Hülle">{tabelle}</section>;
+            }}
+          />
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    expect(within(screen.getByRole("region", { name: "Hülle" })).getByRole("table")).toBeInTheDocument();
+    expect(screen.getAllByTestId("eigen")).toHaveLength(25);
+    expect(ansichten.at(-1)).toEqual({ sichtbar: menge(25).map((z) => z.id), sortierung: null, suchtext: "" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Betrag/ }));
+    expect(ansichten.at(-1)?.sortierung).toBe("betrag:ab");
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Person 3" } });
+    expect(ansichten.at(-1)?.suchtext).toBe("Person 3");
+    expect(ansichten.at(-1)?.sichtbar.length).toBe(screen.getAllByTestId("eigen").length);
+  });
 });
