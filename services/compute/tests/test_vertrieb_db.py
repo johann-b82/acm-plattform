@@ -214,6 +214,29 @@ class TestKennzahlen:
         assert rows[1]["kunde"] == "Übrige"
         assert rows[1]["wert"] == Decimal("2500.00")
 
+    async def test_kundenanteil_ohne_grenze_liefert_alle_kunden(self):
+        # Tabelle und Diagramme bekommen die ganze Menge (TAB-01); ohne
+        # `top_n` gibt es keine Sammelzeile „Übrige“.
+        rows = await _funktion("kpi_vertrieb_kundenanteil", "revenues", None, None, None)
+        assert [(r["kunde"], r["wert"]) for r in rows] == [
+            ("Gamma", Decimal("3000.00")),
+            ("Beta", Decimal("2000.00")),
+            ("Alpha", Decimal("500.00")),
+        ]
+        assert sum(r["anteil"] for r in rows) == Decimal("1.0000")
+
+    async def test_kundenanteil_gleichstand_in_fester_reihenfolge(self, client):
+        # Zwei Kunden mit gleicher Summe: die Reihenfolge darf nicht vom
+        # Ausführungsplan abhängen, sonst springen Säulen und Farben.
+        await _upload(
+            client,
+            "umsatz",
+            "gleich.txt",
+            datei(KOPF_RG, "RG\tR-7\t11.03.2026\t4\tAardvark\t3.000,00"),
+        )
+        rows = await _funktion("kpi_vertrieb_kundenanteil", "revenues", None, None, None)
+        assert [r["kunde"] for r in rows[:2]] == ["Aardvark", "Gamma"]
+
     async def test_kundenanteil_quelle_auftraege(self):
         rows = await _funktion("kpi_vertrieb_kundenanteil", "auftraege", None, None, 14)
         assert {r["kunde"] for r in rows} == {"Alpha", "Beta", "Gamma"}
