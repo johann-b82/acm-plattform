@@ -21,6 +21,7 @@ import { finanzenApi } from "@/lib/kpi/finanzen";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -31,7 +32,7 @@ import { useVergleich } from "@/lib/kpi/use-vergleich";
 
 
 
-export function FinanzenDashboard() {
+export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
   const wahl = useZeitraumwahl();
@@ -107,7 +108,12 @@ export function FinanzenDashboard() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.finanzen.einleitung}
-        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="finanzen" />} />}
+        bedienung={
+          <>
+            {darfUploads && <UploadVerweis />}
+            <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="finanzen" />} />
+          </>
+        }
       />
 
       {fehler && (

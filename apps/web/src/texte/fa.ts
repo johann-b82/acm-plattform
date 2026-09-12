@@ -6,6 +6,8 @@ import type { Texte } from "@/texte/de";
  */
 export const fa: Texte = {
   kopf: {
+    benutzermenue: "منوی کاربر",
+    angemeldetAls: "واردشده با",
     uebersicht: "به نمای کلی",
     hilfe: "راهنما",
     einstellungen: "تنظیمات",
@@ -32,7 +34,7 @@ export const fa: Texte = {
       "/einstellungen": "تنظیمات",
       "/fair": "FAIR",
       "/hilfe": "راهنما",
-      "/hr": "کارکنان",
+      "/hr": "HR",
       "/hr/dokumente": "گردش مدارک",
       "/hr/einarbeitung": "آشناسازی",
       "/hr/kennzahlen": "شاخص‌ها",
@@ -1479,7 +1481,7 @@ export const fa: Texte = {
       kennzahlenText:
         "مقدارهای هدف داشبوردها. در نمودار روند به شکل خط هدف دیده می‌شوند و تعیین " +
         "می‌کنند کارت از چه زمانی هشدار دهد.",
-      personal: "کارکنان",
+      personal: "HR",
       personalText:
         "اینکه کدام غیبت‌ها بیماری به شمار می‌آیند و کدام بخش‌ها به تولید تعلق دارند. " +
         "بدون این فهرست‌ها نسبت‌های کارکنان خالی می‌مانند.",
@@ -1842,7 +1844,7 @@ export const fa: Texte = {
       produktion: "تولید",
       qualitaet: "کیفیت",
       finanzen: "مالی",
-      personal: "کارکنان",
+      personal: "HR",
     },
   },
   erklaerung: {

@@ -6,6 +6,8 @@ import type { Texte } from "@/texte/de";
  */
 export const pl: Texte = {
   kopf: {
+    benutzermenue: "Menu użytkownika",
+    angemeldetAls: "Zalogowano jako",
     uebersicht: "Do przeglądu",
     hilfe: "Pomoc",
     einstellungen: "Ustawienia",
@@ -32,7 +34,7 @@ export const pl: Texte = {
       "/einstellungen": "Ustawienia",
       "/fair": "FAIR",
       "/hilfe": "Pomoc",
-      "/hr": "Kadry",
+      "/hr": "HR",
       "/hr/dokumente": "Obieg dokumentów",
       "/hr/einarbeitung": "Wdrożenie",
       "/hr/kennzahlen": "Wskaźniki",
@@ -1494,7 +1496,7 @@ export const pl: Texte = {
       kennzahlenText:
         "Wartości docelowe pulpitów. Pojawiają się jako linia celu w przebiegu i decydują, " +
         "od kiedy kafelek ostrzega.",
-      personal: "Kadry",
+      personal: "HR",
       personalText:
         "Które nieobecności liczą się jako choroba i które działy należą do produkcji. " +
         "Bez tych list wskaźniki kadrowe zostaną puste.",
@@ -1862,7 +1864,7 @@ export const pl: Texte = {
       produktion: "Produkcja",
       qualitaet: "Jakość",
       finanzen: "Finanse",
-      personal: "Kadry",
+      personal: "HR",
     },
   },
   erklaerung: {

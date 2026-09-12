@@ -6,6 +6,8 @@ import type { Texte } from "@/texte/de";
  */
 export const bg: Texte = {
   kopf: {
+    benutzermenue: "Потребителско меню",
+    angemeldetAls: "Влезли сте като",
     uebersicht: "Към прегледа",
     hilfe: "Помощ",
     einstellungen: "Настройки",
@@ -32,7 +34,7 @@ export const bg: Texte = {
       "/einstellungen": "Настройки",
       "/fair": "FAIR",
       "/hilfe": "Помощ",
-      "/hr": "Персонал",
+      "/hr": "HR",
       "/hr/dokumente": "Документооборот",
       "/hr/einarbeitung": "Въвеждане",
       "/hr/kennzahlen": "Показатели",
@@ -1496,7 +1498,7 @@ export const bg: Texte = {
       kennzahlenText:
         "Целеви стойности на таблата. Появяват се като целева линия в графиката и решават кога " +
         "една карта предупреждава.",
-      personal: "Персонал",
+      personal: "HR",
       personalText:
         "Кои отсъствия се броят като болнични и кои отдели спадат към производството. " +
         "Без тези списъци процентите за персонала остават празни.",
@@ -1864,7 +1866,7 @@ export const bg: Texte = {
       produktion: "Производство",
       qualitaet: "Качество",
       finanzen: "Финанси",
-      personal: "Персонал",
+      personal: "HR",
     },
   },
   erklaerung: {

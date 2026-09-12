@@ -10,6 +10,8 @@ import type { Texte } from "@/texte/de";
  */
 export const en: Texte = {
   kopf: {
+    benutzermenue: "User menu",
+    angemeldetAls: "Signed in as",
     uebersicht: "To the overview",
     hilfe: "Help",
     einstellungen: "Settings",
@@ -36,7 +38,7 @@ export const en: Texte = {
       "/einstellungen": "Settings",
       "/fair": "FAIR",
       "/hilfe": "Help",
-      "/hr": "People",
+      "/hr": "HR",
       "/hr/dokumente": "Document run",
       "/hr/einarbeitung": "Induction",
       "/hr/kennzahlen": "Key figures",
@@ -1486,7 +1488,7 @@ export const en: Texte = {
       kennzahlenText:
         "Targets for the dashboards. They appear as a target line in the chart and decide when a " +
         "tile warns.",
-      personal: "People",
+      personal: "HR",
       personalText:
         "Which absences count as sickness and which departments belong to production. Without " +
         "these lists the people metrics stay empty.",
@@ -1846,7 +1848,7 @@ export const en: Texte = {
       produktion: "Production",
       qualitaet: "Quality",
       finanzen: "Finance",
-      personal: "People",
+      personal: "HR",
     },
   },
   erklaerung: {

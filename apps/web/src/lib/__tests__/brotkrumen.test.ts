@@ -27,7 +27,7 @@ describe("krumen", () => {
   it("baut die Kette aus den Vorsilben", () => {
     expect(krumen("/hr/schulungen/matrix").map((k) => k.titel)).toEqual([
       "Start",
-      "Personal",
+      "HR",
       "Schulungen",
       "Matrix",
     ]);

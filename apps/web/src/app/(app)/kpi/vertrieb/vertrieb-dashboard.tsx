@@ -18,6 +18,7 @@ import {
 import { vertriebApi } from "@/lib/kpi/vertrieb";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -29,7 +30,7 @@ import { AktivitaetKarte } from "./aktivitaet-karte";
 
 
 
-export function VertriebDashboard() {
+export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const worte = useTexte();
@@ -74,7 +75,12 @@ export function VertriebDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="vertrieb" />} />}
+        bedienung={
+          <>
+            {darfUploads && <UploadVerweis />}
+            <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="vertrieb" />} />
+          </>
+        }
       />
 
       {fehler && (

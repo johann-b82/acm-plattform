@@ -6,6 +6,8 @@ import type { Texte } from "@/texte/de";
  */
 export const ar: Texte = {
   kopf: {
+    benutzermenue: "قائمة المستخدم",
+    angemeldetAls: "تم تسجيل الدخول باسم",
     uebersicht: "إلى النظرة العامة",
     hilfe: "المساعدة",
     einstellungen: "الإعدادات",
@@ -32,7 +34,7 @@ export const ar: Texte = {
       "/einstellungen": "الإعدادات",
       "/fair": "FAIR",
       "/hilfe": "المساعدة",
-      "/hr": "شؤون الموظفين",
+      "/hr": "HR",
       "/hr/dokumente": "دورة المستندات",
       "/hr/einarbeitung": "التأهيل",
       "/hr/kennzahlen": "المؤشرات",
@@ -1471,7 +1473,7 @@ export const ar: Texte = {
       kennzahlen: "المؤشرات",
       kennzahlenText:
         "القيم المستهدفة للوحات. تظهر كخط هدف في التطوّر وتحدد متى تنذر البطاقة.",
-      personal: "شؤون الموظفين",
+      personal: "HR",
       personalText:
         "أي أنواع الغياب تُحتسب مرضاً وأي الأقسام تتبع الإنتاج. " +
         "بلا هاتين القائمتين تبقى نسب الموظفين فارغة.",
@@ -1832,7 +1834,7 @@ export const ar: Texte = {
       produktion: "الإنتاج",
       qualitaet: "الجودة",
       finanzen: "المالية",
-      personal: "شؤون الموظفين",
+      personal: "HR",
     },
   },
   erklaerung: {

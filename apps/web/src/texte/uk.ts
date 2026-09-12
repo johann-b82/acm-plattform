@@ -6,6 +6,8 @@ import type { Texte } from "@/texte/de";
  */
 export const uk: Texte = {
   kopf: {
+    benutzermenue: "Меню користувача",
+    angemeldetAls: "Ви увійшли як",
     uebersicht: "До огляду",
     hilfe: "Довідка",
     einstellungen: "Налаштування",
@@ -32,7 +34,7 @@ export const uk: Texte = {
       "/einstellungen": "Налаштування",
       "/fair": "FAIR",
       "/hilfe": "Довідка",
-      "/hr": "Персонал",
+      "/hr": "HR",
       "/hr/dokumente": "Обіг документів",
       "/hr/einarbeitung": "Адаптація",
       "/hr/kennzahlen": "Показники",
@@ -1479,7 +1481,7 @@ export const uk: Texte = {
       kennzahlenText:
         "Цільові значення дашбордів. Вони з’являються як лінія цілі в динаміці й вирішують, " +
         "з якого моменту плитка попереджає.",
-      personal: "Персонал",
+      personal: "HR",
       personalText:
         "Які відсутності рахуються як хвороба і які відділи належать до виробництва. Без цих " +
         "списків показники персоналу лишаються порожніми.",
@@ -1844,7 +1846,7 @@ export const uk: Texte = {
       produktion: "Виробництво",
       qualitaet: "Якість",
       finanzen: "Фінанси",
-      personal: "Персонал",
+      personal: "HR",
     },
   },
   erklaerung: {

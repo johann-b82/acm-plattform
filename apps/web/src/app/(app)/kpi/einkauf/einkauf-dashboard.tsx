@@ -27,6 +27,7 @@ import {
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -42,7 +43,7 @@ function datum(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("de-DE") : "—";
 }
 
-export function EinkaufDashboard() {
+export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
   const wahl = useZeitraumwahl();
@@ -95,7 +96,12 @@ export function EinkaufDashboard() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.einkauf.einleitung}
-        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="einkauf" />} />}
+        bedienung={
+          <>
+            {darfUploads && <UploadVerweis />}
+            <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="einkauf" />} />
+          </>
+        }
       />
 
       {fehler && (

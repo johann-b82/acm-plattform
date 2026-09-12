@@ -21,7 +21,7 @@ export const TITEL = {
   "/einstellungen": "Einstellungen",
   "/fair": "FAIR",
   "/hilfe": "Hilfe",
-  "/hr": "Personal",
+  "/hr": "HR",
   "/hr/dokumente": "Dokumentenlauf",
   "/hr/einarbeitung": "Einarbeitung",
   "/hr/kennzahlen": "Kennzahlen",

@@ -21,6 +21,7 @@ import { produktionApi } from "@/lib/kpi/produktion";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Badge, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
+import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -35,7 +36,7 @@ function datum(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("de-DE") : "—";
 }
 
-export function ProduktionDashboard() {
+export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
   const wahl = useZeitraumwahl();
@@ -86,7 +87,12 @@ export function ProduktionDashboard() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.produktion.einleitung}
-        bedienung={<Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="produktion" />} />}
+        bedienung={
+          <>
+            {darfUploads && <UploadVerweis />}
+            <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="produktion" />} />
+          </>
+        }
       />
 
       {fehler && (

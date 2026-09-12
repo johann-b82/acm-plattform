@@ -6,6 +6,8 @@ import type { Texte } from "@/texte/de";
  */
 export const vi: Texte = {
   kopf: {
+    benutzermenue: "Menu người dùng",
+    angemeldetAls: "Đăng nhập với",
     uebersicht: "Về trang tổng quan",
     hilfe: "Trợ giúp",
     einstellungen: "Cài đặt",
@@ -32,7 +34,7 @@ export const vi: Texte = {
       "/einstellungen": "Cài đặt",
       "/fair": "FAIR",
       "/hilfe": "Trợ giúp",
-      "/hr": "Nhân sự",
+      "/hr": "HR",
       "/hr/dokumente": "Luồng tài liệu",
       "/hr/einarbeitung": "Hội nhập",
       "/hr/kennzahlen": "Chỉ số",
@@ -1491,7 +1493,7 @@ export const vi: Texte = {
       kennzahlenText:
         "Giá trị mục tiêu của các bảng chỉ số. Chúng xuất hiện thành đường mục tiêu trong " +
         "biểu đồ và quyết định khi nào một ô cảnh báo.",
-      personal: "Nhân sự",
+      personal: "HR",
       personalText:
         "Những loại vắng mặt nào tính là nghỉ ốm và những bộ phận nào thuộc sản xuất. " +
         "Không có các danh sách này thì các tỷ lệ nhân sự còn để trống.",
@@ -1858,7 +1860,7 @@ export const vi: Texte = {
       produktion: "Sản xuất",
       qualitaet: "Chất lượng",
       finanzen: "Tài chính",
-      personal: "Nhân sự",
+      personal: "HR",
     },
   },
   erklaerung: {

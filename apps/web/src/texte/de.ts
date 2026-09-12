@@ -11,6 +11,8 @@ import { TITEL, type Pfadtitel } from "@/lib/brotkrumen";
  */
 export const de = {
   kopf: {
+    benutzermenue: "Benutzermenü",
+    angemeldetAls: "Angemeldet als",
     uebersicht: "Zur Übersicht",
     hilfe: "Hilfe",
     einstellungen: "Einstellungen",
@@ -662,7 +664,7 @@ export const de = {
     einleitung:
       "Was eine Stelle verlangt und wie weit es erfüllt ist — je Bereich eine Matrix. " +
       "Eingelesen aus der Bereichsdatei, danach hier gepflegt.",
-    zumDashboard: "Zum Personal-Dashboard",
+    zumDashboard: "Zum HR-Dashboard",
     bereich: "Bereich",
     wirdGelesen: "Wird gelesen …",
     einlesen: "Bereichsdatei einlesen",
@@ -1312,7 +1314,7 @@ export const de = {
     neuEinfrieren: "Neu einfrieren",
     rechtFehlt: (quelle: string) => `Dafür fehlt das Recht an der Quelle: ${quelle} sehen.`,
     quelleKpi: "Kennzahlen",
-    quellePersonal: "Personal",
+    quellePersonal: "HR",
     ausgabeAngelegt: "Ausgabe angelegt.",
     ausgabeGeloescht: "Ausgabe gelöscht.",
     kapitelAngelegt: "Kapitel angelegt.",
@@ -1457,7 +1459,7 @@ export const de = {
       kennzahlenText:
         "Zielwerte der Dashboards. Sie erscheinen als Ziellinie im Verlauf und entscheiden, ab " +
         "wann eine Kachel warnt.",
-      personal: "Personal",
+      personal: "HR",
       personalText:
         "Welche Abwesenheiten als Krankheit zählen und welche Abteilungen zur Produktion gehören. " +
         "Ohne diese Listen bleiben die Personalquoten leer.",
@@ -1494,7 +1496,7 @@ export const de = {
     speichernFehler: (meldung: string) => `Speichern fehlgeschlagen: ${meldung}`,
     zielwertGespeichert: "Zielwert gespeichert. Die Dashboards zeigen ihn nach dem Neuladen.",
     zahlAbNull: "Bitte eine Zahl ab 0 eingeben.",
-    personalGespeichert: "Gespeichert. Das Personal-Dashboard zeigt es nach dem Neuladen.",
+    personalGespeichert: "Gespeichert. Das HR-Dashboard zeigt es nach dem Neuladen.",
     krankTypen: "Abwesenheitsarten, die als Krankheit zählen",
     produktionAbteilungen: "Abteilungen der Produktion",
     kompetenzAttribute: "Personio-Felder, die als gepflegte Kompetenz zählen",
@@ -1824,7 +1826,7 @@ export const de = {
       produktion: "Produktion",
       qualitaet: "Qualität",
       finanzen: "Finanzen",
-      personal: "Personal",
+      personal: "HR",
     },
   },
   erklaerung: {

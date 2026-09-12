@@ -62,7 +62,7 @@ Die Meldung nennt die Ursache im Klartext. Die drei häufigsten:
       text: `
 # Schulungen
 
-Unter **Personal → Schulungen**. Drei Ansichten auf dieselben Daten.
+Unter **HR → Schulungen**. Drei Ansichten auf dieselben Daten.
 
 ## Der Katalog
 
@@ -123,7 +123,7 @@ gepflegt ist.
       text: `
 # Kompetenzen
 
-Unter **Personal → Kompetenzen**.
+Unter **HR → Kompetenzen**.
 
 ## Was drinsteht
 
@@ -148,7 +148,7 @@ Excel übernommen: ändert sich eine Bewertung, stimmt der Schnitt sofort.
       text: `
 # Onboarding und Einarbeitung
 
-Unter **Personal → Onboarding** und **Personal → Einarbeitung**.
+Unter **HR → Onboarding** und **HR → Einarbeitung**.
 
 ## Die Eintrittsliste
 
@@ -191,7 +191,7 @@ gedruckt worden".
 
 ## Einarbeitungsinhalte
 
-Unter **Personal → Einarbeitung** steht, welcher Inhalt für welche Abteilung
+Unter **HR → Einarbeitung** steht, welcher Inhalt für welche Abteilung
 nötig ist und wer dafür Ansprechpartner ist. Der Ansprechpartner hängt am
 Inhalt, nicht an der Abteilung — dieselbe Sicherheitsunterweisung wird für alle
 von derselben Person gemacht.
@@ -204,7 +204,7 @@ von derselben Person gemacht.
       text: `
 # Organigramm
 
-Unter **Personal → Organigramm**.
+Unter **HR → Organigramm**.
 
 ## Woher es kommt
 
@@ -245,7 +245,7 @@ vorlesen — und ausdrucken, ohne dass etwas abgeschnitten wird.
       text: `
 # Dokumentenlauf
 
-Unter **Personal → Dokumentenlauf**.
+Unter **HR → Dokumentenlauf**.
 
 ## Wofür
 
@@ -309,7 +309,7 @@ abgeschnitten. Neu einscannen, gerade und mit mindestens 300 dpi.
       text: `
 # Zeugnisse
 
-Unter **Personal → Zeugnisse**. Nötig ist *Bearbeiten* auf Personal — eine
+Unter **HR → Zeugnisse**. Nötig ist *Bearbeiten* auf Personal — eine
 reine Lesestufe gibt es hier nicht.
 
 ## Der Ablauf

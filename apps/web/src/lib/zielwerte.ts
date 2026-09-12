@@ -29,7 +29,7 @@ export const BEREICH_LABEL: Record<string, string> = {
   produktion: "Produktion",
   qualitaet: "Qualität",
   finanzen: "Finanzen",
-  personal: "Personal",
+  personal: "HR",
 };
 
 export const zielwerteKeys = {
