@@ -89,20 +89,83 @@ statt die Bedingung zu wiederholen.
 Im Altprojekt hängen ATR und FAIR an einer gemeinsamen Zwischenrolle „QS", weil
 es nur Admin und Viewer gab. Mit App-Rechten entfällt sie.
 
+## Zeichnungsliste
+
+Eine flache Tabelle (FAI-01) — die aufklappbaren Kundengruppen des Altsystems
+sind bewusst nicht übernommen. Über der Tabelle wählt man einen Kunden, alle
+oder „ohne Kunde“; Kunden werden dafür getrimmt verglichen (`lib/fair/kunden.ts`).
+Sortieren, Suchen und Blättern macht die gemeinsame `Datentabelle`.
+
+## Editor
+
+**Projektkopf.** Über der Zeichnung stehen Kunde, Artikelnr. und P/N
+(`kunde`, `artikelnummer`, `teilenummer` der Zeichnung). Wie im Altsystem gibt
+es keinen eigenen Bearbeiten-Modus: das Feld speichert beim Verlassen oder mit
+Enter, getrimmt, leer heißt kein Wert. Wer nur lesen darf, sieht Text.
+
+**Prüfliste neben der Zeichnung.** Ab Desktop-Breite (`lg`, 1024 px) rechts,
+darunter auf schmaleren Bildschirmen. Die Zeichnung bleibt beim Blättern stehen (`sticky`).
+
+**Bubblegröße.** Ein zweites Minus/Plus-Paar nach Einpassen („Bubbles
+kleiner“/„Bubbles größer“) skaliert Blase und Nummer aller Ballons gemeinsam —
+nicht Feld, Lage oder Zoom. Wie im Altsystem: Schritte von 18 %, Grenzen 0,4 bis
+3, gemerkt im Browser für alle Zeichnungen (`lib/fair/ballon-groesse.ts`). Eine
+Schriftgröße je Ballon gibt es nicht: die Nummer ist ein fester Anteil der
+Blase (`ballonPixel`), sonst passte sie bei kleinen Blasen nicht hinein. Die
+PDF-Ausgabe zeichnet mit derselben Größe.
+
+## Reihenfolge und Sortierung
+
+Die Nummer **ist** die Reihenfolge. Verschieben — per Griff (Drag-and-drop)
+oder per Pfeil als Tastaturweg — schickt die vollständige neue Folge an
+`fair_reihenfolge`; der Ballon behält Feld, Blase und Wert und bekommt nur eine
+andere Nummer, auf der Zeichnung wie in CSV und PDF.
+
+Die Prüfliste sortiert und sucht wie jede Tabelle (TAB-02/03). Das ist der
+Sonderfall: Verschieben geht nur, solange sie die Nummernfolge zeigt — ohne
+Suche und unsortiert oder nach Nr aufsteigend. Nach Wert sortiert hieße „nach
+oben“ etwas anderes als die Nummer davor, und eine manuelle Reihenfolge würde
+unsichtbar verändert. Griffe und Pfeile sind dann gesperrt, ein Hinweis sagt
+warum. Gezogen wird innerhalb der sichtbaren Seite; über Seitengrenzen tragen
+die Pfeile.
+
+## OCR je Zeile
+
+Der Kreis-Pfeil in jeder Zeile („OCR für diese Zeile neu starten“) liest das
+gespeicherte Feld des Ballons neu, wie `reocrBalloon` im Altsystem: frisch aus
+der Originaldatei gerastert, lange Kante 1400 px, unabhängig vom Zoom; mit
+weißem Rand in allen vier Lagen, die beste Lesung gewinnt
+(`lib/fair/ocr.ts`, `[id]/raster.ts`).
+
+Das Ergebnis geht nur in diese Zeile. Ein leeres Feld wird direkt gefüllt;
+steht schon ein **anderer** Wert darin, fragt ein Dialog vor dem Ersetzen —
+das Altsystem überschreibt still, hier war ausdrücklich verlangt, getippte
+Werte nicht ungefragt zu ersetzen. Nichts erkannt oder Fehler: Meldung, der
+Wert bleibt.
+
+**Alles vom eigenen Server.** tesseract.js lädt Arbeiter, Kern und Sprachdaten
+sonst von jsdelivr. Hier gelten feste Pfade unter `/tesseract`:
+
+| Datei | Herkunft |
+|---|---|
+| `worker.min.js`, `tesseract-core-*-lstm.wasm.js` | `scripts/tesseract-dateien.mjs` kopiert sie vor `dev` und `build` aus `node_modules` (nicht eingecheckt) |
+| `lang/deu.traineddata.gz`, `lang/eng.traineddata.gz` | eingecheckt (tessdata 4.0.0, dieselben Dateien wie im Altsystem) — es gibt sie in keinem installierten Paket, und ein Abruf beim Bauen bräuchte Internet |
+
+Der Arbeiter startet erst beim ersten OCR-Klick, nicht beim Öffnen: wer nur
+ansieht, lädt die rund 18 MB Sprachdaten nicht. Beim Setzen eines neuen Ballons
+liest die Plattform — anders als das Altsystem — noch nicht automatisch vor;
+nach dem Setzen füllt der Knopf in der Zeile das leere Feld.
+
 ## Ausgabe
 
 Die Prüfliste geht als Tabulatortext in die Zwischenablage (direkt in Excel
 einfügbar) oder als CSV mit Semikolon und BOM — was deutsches Excel beim
 Doppelklick erwartet.
 
-## Was fehlt
-
-**OCR.** Das Altprojekt liest den Wert im markierten Feld mit `tesseract.js`
-und trägt ihn vor. Das ist bequem, kostet aber 47 MB mitgelieferte Laufzeit im
-Abbild und einen Download von einem fremden Host im Build — für einen Stack,
-der im LAN ohne Internet laufen soll, eine eigene Entscheidung. Bis dahin wird
-der Wert in der Prüfliste getippt.
-
-**PDF-Ausgabe mit Ballons.** Das Altprojekt kann die ballonierte Zeichnung als
-PDF ausgeben. Der Weg dafür steht bereit — die Ballonebene ist ein SVG in
-Seitenkoordinaten, dieselbe Rechnung wie am Bildschirm.
+**PDF.** Wie „PDF exportieren“ im Altsystem: jede Seite der Zeichnung in ihrer
+Größe und in der Drehung der Ansicht, die Ballons als Vektoren darauf. Die
+Nummern stehen aufrecht. Dazu kommt eine Prüfliste mit Projektkopf, damit das
+PDF allein als Prüfbericht taugt. Anders als im Altsystem (`pdf-lib`, Vektorseite
+eingebettet) wird die Zeichnung mit lange Kante 3000 px gerastert — `jspdf` kann
+keine PDF-Seiten einbetten, und eine zweite PDF-Bibliothek nur dafür lohnt
+nicht. Die Erzeugung ist eine reine Funktion (`lib/fair/pdf.ts`) mit Prüfungen.
