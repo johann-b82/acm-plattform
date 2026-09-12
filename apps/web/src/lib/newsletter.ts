@@ -80,6 +80,11 @@ export interface Kapitel {
   newsletter_eintrag: Eintrag[];
 }
 
+/** Das Quartal, in das ein Tag fällt — Vorgabe für eine neue Ausgabe. */
+export function quartalVon(tag: Date): number {
+  return Math.floor(tag.getMonth() / 3) + 1;
+}
+
 export const newsletterKeys = {
   ausgaben: () => ["newsletter", "ausgaben"] as const,
   ausgabe: (id: string) => ["newsletter", "ausgabe", id] as const,
