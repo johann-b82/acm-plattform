@@ -35,6 +35,24 @@ describe("Wochenzeilen verdichten", () => {
     ]);
   });
 
+  it("hält Besuche vor Ort und online getrennt, ohne doppelt zu zählen", () => {
+    const [woche] = verdichte(
+      [
+        zeile({ erfasser: "MM", besuche_ort: 1, besuche_onl: 2 }),
+        zeile({ erfasser: "SB", besuche_ort: 1 }),
+      ],
+      [],
+    );
+    expect(woche.besuche_ort).toBe(2);
+    expect(woche.besuche_onl).toBe(2);
+    expect(woche.besuche).toBe(woche.besuche_ort + woche.besuche_onl);
+    expect(woche.anteile.besuche_ort).toEqual([
+      ["MM", 1],
+      ["SB", 1],
+    ]);
+    expect(woche.anteile.besuche_onl).toEqual([["MM", 2]]);
+  });
+
   it("lässt Vertriebler ohne Beitrag aus dem Tooltip", () => {
     const [woche] = verdichte(
       [

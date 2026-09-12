@@ -3,9 +3,11 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
+  Legend,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -19,13 +21,20 @@ import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { Card } from "@/components/ui/primitives";
+import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 
 /**
- * Vertriebsaktivität: fünf Balkendiagramme über dieselbe Wochenachse.
+ * Vertriebsaktivität: fünf Diagramme über dieselbe Wochenachse, je als
+ * Balken oder Fläche (VER-04B).
  *
- * Der Balken ist die Wochensumme über alle Vertriebler; wer wie viel
+ * Der Wert ist die Wochensumme über alle Vertriebler; wer wie viel
  * beigetragen hat, steht im Tooltip. Die Datenbank liefert genau dafür eine
  * Zeile je Woche und Vertriebler — eine Abfrage für Balken und Aufteilung.
+ *
+ * Besuche stehen getrennt nach vor Ort und online übereinander (VER-04C), wie
+ * in `SalesActivityCard.tsx`. Gestapelt auch als Fläche: anders als Vorjahr
+ * und laufendes Jahr sind die beiden Arten Teile einer Summe, und das Ziel
+ * „3 / Woche“ gilt dieser Summe — es wird nicht je Art verdoppelt.
  *
  * Die Karte hängt nicht am Zeitraumwähler des Dashboards: sie zeigt Wochen,
  * und „Dieser Monat" ergäbe vier Balken. Siehe `wochenfenster`.
@@ -45,10 +54,14 @@ interface Woche {
   anteile: Record<string, [string, number][]>;
 }
 
-type Feld = "erstkontakte" | "besuche" | "angebote_eur" | "auftraege_eur" | "interessenten";
+type Feld = "erstkontakte" | "besuche_ort" | "besuche_onl" | "angebote_eur" | "auftraege_eur" | "interessenten";
 
 const DIAGRAMME: {
-  feld: Feld;
+  schluessel: string;
+  /** Die gezeichneten Reihen; mehr als eine wird gestapelt. */
+  reihen: Feld[];
+  /** Die Wochensumme — für Achsenbreite und Ziellinie. */
+  summe: Feld | "besuche";
   /** Schlüssel im Wörterbuch; `<name>Hinweis` ist die Zeile darunter. */
   wort: "erstkontakte" | "besuche" | "interessenten" | "angebote" | "auftragseingang";
   zielSchluessel: string;
@@ -57,41 +70,61 @@ const DIAGRAMME: {
   mitAnteilen: boolean;
 }[] = [
   {
-    feld: "erstkontakte",
+    schluessel: "erstkontakte",
+    reihen: ["erstkontakte"],
+    summe: "erstkontakte",
     wort: "erstkontakte",
     zielSchluessel: "vertrieb_erstkontakte",
     einheit: "anzahl",
     mitAnteilen: true,
   },
   {
-    feld: "besuche",
+    schluessel: "besuche",
+    reihen: ["besuche_ort", "besuche_onl"],
+    summe: "besuche",
     wort: "besuche",
     zielSchluessel: "vertrieb_besuche",
     einheit: "anzahl",
     mitAnteilen: true,
   },
   {
-    feld: "interessenten",
+    schluessel: "interessenten",
+    reihen: ["interessenten"],
+    summe: "interessenten",
     wort: "interessenten",
     zielSchluessel: "vertrieb_interessenten",
     einheit: "anzahl",
     mitAnteilen: false,
   },
   {
-    feld: "angebote_eur",
+    schluessel: "angebote",
+    reihen: ["angebote_eur"],
+    summe: "angebote_eur",
     wort: "angebote",
     zielSchluessel: "vertrieb_angebote_eur",
     einheit: "eur",
     mitAnteilen: true,
   },
   {
-    feld: "auftraege_eur",
+    schluessel: "auftraege",
+    reihen: ["auftraege_eur"],
+    summe: "auftraege_eur",
     wort: "auftragseingang",
     zielSchluessel: "vertrieb_auftraege_eur",
     einheit: "eur",
     mitAnteilen: true,
   },
 ];
+
+/** Die zweite Besuchsart in einem helleren Ton derselben Farbe — Teil derselben Summe. */
+const FARBE: Record<Feld, string> = {
+  erstkontakte: "var(--ring)",
+  besuche_ort: "var(--ring)",
+  besuche_onl: "color-mix(in oklab, var(--ring) 45%, var(--surface))",
+  angebote_eur: "var(--ring)",
+  auftraege_eur: "var(--ring)",
+  interessenten: "var(--ring)",
+};
 
 function anteileHinzu(
   ziel: Record<string, [string, number][]>,
@@ -145,7 +178,8 @@ export function verdichte(
     w.angebote_eur += ang;
     w.auftraege_eur += auf;
     anteileHinzu(w.anteile, "erstkontakte", z.erfasser, ers);
-    anteileHinzu(w.anteile, "besuche", z.erfasser, ort + onl);
+    anteileHinzu(w.anteile, "besuche_ort", z.erfasser, ort);
+    anteileHinzu(w.anteile, "besuche_onl", z.erfasser, onl);
     anteileHinzu(w.anteile, "angebote_eur", z.erfasser, ang);
     anteileHinzu(w.anteile, "auftraege_eur", z.erfasser, auf);
   }
@@ -159,7 +193,8 @@ export function verdichte(
 
 function Diagramm({
   daten,
-  feld,
+  reihen,
+  summe,
   titel,
   hinweis,
   ziel,
@@ -167,7 +202,8 @@ function Diagramm({
   mitAnteilen,
 }: {
   daten: Woche[];
-  feld: Feld;
+  reihen: Feld[];
+  summe: Feld | "besuche";
   titel: string;
   hinweis: string;
   ziel: number | undefined;
@@ -176,8 +212,12 @@ function Diagramm({
 }) {
   const worte = useTexte();
   const fmt = useFormate();
+  const [art, setArt] = useDiagrammart();
   const zeige = einheit === "eur" ? fmt.eur : fmt.zahl;
   const zeigeGenau = einheit === "eur" ? fmt.eurGenau : fmt.zahl;
+  const gestapelt = reihen.length > 1;
+  const reihenname = (feld: Feld) =>
+    feld === "besuche_ort" ? worte.aktivitaet.besucheOrt : feld === "besuche_onl" ? worte.aktivitaet.besucheOnline : titel;
 
   // Die Achse muss so breit sein wie ihre längste Beschriftung. Eine feste
   // Breite reichte, solange die Angebote fünfstellig waren; mit den echten
@@ -185,21 +225,26 @@ function Diagramm({
   // abgeschnitten. Gerechnet wird über den größten Wert, nicht über alle —
   // die längste Zahl ist immer die größte.
   const achsenbreite = useMemo(() => {
-    const groesster = daten.reduce((h, w) => Math.max(h, Number(w[feld] ?? 0)), 0);
+    const groesster = daten.reduce((h, w) => Math.max(h, Number(w[summe] ?? 0)), 0);
     const zeichen = zeige(groesster).length;
     return Math.min(96, Math.max(36, 12 + zeichen * 7));
-  }, [daten, feld, zeige]);
+  }, [daten, summe, zeige]);
 
   return (
     <Card className="p-4">
-      <h3 className="text-sm font-semibold">{titel}</h3>
-      <p className="mt-0.5 text-xs text-[var(--fg-muted)]">
-        {hinweis}
-        {ziel != null && <> · {worte.aktivitaet.ziel(zeige(ziel))}</>}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">{titel}</h3>
+          <p className="mt-0.5 text-xs text-[var(--fg-muted)]">
+            {hinweis}
+            {ziel != null && <> · {worte.aktivitaet.ziel(zeige(ziel))}</>}
+          </p>
+        </div>
+        <DiagrammartWahl art={art} onChange={setArt} />
+      </div>
       <div className="mt-3 h-44">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={daten} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+          <ComposedChart data={daten} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="label"
@@ -226,9 +271,9 @@ function Diagramm({
                 borderRadius: 8,
                 color: "var(--fg)",
               }}
-              formatter={(wert, _name, eintrag) => {
+              formatter={(wert, name, eintrag) => {
                 const woche = eintrag?.payload as Woche | undefined;
-                const anteile = mitAnteilen ? (woche?.anteile[feld] ?? []) : [];
+                const anteile = mitAnteilen ? (woche?.anteile[String(eintrag?.dataKey)] ?? []) : [];
                 const aufteilung = anteile
                   .slice()
                   .sort((a, b) => b[1] - a[1])
@@ -241,7 +286,7 @@ function Diagramm({
                   aufteilung
                     ? `${zeigeGenau(Number(wert))}  (${aufteilung})`
                     : zeigeGenau(Number(wert)),
-                  titel,
+                  String(name),
                 ] as [string, string];
               }}
               labelFormatter={(label, nutzlast) => {
@@ -251,6 +296,7 @@ function Diagramm({
                   : String(label);
               }}
             />
+            {gestapelt && <Legend verticalAlign="top" height={20} iconSize={10} wrapperStyle={{ fontSize: 11 }} />}
             {ziel != null && (
               <ReferenceLine
                 y={ziel}
@@ -266,14 +312,36 @@ function Diagramm({
                 ifOverflow="extendDomain"
               />
             )}
-            <Bar
-              dataKey={feld}
-              fill="var(--ring)"
-              radius={[3, 3, 0, 0]}
-              isAnimationActive={false}
-              maxBarSize={28}
-            />
-          </BarChart>
+            {reihen.map((feld, i) =>
+              art === "balken" ? (
+                <Bar
+                  key={feld}
+                  dataKey={feld}
+                  name={reihenname(feld)}
+                  stackId={gestapelt ? "summe" : undefined}
+                  fill={FARBE[feld]}
+                  // Runde Ecken nur oben auf dem Stapel.
+                  radius={i === reihen.length - 1 ? [3, 3, 0, 0] : 0}
+                  isAnimationActive={false}
+                  maxBarSize={28}
+                />
+              ) : (
+                <Area
+                  key={feld}
+                  type="monotone"
+                  dataKey={feld}
+                  name={reihenname(feld)}
+                  stackId={gestapelt ? "summe" : undefined}
+                  stroke={FARBE[feld]}
+                  strokeWidth={2}
+                  fill={FARBE[feld]}
+                  fillOpacity={0.3}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              ),
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
     </Card>
@@ -328,9 +396,10 @@ export function AktivitaetKarte({ von, bis }: { von: string | null; bis: string 
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {DIAGRAMME.map((d) => (
             <Diagramm
-              key={d.feld}
+              key={d.schluessel}
               daten={daten}
-              feld={d.feld}
+              reihen={d.reihen}
+              summe={d.summe}
               titel={worte.aktivitaet[d.wort]}
               hinweis={worte.aktivitaet[`${d.wort}Hinweis`]}
               ziel={zielNach[d.zielSchluessel]}
