@@ -27,7 +27,7 @@ Sicht mit `security_invoker`. Es gelten die Policies aus 0004, 0005 und 0011.
 from alembic import op
 
 revision = "0042_einkauf_produktion"
-down_revision = "0040_bereich_hr"
+down_revision = "0044_qualitaet_abgleich"
 branch_labels = None
 depends_on = None
 
