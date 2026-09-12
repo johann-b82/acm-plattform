@@ -209,7 +209,7 @@ export const bg: Texte = {
     erstkontakte: "Първи контакти",
     erstkontakteHinweis: "приключени контакти от тип ERS",
     besuche: "Посещения",
-    besucheHinweis: "на място и онлайн заедно",
+    besucheHinweis: "на място и онлайн поотделно",
     besucheOrt: "на място",
     besucheOnline: "онлайн",
     interessenten: "Потенциални клиенти",

@@ -209,7 +209,7 @@ export const fa: Texte = {
     erstkontakte: "تماس‌های نخست",
     erstkontakteHinweis: "تماس‌های انجام‌شده از نوع ERS",
     besuche: "بازدیدها",
-    besucheHinweis: "حضوری و برخط با هم",
+    besucheHinweis: "حضوری و برخط جداگانه",
     besucheOrt: "حضوری",
     besucheOnline: "برخط",
     interessenten: "مشتریان بالقوه",

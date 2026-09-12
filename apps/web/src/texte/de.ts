@@ -177,7 +177,7 @@ export const de = {
     erstkontakte: "Erstkontakte",
     erstkontakteHinweis: "erledigte Kontakte vom Typ ERS",
     besuche: "Besuche",
-    besucheHinweis: "vor Ort und online zusammen",
+    besucheHinweis: "vor Ort und online getrennt",
     besucheOrt: "vor Ort",
     besucheOnline: "online",
     interessenten: "Interessenten",
