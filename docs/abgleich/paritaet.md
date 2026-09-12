@@ -27,3 +27,30 @@ Vergleichsfenster Referenz: `frontend/src/lib/prevBounds.ts` — Vormonat/Vorqua
 Ursache der früheren Abweichung: die Plattform verglich „Dieser Monat“ (01.–12.09.) mit dem gleich langen Fenster 20.–31.08., die Referenz mit 01.–12.08.
 
 Referenzwerte: Periodenprüfung der Übergabe vom 12.09.2026 (Referenzoberfläche). Lokale Werte: Browserprüfung am 12.09.2026 nach lokalem Deployment des Zweigs `feat/abgleich-grundlagen`.
+
+## Vertrieb — Kundenanteile, Einzelaufträge, Verlauf (VER-03A, VER-03B, VER-04A/B/C, KPI-06)
+
+**Kundenanteile.** Rechenweg Referenz `compute_customer_share` (`sales_kpi_aggregation.py:300-373`): `SUM(wert_eur)` je `customer_name` im Fenster, kein `> 0`-Filter; Frontend Top 3, aufklappbar bis 14, Rest = Gesamt − sichtbare Summe (`CustomerShareCard.tsx`). Neu `kpi_vertrieb_kundenanteil` mit `top_n => null` (Migration 0041) und `kundensaeulen` im Frontend. Lokale Rohwerte „Dieses Jahr“ 01.01.–12.09.2026:
+
+| Grundlage | Kunde | Referenz | Lokal (Rohwert) | Status |
+|---|---|---:|---:|---|
+| Aufträge | Diehl Aviation Laupheim GmbH | 3.389.006 € · 69,1 % | 3.389.006,05 € · 69,1 % | bestanden |
+| Aufträge | Ethiopian Airlines | 416.272 € · 8,5 % | 416.272,47 € · 8,5 % | bestanden |
+| Aufträge | B/E Aerospace Fischer GmbH | 364.516 € · 7,4 % | 364.515,90 € · 7,4 % | bestanden |
+| Aufträge | Rest | 736.491 € · 15,0 % | 736.490,73 € · 15,0 % | bestanden |
+| Rechnungen | Diehl Aviation Laupheim GmbH | 3.713.342 € · 78,0 % | 3.713.342,46 € · 78,0 % | bestanden |
+| Rechnungen | Pilatus Aircraft Ltd | 249.885 € · 5,3 % | 249.884,84 € · 5,2 % | Anzeigerundung |
+| Rechnungen | Aircraft Cabin Modification FZE | 228.696 € · 4,8 % | 228.696,15 € · 4,8 % | bestanden |
+| Rechnungen | Rest | 568.780 € · 11,9 % | 568.779,66 € · 11,9 % | bestanden |
+
+Gesamt Aufträge 4.906.285,15 €, Rechnungen 4.760.703,11 € (= Kachel Umsatz). Pilatus: 249.884,84 / 4.760.703,11 = 5,2489 %. Die Referenz rundet erst auf 5,25 (`round(…, 2)`) und dann noch einmal auf eine Stelle (`toFixed(1)`) — daraus wird 5,3 %. Die Plattform rundet einmal: 5,2 %. Betrag und Anteil sind dieselben.
+
+„Alles“: die Referenz lädt ohne Von/Bis nichts (`enabled: Boolean(from && to)`); die Plattform rechnet über den ganzen Bestand (E-03).
+
+**Einzelaufträge — 198 gegen 381.** Die Tabelle der Referenz (`SalesTable.tsx`) liest `sales_records`, den 60-Spalten-Altexport, der seit v1.54 für keine Kennzahl mehr benutzt wird; sie lädt höchstens 500 Zeilen. Die Kachel „Aufträge gesamt“ zählt `auftraege` mit `wert_eur > 0`. Beide Mengen stammen aus verschiedenen Tabellen und Importständen; `sales_records` gibt es in der Plattform nicht. Die neue Tabelle zeigt genau die Menge der Kachel: „Dieses Jahr“ 381 Aufträge (von 417 im Zeitraum; 36 mit 0 € zählen nicht), „Alles“ 1.065 (= Kachel) über zwei PostgREST-Seiten. Projekt und Restwert gibt es nur in `sales_records`; beide Spalten entfallen.
+
+**Umsatzverlauf.** Vergleichsreihe wie `chartComparisonMode.ts` (Monat/Quartal → Vorperiode, Jahr → Vorjahr, Alles → keine), freier Zeitraum → Vorjahr. Anders als `routers/kpis.py:181-193` paart die Plattform Buckets über eine vollständige Achse beider Fenster: fehlt in der Referenz ein Monat ohne Umsatz, verschiebt sich die restliche Vorjahresreihe.
+
+**Besuche.** `sales_contacts`, `status = 1`, `ORT` vor Ort, `ONL` online, gestapelt; Ziel „3 / Woche“ gilt der Summe (`SalesActivityCard.tsx`, `sales_kpi_aggregation.py:57,85-88`).
+
+**KPI-06.** Umsatz und Aufträge gesamt: mehr ist günstig. Ø Auftragswert: neutral — offen zur fachlichen Entscheidung, weil er auch steigt, wenn kleine Aufträge wegfallen.
