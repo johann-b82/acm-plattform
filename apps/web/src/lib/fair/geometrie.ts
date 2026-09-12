@@ -165,6 +165,27 @@ export function ausDrehung(
   }
 }
 
+/** Kanonische px → gedrehter Kasten (px). Umkehrung von `ausDrehung`; die
+ *  PDF-Ausgabe legt damit Ballons auf die gedrehte Seite. */
+export function inDrehung(
+  x: number,
+  y: number,
+  b: number,
+  h: number,
+  d: Drehung,
+): Punkt {
+  switch (d) {
+    case 90:
+      return { x: h - y, y: x };
+    case 180:
+      return { x: b - x, y: h - y };
+    case 270:
+      return { x: y, y: b - x };
+    default:
+      return { x, y };
+  }
+}
+
 // ── Der Ballon selbst ──────────────────────────────────────────────────────
 
 export const FARBEN = {
