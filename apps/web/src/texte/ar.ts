@@ -1063,6 +1063,7 @@ export const ar: Texte = {
     nichtsGefunden:
       "لم يُعثر على شيء. إن كان شيء ناقصاً في المساعدة، أبلِغ عنه بزر الإبلاغ أسفل اليسار.",
     alleThemen: "→ كل المواضيع",
+    navigation: "مواضيع المساعدة",
   },
   meldungen: {
     stand: (offen: number) => `ما أُبلغ عنه من الشاشات. ${offen} مفتوح`,

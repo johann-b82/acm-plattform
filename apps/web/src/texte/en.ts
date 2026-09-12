@@ -1075,6 +1075,7 @@ export const en: Texte = {
       "Nothing found. If something is missing from the help, say so with the Report button at the " +
       "bottom right.",
     alleThemen: "← All topics",
+    navigation: "Help topics",
   },
   meldungen: {
     stand: (offen: number) => `What was reported from the views. ${offen} open`,

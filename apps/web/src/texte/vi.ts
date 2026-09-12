@@ -1078,6 +1078,7 @@ export const vi: Texte = {
     nichtsGefunden:
       "Không tìm thấy gì. Nếu trợ giúp còn thiếu điều gì, hãy nói qua nút Phản hồi ở dưới bên phải.",
     alleThemen: "← Tất cả chủ đề",
+    navigation: "Chủ đề trợ giúp",
   },
   meldungen: {
     stand: (offen: number) => `Những gì đã được phản ánh từ các màn hình. ${offen} đang mở`,

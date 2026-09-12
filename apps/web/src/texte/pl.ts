@@ -1082,6 +1082,7 @@ export const pl: Texte = {
       "Nic nie znaleziono. Jeśli czegoś w pomocy brakuje, powiedz to przyciskiem Zgłoś na " +
       "dole po prawej.",
     alleThemen: "← Wszystkie tematy",
+    navigation: "Tematy pomocy",
   },
   meldungen: {
     stand: (offen: number) => `Co zgłoszono z widoków. Otwartych: ${offen}`,

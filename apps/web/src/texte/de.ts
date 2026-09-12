@@ -1042,6 +1042,7 @@ export const de = {
     nichtsGefunden:
       "Nichts gefunden. Steht etwas nicht in der Hilfe, sag es über den Melden-Knopf unten rechts.",
     alleThemen: "← Alle Themen",
+    navigation: "Hilfethemen",
   },
   meldungen: {
     stand: (offen: number) => `Was aus den Ansichten gemeldet wurde. ${offen} offen`,

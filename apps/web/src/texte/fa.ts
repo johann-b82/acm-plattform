@@ -1068,6 +1068,7 @@ export const fa: Texte = {
     nichtsGefunden:
       "چیزی یافت نشد. اگر چیزی در راهنما نیست، آن را با دکمهٔ گزارش در پایین سمت چپ بگویید.",
     alleThemen: "→ همهٔ موضوع‌ها",
+    navigation: "موضوع‌های راهنما",
   },
   meldungen: {
     stand: (offen: number) => `آنچه از نماها گزارش شده است. ${offen} باز`,
