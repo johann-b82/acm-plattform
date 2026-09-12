@@ -256,9 +256,9 @@ export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
         </Card>
       )}
 
-      {/* Fachliche Richtung der Vergleichsfarbe (KPI-06): mehr Umsatz und mehr
-          Aufträge sind günstig. Der Ø Auftragswert bleibt neutral — er steigt
-          auch, wenn kleine Aufträge wegfallen, und ist für sich kein Erfolg. */}
+      {/* Fachliche Richtung der Vergleichsfarbe (KPI-06): mehr ist bei allen
+          drei Kacheln günstig. Für den Ø Auftragswert steht das in der
+          Nutzerentscheidung KPI-05 („im Vertriebsbeispiel Rückgänge rot“). */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Kennzahl
           titel={worte.vertrieb.umsatz}
@@ -290,7 +290,7 @@ export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
               vorjahr={vgl.vorjahr?.auftragswert_avg}
               vorperiodeLabel={vgl.label}
               vorjahrLabel={vgl.labelVorjahr}
-              richtung="neutral"
+              richtung="mehr_ist_besser"
             />
           }
         />
