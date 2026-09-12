@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
+  Bar,
   CartesianGrid,
-  Line,
-  LineChart,
+  ComposedChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -17,31 +18,81 @@ import {
 import {
   takt,
 } from "@/lib/kpi/gemeinsam";
-import { produktionApi } from "@/lib/kpi/produktion";
+import { nachAnsicht, produktionApi, type Auftragsansicht, type VerzugZeile } from "@/lib/kpi/produktion";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
-import { Badge, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
 import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { useTexte } from "@/components/sprache/anbieter";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
+import { ZAHL_TAG } from "@/lib/sprache";
+import { cn } from "@/lib/cn";
 
 
 
-function datum(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleDateString("de-DE") : "—";
+function datum(iso: string | null, sprachTag: string): string {
+  return iso ? new Date(iso).toLocaleDateString(sprachTag) : "—";
+}
+
+/**
+ * Welche der beiden Auftragsmengen die Tabelle zeigt (PRO-02). Die Referenz
+ * stellte beide Tabellen nebeneinander; hier teilen sie sich die volle Breite.
+ */
+function Ansichtswahl({
+  ansicht,
+  onChange,
+}: {
+  ansicht: Auftragsansicht;
+  onChange: (ansicht: Auftragsansicht) => void;
+}) {
+  const worte = useTexte();
+  const stufen: [Auftragsansicht, string][] = [
+    ["verzug", worte.produktion.ansichtVerzug],
+    ["ueberfaellig", worte.produktion.ansichtUeberfaellig],
+  ];
+  return (
+    <div
+      role="radiogroup"
+      aria-label={worte.produktion.ansicht}
+      className="inline-flex rounded-md border border-[var(--border)] p-0.5"
+    >
+      {stufen.map(([stufe, label]) => (
+        <button
+          key={stufe}
+          type="button"
+          role="radio"
+          aria-checked={ansicht === stufe}
+          onClick={() => onChange(stufe)}
+          className={cn(
+            "rounded px-3 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ring)]",
+            ansicht === stufe ? "bg-[var(--fg)] text-[var(--bg)]" : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
+  const tag = ZAHL_TAG[useSprache()];
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
+  const [art, setArt] = useDiagrammart();
+  // Start mit den zu spät gelieferten — sie stehen in der Referenz links und
+  // tragen den Namen der Kachel. Die Wahl gilt für den Besuch, nicht dauerhaft.
+  const [ansicht, setAnsicht] = useState<Auftragsansicht>("verzug");
 
   const verzug = useQuery({
     queryKey: ["kpi", "produktion", "verzug", von, bis],
@@ -76,12 +127,74 @@ export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
     [verlaufDaten, t, fmt],
   );
 
-  const zeilenDaten = liste.data;
-  const zeilen = useMemo(() => zeilenDaten ?? [], [zeilenDaten]);
-  const offene = zeilen.filter((z) => z.art === "offen").length;
+  const listenDaten = liste.data;
+  const zeilen = useMemo(() => nachAnsicht(listenDaten ?? [], ansicht), [listenDaten, ansicht]);
+  const offene = verzug.data?.offen ?? 0;
+
+  const spalten = useMemo<Tabellenspalte<VerzugZeile>[]>(() => {
+    const auftrag: Tabellenspalte<VerzugZeile> = {
+      schluessel: "auftrag",
+      titel: worte.produktion.auftrag,
+      typ: "text",
+      wert: (z) => z.vorgang_nr,
+      zelle: (z) => <span className="font-mono text-xs">{z.vorgang_nr}</span>,
+    };
+    const kunde: Tabellenspalte<VerzugZeile> = {
+      schluessel: "kunde",
+      titel: worte.produktion.kunde,
+      typ: "text",
+      wert: (z) => z.customer_name,
+      suchtext: (z) => `${z.customer_name ?? ""} ${z.adr_nr ?? ""}`,
+      zelle: (z) => (
+        <>
+          {z.customer_name ?? "—"}
+          {z.adr_nr && <span className="ms-1 text-xs text-[var(--fg-muted)]">({z.adr_nr})</span>}
+        </>
+      ),
+    };
+    const zieltermin: Tabellenspalte<VerzugZeile> = {
+      schluessel: "zieltermin",
+      titel: worte.produktion.zieltermin,
+      typ: "datum",
+      wert: (z) => z.ziel,
+      zelle: (z) => datum(z.ziel, tag),
+      suchtext: false,
+      ausrichtung: "end",
+    };
+    // Derselbe Schlüssel in beiden Ansichten: die Sortierung bleibt beim Umschalten.
+    const tage = (titel: string): Tabellenspalte<VerzugZeile> => ({
+      schluessel: "verzug",
+      titel,
+      typ: "zahl",
+      wert: (z) => z.verzug_tage,
+      zelle: (z) => <span className="text-[var(--danger)]">+{fmt.zahl(z.verzug_tage)} d</span>,
+      suchtext: false,
+      ausrichtung: "end",
+    });
+    if (ansicht === "ueberfaellig") {
+      return [auftrag, kunde, zieltermin, tage(worte.produktion.tageUeberfaellig)];
+    }
+    return [
+      auftrag,
+      kunde,
+      zieltermin,
+      {
+        schluessel: "geliefert",
+        titel: worte.produktion.geliefert,
+        typ: "datum",
+        wert: (z) => z.ist,
+        zelle: (z) => datum(z.ist, tag),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      tage(worte.produktion.verzug),
+    ];
+  }, [ansicht, worte, fmt, tag]);
 
   const keineDaten = !verzug.isLoading && verzug.data?.gesamt === 0;
   const fehler = verzug.error ?? verlauf.error ?? liste.error ?? ziele.error;
+  const ansichtName =
+    ansicht === "verzug" ? worte.produktion.ansichtVerzug : worte.produktion.ansichtUeberfaellig;
 
   return (
     <div className="space-y-6">
@@ -136,7 +249,7 @@ export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
           titel={worte.produktion.inVerzug}
           erklaerung={{ seite: "produktion", abschnitt: "Aufträge in Verzug" }}
           wert={fmt.zahl(verzug.data?.in_verzug)}
-          hinweis={offene > 0 ? `davon ${offene} offen und überfällig` : undefined}
+          hinweis={offene > 0 ? worte.produktion.davonOffen(fmt.zahl(offene)) : undefined}
           laedt={verzug.isLoading}
           vergleich={
             <Vergleiche
@@ -173,14 +286,19 @@ export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
 
       {chartDaten.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">{worte.produktion.verlauf}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            {worte.produktion.verlaufHinweis}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="font-medium">{worte.produktion.verlauf}</h2>
+              <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+                {worte.produktion.verlaufHinweis}
+              </p>
+            </div>
+            <DiagrammartWahl art={art} onChange={setArt} />
+          </div>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
               {/* Rechter Rand trägt die Beschriftung der Ziellinie. */}
-              <LineChart data={chartDaten} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
+              <ComposedChart data={chartDaten} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--fg-muted)" />
                 <YAxis
@@ -195,11 +313,26 @@ export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
                     const zahl = typeof wert === "number" ? wert : null;
                     const gesamt = (eintrag?.payload as { gesamt?: number } | undefined)?.gesamt ?? 0;
                     return [
-                      zahl == null ? "—" : `${zahl.toFixed(1)} %`,
-                      `Verzug (${gesamt} Aufträge)`,
+                      zahl == null ? "—" : fmt.prozent(zahl / 100),
+                      worte.produktion.verlaufTooltip(fmt.zahl(gesamt)),
                     ] as [string, string];
                   }}
                 />
+                {art === "balken" ? (
+                  <Bar dataKey="quote" fill="var(--accent, #2f6f8f)" isAnimationActive={false} />
+                ) : (
+                  <Area
+                    type="monotone"
+                    dataKey="quote"
+                    stroke="var(--accent, #2f6f8f)"
+                    strokeWidth={2}
+                    fill="var(--accent, #2f6f8f)"
+                    fillOpacity={0.2}
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
                 {ziel != null && (
                 <ReferenceLine
                   y={ziel * 100}
@@ -213,59 +346,31 @@ export function ProduktionDashboard({ darfUploads }: { darfUploads: boolean }) {
                   }}
                 />
                 )}
-                <Line
-                  type="monotone"
-                  dataKey="quote"
-                  stroke="var(--accent, #2f6f8f)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </Card>
       )}
 
-      {zeilen.length > 0 && (
+      {!keineDaten && (
         <Card className="p-5">
-          <h2 className="font-medium">{worte.produktion.liste}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            {worte.produktion.listeHinweis}
-          </p>
-          <TableWrap className="mt-4">
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.produktion.auftrag}</Th>
-                  <Th>{worte.produktion.kunde}</Th>
-                  <Th>{worte.produktion.stand}</Th>
-                  <Th className="text-end">{worte.produktion.zieltermin}</Th>
-                  <Th className="text-end">{worte.produktion.geliefert}</Th>
-                  <Th className="text-end">{worte.produktion.verzug}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {zeilen.map((z) => (
-                  <tr key={z.vorgang_nr}>
-                    <Td className="font-mono text-xs">{z.vorgang_nr}</Td>
-                    <Td>{z.customer_name ?? "—"}</Td>
-                    <Td>
-                      <Badge variant={z.art === "offen" ? "secondary" : undefined}>
-                        {worte.produktion[z.art]}
-                      </Badge>
-                    </Td>
-                    <Td className="text-end tabular-nums">{datum(z.ziel)}</Td>
-                    <Td className="text-end tabular-nums">{datum(z.ist)}</Td>
-                    <Td className="text-end tabular-nums text-[var(--danger)]">
-                      +{z.verzug_tage.toLocaleString("de-DE")} d
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
+          <Datentabelle
+            zeilen={zeilen}
+            spalten={spalten}
+            zeilenSchluessel={(z) => z.vorgang_nr}
+            vorsortierung={{ spalte: "verzug", richtung: "ab" }}
+            laedt={liste.isLoading}
+            leer={ansicht === "verzug" ? worte.produktion.leerVerzug : worte.produktion.leerUeberfaellig}
+            beschriftung={ansichtName}
+            werkzeuge={
+              <>
+                <Ansichtswahl ansicht={ansicht} onChange={setAnsicht} />
+                <span className="text-sm text-[var(--fg-muted)]">
+                  {ansicht === "verzug" ? worte.produktion.hinweisVerzug : worte.produktion.hinweisUeberfaellig}
+                </span>
+              </>
+            }
+          />
         </Card>
       )}
     </div>
