@@ -149,6 +149,7 @@ export const bg: Texte = {
       kontakte: "Контакти",
       liefertreue: "Спазване на срокове",
       lagerbewegungen: "Складови движения",
+      materialpreise: "Цени на материали",
       lagerpreise: "Складови цени",
       auftragspositionen: "Позиции по поръчки",
       lieferscheine: "Стокови разписки",
@@ -269,7 +270,7 @@ export const bg: Texte = {
   finanzen: {
     einleitung: "Материални и разходи за персонал спрямо фактурирания оборот.",
     keineDatenVor:
-      "Нужни са три файла: складовите движения за разхода, входящите доставки за " +
+      "Нужни са три файла: складовите движения за разхода, цените на материали (входящи доставки) за " +
       "цените и оборотът като база. И трите се качват в ",
     keineDatenNach: ".",
     materialquote: "Процент материални разходи",
@@ -279,7 +280,6 @@ export const bg: Texte = {
     umsatz: "Оборот",
     personalquote: "Процент разходи за персонал",
     brauchtZeitraum: "изисква период",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} при ${personen} души`,
     ohnePreis: "Артикули без цена",
     ohnePreisHinweis: "изразходвани, но неостойностени",
     jeAbteilung: "Разходи за персонал по отдели",
@@ -291,14 +291,21 @@ export const bg: Texte = {
     verlaufHinweis: "Празнините са периоди без оборот — без база няма процент.",
     ziellinie: "Цел",
     verbrauch: "Разход на материал по артикули",
-    verbrauchHinweis:
-      "Най-високите разходи първи. Артикулите без цена стоят най-отдолу — те не влизат в " +
-      "процента. Най-много 500 реда.",
+    verbrauchHinweis: "Най-високите разходи първи. Артикулите без цена стоят най-отдолу — те не влизат в процента.",
     artikel: "Артикул",
     bezeichnung: "Наименование",
     menge: "Разход",
     stueckpreis: "Единична цена",
     keinPreis: "няма цена",
+    ansicht: "Изглед",
+    ansichtMaterial: "Материали",
+    ansichtPersonal: "Персонал",
+    personalkosten: "Разходи за персонал",
+    personalquoteHinweis: "Разходи за персонал / оборот",
+    mitarbeiter: "Служители",
+    mitarbeiterHinweis: "с разходи в периода",
+    personalVerlauf: "Процент разходи за персонал във времето",
+    quoteBeiKosten: (kosten: string) => `Процент при разходи ${kosten}`,
   },
   qualitaet: {
     einleitung: "Одитни констатации, процент рекламации и проверени количества.",
@@ -544,6 +551,9 @@ export const bg: Texte = {
       lagerbewegungen: "Складови движения",
       lagerbewegungenText:
         "Разход по артикули за процента материални разходи. Заменя всички редове в периода на файла.",
+      materialpreise: "Цени на материали (входящи доставки)",
+      materialpreiseText:
+        "Цени за процента материални разходи: за всеки артикул важи последната доставка. Обновява същите позиции, добавя нови, не изтрива нищо.",
       lagerpreise: "Складови цени на артикули",
       lagerpreiseText:
         "Основни данни за оценка на склада. Заменя целия ценоразпис, не само съдържащите се артикули.",

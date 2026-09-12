@@ -30,7 +30,7 @@ export const QUELLEN: Record<string, string[]> = {
   einkauf: ["liefertreue", "lagerbewegungen", "lagerpreise"],
   produktion: ["auftragspositionen", "lieferscheine"],
   qualitaet: ["pruefungen", "acht_d", "lieferscheine", "wareneingaenge"],
-  finanzen: ["umsatz", "lagerbewegungen", "wareneingaenge"],
+  finanzen: ["umsatz", "lagerbewegungen", "materialpreise"],
 };
 
 export interface Stand {

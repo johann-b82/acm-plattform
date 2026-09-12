@@ -148,6 +148,7 @@ export const ar: Texte = {
       kontakte: "الاتصالات",
       liefertreue: "الالتزام بمواعيد التسليم",
       lagerbewegungen: "حركات المخزون",
+      materialpreise: "أسعار المواد",
       lagerpreise: "أسعار المخزون",
       auftragspositionen: "بنود الطلبات",
       lieferscheine: "إشعارات التسليم",
@@ -266,7 +267,7 @@ export const ar: Texte = {
   finanzen: {
     einleitung: "تكاليف المواد والعاملين قياساً إلى الإيرادات المفوترة.",
     keineDatenVor:
-      "يلزم ثلاثة ملفات: حركات المخزون للاستهلاك، واستلامات البضائع للأسعار، " +
+      "يلزم ثلاثة ملفات: حركات المخزون للاستهلاك، وأسعار المواد (استلام البضائع) للأسعار، " +
       "والإيرادات كمرجع. الثلاثة كلها في ",
     keineDatenNach: ".",
     materialquote: "نسبة تكلفة المواد",
@@ -276,7 +277,6 @@ export const ar: Texte = {
     umsatz: "الإيرادات",
     personalquote: "نسبة تكلفة العاملين",
     brauchtZeitraum: "تحتاج إلى فترة",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} لدى ${personen} أشخاص`,
     ohnePreis: "أصناف بلا سعر",
     ohnePreisHinweis: "مستهلكة، لكن غير مقوَّمة",
     jeAbteilung: "تكاليف العاملين لكل قسم",
@@ -288,14 +288,21 @@ export const ar: Texte = {
     verlaufHinweis: "الفجوات فترات بلا إيرادات — وبلا مرجع لا توجد نسبة.",
     ziellinie: "الهدف",
     verbrauch: "استهلاك المواد لكل صنف",
-    verbrauchHinweis:
-      "الأعلى تكلفةً أولاً. الأصناف بلا سعر في الآخر — وهي لا تدخل في النسبة. " +
-      "500 سطر كحدٍّ أقصى.",
+    verbrauchHinweis: "الأعلى تكلفةً أولاً. الأصناف بلا سعر في الآخر — وهي لا تدخل في النسبة.",
     artikel: "الصنف",
     bezeichnung: "الوصف",
     menge: "الاستهلاك",
     stueckpreis: "سعر الوحدة",
     keinPreis: "بلا سعر",
+    ansicht: "العرض",
+    ansichtMaterial: "المواد",
+    ansichtPersonal: "العاملون",
+    personalkosten: "تكاليف العاملين",
+    personalquoteHinweis: "تكاليف العاملين / الإيرادات",
+    mitarbeiter: "الموظفون",
+    mitarbeiterHinweis: "ممن لهم تكاليف في الفترة",
+    personalVerlauf: "نسبة تكلفة العاملين عبر الزمن",
+    quoteBeiKosten: (kosten: string) => `النسبة عند تكاليف ${kosten}`,
   },
   qualitaet: {
     einleitung: "نتائج التدقيق ونسبة الشكاوى وكميات الفحص.",
@@ -534,6 +541,9 @@ export const ar: Texte = {
       lagerbewegungen: "حركات المخزون",
       lagerbewegungenText:
         "الاستهلاك لكل صنف لحساب نسبة تكلفة المواد. تستبدل كل الأسطر ضمن المدى الزمني للملف.",
+      materialpreise: "أسعار المواد (استلام البضائع)",
+      materialpreiseText:
+        "أسعار نسبة تكلفة المواد: لكل صنف يُعتمد أحدث استلام. تُحدِّث البنود المطابقة وتضيف الجديدة ولا تحذف شيئاً.",
       lagerpreise: "أسعار أصناف المخزون",
       lagerpreiseText:
         "بيانات أساسية لتقويم المخزون. تستبدل قائمة الأسعار كاملةً، لا الأصناف الواردة فيها فقط.",

@@ -62,6 +62,10 @@ const ARTEN: readonly Art[] = [
     datei: "AswLagBew.txt",
   },
   {
+    kind: "materialpreise",
+    datei: "AswKpf_WE.txt",
+  },
+  {
     kind: "lagerpreise",
     datei: "AswLagBew-Preiskonditionen",
   },

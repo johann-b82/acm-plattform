@@ -117,6 +117,7 @@ export const de = {
       kontakte: "Kontakte",
       liefertreue: "Liefertreue",
       lagerbewegungen: "Lagerbewegungen",
+      materialpreise: "Materialpreise",
       lagerpreise: "Lagerpreise",
       auftragspositionen: "Auftragspositionen",
       lieferscheine: "Lieferscheine",
@@ -235,8 +236,8 @@ export const de = {
   finanzen: {
     einleitung: "Material- und Personalkosten im Verhältnis zum Rechnungsumsatz.",
     keineDatenVor:
-      "Es braucht drei Dateien: die Lagerbewegungen für den Verbrauch, die Wareneingänge für " +
-      "die Preise und den Umsatz als Bezugsgröße. Alle drei liegen unter ",
+      "Es braucht drei Dateien: die Lagerbewegungen für den Verbrauch, die Materialpreise " +
+      "(Wareneingang) für die Preise und den Umsatz als Bezugsgröße. Alle drei liegen unter ",
     keineDatenNach: ".",
     materialquote: "Materialkostenquote",
     materialquoteHinweis: "Materialkosten / Umsatz",
@@ -245,7 +246,6 @@ export const de = {
     umsatz: "Umsatz",
     personalquote: "Personalkostenquote",
     brauchtZeitraum: "braucht einen Zeitraum",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} bei ${personen} Personen`,
     ohnePreis: "Artikel ohne Preis",
     ohnePreisHinweis: "verbraucht, aber nicht bewertet",
     jeAbteilung: "Personalkosten je Abteilung",
@@ -257,14 +257,21 @@ export const de = {
     verlaufHinweis: "Lücken sind Zeiträume ohne Umsatz — ohne Bezugsgröße gibt es keine Quote.",
     ziellinie: "Ziel",
     verbrauch: "Materialverbrauch je Artikel",
-    verbrauchHinweis:
-      "Höchste Kosten zuerst. Artikel ohne Preis stehen am Ende — sie gehen in die Quote " +
-      "nicht ein. Höchstens 500 Zeilen.",
+    verbrauchHinweis: "Höchste Kosten zuerst. Artikel ohne Preis stehen am Ende — sie gehen in die Quote nicht ein.",
     artikel: "Artikel",
     bezeichnung: "Bezeichnung",
     menge: "Verbrauch",
     stueckpreis: "Stückpreis",
     keinPreis: "kein Preis",
+    ansicht: "Ansicht",
+    ansichtMaterial: "Material",
+    ansichtPersonal: "Personal",
+    personalkosten: "Personalkosten",
+    personalquoteHinweis: "Personalkosten / Umsatz",
+    mitarbeiter: "Mitarbeiter",
+    mitarbeiterHinweis: "mit Kosten im Zeitraum",
+    personalVerlauf: "Personalkostenquote im Zeitverlauf",
+    quoteBeiKosten: (kosten: string) => `Quote bei ${kosten} Kosten`,
   },
   qualitaet: {
     einleitung: "Audit-Findings, Reklamationsquote und Prüfmengen.",
@@ -507,6 +514,9 @@ export const de = {
       lagerbewegungen: "Lagerbewegungen",
       lagerbewegungenText:
         "Verbrauch je Artikel für die Materialkostenquote. Ersetzt alle Zeilen im Datumsbereich der Datei.",
+      materialpreise: "Materialpreise (Wareneingang)",
+      materialpreiseText:
+        "Preise für die Materialkostenquote: je Artikel gilt der jüngste Wareneingang. Aktualisiert gleiche Positionen, ergänzt neue, löscht nichts.",
       lagerpreise: "Artikelpreise Lager",
       lagerpreiseText:
         "Stammdaten für die Lagerbewertung. Ersetzt die ganze Preisliste, nicht nur die enthaltenen Artikel.",
