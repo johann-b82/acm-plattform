@@ -42,7 +42,7 @@ Kachel die Einordnung nimmt.
 from alembic import op
 
 revision = "0044_qualitaet_abgleich"
-down_revision = "0040_bereich_hr"
+down_revision = "0041_vertrieb_abgleich"
 branch_labels = None
 depends_on = None
 
