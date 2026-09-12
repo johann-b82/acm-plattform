@@ -33,7 +33,7 @@ export const TITEL = {
   "/hr/schulungen/offen": "Offene",
   "/hr/zeugnisse": "Zeugnisse",
   "/kpi": "Kennzahlen",
-  "/kpi/bewertung": "Bewertung",
+  "/kpi/bewertung": "KPI-Bewertung & Maßnahmen",
   "/kpi/einkauf": "Einkauf",
   "/kpi/finanzen": "Finanzen",
   "/kpi/produktion": "Produktion",

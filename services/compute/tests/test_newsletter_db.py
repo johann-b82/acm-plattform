@@ -288,3 +288,104 @@ class TestBilder:
             " where id = 'newsletter'"))[0]
         assert zeile["public"] is False
         assert zeile["file_size_limit"] == 10 * 1024 * 1024
+
+
+class TestRedaktionsablauf:
+    """NEW-01: Anlage, Bearbeitung, Anzeige — mit Testdaten, ohne Versand."""
+
+    async def test_neue_ausgabe_ist_ein_entwurf(self, db):
+        await als_dauerhaft(REDAKTION, "insert into public.newsletter (jahr, quartal) values (2026, 4)")
+        zeilen = await anlegen("select status, titel from public.newsletter")
+        assert zeilen == [{"status": "entwurf", "titel": None}]
+
+    async def test_bearbeiten_setzt_den_aenderungszeitpunkt(self, db):
+        n = await ausgabe("entwurf")
+        await anlegen("update public.newsletter set geaendert_am = '2020-01-01'"
+                      " where id = cast(:n as uuid)", n=n)
+        await als_dauerhaft(REDAKTION, "update public.newsletter set titel = 'Sommer'"
+                                       " where id = cast(:n as uuid)", n=n)
+        zeile = (await anlegen("select titel, geaendert_am from public.newsletter"))[0]
+        assert zeile["titel"] == "Sommer"
+        assert zeile["geaendert_am"].year > 2020
+
+    async def test_leser_aendert_nichts(self, db):
+        n = await ausgabe("veroeffentlicht")
+        assert await als(LESER, "update public.newsletter set titel = 'X'"
+                                " where id = cast(:n as uuid) returning id", n=n) == []
+
+    async def test_veroeffentlichen_macht_die_ausgabe_lesbar(self, db):
+        n = await ausgabe("entwurf")
+        assert await als(LESER, "select id from public.newsletter") == []
+        await als_dauerhaft(REDAKTION, "update public.newsletter set status = 'veroeffentlicht'"
+                                       " where id = cast(:n as uuid)", n=n)
+        assert len(await als(LESER, "select id from public.newsletter")) == 1
+
+    async def test_anzeige_liefert_kapitel_und_eintraege_in_ihrer_reihenfolge(self, db):
+        n = await ausgabe("veroeffentlicht")
+        for titel, nr in (("Zweites", 2), ("Erstes", 1)):
+            k = (await anlegen(
+                "insert into public.newsletter_kapitel (newsletter_id, titel, sortierung)"
+                " values (cast(:n as uuid), :t, :s) returning id", n=n, t=titel, s=nr))[0]["id"]
+            await anlegen(
+                "insert into public.newsletter_eintrag (kapitel_id, untertitel, inhalt_md)"
+                " values (:k, :u, '**fett**')", k=k, u=f"Beitrag {titel}")
+        zeilen = await als(
+            LESER,
+            "select k.titel, e.untertitel, e.inhalt_md from public.newsletter_kapitel k"
+            " join public.newsletter_eintrag e on e.kapitel_id = k.id order by k.sortierung")
+        assert [z["titel"] for z in zeilen] == ["Erstes", "Zweites"]
+        assert zeilen[0]["inhalt_md"] == "**fett**"
+
+    async def test_eintrag_bearbeiten_darf_nur_die_redaktion(self, db):
+        k = await kapitel(await ausgabe("veroeffentlicht"))
+        await anlegen("insert into public.newsletter_eintrag (kapitel_id, untertitel)"
+                      " values (cast(:k as uuid), 'Alt')", k=k)
+        assert await als(LESER, "update public.newsletter_eintrag set untertitel = 'Neu'"
+                                " returning id") == []
+        geaendert = await als(REDAKTION, "update public.newsletter_eintrag set untertitel = 'Neu'"
+                                         " returning untertitel")
+        assert geaendert == [{"untertitel": "Neu"}]
+
+    async def test_ausgabe_loeschen_nimmt_kapitel_eintraege_und_bildzeilen_mit(self, db):
+        n = await ausgabe("entwurf")
+        k = await kapitel(n)
+        e = (await anlegen("insert into public.newsletter_eintrag (kapitel_id) values"
+                           " (cast(:k as uuid)) returning id", k=k))[0]["id"]
+        await anlegen("insert into public.newsletter_bild (eintrag_id, pfad) values (:e, 'x/y.jpg')",
+                      e=e)
+        await als_dauerhaft(REDAKTION, "delete from public.newsletter")
+        for tabelle in ("newsletter_kapitel", "newsletter_eintrag", "newsletter_bild"):
+            assert await anlegen(f"select id from public.{tabelle}") == []
+
+
+class TestPeriodenbezug:
+    """Eine Ausgabe gehört zu genau einem Quartal, und was sie einfriert,
+    kommt aus diesem Quartal."""
+
+    @pytest.mark.parametrize("quartal", [0, 5])
+    async def test_nur_quartale_eins_bis_vier(self, db, quartal):
+        text = await als_erwartet_fehler(
+            REDAKTION, "insert into public.newsletter (jahr, quartal) values (2026, :q)", q=quartal)
+        assert "check" in text
+
+    async def test_kpi_stichtag_ist_das_quartalsende(self, db):
+        k = await kapitel(await ausgabe(jahr=2025, quartal=2), art="kpi", titel="Zahlen")
+        stand = (await als_dauerhaft(
+            REDAKTION_KPI,
+            "select public.newsletter_kpi_einfrieren(cast(:k as uuid)) as s", k=k))[0]["s"]
+        assert stand["stichtag"] == "2025-06-30"
+
+    async def test_neuzugaenge_im_vierten_quartal_enden_am_jahreswechsel(self, db):
+        n = await ausgabe(jahr=2025, quartal=4)
+        k = await kapitel(n, art="neuzugaenge", titel="Neu")
+        for nr, tag in ((1, date(2025, 9, 30)), (2, date(2025, 10, 1)),
+                        (3, date(2025, 12, 31)), (4, date(2026, 1, 1))):
+            await anlegen(
+                "insert into public.personio_employees (id, first_name, last_name,"
+                " status, hire_date, synced_at)"
+                " values (:i, 'V', :nn, 'active', :d, now())", i=nr, nn=f"N{nr}", d=tag)
+        stand = (await als_dauerhaft(
+            REDAKTION_HR,
+            "select public.newsletter_neuzugaenge_einfrieren(cast(:k as uuid)) as s",
+            k=k))[0]["s"]
+        assert [z["nachname"] for z in stand] == ["N2", "N3"]
