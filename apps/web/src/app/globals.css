@@ -247,3 +247,116 @@ body {
   background: var(--muted);
   font-weight: 600;
 }
+
+/* Organigramm als Baum mit Verbindungslinien (ORG-01).
+ *
+ * Nach dem Altsystem (`index.css`, `.org-tree`): jede Ebene ist eine
+ * waagerechte Reihe, die Linien sind Pseudo-Elemente. Stehen unter einer
+ * Person nur noch Personen ohne eigene Mitarbeiter, stapeln sie sich in einer
+ * Spalte an einer senkrechten Linie — sonst wird ein Haus mit siebzig Leuten
+ * breiter als jeder Bildschirm.
+ *
+ * Immer links nach rechts, auch in Arabisch und Persisch: die Linien rechnen
+ * mit links und rechts, und ein gespiegelter Baum sagt nichts anderes. */
+.org-baum {
+  direction: ltr;
+}
+.org-baum ul {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  padding-top: 1.5rem;
+  margin: 0;
+  list-style: none;
+}
+.org-baum ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 1.5rem;
+  border-left: 1px solid var(--border);
+}
+.org-baum li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0.5rem 0;
+}
+.org-baum li::before,
+.org-baum li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.org-baum li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid var(--border);
+}
+.org-baum li:first-child::before,
+.org-baum li:last-child::after {
+  border: 0 none;
+}
+.org-baum li:last-child::before {
+  border-right: 1px solid var(--border);
+}
+.org-baum li:only-child {
+  padding-top: 0;
+}
+.org-baum li:only-child::before,
+.org-baum li:only-child::after {
+  display: none;
+}
+.org-baum > ul {
+  padding-top: 0;
+  gap: 2rem;
+  width: max-content;
+  margin-inline: auto;
+}
+.org-baum > ul::before {
+  display: none;
+}
+.org-baum > ul > li {
+  padding-top: 0;
+}
+.org-baum > ul > li::before,
+.org-baum > ul > li::after {
+  display: none;
+}
+.org-baum ul.org-blaetter {
+  display: block;
+  width: 30rem;
+}
+.org-baum ul.org-blaetter > li {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 0 0 0.5rem calc(50% + 1.25rem);
+}
+.org-baum ul.org-blaetter > li::before {
+  display: block;
+  left: 50%;
+  right: auto;
+  width: 0;
+  height: 100%;
+  border: 0 none;
+  border-left: 1px solid var(--border);
+}
+.org-baum ul.org-blaetter > li:last-child::before {
+  height: 50%;
+}
+.org-baum ul.org-blaetter > li::after {
+  display: block;
+  left: 50%;
+  right: auto;
+  top: 50%;
+  width: 1.25rem;
+  height: 0;
+  border: 0 none;
+  border-top: 1px solid var(--border);
+}

@@ -109,7 +109,7 @@ export function Kennzahlen() {
                     className="max-w-32 text-end tabular-nums"
                   />
                   <span className="text-sm text-[var(--fg-muted)]">
-                    {z.einheit === "anteil" ? "%" : worte.allgemein.stueck}
+                    {z.einheit === "anteil" ? "%" : z.einheit === "euro" ? "€" : worte.allgemein.stueck}
                   </span>
                   {entwurf[z.schluessel] !== undefined && (
                     <Button size="sm" disabled={speichern.isPending} onClick={() => absenden(z)}>
