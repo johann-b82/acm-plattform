@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, KeyRound, Pencil, UserPlus, X } from "lucide-react";
+import { Check, ChevronRight, KeyRound, Pencil, UserPlus, X } from "lucide-react";
 
 import {
   verwaltungApi,
@@ -52,6 +52,8 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
   const [zugang, setZugang] = useState<{ titel: string; email: string; passwort: string } | null>(
     null,
   );
+  // Gruppen ohne jedes Recht (bei AD-Anbindung die Mehrheit) bleiben eingeklappt.
+  const [zeigeOhneRechte, setZeigeOhneRechte] = useState(false);
 
   // Nur die Zahl der noch nicht angesehenen Meldungen — gezählt wird in der
   // Datenbank, die Liste selbst holt die eigene Seite.
@@ -101,6 +103,22 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
   }, [mitgliedDaten]);
 
   const nutzerNach = useMemo(() => new Map(nutzerListe.map((n) => [n.id, n])), [nutzerListe]);
+
+  // Zahl der Rechte je Gruppe — trennt die Matrix in „mit Rechten" (immer
+  // sichtbar) und „ohne Rechte" (einklappbar).
+  const rechteAnzahl = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rechteDaten ?? []) m.set(r.group_id, (m.get(r.group_id) ?? 0) + 1);
+    return m;
+  }, [rechteDaten]);
+  const mitRechten = useMemo(
+    () => gruppenListe.filter((g) => (rechteAnzahl.get(g.id) ?? 0) > 0),
+    [gruppenListe, rechteAnzahl],
+  );
+  const ohneRechte = useMemo(
+    () => gruppenListe.filter((g) => (rechteAnzahl.get(g.id) ?? 0) === 0),
+    [gruppenListe, rechteAnzahl],
+  );
 
   function neuLaden(...keys: readonly (readonly unknown[])[]) {
     for (const key of keys) queryClient.invalidateQueries({ queryKey: key });
@@ -208,6 +226,57 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
   const mitgliederDerGruppe = mitglieder ? (mitgliederVon.get(mitglieder.id) ?? []) : [];
   const nochNichtMitglied = nutzerListe.filter((n) => !mitgliederDerGruppe.includes(n.id));
 
+  // Eine Matrixzeile: Gruppenname, je App eine kompakte Rechtezelle, dann die
+  // Aktionen (Mitglieder, Umbenennen, Löschen).
+  const gruppeZeile = (g: Gruppe) => (
+    <tr key={g.id} className="border-b border-[var(--border)] last:border-0">
+      <td className="sticky left-0 z-10 bg-[var(--surface)] px-3 py-1.5 whitespace-nowrap">
+        <span className="inline-flex items-center gap-2">
+          <span className="font-medium">{g.name}</span>
+          {g.source === "ad" && (
+            <Badge variant="secondary" title={worte.zugaenge.ausVerzeichnis}>
+              {worte.zugaenge.verzeichnis}
+            </Badge>
+          )}
+        </span>
+      </td>
+      {appListe.map((a) => (
+        <td key={a.id} className="px-1 py-1 text-center">
+          <RechtZelle
+            wert={rechtVon.get(`${g.id}|${a.id}`) ?? ""}
+            label={`${a.name} – ${g.name}`}
+            keinZugriff={worte.zugaenge.keinZugriff}
+            stufen={worte.zugaenge.stufen}
+            onChange={(level) => rechtSetzen.mutate({ group_id: g.id, app_id: a.id, level })}
+          />
+        </td>
+      ))}
+      <td className="sticky right-0 z-10 bg-[var(--surface)] px-2 py-1 text-right">
+        <div className="flex items-center justify-end gap-0.5">
+          <Button variant="ghost" size="sm" onClick={() => setMitglieder(g)}>
+            <UserPlus className="h-3.5 w-3.5" />
+            {(mitgliederVon.get(g.id) ?? []).length}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setUmbenennen({ gruppe: g, name: g.name })}
+            aria-label={`${g.name} umbenennen`}
+            title={worte.zugaenge.umbenennen}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <ConfirmDeleteButton
+            itemLabel={g.name}
+            onConfirm={async () => {
+              await loeschen.mutateAsync(g.id);
+            }}
+          />
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="space-y-4">
       <Link
@@ -274,75 +343,63 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
           body={worte.zugaenge.keineGruppeText}
         />
       ) : (
-        <div className="grid gap-4">
-          {gruppenListe.map((g) => (
-            <Card key={g.id} className="p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{g.name}</span>
-                  {g.source === "ad" && (
-                    <Badge variant="secondary" title={worte.zugaenge.ausVerzeichnis}>
-                      {worte.zugaenge.verzeichnis}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setMitglieder(g)}>
-                    <UserPlus className="h-3.5 w-3.5" />
-                    {(mitgliederVon.get(g.id) ?? []).length} Mitglieder
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setUmbenennen({ gruppe: g, name: g.name })}
-                    aria-label={`${g.name} umbenennen`}
-                    title={worte.zugaenge.umbenennen}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDeleteButton
-                    itemLabel={g.name}
-                    onConfirm={async () => {
-                      await loeschen.mutateAsync(g.id);
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {appListe.map((a) => {
-                  const feldId = `${g.id}-${a.id}`;
-                  const aktuell = rechtVon.get(`${g.id}|${a.id}`) ?? "";
-                  return (
-                    <div key={a.id} className="flex flex-col gap-1">
-                      <Label htmlFor={feldId}>{a.name}</Label>
-                      <Select
-                        id={feldId}
-                        value={aktuell}
-                        onChange={(e) =>
-                          rechtSetzen.mutate({
-                            group_id: g.id,
-                            app_id: a.id,
-                            level: (e.target.value || null) as Level | null,
-                          })
-                        }
-                        className="h-8 text-xs"
+        <Card className="overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)]">
+                  <th className="sticky left-0 z-20 bg-[var(--surface)]" />
+                  {appListe.map((a) => (
+                    <th key={a.id} className="px-1 align-bottom">
+                      <div
+                        className="mx-auto py-2 rotate-180 whitespace-nowrap text-xs text-[var(--fg-muted)] [writing-mode:vertical-rl]"
+                        title={a.name}
                       >
-                        <option value="">{worte.zugaenge.keinZugriff}</option>
-                        {LEVELS.map((l) => (
-                          <option key={l} value={l}>
-                            {worte.zugaenge.stufen[l]}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          ))}
-        </div>
+                        {a.name}
+                      </div>
+                    </th>
+                  ))}
+                  <th className="sticky right-0 z-20 bg-[var(--surface)]" />
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td
+                    colSpan={appListe.length + 2}
+                    className="border-b border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--fg-muted)]"
+                  >
+                    {worte.zugaenge.mitRechten} ({mitRechten.length})
+                  </td>
+                </tr>
+                {mitRechten.map(gruppeZeile)}
+                {ohneRechte.length > 0 && (
+                  <tr>
+                    <td colSpan={appListe.length + 2} className="border-b border-[var(--border)] p-0">
+                      <button
+                        type="button"
+                        onClick={() => setZeigeOhneRechte((v) => !v)}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[var(--fg-muted)] hover:bg-[color-mix(in_srgb,var(--fg)_4%,transparent)]"
+                      >
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 transition-transform ${zeigeOhneRechte ? "rotate-90" : ""}`}
+                        />
+                        {worte.zugaenge.ohneRechte} ({ohneRechte.length})
+                      </button>
+                    </td>
+                  </tr>
+                )}
+                {zeigeOhneRechte && ohneRechte.map(gruppeZeile)}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
+
+      <p className="text-xs text-[var(--fg-muted)]">
+        <span className="font-medium">V</span> {worte.zugaenge.stufen.viewer} ·{" "}
+        <span className="font-medium">E</span> {worte.zugaenge.stufen.editor} ·{" "}
+        <span className="font-medium">A</span> {worte.zugaenge.stufen.admin}
+      </p>
 
       <p className="text-xs text-[var(--fg-muted)]">
         {worte.einstellungenText.verwaltenSchliesstEin}
@@ -495,6 +552,59 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
           )}
         </div>
       </Dialog>
+    </div>
+  );
+}
+
+/**
+ * Eine Matrixzelle: zeigt kompakt den Buchstaben (—/V/E/A) und liegt als
+ * unsichtbares natives Auswahlfeld darüber — im Aufklappmenü stehen die vollen
+ * Wörter, für Screenreader das `label`. Die Buchstaben sind sprachneutral
+ * (Schlüssel viewer/editor/admin), die Legende darunter erklärt sie.
+ */
+function RechtZelle({
+  wert,
+  label,
+  keinZugriff,
+  stufen,
+  onChange,
+}: {
+  wert: Level | "";
+  label: string;
+  keinZugriff: string;
+  stufen: Record<Level, string>;
+  onChange: (level: Level | null) => void;
+}) {
+  const buchstabe = wert ? wert.charAt(0).toUpperCase() : "—";
+  const stil =
+    wert === "admin"
+      ? "bg-[var(--accent)] text-white"
+      : wert === "editor"
+        ? "border border-[var(--accent)] text-[var(--accent)]"
+        : wert === "viewer"
+          ? "border border-[var(--border)]"
+          : "text-[var(--fg-muted)]";
+  return (
+    <div className="relative mx-auto h-7 w-8">
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 flex items-center justify-center rounded-md text-xs font-semibold ${stil}`}
+      >
+        {buchstabe}
+      </span>
+      <select
+        aria-label={label}
+        value={wert}
+        onChange={(e) => onChange((e.target.value || null) as Level | null)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      >
+        <option value="">{keinZugriff}</option>
+        {LEVELS.map((l) => (
+          <option key={l} value={l}>
+            {stufen[l]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

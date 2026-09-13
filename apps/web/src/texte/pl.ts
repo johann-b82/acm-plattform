@@ -2112,6 +2112,8 @@ export const pl: Texte = {
     verzeichnis: "Katalog",
     ausVerzeichnis: "Pochodzi z katalogu",
     umbenennen: "Przemianuj",
+    mitRechten: "Z uprawnieniami",
+    ohneRechte: "Bez uprawnień",
     keinZugriff: "brak dostępu",
     rechteAnGruppe: "Prawa wiszą przy grupie, a nie przy osobie.",
     passwortNurJetzt:

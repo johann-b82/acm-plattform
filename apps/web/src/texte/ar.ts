@@ -2086,6 +2086,8 @@ export const ar: Texte = {
     verzeichnis: "الدليل",
     ausVerzeichnis: "يأتي من الدليل",
     umbenennen: "أعد التسمية",
+    mitRechten: "لديها صلاحيات",
+    ohneRechte: "بدون صلاحيات",
     keinZugriff: "لا وصول",
     rechteAnGruppe: "الصلاحيات مرتبطة بالمجموعة لا بالشخص.",
     passwortNurJetzt:

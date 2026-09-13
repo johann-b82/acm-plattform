@@ -2077,6 +2077,8 @@ export const de = {
     verzeichnis: "Verzeichnis",
     ausVerzeichnis: "Kommt aus dem Verzeichnis",
     umbenennen: "Umbenennen",
+    mitRechten: "Mit Rechten",
+    ohneRechte: "Ohne Rechte",
     keinZugriff: "kein Zugriff",
     rechteAnGruppe: "Rechte hängen an der Gruppe, nicht an der Person.",
     passwortNurJetzt:

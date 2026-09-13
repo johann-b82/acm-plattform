@@ -2096,6 +2096,8 @@ export const uk: Texte = {
     verzeichnis: "Каталог",
     ausVerzeichnis: "Походить із каталогу",
     umbenennen: "Перейменувати",
+    mitRechten: "З правами",
+    ohneRechte: "Без прав",
     keinZugriff: "немає доступу",
     rechteAnGruppe: "Права належать групі, а не особі.",
     passwortNurJetzt:

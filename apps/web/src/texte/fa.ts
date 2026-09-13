@@ -2096,6 +2096,8 @@ export const fa: Texte = {
     verzeichnis: "دایرکتوری",
     ausVerzeichnis: "از دایرکتوری می‌آید",
     umbenennen: "تغییر نام",
+    mitRechten: "دارای دسترسی",
+    ohneRechte: "بدون دسترسی",
     keinZugriff: "بدون دسترسی",
     rechteAnGruppe: "دسترسی‌ها به گروه بسته‌اند، نه به فرد.",
     passwortNurJetzt:

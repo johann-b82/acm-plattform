@@ -2103,6 +2103,8 @@ export const en: Texte = {
     verzeichnis: "Directory",
     ausVerzeichnis: "Comes from the directory",
     umbenennen: "Rename",
+    mitRechten: "With access",
+    ohneRechte: "Without access",
     keinZugriff: "no access",
     rechteAnGruppe: "Permissions belong to the group, not to the person.",
     passwortNurJetzt:

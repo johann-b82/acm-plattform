@@ -2110,6 +2110,8 @@ export const vi: Texte = {
     verzeichnis: "Thư mục người dùng",
     ausVerzeichnis: "Đến từ thư mục người dùng",
     umbenennen: "Đổi tên",
+    mitRechten: "Có quyền",
+    ohneRechte: "Không có quyền",
     keinZugriff: "không có quyền",
     rechteAnGruppe: "Quyền gắn với nhóm, không gắn với từng người.",
     passwortNurJetzt:

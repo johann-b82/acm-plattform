@@ -2117,6 +2117,8 @@ export const bg: Texte = {
     verzeichnis: "Директория",
     ausVerzeichnis: "Идва от директорията",
     umbenennen: "Преименувай",
+    mitRechten: "С права",
+    ohneRechte: "Без права",
     keinZugriff: "няма достъп",
     rechteAnGruppe: "Правата висят на групата, не на човека.",
     passwortNurJetzt:
