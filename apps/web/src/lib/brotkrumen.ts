@@ -62,10 +62,20 @@ export type Pfadtitel = Record<keyof typeof TITEL, string>;
  * Seiten, die woanders hängen, als ihre Adresse sagt. Nur für den Fall, dass
  * eine Adresse aus gutem Grund bleibt, wo sie ist: `/platform` leitet seit dem
  * Umzug der Verwaltung auf die Einstellungen um, und von dort wird auch auf
- * die Meldungen verwiesen.
+ * die Meldungen verwiesen. Die HR-Kennzahlen liegen unter `/hr` (eigene
+ * Berechtigung), gehören aber zu den Dashboards unter „Kennzahlen“.
  */
 export const ELTERN: Record<string, string> = {
   "/platform/feedback": "/einstellungen",
+  "/hr/kennzahlen": "/kpi",
+};
+
+/**
+ * Seiten, die in der Kette den Namen einer anderen tragen. Unter „Kennzahlen“
+ * heißen die HR-Kennzahlen schlicht „HR“ — wie ihre Kachel dort.
+ */
+const TITEL_WIE: Record<string, string> = {
+  "/hr/kennzahlen": "/hr",
 };
 
 /**
@@ -87,7 +97,10 @@ export function krumen(
   }
   return [
     { titel: start, adresse: "/" },
-    ...kette.map((p) => ({ titel: titel[p] ?? BEKANNT[p], adresse: p })),
+    ...kette.map((p) => {
+      const name = TITEL_WIE[p] ?? p;
+      return { titel: titel[name] ?? BEKANNT[name], adresse: p };
+    }),
   ];
 }
 

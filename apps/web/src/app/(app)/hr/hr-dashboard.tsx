@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import {
   Area,
   Bar,
@@ -58,21 +59,15 @@ const TOOLTIP_STIL = {
 /**
  * Der Datenstand der Seite unter der Zeitraumwahl (KPI-08): wann der
  * Personio-Abgleich zuletzt lief. Darauf stehen alle Zahlen hier außer dem
- * Auftragswert der Kachel „Umsatz / Produktions-MA“. Wer HR verwalten darf,
- * stößt den Abgleich direkt darunter an.
+ * Auftragswert der Kachel „Umsatz / Produktions-MA“.
  */
-function Abgleichstand({ darfAbgleichen }: { darfAbgleichen: boolean }) {
+function Abgleichstand() {
   const worte = useTexte();
   const fmt = useFormate();
   const tag = ZAHL_TAG[useSprache()];
-  const qc = useQueryClient();
   const stand = useQuery({
     queryKey: personalKeys.abgleich(),
     queryFn: personalApi.abgleichstand,
-  });
-  const anstossen = useMutation({
-    mutationFn: personalApi.abgleichAnstossen,
-    onSuccess: () => qc.invalidateQueries({ queryKey: personalKeys.alle() }),
   });
 
   if (stand.isLoading) return null;
@@ -101,21 +96,37 @@ function Abgleichstand({ darfAbgleichen }: { darfAbgleichen: boolean }) {
       ) : (
         <p>{worte.personal.keinAbgleich}</p>
       )}
-      {darfAbgleichen && (
-        <button
-          type="button"
-          onClick={() => anstossen.mutate()}
-          disabled={anstossen.isPending}
-          className="inline-flex items-center gap-1 rounded hover:text-[var(--fg)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
-        >
-          <RefreshCw className={cn("h-3 w-3", anstossen.isPending && "animate-spin")} aria-hidden />
-          {anstossen.isPending ? worte.personal.abgleichLaeuft : worte.personal.abgleichen}
-        </button>
-      )}
-      {anstossen.error && (
-        <p className="max-w-64 text-end text-[var(--danger)]">{(anstossen.error as Error).message}</p>
-      )}
     </div>
+  );
+}
+
+/**
+ * Wer HR verwalten darf, stößt den Personio-Abgleich an — als Knopf links
+ * neben der Zeitraumwahl, im Stil des Upload-Verweises der Kennzahlenseiten.
+ * Ein Fehler erscheint als Meldung; unter dem Knopf wäre in der Zeile kein Platz.
+ */
+function AbgleichKnopf() {
+  const worte = useTexte();
+  const qc = useQueryClient();
+  const anstossen = useMutation({
+    mutationFn: personalApi.abgleichAnstossen,
+    onSuccess: () => qc.invalidateQueries({ queryKey: personalKeys.alle() }),
+    onError: (fehler) => toast.error((fehler as Error).message),
+  });
+
+  return (
+    <button
+      type="button"
+      onClick={() => anstossen.mutate()}
+      disabled={anstossen.isPending}
+      className={
+        "inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 text-sm " +
+        "hover:bg-[var(--muted)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+      }
+    >
+      <RefreshCw className={cn("h-4 w-4 text-[var(--fg-muted)]", anstossen.isPending && "animate-spin")} aria-hidden />
+      {anstossen.isPending ? worte.personal.abgleichLaeuft : worte.personal.abgleichen}
+    </button>
   );
 }
 
@@ -208,11 +219,10 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
       <Seitenkopf
         untertitel={worte.personal.einleitung}
         bedienung={
-          <Zeitraumwahl
-            wahl={wahl}
-            stufen={STUFEN_MIT_FENSTER}
-            datenstand={<Abgleichstand darfAbgleichen={darfAbgleichen} />}
-          />
+          <>
+            {darfAbgleichen && <AbgleichKnopf />}
+            <Zeitraumwahl wahl={wahl} stufen={STUFEN_MIT_FENSTER} datenstand={<Abgleichstand />} />
+          </>
         }
       />
 
