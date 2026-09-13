@@ -20,8 +20,31 @@ vi.mock("@/lib/supabase/client", () => ({
   supabaseBrowser: () => ({ rpc }),
 }));
 
+/** Die nächste Antwort — als ganzes Ergebnis (`rpc`) oder seitenweise über
+ *  `range` (`rpcAlle`), wie PostgREST mit seinem Zeilenmaximum. */
 function antwort(data: unknown) {
-  rpc.mockResolvedValueOnce({ data, error: null });
+  rpc.mockImplementationOnce(() => {
+    const ergebnis = { data, error: null };
+    return {
+      then: (fertig: (e: typeof ergebnis) => unknown) => fertig(ergebnis),
+      range: async (von: number, bis: number) => ({
+        data: (data as unknown[]).slice(von, bis + 1),
+        error: null,
+      }),
+    };
+  });
+}
+
+/** Ein Bestand, der über mehrere Seiten geht: jede Seite ist ein eigener Aufruf. */
+function bestand(zeilen: unknown[]) {
+  const seiten: Array<[number, number]> = [];
+  rpc.mockImplementation(() => ({
+    range: async (von: number, bis: number) => {
+      seiten.push([von, bis]);
+      return { data: zeilen.slice(von, bis + 1), error: null };
+    },
+  }));
+  return seiten;
 }
 
 beforeEach(() => rpc.mockReset());
@@ -79,6 +102,19 @@ describe("Prüfleistung", () => {
     expect(rpc).toHaveBeenCalledWith("kpi_qualitaet_buchungen", { von: null, bis: null, artikelart: "fertig" });
   });
 
+  it("lädt mehr Buchungen als das Zeilenmaximum von PostgREST", async () => {
+    // Lokal 2547 Buchungen für 2026; ohne Blättern stünde „1–25 von 1000“ da.
+    const seiten = bestand(Array.from({ length: 2547 }, (_, i) => ({ id: i, buchungs_menge: "1" })));
+    const zeilen = await pruefungApi.buchungen("2026-01-01", "2026-09-12", "alle");
+    expect(zeilen).toHaveLength(2547);
+    expect(zeilen[2546]).toMatchObject({ id: 2546, buchungs_menge: 1 });
+    expect(seiten).toEqual([
+      [0, 999],
+      [1000, 1999],
+      [2000, 2999],
+    ]);
+  });
+
   it("vergleicht nur, wenn im Vergleichsfenster jemand geprüft hat", () => {
     const m = { gross: 0, klein: 12.5, gesamt: 12.5, personentage_gross: 0, personentage_klein: 3, personentage_gesamt: 3 };
     // Eine 0 ohne Prüfer-Tage ist keine Leistung von null, sondern keine Basis.
@@ -97,6 +133,14 @@ describe("Findings", () => {
       bis: "2026-12-31",
       arten: ["KU AUD"],
     });
+  });
+
+  it("lädt die Findings über das Zeilenmaximum hinaus vollständig", async () => {
+    bestand(Array.from({ length: 1001 }, (_, i) => ({ report_nr: `A-${i}`, level: null })));
+    const liste = await qualitaetApi.liste(null, null, null);
+    expect(liste).toHaveLength(1001);
+    // Die Diagnoseliste kommt aus derselben vollständigen Menge.
+    expect(ohneLevel(liste)).toHaveLength(1001);
   });
 
   it("liest die Diagnoseliste aus derselben Menge", () => {
@@ -122,5 +166,12 @@ describe("Reklamationen", () => {
     });
     expect(zeilen[0].quantity).toBe(30);
     expect(zeilen[0].accepted_quantity).toBeNull();
+  });
+
+  it("lädt über das Zeilenmaximum hinaus vollständig", async () => {
+    bestand(Array.from({ length: 1500 }, (_, i) => ({ report_nr: `R-${i}`, quantity: "2", accepted_quantity: null })));
+    const zeilen = await reklamationApi.liste("kunde", null, null);
+    expect(zeilen).toHaveLength(1500);
+    expect(zeilen[1499].quantity).toBe(2);
   });
 });
