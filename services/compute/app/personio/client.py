@@ -230,6 +230,38 @@ class PersonioClient:
         typ = antwort.headers.get("content-type", "image/jpeg").split(";")[0].strip()
         return antwort.content, typ
 
+    async def dokument_hochladen(
+        self, employee_id: int, kategorie: str, titel: str, dateiname: str, pdf: bytes
+    ) -> None:
+        """`POST /company/documents` — ein Nachweis ins Mitarbeiterprofil.
+
+        Braucht Schreibrechte auf Dokumente; mit lesenden Zugangsdaten antwortet
+        Personio 403. Keine Wiederholung hier: ob es noch einmal versucht wird,
+        entscheidet die Warteschlange, damit kein Nachweis doppelt hochgeht.
+        """
+        kopf = {"Authorization": f"Bearer {await self._gueltiger_token()}"}
+        try:
+            antwort = await self._http.post(
+                f"{BASIS_V1}/company/documents",
+                headers=kopf,
+                data={
+                    "employee_id": str(employee_id),
+                    "document_category_id": str(kategorie),
+                    "title": titel,
+                },
+                files={"file": (dateiname, pdf, "application/pdf")},
+            )
+        except httpx.TimeoutException as exc:
+            raise PersonioNetzFehler(f"Personio antwortet nicht: {exc}") from exc
+        except httpx.RequestError as exc:
+            raise PersonioNetzFehler(f"Personio nicht erreichbar: {exc}") from exc
+        if antwort.status_code == 401:
+            raise PersonioAnmeldeFehler("Zugangsdaten abgelehnt", status=401)
+        if antwort.is_error:
+            raise PersonioFehler(
+                f"Personio lehnt den Nachweis ab ({antwort.status_code})", status=antwort.status_code
+            )
+
     async def freistellungen(self) -> list[dict]:
         """`/company/time-offs` — tagesbasiert (Urlaub, Krankheit).
 

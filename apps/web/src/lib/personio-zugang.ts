@@ -23,6 +23,17 @@ export interface Pruefung {
   meldung: string | null;
 }
 
+/** Ergebnis eines Abgleichs, wie `compute` es meldet (SET-08). */
+export interface AbgleichErgebnis {
+  status: string;
+  mitarbeiter: number;
+  anwesenheiten: number;
+  abwesenheiten: number;
+  entfernt: number;
+  dauer_sekunden: number;
+  fehler: string | null;
+}
+
 const PFAD = "/api/einstellungen/personio";
 
 export const personioKeys = {
@@ -39,4 +50,6 @@ export const personioZugang = {
     }),
   entfernen: () => computeJson<PersonioStand>(PFAD, { method: "DELETE" }),
   pruefen: () => computeJson<Pruefung>(`${PFAD}/pruefen`, { method: "POST" }),
+  /** „Daten aktualisieren“ — der bestehende Abgleich, von Hand angestoßen. */
+  abgleichen: () => computeJson<AbgleichErgebnis>("/api/hr/sync", { method: "POST" }),
 };
