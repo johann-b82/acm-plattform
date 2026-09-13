@@ -9,6 +9,8 @@ Verwaltung.
 """
 from __future__ import annotations
 
+import uuid
+
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
@@ -181,6 +183,64 @@ class TestLesen:
         await anlegen(BERICHT)
         assert await als(MELDER, "delete from public.feedback returning id") == []
         assert len(await als(VERWALTUNG, "delete from public.feedback returning id")) == 1
+
+
+class TestBearbeiten:
+    """App Feedback: ein dritter Status zwischen offen und erledigt, und eine
+    Person, die sich kuemmert."""
+
+    async def test_in_bearbeitung_ist_ein_status(self, db):
+        await anlegen(BERICHT)
+        geaendert = await als(
+            VERWALTUNG,
+            "update public.feedback set status = 'in_bearbeitung' returning status")
+        assert geaendert[0]["status"] == "in_bearbeitung"
+
+    async def test_ein_unbekannter_status_wird_abgelehnt(self, db):
+        await anlegen(BERICHT)
+        text = await als_erwartet_fehler(
+            VERWALTUNG, "update public.feedback set status = 'irgendwas'")
+        assert "check" in text
+
+    async def test_die_verwaltung_weist_zu(self, db):
+        await anlegen(BERICHT)
+        geaendert = await als(
+            VERWALTUNG,
+            "update public.feedback set zugewiesen = cast(:f as uuid) returning zugewiesen",
+            f=FREMD_ID)
+        assert str(geaendert[0]["zugewiesen"]) == FREMD_ID
+
+    async def test_wer_meldet_weist_nicht_zu(self, db):
+        await anlegen(BERICHT)
+        assert await als(
+            MELDER,
+            "update public.feedback set zugewiesen = cast(:f as uuid) returning id",
+            f=FREMD_ID) == []
+
+    async def test_zuweisbar_ist_nur_ein_konto(self, db):
+        # Zufaellig statt fest: andere Tests legen Konten mit festen Kennungen an.
+        await anlegen(BERICHT)
+        text = await als_erwartet_fehler(
+            VERWALTUNG,
+            "update public.feedback set zugewiesen = cast(:f as uuid)",
+            f=str(uuid.uuid4()))
+        assert "foreign key" in text
+
+    async def test_geht_das_konto_bleibt_die_meldung_ohne_zuweisung(self, db):
+        kennung = "55555555-5555-5555-5555-555555555555"
+        await anlegen("insert into auth.users (id, email) values (cast(:i as uuid), 'weg@example.com')"
+                      " on conflict (id) do nothing", i=kennung)
+        await anlegen(BERICHT)
+        await anlegen("update public.feedback set zugewiesen = cast(:i as uuid)", i=kennung)
+        await anlegen("delete from auth.users where id = cast(:i as uuid)", i=kennung)
+        zeile = (await zeilen_ungeprueft("select zugewiesen from public.feedback"))[0]
+        assert zeile["zugewiesen"] is None
+
+    async def test_die_verwaltung_sieht_die_zuweisbaren_konten(self, db):
+        """Zuweisbar ist, wer ein Konto hat — dieselbe Sicht wie die Zugaenge."""
+        konten = await als(VERWALTUNG, "select id, email from public.plattform_nutzer")
+        assert {str(k["id"]) for k in konten} >= {USER_ID, FREMD_ID}
+        assert await als(MELDER, "select id from public.plattform_nutzer") == []
 
 
 class TestBild:

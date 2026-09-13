@@ -20,7 +20,9 @@ export const EIMER = "feedback";
 export const ERLAUBTE_BILDTYPEN = ["image/png", "image/jpeg", "image/webp"];
 export const MAX_BILD_BYTES = 5 * 1024 * 1024;
 
-export type FeedbackStatus = "neu" | "erledigt";
+/** In der Reihenfolge der Kanban-Spalten. */
+export const FEEDBACK_STATUS = ["neu", "in_bearbeitung", "erledigt"] as const;
+export type FeedbackStatus = (typeof FEEDBACK_STATUS)[number];
 
 export interface Feedback {
   id: string;
@@ -33,6 +35,14 @@ export interface Feedback {
   gesehen_am: string | null;
   erstellt_am: string;
   melder_email: string | null;
+  /** Das Konto, das sich kümmert — `null`, solange niemand zugewiesen ist. */
+  zugewiesen: string | null;
+}
+
+/** Wem eine Meldung zugewiesen werden kann: jedes Konto der Plattform. */
+export interface Konto {
+  id: string;
+  email: string;
 }
 
 export interface Meldung {
@@ -43,19 +53,36 @@ export interface Meldung {
   bild?: Blob | null;
 }
 
-/** Die Kanban-Spalten: genau die beiden Status. Ob eine Meldung gesehen ist,
- *  ist ein eigener Zustand und keine Spalte. */
+/** Die Kanban-Spalten nach Status. Ob eine Meldung gesehen ist, ist ein
+ *  eigener Zustand und keine Spalte. */
 export function nachStatus(meldungen: readonly Feedback[]): Record<FeedbackStatus, Feedback[]> {
   return {
     neu: meldungen.filter((m) => m.status === "neu"),
+    in_bearbeitung: meldungen.filter((m) => m.status === "in_bearbeitung"),
     erledigt: meldungen.filter((m) => m.status === "erledigt"),
   };
+}
+
+/** Die Kanban-Spalten nach Person: vorn „nicht zugewiesen“, dann je Konto
+ *  eine Spalte, nach E-Mail sortiert. Eine Meldung, deren Konto nicht mehr in
+ *  der Liste steht, landet vorn — verloren geht keine. */
+export function nachPerson(
+  meldungen: readonly Feedback[],
+  konten: readonly Konto[],
+): { zugewiesen: string | null; meldungen: Feedback[] }[] {
+  const sortiert = [...konten].sort((a, b) => a.email.localeCompare(b.email));
+  const bekannt = new Set(sortiert.map((k) => k.id));
+  return [
+    { zugewiesen: null, meldungen: meldungen.filter((m) => m.zugewiesen === null || !bekannt.has(m.zugewiesen)) },
+    ...sortiert.map((k) => ({ zugewiesen: k.id, meldungen: meldungen.filter((m) => m.zugewiesen === k.id) })),
+  ];
 }
 
 export const feedbackKeys = {
   liste: () => ["feedback", "liste"] as const,
   offen: () => ["feedback", "offen"] as const,
   bild: (pfad: string) => ["feedback", "bild", pfad] as const,
+  konten: () => ["feedback", "konten"] as const,
 };
 
 function pruefeBetroffen(daten: unknown[] | null): void {
@@ -124,7 +151,7 @@ export const feedbackApi = {
     const { data, error } = await supabaseBrowser()
       .from("feedback")
       .select(
-        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email",
+        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email,zugewiesen",
       )
       .order("erstellt_am", { ascending: false });
     if (error) throw new Error(error.message);
@@ -165,6 +192,27 @@ export const feedbackApi = {
       .select("id");
     if (error) throw new Error(error.message);
     pruefeBetroffen(data);
+  },
+
+  zuweisen: async (id: string, zugewiesen: string | null): Promise<void> => {
+    const { data, error } = await supabaseBrowser()
+      .from("feedback")
+      .update({ zugewiesen })
+      .eq("id", id)
+      .select("id");
+    if (error) throw new Error(error.message);
+    pruefeBetroffen(data);
+  },
+
+  /** Die Konten, denen zugewiesen werden kann — dieselbe Sicht wie die
+   *  Zugänge in den Einstellungen, lesbar nur für die Plattform-Verwaltung. */
+  konten: async (): Promise<Konto[]> => {
+    const { data, error } = await supabaseBrowser()
+      .from("plattform_nutzer")
+      .select("id,email")
+      .order("email");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Konto[];
   },
 
   /** Löscht Bericht und Bild. Das Bild zuerst: bleibt die Zeile stehen,

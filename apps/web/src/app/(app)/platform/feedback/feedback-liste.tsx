@@ -1,13 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, ExternalLink, RotateCcw } from "lucide-react";
+import { ExternalLink, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCorners,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 import {
+  FEEDBACK_STATUS,
   feedbackApi,
   feedbackKeys,
+  nachPerson,
   nachStatus,
   type Feedback,
   type FeedbackStatus,
@@ -23,18 +37,48 @@ import { cn } from "@/lib/cn";
 
 type Ansicht = "tabelle" | "kanban";
 const ANSICHTEN: Ansicht[] = ["tabelle", "kanban"];
+type Gruppierung = "status" | "person";
+const GRUPPIERUNGEN: Gruppierung[] = ["status", "person"];
 
 /**
- * Was aus den Ansichten gemeldet wurde — als Tabelle wie im Altsystem
- * (`FeedbackPage`) oder als Kanban mit einer Spalte je Status (MEL-01).
+ * Was das Ablegen einer Karte in einer Kanban-Spalte ändert — `null`, wenn
+ * nichts. Die Spalten heißen `status:<status>` bzw. `person:<Konto>`, die
+ * Spalte ohne Zuweisung `person:ohne`.
+ */
+export function ablegen(
+  m: Feedback,
+  ziel: string | null,
+): { status: FeedbackStatus } | { zugewiesen: string | null } | null {
+  if (!ziel) return null;
+  const schnitt = ziel.indexOf(":");
+  const art = ziel.slice(0, schnitt);
+  const wert = ziel.slice(schnitt + 1);
+  if (art === "status") {
+    if (!(FEEDBACK_STATUS as readonly string[]).includes(wert) || wert === m.status) return null;
+    return { status: wert as FeedbackStatus };
+  }
+  if (art === "person") {
+    const zugewiesen = wert === "ohne" ? null : wert;
+    return zugewiesen === m.zugewiesen ? null : { zugewiesen };
+  }
+  return null;
+}
+
+/**
+ * App Feedback: was aus den Ansichten gemeldet wurde — als Tabelle wie im
+ * Altsystem (`FeedbackPage`) oder als Kanban (MEL-01), gruppiert nach Status
+ * (offen, In Bearbeitung, erledigt) oder nach der zugewiesenen Person.
  *
- * Beide Ansichten zeigen dieselbe Menge mit denselben Aktionen. Ob eine
- * Meldung **gesehen** ist, ist kein Status: offen/erledigt bilden die
- * Spalten, ungesehen ist ein Punkt an der Meldung. Als gesehen gilt sie, wenn
- * jemand den Punkt anklickt, das Bild öffnet oder den Status ändert — wie im
- * Altsystem, wo ein Klick auf die Zeile sie abhakt. Beim bloßen Öffnen der
- * Seite bleibt die Markierung stehen, sonst wäre sie beim nächsten Besuch weg,
- * ohne dass jemand die Meldung gelesen hat.
+ * Status und Zuweisung ändern sich im Kanban durch Ziehen einer Karte in eine
+ * andere Spalte, mit der Maus oder über den Griff mit der Tastatur. In der
+ * Tabelle ist der Status eine Auswahlliste; die Zuweisung steht dort nur.
+ *
+ * Ob eine Meldung **gesehen** ist, ist kein Status: ungesehen ist ein Punkt an
+ * der Meldung. Als gesehen gilt sie, wenn jemand den Punkt anklickt, das Bild
+ * öffnet oder sie in eine andere Spalte zieht — wie im Altsystem, wo ein Klick
+ * auf die Zeile sie abhakt. Beim bloßen Öffnen der Seite bleibt die Markierung
+ * stehen, sonst wäre sie beim nächsten Besuch weg, ohne dass jemand die
+ * Meldung gelesen hat.
  *
  * Das Bild liegt im Eimer `feedback` und ist nicht öffentlich. Es wird erst
  * geholt, wenn jemand es ansieht — über eine signierte URL, die nach fünf
@@ -46,6 +90,7 @@ export function FeedbackListe() {
   const format = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "short", timeStyle: "short" });
   const queryClient = useQueryClient();
   const [ansicht, setAnsicht] = useState<Ansicht>("tabelle");
+  const [gruppierung, setGruppierung] = useState<Gruppierung>("status");
   const [bild, setBild] = useState<{ url: string; seite: string } | null>(null);
 
   const liste = useQuery({ queryKey: feedbackKeys.liste(), queryFn: feedbackApi.liste });
@@ -53,6 +98,10 @@ export function FeedbackListe() {
   const meldungen = useMemo(() => daten ?? [], [daten]);
   const offen = meldungen.filter((m) => m.status === "neu").length;
   const ungesehen = meldungen.filter((m) => m.gesehen_am === null).length;
+
+  const kontenAbfrage = useQuery({ queryKey: feedbackKeys.konten(), queryFn: feedbackApi.konten });
+  const konten = useMemo(() => kontenAbfrage.data ?? [], [kontenAbfrage.data]);
+  const emailVon = useMemo(() => new Map(konten.map((k) => [k.id, k.email])), [konten]);
 
   // Auch die Zahl an der Glocke in der Kopfzeile.
   const neuLaden = async () => {
@@ -75,6 +124,13 @@ export function FeedbackListe() {
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
+  const weiseZu = useMutation({
+    mutationFn: ({ m, zugewiesen }: { m: Feedback; zugewiesen: string | null }) =>
+      feedbackApi.zuweisen(m.id, zugewiesen),
+    onSuccess: neuLaden,
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
   const loeschen = useMutation({
     mutationFn: (m: Feedback) => feedbackApi.loeschen(m.id, m.bild_pfad),
     onSuccess: neuLaden,
@@ -87,7 +143,32 @@ export function FeedbackListe() {
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
-  const statusName = (s: FeedbackStatus) => (s === "neu" ? w.offen : w.erledigt);
+  const sensoren = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const beiAblegen = ({ active, over }: DragEndEvent) => {
+    const m = meldungen.find((x) => x.id === String(active.id));
+    if (!m) return;
+    const aenderung = ablegen(m, over ? String(over.id) : null);
+    if (!aenderung) return;
+    merke(m);
+    if ("status" in aenderung) setzeStatus.mutate({ m, status: aenderung.status });
+    else weiseZu.mutate({ m, zugewiesen: aenderung.zugewiesen });
+  };
+
+  const statusName: Record<FeedbackStatus, string> = {
+    neu: w.offen,
+    in_bearbeitung: w.inBearbeitung,
+    erledigt: w.erledigt,
+  };
+  const statusBadge = (s: FeedbackStatus) => (
+    <Badge variant={s === "neu" ? "default" : s === "in_bearbeitung" ? "outline" : "secondary"}>
+      {statusName[s]}
+    </Badge>
+  );
+  const zugewiesenAn = (m: Feedback) => (m.zugewiesen ? (emailVon.get(m.zugewiesen) ?? null) : null);
 
   const punkt = (m: Feedback) =>
     m.gesehen_am === null ? (
@@ -121,35 +202,8 @@ export function FeedbackListe() {
       <span className="text-xs text-[var(--fg-muted)]">—</span>
     );
 
-  const aktionen = (m: Feedback) => (
+  const loeschKnopf = (m: Feedback) => (
     <div className="flex items-center justify-end gap-1">
-      {m.status === "neu" ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={w.alsErledigt}
-          title={w.alsErledigt}
-          onClick={() => {
-            merke(m);
-            setzeStatus.mutate({ m, status: "erledigt" });
-          }}
-        >
-          <Check className="h-4 w-4" aria-hidden />
-        </Button>
-      ) : (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={w.wiederOeffnen}
-          title={w.wiederOeffnen}
-          onClick={() => {
-            merke(m);
-            setzeStatus.mutate({ m, status: "neu" });
-          }}
-        >
-          <RotateCcw className="h-4 w-4" aria-hidden />
-        </Button>
-      )}
       <ConfirmDeleteButton itemLabel={w.meldung} onConfirm={() => loeschen.mutateAsync(m)} />
     </div>
   );
@@ -204,8 +258,32 @@ export function FeedbackListe() {
       schluessel: "status",
       titel: w.spalte.status,
       typ: "text",
-      wert: (m) => statusName(m.status),
-      zelle: (m) => <Badge variant={m.status === "neu" ? "default" : "secondary"}>{statusName(m.status)}</Badge>,
+      wert: (m) => statusName[m.status],
+      zelle: (m) => (
+        <select
+          value={m.status}
+          aria-label={`${w.spalte.status}: ${m.beschreibung}`}
+          onChange={(e) => {
+            merke(m);
+            setzeStatus.mutate({ m, status: e.target.value as FeedbackStatus });
+          }}
+          className="h-8 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-xs focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+        >
+          {FEEDBACK_STATUS.map((s) => (
+            <option key={s} value={s}>
+              {statusName[s]}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      schluessel: "zugewiesen",
+      titel: w.spalte.zugewiesen,
+      typ: "text",
+      wert: zugewiesenAn,
+      className: "text-xs",
+      zelle: (m) => zugewiesenAn(m) ?? <span className="text-[var(--fg-muted)]">—</span>,
     },
     {
       schluessel: "aktionen",
@@ -215,11 +293,43 @@ export function FeedbackListe() {
       suchtext: false,
       sortierbar: false,
       ausrichtung: "end",
-      zelle: aktionen,
+      zelle: loeschKnopf,
     },
   ];
 
-  const spaltenKanban = nachStatus(meldungen);
+  const kartenInhalt = (m: Feedback) => (
+    <>
+      <div className="flex items-start gap-2">
+        {punkt(m)}
+        <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm">{m.beschreibung}</p>
+      </div>
+      <p className="text-xs text-[var(--fg-muted)]">
+        {m.melder_email ?? w.unbekannt} · <span className="font-mono">{m.seite}</span> ·{" "}
+        {format.format(new Date(m.erstellt_am))}
+      </p>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {gruppierung === "status"
+          ? zugewiesenAn(m) && <span className="text-[var(--fg-muted)]">{zugewiesenAn(m)}</span>
+          : statusBadge(m.status)}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        {bildKnopf(m)}
+        {loeschKnopf(m)}
+      </div>
+    </>
+  );
+
+  const kanbanSpalten: { id: string; titel: string; meldungen: Feedback[] }[] =
+    gruppierung === "status"
+      ? (() => {
+          const nach = nachStatus(meldungen);
+          return FEEDBACK_STATUS.map((s) => ({ id: `status:${s}`, titel: statusName[s], meldungen: nach[s] }));
+        })()
+      : nachPerson(meldungen, konten).map((s) => ({
+          id: `person:${s.zugewiesen ?? "ohne"}`,
+          titel: s.zugewiesen ? (emailVon.get(s.zugewiesen) ?? w.unbekannt) : w.nichtZugewiesen,
+          meldungen: s.meldungen,
+        }));
 
   return (
     <div className="space-y-6">
@@ -231,27 +341,22 @@ export function FeedbackListe() {
           </>
         }
         links={
-          <div
-            role="radiogroup"
-            aria-label={w.ansicht}
-            className="inline-flex rounded-md border border-[var(--border)] p-0.5"
-          >
-            {ANSICHTEN.map((a) => (
-              <button
-                key={a}
-                type="button"
-                role="radio"
-                aria-checked={ansicht === a}
-                onClick={() => setAnsicht(a)}
-                className={cn(
-                  "rounded px-4 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ring)]",
-                  ansicht === a ? "bg-[var(--fg)] text-[var(--bg)]" : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-                )}
-              >
-                {a === "tabelle" ? w.tabelle : w.kanban}
-              </button>
-            ))}
-          </div>
+          <>
+            <Umschalter
+              beschriftung={w.ansicht}
+              wert={ansicht}
+              onChange={setAnsicht}
+              optionen={ANSICHTEN.map((a) => [a, a === "tabelle" ? w.tabelle : w.kanban])}
+            />
+            {ansicht === "kanban" && (
+              <Umschalter
+                beschriftung={w.gruppieren}
+                wert={gruppierung}
+                onChange={setGruppierung}
+                optionen={GRUPPIERUNGEN.map((g) => [g, g === "status" ? w.nachStatus : w.nachPerson])}
+              />
+            )}
+          </>
         }
       />
 
@@ -269,40 +374,28 @@ export function FeedbackListe() {
           zeilenKlasse={(m) => (m.gesehen_am === null ? "bg-[var(--muted)]" : undefined)}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {(["neu", "erledigt"] as const).map((status) => (
-            <section key={status} aria-label={statusName(status)} className="space-y-2">
-              <h3 className="flex items-center gap-2 text-sm font-medium">
-                {statusName(status)}
-                <span className="text-[var(--fg-muted)]">({spaltenKanban[status].length})</span>
-              </h3>
-              <ul className="space-y-2">
-                {spaltenKanban[status].map((m) => (
-                  <li key={m.id}>
-                    <Card
-                      className={cn(
-                        "space-y-2 p-3",
-                        m.gesehen_am === null && "border-s-2 border-s-[var(--fg)] bg-[var(--muted)]",
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        {punkt(m)}
-                        <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm">{m.beschreibung}</p>
-                      </div>
-                      <p className="text-xs text-[var(--fg-muted)]">
-                        {m.melder_email ?? w.unbekannt} · <span className="font-mono">{m.seite}</span> ·{" "}
-                        {format.format(new Date(m.erstellt_am))}
-                      </p>
-                      <div className="flex items-center justify-between gap-2">
-                        {bildKnopf(m)}
-                        {aktionen(m)}
-                      </div>
-                    </Card>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+        <div className="space-y-3">
+          <p className="text-xs text-[var(--fg-muted)]">{w.ziehenHinweis}</p>
+          <DndContext sensors={sensoren} collisionDetection={closestCorners} onDragEnd={beiAblegen}>
+            <div
+              className={cn(
+                "grid gap-4",
+                gruppierung === "status"
+                  ? "md:grid-cols-3"
+                  : "grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))]",
+              )}
+            >
+              {kanbanSpalten.map((s) => (
+                <Spalte key={s.id} id={s.id} titel={s.titel} anzahl={s.meldungen.length}>
+                  {s.meldungen.map((m) => (
+                    <Karte key={m.id} m={m} griff={w.verschieben(m.beschreibung)}>
+                      {kartenInhalt(m)}
+                    </Karte>
+                  ))}
+                </Spalte>
+              ))}
+            </div>
+          </DndContext>
         </div>
       )}
 
@@ -323,5 +416,90 @@ export function FeedbackListe() {
         )}
       </Dialog>
     </div>
+  );
+}
+
+function Umschalter<T extends string>({
+  beschriftung,
+  wert,
+  onChange,
+  optionen,
+}: {
+  beschriftung: string;
+  wert: T;
+  onChange: (w: T) => void;
+  optionen: [T, string][];
+}) {
+  return (
+    <div role="radiogroup" aria-label={beschriftung} className="inline-flex rounded-md border border-[var(--border)] p-0.5">
+      {optionen.map(([schluessel, name]) => (
+        <button
+          key={schluessel}
+          type="button"
+          role="radio"
+          aria-checked={wert === schluessel}
+          onClick={() => onChange(schluessel)}
+          className={cn(
+            "rounded px-4 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ring)]",
+            wert === schluessel ? "bg-[var(--fg)] text-[var(--bg)]" : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+          )}
+        >
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Eine Kanban-Spalte, in die Karten abgelegt werden können. */
+function Spalte({ id, titel, anzahl, children }: { id: string; titel: string; anzahl: number; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <section
+      ref={setNodeRef}
+      aria-label={titel}
+      className={cn(
+        "min-h-24 space-y-2 rounded-lg p-2 transition-colors",
+        isOver ? "bg-[var(--muted)] outline-2 outline-dashed outline-[var(--ring)]" : "bg-transparent",
+      )}
+    >
+      <h3 className="flex items-center gap-2 text-sm font-medium">
+        <span className="min-w-0 truncate" title={titel}>
+          {titel}
+        </span>
+        <span className="text-[var(--fg-muted)]">({anzahl})</span>
+      </h3>
+      <ul className="space-y-2">{children}</ul>
+    </section>
+  );
+}
+
+/** Eine Karte, die sich am Griff in eine andere Spalte ziehen lässt. */
+function Karte({ m, griff, children }: { m: Feedback; griff: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: m.id });
+  return (
+    <li ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform) }} className={cn(isDragging && "relative z-10")}>
+      <Card
+        className={cn(
+          "space-y-2 p-3",
+          m.gesehen_am === null && "border-s-2 border-s-[var(--fg)] bg-[var(--muted)]",
+          isDragging && "shadow-lg",
+        )}
+      >
+        <div className="flex justify-end">
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label={griff}
+            title={griff}
+            className="-me-1 -mt-1 inline-flex h-6 w-6 cursor-grab touch-none items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-[var(--ring)] active:cursor-grabbing"
+          >
+            <GripVertical className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+        {children}
+      </Card>
+    </li>
   );
 }
