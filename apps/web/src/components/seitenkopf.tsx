@@ -28,7 +28,7 @@ export function Seitenkopf({
     <div className="space-y-3">
       {(untertitel || unter) && (
         <div className="text-start">
-          {untertitel && <p className="max-w-prose text-sm text-[var(--fg-muted)]">{untertitel}</p>}
+          {untertitel && <p className="text-sm text-[var(--fg-muted)]">{untertitel}</p>}
           {unter}
         </div>
       )}

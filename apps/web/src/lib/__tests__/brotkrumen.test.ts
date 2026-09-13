@@ -62,6 +62,15 @@ describe("krumen", () => {
     ]);
   });
 
+  it("führt die HR-Kennzahlen unter den Kennzahlen, als „HR“", () => {
+    // Die Seite liegt unter /hr, gehört aber zu den Dashboards.
+    expect(krumen("/hr/kennzahlen")).toEqual([
+      { titel: "Start", adresse: "/" },
+      { titel: "Kennzahlen", adresse: "/kpi" },
+      { titel: "HR", adresse: "/hr/kennzahlen" },
+    ]);
+  });
+
   it("überspringt eine Ebene ohne Titel", () => {
     // /platform selbst hat keinen Titel — ohne ELTERN fiele es aus der Kette,
     // statt eine leere Krume zu erzeugen.
