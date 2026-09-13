@@ -15,6 +15,9 @@ Diese Prüfung ist die Entwicklungsabnahme der Koordination, **nicht** die unabh
 | Qualität | Drei Ansichten Audits/Reklamationen/Qualitätsprüfung über Umschalter links; Findings-Übersicht (59, sortierbar, 3 Seiten); Qualitätsprüfung mit Gesamt-Kachel und Gesamt-Verlauf; **Buchungen „1–25 von 2412“ — nicht mehr bei 1000 abgeschnitten**; Artikelart Fertig/Halbfertig/Alle | QUA-04/05/06/07, TAB-01 |
 | HR-Kennzahlen | Brotkrumen „HR › Kennzahlen“; neue Kachel „Umsatz / Produktions-MA“ 102.214 € mit „4.906.285 € Aufträge ÷ 48 Köpfe“ und „+47,9 % zum Jahr 2025“; Datenstand = Personio-Abgleich unter dem Dropdown, „Jetzt abgleichen“ | HR-04, NAV-06, KPI-08 |
 | ATR | `/atr` öffnet Lieferungen; Dropdown Lieferungen/Teilekatalog; Mehrfachauswahl + „Containerbeschriftung erstellen“; Status „erzeugt“; sortierbare Tabelle mit Suche | ATR-10/06/09, TAB |
+| Finanzen | Umschalter Material/Personal links, Zeitraum rechts; Material 117.091 € (echte Kosten nach Vorbelegung), Quote 2,5 %; Personal alle Abteilungen einzeln ohne „Übrige“ (auch 1-Personen-Abteilungen); Datenstand 01.09.26 korrekt (keine „Materialpreise fehlt“-Meldung mehr); Verlauf Balken/Fläche | FIN-04/05, VER-04B, E-05 |
+| Einstellungen | Erscheinungsbild: App-Name konfigurierbar, Farbrollen mit Hauptfarbe #0041F6 (Logoblau) hell/dunkel, Logo „PNG/JPEG/SVG ≤ 5 MB“; Bereich „E-Mails“ in der Navigation; Seitengröße 25/50/100 | SET-06/07/05, TAB-01 |
+| Hilfe | Themenübersicht mit Suche erhalten; auf `/hilfe/[slug]` seitliche, thematisch gruppierte Artikelnavigation mit markiertem Artikel und „← Alle Themen“ | HIL-01 |
 
 ## Noch im Browser zu prüfen (nach Abschluss aller Module)
 
