@@ -18,6 +18,11 @@ Diese Prüfung ist die Entwicklungsabnahme der Koordination, **nicht** die unabh
 | Finanzen | Umschalter Material/Personal links, Zeitraum rechts; Material 117.091 € (echte Kosten nach Vorbelegung), Quote 2,5 %; Personal alle Abteilungen einzeln ohne „Übrige“ (auch 1-Personen-Abteilungen); Datenstand 01.09.26 korrekt (keine „Materialpreise fehlt“-Meldung mehr); Verlauf Balken/Fläche | FIN-04/05, VER-04B, E-05 |
 | Einstellungen | Erscheinungsbild: App-Name konfigurierbar, Farbrollen mit Hauptfarbe #0041F6 (Logoblau) hell/dunkel, Logo „PNG/JPEG/SVG ≤ 5 MB“; Bereich „E-Mails“ in der Navigation; Seitengröße 25/50/100 | SET-06/07/05, TAB-01 |
 | Hilfe | Themenübersicht mit Suche erhalten; auf `/hilfe/[slug]` seitliche, thematisch gruppierte Artikelnavigation mit markiertem Artikel und „← Alle Themen“ | HIL-01 |
+| Meldungen | Tabelle mit Referenzspalten (Datum, Von, Seite, Beschreibung, Screenshot, Status, Aktionen) und Tabelle/Kanban-Umschalter; Kanban „offen (5)“/„erledigt (5)“ nach Status, gleiche Daten und Aktionen | MEL-01 |
+| Maßnahmen | „KPI-Bewertung & Maßnahmen“ nach Referenz: Bubbles-Bereich, Formular „Neue Maßnahme“ mit Priorität, zentrale Tabelle mit Statusfilter; bestehende Maßnahme „Test“ erhalten | MAS-01 |
+| Organigramm | Grafische Hierarchie mit Verbindungslinien, rechteckige Avatare (Personio-Foto bzw. Initialen), Standortfilter, „74 Personen · 7 ohne Vorgesetzten“, schmal horizontal scrollbar | ORG-01 |
+| Produktion | Eine Tabelle mit Segmentwahl „Aufträge in Verzug“/„Überfällige offene Aufträge“, Kunde mit Adr-Nr., sortierbare Spalten, Suche, Seiten | PRO-02, TAB |
+| Sensoren | Zeittakt-Dropdown + „Jetzt messen“; je Kachel Temperatur und Feuchte mit Min/Max und Änderung 1h/24h (fehlend „—“), globale Grenzen mit Warnfarbe; Offline-Leerzustand ohne Ersatzwerte | SEN-02/03, SET-10/11, SEN-01 |
 
 ## Noch im Browser zu prüfen (nach Abschluss aller Module)
 
