@@ -82,16 +82,33 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
       <Seitenkopf
         untertitel={worte.qualitaet.einleitung}
         links={
-          <Segmentwahl
-            beschriftung={worte.qualitaet.ansicht}
-            wert={ansicht}
-            onChange={setAnsicht}
-            optionen={[
-              ["audits", worte.qualitaet.ansichtAudits],
-              ["reklamationen", worte.qualitaet.ansichtReklamationen],
-              ["pruefung", worte.qualitaet.ansichtPruefung],
-            ]}
-          />
+          <>
+            <Segmentwahl
+              beschriftung={worte.qualitaet.ansicht}
+              wert={ansicht}
+              onChange={setAnsicht}
+              optionen={[
+                ["audits", worte.qualitaet.ansichtAudits],
+                ["reklamationen", worte.qualitaet.ansichtReklamationen],
+                ["pruefung", worte.qualitaet.ansichtPruefung],
+              ]}
+            />
+            {/* Der Filter einer Ansicht steht in derselben Zeile wie der
+                Umschalter — nur, solange die Ansicht zu sehen ist. */}
+            {ansicht === "audits" && <AuditartWahl arten={arten} setArten={setArten} />}
+            {ansicht === "pruefung" && (
+              <Segmentwahl
+                beschriftung={worte.qualitaet.artikelart}
+                wert={artikelart}
+                onChange={setArtikelart}
+                optionen={[
+                  ["fertig", worte.qualitaet.artikelFertig],
+                  ["halbfertig", worte.qualitaet.artikelHalbfertig],
+                  ["alle", worte.qualitaet.artikelAlle],
+                ]}
+              />
+            )}
+          </>
         }
         bedienung={
           <>
@@ -104,7 +121,7 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
       <Ladefehler fehler={ziele.error} />
 
       {ansicht === "audits" && (
-        <Audits wahl={wahl} arten={arten} setArten={setArten} zielNach={zielNach} />
+        <Audits wahl={wahl} arten={arten} zielNach={zielNach} />
       )}
       {ansicht === "reklamationen" && (
         <Reklamationen
@@ -117,7 +134,7 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
         />
       )}
       {ansicht === "pruefung" && (
-        <Pruefung wahl={wahl} artikelart={artikelart} setArtikelart={setArtikelart} zielNach={zielNach} />
+        <Pruefung wahl={wahl} artikelart={artikelart} zielNach={zielNach} />
       )}
     </div>
   );
@@ -127,15 +144,61 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
 // Audits
 // ---------------------------------------------------------------------------
 
+/** Die Schlüssel kommen aus der Datenbank, die Namen aus dem Wörterbuch. */
+function useAuditLabel(): Record<string, string> {
+  const worte = useTexte();
+  return {
+    "BH AUD": worte.qualitaet.behoerde,
+    "EX AUD": worte.qualitaet.extern,
+    "IN AUD": worte.qualitaet.intern,
+    "KU AUD": worte.qualitaet.kunde,
+  };
+}
+
+function AuditartWahl({
+  arten,
+  setArten,
+}: {
+  arten: string[];
+  setArten: Dispatch<SetStateAction<string[]>>;
+}) {
+  const worte = useTexte();
+  const auditLabel = useAuditLabel();
+
+  function umschalten(art: string) {
+    setArten((vorher) => (vorher.includes(art) ? vorher.filter((a) => a !== art) : [...vorher, art]));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 ms-2">
+      <span className="text-sm text-[var(--fg-muted)]">{worte.qualitaet.auditart}</span>
+      {AUDIT_ARTEN.map((art) => (
+        <button
+          key={art}
+          type="button"
+          onClick={() => umschalten(art)}
+          aria-pressed={arten.includes(art)}
+          className={cn(
+            "rounded-full border px-3 py-1 text-sm transition-colors",
+            arten.includes(art)
+              ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
+              : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
+          )}
+        >
+          {auditLabel[art]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Audits({
   wahl,
   arten,
-  setArten,
   zielNach,
 }: {
   wahl: Zeitraumwahl;
   arten: string[];
-  setArten: Dispatch<SetStateAction<string[]>>;
   zielNach: Record<string, number>;
 }) {
   const worte = useTexte();
@@ -144,13 +207,7 @@ function Audits({
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
   const [diagrammart, setDiagrammart] = useDiagrammart();
-  // Die Schlüssel kommen aus der Datenbank, die Namen aus dem Wörterbuch.
-  const auditLabel: Record<string, string> = {
-    "BH AUD": worte.qualitaet.behoerde,
-    "EX AUD": worte.qualitaet.extern,
-    "IN AUD": worte.qualitaet.intern,
-    "KU AUD": worte.qualitaet.kunde,
-  };
+  const auditLabel = useAuditLabel();
 
   // Alle vier ausgewählt heißt „kein Filter" — dann rechnet die Datenbank mit
   // ihrer eigenen Liste, und ein fünfter Code dort wirkt sofort.
@@ -193,10 +250,6 @@ function Audits({
     summe.data?.level_2 === 0 &&
     summe.data?.ohne_level === 0;
 
-  function umschalten(art: string) {
-    setArten((vorher) => (vorher.includes(art) ? vorher.filter((a) => a !== art) : [...vorher, art]));
-  }
-
   const datum = (iso: string) => new Date(iso).toLocaleDateString(tag);
   const spalten: Tabellenspalte<AuditFinding>[] = [
     { schluessel: "report_nr", titel: worte.qualitaet.nr, typ: "text", wert: (z) => z.report_nr, className: "font-mono text-xs" },
@@ -218,26 +271,6 @@ function Audits({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-[var(--fg-muted)]">{worte.qualitaet.auditart}</span>
-        {AUDIT_ARTEN.map((art) => (
-          <button
-            key={art}
-            type="button"
-            onClick={() => umschalten(art)}
-            aria-pressed={arten.includes(art)}
-            className={cn(
-              "rounded-full border px-3 py-1 text-sm transition-colors",
-              arten.includes(art)
-                ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
-                : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
-            )}
-          >
-            {auditLabel[art]}
-          </button>
-        ))}
-      </div>
-
       <Ladefehler fehler={summe.error ?? verlauf.error ?? liste.error} />
 
       {arten.length === 0 && (
@@ -592,12 +625,10 @@ const PRUEFZIEL: Record<Pruefklasse, string> = {
 function Pruefung({
   wahl,
   artikelart,
-  setArtikelart,
   zielNach,
 }: {
   wahl: Zeitraumwahl;
   artikelart: Artikelart;
-  setArtikelart: (a: Artikelart) => void;
   zielNach: Record<string, number>;
 }) {
   const worte = useTexte();
@@ -698,19 +729,6 @@ function Pruefung({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmentwahl
-          beschriftung={worte.qualitaet.artikelart}
-          wert={artikelart}
-          onChange={setArtikelart}
-          optionen={[
-            ["fertig", worte.qualitaet.artikelFertig],
-            ["halbfertig", worte.qualitaet.artikelHalbfertig],
-            ["alle", worte.qualitaet.artikelAlle],
-          ]}
-        />
-      </div>
-
       <Ladefehler fehler={mengen.error ?? verlauf.error ?? buchungen.error} />
 
       <Card className="p-5">
