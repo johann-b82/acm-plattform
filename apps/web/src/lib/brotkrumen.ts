@@ -42,7 +42,7 @@ export const TITEL = {
   "/kpi/vertrieb": "Vertrieb",
   "/newsletter": "Newsletter",
   "/newsletter/redaktion": "Redaktion",
-  "/platform/feedback": "Meldungen",
+  "/platform/feedback": "App Feedback",
   "/produktion": "Produktion",
   "/qualitaet": "Qualität",
   "/sensoren": "Sensoren",

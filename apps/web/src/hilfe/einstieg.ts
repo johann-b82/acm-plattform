@@ -99,7 +99,7 @@ fehlt. Drei häufige Fälle:
 
 ## Etwas stimmt nicht
 
-Unten rechts steht auf jeder Seite ein **Melden**-Knopf. Er schickt den
+Unten rechts steht auf jeder Seite der Knopf **App Feedback melden**. Er schickt den
 Seitennamen und deinen Text an die Plattform-Verwaltung. Das ist der kürzere
 Weg als eine Mail, weil die Seite gleich mitkommt.
 `.trim(),

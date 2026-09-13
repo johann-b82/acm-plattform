@@ -1,8 +1,9 @@
-# Seiten-Feedback
+# App Feedback
 
-Ein Knopf unten rechts in jeder angemeldeten Ansicht: beschreiben, was auf
-dieser Seite nicht stimmt, mit einem Bild des Ausschnitts, den man gerade vor
-sich hat. Die Plattform-Verwaltung arbeitet die Meldungen ab.
+Ein Knopf **App Feedback melden** unten rechts in jeder angemeldeten Ansicht:
+beschreiben, was auf dieser Seite nicht stimmt, mit einem Bild des
+Ausschnitts, den man gerade vor sich hat. Die Plattform-Verwaltung arbeitet
+die Meldungen ab. (Bis September 2026 hieß das Modul „Meldungen“.)
 
 Das Modul ist zugleich **der erste Verbraucher von Supabase Storage** im neuen
 Stack. Was dabei über den Speicher zu lernen war, steht weiter unten — der
@@ -12,7 +13,8 @@ Newsletter wird denselben Weg gehen.
 
 | Was | Wo |
 |---|---|
-| Meldung | `public.feedback` (Migration `0019_feedback`) |
+| Meldung | `public.feedback` (Migrationen `0019_feedback`, `0056_feedback_bearbeitung`) |
+| Zuweisbare Konten | Sicht `plattform_nutzer` (Migration `0003_verwaltung`) |
 | Bild | Eimer `feedback`, nicht öffentlich, 5 MB, `image/png,jpeg,webp` |
 | Objektname | `<Kennung der meldenden Person>/<zufällige UUID>.jpg` |
 
@@ -23,14 +25,26 @@ und jeder `pg_dump` schleppt ihn mit.
 ## Die Liste
 
 `/platform/feedback` zeigt die Meldungen als Tabelle wie im Altsystem
-(Datum, Von, Seite, Beschreibung, Screenshot, Status, Aktionen) oder als
-Kanban mit einer Spalte je Status (MEL-01). Beide Ansichten zeigen dieselbe
-Menge mit denselben Aktionen: Bild öffnen, erledigen bzw. wieder öffnen,
-löschen.
+(Datum, Von, Seite, Beschreibung, Screenshot, Status, Zugewiesen, Aktionen)
+oder als Kanban (MEL-01). Beide Ansichten zeigen dieselbe Menge; Bild öffnen
+und löschen geht in beiden.
 
-**Gesehen ist kein Status.** Die Spalten sind `neu` („offen“) und
-`erledigt`; ungesehen ist ein Punkt an der Meldung. Abgehakt wird er, wenn
-jemand den Punkt anklickt, das Bild öffnet oder den Status ändert — wie im
+**Status:** `neu` („offen“), `in_bearbeitung` („In Bearbeitung“),
+`erledigt`. **Zugewiesen** ist ein Konto der Plattform (`zugewiesen`, Verweis
+auf `auth.users`); geht das Konto, bleibt die Meldung ohne Zuweisung stehen.
+Zuweisbar ist jedes Konto aus `plattform_nutzer` — wer Feedback abarbeitet,
+braucht ohnehin einen Login.
+
+**Kanban:** umschaltbar gruppiert nach Status (drei Spalten) oder nach Person
+(„Nicht zugewiesen“ vorn, dann je Konto nach E-Mail). Status und Zuweisung
+ändern sich **nur durch Ziehen** einer Karte in eine andere Spalte — mit der
+Maus oder über den Griff mit der Tastatur (Leertaste, Pfeiltasten, Leertaste).
+Die Tabelle zeigt beides nur an. Was das Ablegen ändert, entscheidet
+`ablegen()` in `feedback-liste.tsx`.
+
+**Gesehen ist kein Status.** Ungesehen ist ein Punkt an der Meldung.
+Abgehakt wird er, wenn jemand den Punkt anklickt, das Bild öffnet oder die
+Karte in eine andere Spalte zieht — wie im
 Altsystem, wo ein Klick auf die Zeile ihn abhakt. Das bloße Öffnen der Seite
 hakt nichts ab; sonst wäre die Markierung beim nächsten Besuch weg, ohne dass
 jemand die Meldung gelesen hat.
@@ -40,7 +54,7 @@ jemand die Meldung gelesen hat.
 | | Recht |
 |---|---|
 | Melden (Zeile und Bild) | jede angemeldete Person |
-| Lesen, Status ändern, Löschen | `app_mindestens('platform', 'admin')` |
+| Lesen, Status ändern, zuweisen, Löschen | `app_mindestens('platform', 'admin')` |
 
 Die Schranke ist mit Absicht schief. Ein Fehlerbericht, den nur Berechtigte
 schreiben dürfen, erreicht die Fehler nicht, die es zu finden gilt. Gelesen
