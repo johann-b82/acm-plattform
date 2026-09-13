@@ -149,6 +149,7 @@ export const fa: Texte = {
       kontakte: "تماس‌ها",
       liefertreue: "پایبندی به موعد تحویل",
       lagerbewegungen: "گردش انبار",
+      materialpreise: "قیمت مواد",
       lagerpreise: "قیمت‌های انبار",
       auftragspositionen: "اقلام سفارش",
       lieferscheine: "برگه‌های تحویل",
@@ -291,7 +292,7 @@ export const fa: Texte = {
   finanzen: {
     einleitung: "هزینهٔ مواد و پرسنل در نسبت با درآمد فاکتورشده.",
     keineDatenVor:
-      "سه فایل لازم است: گردش انبار برای مصرف، رسید کالا برای قیمت‌ها و درآمد " +
+      "سه فایل لازم است: گردش انبار برای مصرف، قیمت مواد (رسید کالا) برای قیمت‌ها و درآمد " +
       "به‌عنوان مبنا. هر سه در ",
     keineDatenNach: " هستند.",
     materialquote: "نسبت هزینهٔ مواد",
@@ -301,7 +302,6 @@ export const fa: Texte = {
     umsatz: "درآمد",
     personalquote: "نسبت هزینهٔ پرسنل",
     brauchtZeitraum: "نیازمند یک بازه است",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} برای ${personen} نفر`,
     ohnePreis: "کالاهای بدون قیمت",
     ohnePreisHinweis: "مصرف‌شده، اما ارزش‌گذاری نشده",
     jeAbteilung: "هزینهٔ پرسنل به تفکیک بخش",
@@ -313,14 +313,21 @@ export const fa: Texte = {
     verlaufHinweis: "شکاف‌ها بازه‌هایی بدون درآمد هستند — بدون مبنا نسبتی به دست نمی‌آید.",
     ziellinie: "هدف",
     verbrauch: "مصرف مواد به تفکیک کالا",
-    verbrauchHinweis:
-      "بیشترین هزینه نخست. کالاهای بدون قیمت در پایان می‌آیند — در نسبت وارد " +
-      "نمی‌شوند. حداکثر 500 سطر.",
+    verbrauchHinweis: "بیشترین هزینه نخست. کالاهای بدون قیمت در پایان می‌آیند — در نسبت وارد نمی‌شوند.",
     artikel: "کالا",
     bezeichnung: "شرح",
     menge: "مصرف",
     stueckpreis: "قیمت واحد",
     keinPreis: "بدون قیمت",
+    ansicht: "نما",
+    ansichtMaterial: "مواد",
+    ansichtPersonal: "پرسنل",
+    personalkosten: "هزینهٔ پرسنل",
+    personalquoteHinweis: "هزینهٔ پرسنل / درآمد",
+    mitarbeiter: "کارکنان",
+    mitarbeiterHinweis: "دارای هزینه در بازه",
+    personalVerlauf: "روند نسبت هزینهٔ پرسنل",
+    quoteBeiKosten: (kosten: string) => `نسبت با هزینهٔ ${kosten}`,
   },
   qualitaet: {
     einleitung: "یافته‌های ممیزی، نرخ شکایت و مقدارهای بازرسی‌شده.",
@@ -578,6 +585,9 @@ export const fa: Texte = {
       lagerbewegungen: "گردش انبار",
       lagerbewegungenText:
         "مصرف هر کالا برای نسبت هزینهٔ مواد. همهٔ سطرهای بازهٔ تاریخی فایل را جایگزین می‌کند.",
+      materialpreise: "قیمت مواد (رسید کالا)",
+      materialpreiseText:
+        "قیمت‌ها برای نسبت هزینهٔ مواد: برای هر کالا جدیدترین رسید معتبر است. ردیف‌های یکسان را به‌روز می‌کند، ردیف‌های تازه را می‌افزاید و چیزی را حذف نمی‌کند.",
       lagerpreise: "قیمت کالاهای انبار",
       lagerpreiseText:
         "داده‌های پایه برای ارزش‌گذاری انبار. کل فهرست قیمت را جایگزین می‌کند، نه فقط کالاهای موجود در فایل.",

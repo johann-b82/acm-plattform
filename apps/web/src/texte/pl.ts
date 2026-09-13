@@ -149,6 +149,7 @@ export const pl: Texte = {
       kontakte: "Kontakty",
       liefertreue: "Terminowość dostaw",
       lagerbewegungen: "Ruchy magazynowe",
+      materialpreise: "Ceny materiałów",
       lagerpreise: "Ceny magazynowe",
       auftragspositionen: "Pozycje zamówień",
       lieferscheine: "Dowody dostawy",
@@ -292,7 +293,7 @@ export const pl: Texte = {
   finanzen: {
     einleitung: "Koszty materiałów i personelu w stosunku do obrotu z faktur.",
     keineDatenVor:
-      "Potrzebne są trzy pliki: ruchy magazynowe dla zużycia, przyjęcia towaru dla cen i " +
+      "Potrzebne są trzy pliki: ruchy magazynowe dla zużycia, ceny materiałów (przyjęcie towaru) dla cen i " +
       "obrót jako wielkość odniesienia. Wszystkie trzy znajdziesz w ",
     keineDatenNach: ".",
     materialquote: "Udział kosztów materiałów",
@@ -302,7 +303,6 @@ export const pl: Texte = {
     umsatz: "Obrót",
     personalquote: "Udział kosztów personelu",
     brauchtZeitraum: "wymaga okresu",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} przy ${personen} osobach`,
     ohnePreis: "Artykuły bez ceny",
     ohnePreisHinweis: "zużyte, ale niewycenione",
     jeAbteilung: "Koszty personelu wg działu",
@@ -314,14 +314,21 @@ export const pl: Texte = {
     verlaufHinweis: "Przerwy to okresy bez obrotu — bez wielkości odniesienia nie ma wskaźnika.",
     ziellinie: "Cel",
     verbrauch: "Zużycie materiału wg artykułu",
-    verbrauchHinweis:
-      "Najwyższe koszty na górze. Artykuły bez ceny stoją na końcu — nie wchodzą do " +
-      "wskaźnika. Najwyżej 500 wierszy.",
+    verbrauchHinweis: "Najwyższe koszty na górze. Artykuły bez ceny stoją na końcu — nie wchodzą do wskaźnika.",
     artikel: "Artykuł",
     bezeichnung: "Nazwa",
     menge: "Zużycie",
     stueckpreis: "Cena jedn.",
     keinPreis: "brak ceny",
+    ansicht: "Widok",
+    ansichtMaterial: "Materiały",
+    ansichtPersonal: "Personel",
+    personalkosten: "Koszty personelu",
+    personalquoteHinweis: "Koszty personelu / obrót",
+    mitarbeiter: "Pracownicy",
+    mitarbeiterHinweis: "z kosztami w okresie",
+    personalVerlauf: "Udział kosztów personelu w czasie",
+    quoteBeiKosten: (kosten: string) => `Wskaźnik przy kosztach ${kosten}`,
   },
   qualitaet: {
     einleitung: "Ustalenia z auditów, wskaźnik reklamacji i ilości kontrolowane.",
@@ -585,6 +592,9 @@ export const pl: Texte = {
       lagerbewegungen: "Ruchy magazynowe",
       lagerbewegungenText:
         "Zużycie wg artykułu dla udziału kosztów materiałów. Zastępuje wszystkie wiersze z zakresu dat pliku.",
+      materialpreise: "Ceny materiałów (przyjęcie towaru)",
+      materialpreiseText:
+        "Ceny dla udziału kosztów materiałów: dla każdego artykułu obowiązuje najnowsze przyjęcie. Aktualizuje te same pozycje, dodaje nowe, niczego nie usuwa.",
       lagerpreise: "Ceny artykułów magazynowych",
       lagerpreiseText:
         "Dane podstawowe do wyceny magazynu. Zastępuje całą listę cen, nie tylko zawarte w niej artykuły.",

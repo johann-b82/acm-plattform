@@ -149,6 +149,7 @@ export const vi: Texte = {
       kontakte: "Liên hệ",
       liefertreue: "Độ đúng hẹn giao hàng",
       lagerbewegungen: "Biến động kho",
+      materialpreise: "Giá vật tư",
       lagerpreise: "Giá hàng kho",
       auftragspositionen: "Hạng mục đơn hàng",
       lieferscheine: "Phiếu giao hàng",
@@ -290,7 +291,7 @@ export const vi: Texte = {
   finanzen: {
     einleitung: "Chi phí vật tư và nhân sự so với doanh thu xuất hóa đơn.",
     keineDatenVor:
-      "Cần ba tệp: biến động kho cho lượng tiêu hao, hàng nhập kho cho giá và " +
+      "Cần ba tệp: biến động kho cho lượng tiêu hao, giá vật tư (nhập kho) cho giá và " +
       "doanh thu làm cơ sở quy chiếu. Cả ba đều nằm ở ",
     keineDatenNach: ".",
     materialquote: "Tỷ lệ chi phí vật tư",
@@ -300,7 +301,6 @@ export const vi: Texte = {
     umsatz: "Doanh thu",
     personalquote: "Tỷ lệ chi phí nhân sự",
     brauchtZeitraum: "cần một khoảng thời gian",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} cho ${personen} người`,
     ohnePreis: "Mặt hàng không có giá",
     ohnePreisHinweis: "đã tiêu hao nhưng chưa định giá",
     jeAbteilung: "Chi phí nhân sự theo bộ phận",
@@ -313,14 +313,21 @@ export const vi: Texte = {
       "Chỗ trống là những kỳ không có doanh thu — không có cơ sở quy chiếu thì không có tỷ lệ.",
     ziellinie: "Mục tiêu",
     verbrauch: "Lượng vật tư tiêu hao theo mặt hàng",
-    verbrauchHinweis:
-      "Chi phí cao nhất lên trước. Mặt hàng không có giá nằm cuối — chúng không vào " +
-      "tỷ lệ. Tối đa 500 dòng.",
+    verbrauchHinweis: "Chi phí cao nhất lên trước. Mặt hàng không có giá nằm cuối — chúng không vào tỷ lệ.",
     artikel: "Mặt hàng",
     bezeichnung: "Mô tả",
     menge: "Tiêu hao",
     stueckpreis: "Đơn giá",
     keinPreis: "không có giá",
+    ansicht: "Chế độ xem",
+    ansichtMaterial: "Vật tư",
+    ansichtPersonal: "Nhân sự",
+    personalkosten: "Chi phí nhân sự",
+    personalquoteHinweis: "Chi phí nhân sự / doanh thu",
+    mitarbeiter: "Nhân viên",
+    mitarbeiterHinweis: "có chi phí trong kỳ",
+    personalVerlauf: "Tỷ lệ chi phí nhân sự theo thời gian",
+    quoteBeiKosten: (kosten: string) => `Tỷ lệ với chi phí ${kosten}`,
   },
   qualitaet: {
     einleitung: "Phát hiện audit, tỷ lệ khiếu nại và sản lượng kiểm tra.",
@@ -584,6 +591,9 @@ export const vi: Texte = {
       lagerbewegungen: "Biến động kho",
       lagerbewegungenText:
         "Lượng tiêu hao theo mặt hàng cho tỷ lệ chi phí vật tư. Thay thế toàn bộ dòng trong khoảng ngày của tệp.",
+      materialpreise: "Giá vật tư (nhập kho)",
+      materialpreiseText:
+        "Giá cho tỷ lệ chi phí vật tư: mỗi mặt hàng lấy lần nhập kho mới nhất. Cập nhật vị trí trùng, thêm vị trí mới, không xóa gì.",
       lagerpreise: "Giá mặt hàng kho",
       lagerpreiseText:
         "Dữ liệu gốc để định giá tồn kho. Thay thế cả bảng giá, không chỉ những mặt hàng có trong tệp.",

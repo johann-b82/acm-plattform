@@ -152,6 +152,7 @@ export const en: Texte = {
       kontakte: "Contacts",
       liefertreue: "Delivery reliability",
       lagerbewegungen: "Stock movements",
+      materialpreise: "Material prices",
       lagerpreise: "Stock prices",
       auftragspositionen: "Order lines",
       lieferscheine: "Delivery notes",
@@ -292,8 +293,8 @@ export const en: Texte = {
   finanzen: {
     einleitung: "Material and personnel costs against invoiced revenue.",
     keineDatenVor:
-      "Three files are needed: the stock movements for consumption, the goods receipts for " +
-      "the prices and the revenue as the reference. All three live under ",
+      "Three files are needed: the stock movements for consumption, the material prices " +
+      "(goods receipt) for the prices and the revenue as the reference. All three live under ",
     keineDatenNach: ".",
     materialquote: "Material cost ratio",
     materialquoteHinweis: "Material costs / revenue",
@@ -302,7 +303,6 @@ export const en: Texte = {
     umsatz: "Revenue",
     personalquote: "Personnel cost ratio",
     brauchtZeitraum: "needs a period",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} for ${personen} people`,
     ohnePreis: "Items without a price",
     ohnePreisHinweis: "consumed, but not valued",
     jeAbteilung: "Personnel costs by department",
@@ -314,14 +314,21 @@ export const en: Texte = {
     verlaufHinweis: "Gaps are periods without revenue — without a reference there is no ratio.",
     ziellinie: "Target",
     verbrauch: "Material consumption by item",
-    verbrauchHinweis:
-      "Highest cost first. Items without a price come last — they do not enter the ratio. " +
-      "At most 500 rows.",
+    verbrauchHinweis: "Highest cost first. Items without a price come last — they do not enter the ratio.",
     artikel: "Item",
     bezeichnung: "Description",
     menge: "Consumption",
     stueckpreis: "Unit price",
     keinPreis: "no price",
+    ansicht: "View",
+    ansichtMaterial: "Material",
+    ansichtPersonal: "Personnel",
+    personalkosten: "Personnel costs",
+    personalquoteHinweis: "Personnel costs / revenue",
+    mitarbeiter: "Employees",
+    mitarbeiterHinweis: "with costs in the period",
+    personalVerlauf: "Personnel cost ratio over time",
+    quoteBeiKosten: (kosten: string) => `Ratio at ${kosten} costs`,
   },
   qualitaet: {
     einleitung: "Audit findings, complaint rate and inspected quantities.",
@@ -581,6 +588,9 @@ export const en: Texte = {
       lagerbewegungen: "Stock movements",
       lagerbewegungenText:
         "Consumption per item for the material cost ratio. Replaces all rows within the file's date range.",
+      materialpreise: "Material prices (goods receipt)",
+      materialpreiseText:
+        "Prices for the material cost ratio: per item the latest goods receipt applies. Updates matching positions, adds new ones, deletes nothing.",
       lagerpreise: "Stock item prices",
       lagerpreiseText:
         "Master data for stock valuation. Replaces the whole price list, not only the items contained.",

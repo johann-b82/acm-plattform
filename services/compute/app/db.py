@@ -219,6 +219,29 @@ material_movements = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+# Materialpreise (Wareneingang): dieselbe Datei wie `goods_receipt_records`,
+# aber ein eigener Upload — die Preisquelle der Materialkostenquote.
+material_prices = sa.Table(
+    "material_prices",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("vorgang_nr", sa.String(50), nullable=False),
+    sa.Column("pos", sa.Integer, nullable=False),
+    sa.Column("upos", sa.Integer, nullable=False, server_default="0"),
+    sa.Column("typ", sa.String(10)),
+    sa.Column("datum", sa.Date),
+    sa.Column("artnr", sa.String(50), nullable=False),
+    sa.Column("article_name", sa.String(255)),
+    sa.Column("menge", sa.Numeric(15, 3)),
+    sa.Column("unit", sa.String(20)),
+    sa.Column("preis", sa.Numeric(15, 4)),
+    sa.Column("pos_wert", sa.Numeric(15, 2)),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+    sa.Column("raw", JSONB),
+    sa.UniqueConstraint("vorgang_nr", "pos", "upos", name="uq_material_prices_vorgang_pos"),
+)
+
 stock_article_prices = sa.Table(
     "stock_article_prices",
     metadata,
@@ -856,6 +879,7 @@ TABLES = {
     "goods_receipt_records": goods_receipt_records,
     "inspection_records": inspection_records,
     "material_movements": material_movements,
+    "material_prices": material_prices,
     "stock_article_prices": stock_article_prices,
     "sales_contacts": sales_contacts,
     "offers": offers,

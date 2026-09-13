@@ -312,7 +312,7 @@ Vier Entscheidungen des Rechenwegs, alle aus dem Altprojekt übernommen:
 - **Ein Artikel ohne Preis wird nicht mit null bewertet**, sondern ausgelassen und gezählt. Sonst sähe die Quote besser aus, als sie ist. Die Kachel „Artikel ohne Preis" macht das sichtbar.
 - **Mehr Storno als Entnahme ergibt negative Kosten.** Kein Schutzgriff: das Vorzeichen ist eine Aussage über die Daten.
 
-Eine Vereinfachung gegenüber dem Altprojekt: dort wird `AswKpf_WE.txt` **zweimal** hochgeladen, einmal als Wareneingang und einmal als Preisliste in eine eigene Tabelle. Es sind dieselben Zeilen. Hier ist die Preisliste die Sicht `artikel_preise` auf die Wareneingänge, die es schon gibt.
+Wie im Altprojekt wird `AswKpf_WE.txt` **zweimal** hochgeladen: als Wareneingang (Reklamationsquote) und als Materialpreise (Wareneingang) in die eigene Tabelle `material_prices`. Die Sicht `artikel_preise` liest nur die Materialpreise — die beiden Uploads haben verschiedene Stände (Migration `0043_materialpreise`).
 
 ### Ladenhüter
 

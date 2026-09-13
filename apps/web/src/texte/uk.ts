@@ -150,6 +150,7 @@ export const uk: Texte = {
       kontakte: "Контакти",
       liefertreue: "Дотримання термінів постачання",
       lagerbewegungen: "Рух складу",
+      materialpreise: "Ціни матеріалів",
       lagerpreise: "Ціни складу",
       auftragspositionen: "Позиції замовлень",
       lieferscheine: "Накладні",
@@ -290,7 +291,7 @@ export const uk: Texte = {
   finanzen: {
     einleitung: "Витрати на матеріали та персонал у відношенні до обороту за рахунками.",
     keineDatenVor:
-      "Потрібні три файли: рух складу для витрати, надходження товару для цін і оборот як " +
+      "Потрібні три файли: рух складу для витрати, ціни матеріалів (надходження товару) для цін і оборот як " +
       "база. Усі три лежать у розділі ",
     keineDatenNach: ".",
     materialquote: "Частка витрат на матеріали",
@@ -300,7 +301,6 @@ export const uk: Texte = {
     umsatz: "Оборот",
     personalquote: "Частка витрат на персонал",
     brauchtZeitraum: "потрібен період",
-    personalHinweis: (kosten: string, personen: string) => `${kosten} на ${personen} осіб`,
     ohnePreis: "Артикули без ціни",
     ohnePreisHinweis: "витрачені, але не оцінені",
     jeAbteilung: "Витрати на персонал за відділами",
@@ -312,14 +312,21 @@ export const uk: Texte = {
     verlaufHinweis: "Прогалини — це періоди без обороту: без бази немає і частки.",
     ziellinie: "Ціль",
     verbrauch: "Витрата матеріалів за артикулами",
-    verbrauchHinweis:
-      "Найбільші витрати спершу. Артикули без ціни стоять у кінці — вони не входять у " +
-      "частку. Щонайбільше 500 рядків.",
+    verbrauchHinweis: "Найбільші витрати спершу. Артикули без ціни стоять у кінці — вони не входять у частку.",
     artikel: "Артикул",
     bezeichnung: "Назва",
     menge: "Витрата",
     stueckpreis: "Ціна за од.",
     keinPreis: "немає ціни",
+    ansicht: "Подання",
+    ansichtMaterial: "Матеріали",
+    ansichtPersonal: "Персонал",
+    personalkosten: "Витрати на персонал",
+    personalquoteHinweis: "Витрати на персонал / оборот",
+    mitarbeiter: "Працівники",
+    mitarbeiterHinweis: "з витратами в періоді",
+    personalVerlauf: "Частка витрат на персонал у часі",
+    quoteBeiKosten: (kosten: string) => `Частка при витратах ${kosten}`,
   },
   qualitaet: {
     einleitung: "Невідповідності аудитів, частка рекламацій і обсяги перевірок.",
@@ -583,6 +590,9 @@ export const uk: Texte = {
       lagerbewegungen: "Рух складу",
       lagerbewegungenText:
         "Витрата на артикул для частки витрат на матеріали. Замінює всі рядки в діапазоні дат файлу.",
+      materialpreise: "Ціни матеріалів (надходження товару)",
+      materialpreiseText:
+        "Ціни для частки витрат на матеріали: для кожного артикула діє найновіше надходження. Оновлює ті самі позиції, додає нові, нічого не видаляє.",
       lagerpreise: "Ціни складських артикулів",
       lagerpreiseText:
         "Основні дані для оцінки складу. Замінює весь прайс-лист, а не лише наявні в ньому артикули.",

@@ -51,7 +51,7 @@ PAARE: list[Paar] = [
     Paar("Einkauf", "goods_receipt_records", "goods_receipt_records"),
     Paar("Einkauf", "material_movements", "material_movements"),
     Paar("Einkauf", "stock_article_prices", "stock_article_prices"),
-    Paar("Einkauf", "material_prices", None, "Preise stehen in stock_article_prices"),
+    Paar("Einkauf", "material_prices", "material_prices"),
     # --- Qualität -----------------------------------------------------------
     Paar("Qualität", "quality_records", "quality_records"),
     Paar("Qualität", "inspection_records", "inspection_records"),
