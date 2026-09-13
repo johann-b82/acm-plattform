@@ -70,8 +70,8 @@ export function ablegen(
  * (offen, In Bearbeitung, erledigt) oder nach der zugewiesenen Person.
  *
  * Status und Zuweisung ändern sich im Kanban durch Ziehen einer Karte in eine
- * andere Spalte, mit der Maus oder über den Griff mit der Tastatur. Die
- * Tabelle zeigt beides nur an.
+ * andere Spalte, mit der Maus oder über den Griff mit der Tastatur. In der
+ * Tabelle ist der Status eine Auswahlliste; die Zuweisung steht dort nur.
  *
  * Ob eine Meldung **gesehen** ist, ist kein Status: ungesehen ist ein Punkt an
  * der Meldung. Als gesehen gilt sie, wenn jemand den Punkt anklickt, das Bild
@@ -259,7 +259,23 @@ export function FeedbackListe() {
       titel: w.spalte.status,
       typ: "text",
       wert: (m) => statusName[m.status],
-      zelle: (m) => statusBadge(m.status),
+      zelle: (m) => (
+        <select
+          value={m.status}
+          aria-label={`${w.spalte.status}: ${m.beschreibung}`}
+          onChange={(e) => {
+            merke(m);
+            setzeStatus.mutate({ m, status: e.target.value as FeedbackStatus });
+          }}
+          className="h-8 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-xs focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+        >
+          {FEEDBACK_STATUS.map((s) => (
+            <option key={s} value={s}>
+              {statusName[s]}
+            </option>
+          ))}
+        </select>
+      ),
     },
     {
       schluessel: "zugewiesen",

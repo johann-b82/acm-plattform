@@ -37,10 +37,11 @@ braucht ohnehin einen Login.
 
 **Kanban:** umschaltbar gruppiert nach Status (drei Spalten) oder nach Person
 („Nicht zugewiesen“ vorn, dann je Konto nach E-Mail). Status und Zuweisung
-ändern sich **nur durch Ziehen** einer Karte in eine andere Spalte — mit der
-Maus oder über den Griff mit der Tastatur (Leertaste, Pfeiltasten, Leertaste).
-Die Tabelle zeigt beides nur an. Was das Ablegen ändert, entscheidet
-`ablegen()` in `feedback-liste.tsx`.
+ändern sich durch Ziehen einer Karte in eine andere Spalte — mit der Maus
+oder über den Griff mit der Tastatur (Leertaste, Pfeiltasten, Leertaste). Was
+das Ablegen ändert, entscheidet `ablegen()` in `feedback-liste.tsx`. In der
+**Tabelle** ist der Status eine Auswahlliste je Zeile; die Zuweisung steht
+dort nur.
 
 **Gesehen ist kein Status.** Ungesehen ist ein Punkt an der Meldung.
 Abgehakt wird er, wenn jemand den Punkt anklickt, das Bild öffnet oder die

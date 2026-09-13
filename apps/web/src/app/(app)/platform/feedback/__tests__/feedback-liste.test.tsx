@@ -85,9 +85,20 @@ describe("App Feedback", () => {
       expect(within(tabelle).getByText(titel)).toBeInTheDocument();
     }
     expect(within(tabelle).getAllByRole("row")).toHaveLength(4);
-    expect(within(tabelle).getByText("In Bearbeitung")).toBeInTheDocument();
+    expect(within(tabelle).getByRole("combobox", { name: "Status: Beschreibung b" })).toHaveValue("in_bearbeitung");
     expect(await within(tabelle).findByText("anna@example.com")).toBeInTheDocument();
     expect(within(tabelle).getByRole("button", { name: "Öffnen" })).toBeInTheDocument();
+  });
+
+  it("ändert den Status auch in der Tabelle und hakt die ungesehene Meldung ab", async () => {
+    zeige();
+    await screen.findByText("Beschreibung a");
+    const auswahl = screen.getByRole("combobox", { name: "Status: Beschreibung a" });
+    expect(auswahl).toHaveValue("neu");
+    fireEvent.change(auswahl, { target: { value: "in_bearbeitung" } });
+    await waitFor(() => expect(api.status).toHaveBeenCalledWith("a", "in_bearbeitung"));
+    expect(api.gesehen).toHaveBeenCalledWith(["a"]);
+    expect(screen.getByRole("combobox", { name: "Status: Beschreibung c" })).toHaveValue("erledigt");
   });
 
   it("markiert beim bloßen Öffnen nichts als gesehen", async () => {
