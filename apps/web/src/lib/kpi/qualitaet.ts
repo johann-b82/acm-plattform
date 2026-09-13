@@ -1,5 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { rpc, takt } from "@/lib/kpi/gemeinsam";
+import { rpc, rpcAlle, takt } from "@/lib/kpi/gemeinsam";
 
 /**
  * Audit-Findings. Rechenweg in Alembic 0006.
@@ -53,7 +53,8 @@ export const qualitaetApi = {
       arten,
     }),
   liste: (von: string | null, bis: string | null, arten: string[] | null) =>
-    rpc<AuditFinding[]>("kpi_qualitaet_audits_liste", { von, bis, arten }),
+    // Vollständig, nicht nur die ersten 1000 Zeilen von PostgREST.
+    rpcAlle<AuditFinding>("kpi_qualitaet_audits_liste", { von, bis, arten }),
 };
 
 /** Die Befunde ohne erkanntes Level — aus derselben Menge wie die Übersicht,
@@ -155,7 +156,7 @@ export const reklamationApi = {
     }));
   },
   liste: async (p_art: ReklamationsArt, von: string | null, bis: string | null): Promise<ReklamationZeile[]> => {
-    const rows = await rpc<ReklamationZeile[]>("kpi_qualitaet_reklamationen_liste", { p_art, von, bis });
+    const rows = await rpcAlle<ReklamationZeile>("kpi_qualitaet_reklamationen_liste", { p_art, von, bis });
     return rows.map((r) => ({
       ...r,
       quantity: r.quantity == null ? null : Number(r.quantity),
@@ -261,7 +262,7 @@ export const pruefungApi = {
     }));
   },
   buchungen: async (von: string | null, bis: string | null, artikelart: Artikelart) => {
-    const rows = await rpc<BuchungsZeile[]>("kpi_qualitaet_buchungen", { von, bis, artikelart });
+    const rows = await rpcAlle<BuchungsZeile>("kpi_qualitaet_buchungen", { von, bis, artikelart });
     return rows.map((z) => ({
       ...z,
       buchungs_menge: z.buchungs_menge == null ? null : Number(z.buchungs_menge),
