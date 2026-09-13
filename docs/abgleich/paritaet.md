@@ -54,3 +54,29 @@ Gesamt Aufträge 4.906.285,15 €, Rechnungen 4.760.703,11 € (= Kachel Umsatz)
 **Besuche.** `sales_contacts`, `status = 1`, `ORT` vor Ort, `ONL` online, gestapelt; Ziel „3 / Woche“ gilt der Summe (`SalesActivityCard.tsx`, `sales_kpi_aggregation.py:57,85-88`).
 
 **KPI-06.** Umsatz und Aufträge gesamt: mehr ist günstig. Ø Auftragswert: mehr ist günstig (KPI-05: Rückgänge rot).
+
+## Produktion — Verzugsquote-Vergleich (PRO-01, E-02)
+
+Rohwerte der lokalen Kopie, Fenster „Dieses Jahr" (01.01.–13.09.) gegen dasselbe Fenster im Vorjahr:
+
+| Fenster | in Verzug / gesamt | Quote |
+|---|---:|---:|
+| 2026 | 428 / 506 | 84,6 % |
+| 2025 | 311 / 464 | 67,0 % |
+
+- **Unsere Anzeige (direkt):** (0,846 − 0,670) / 0,670 = **+26,2 %** — die relative Änderung der angezeigten Quote; Farbe rot (weniger ist besser, Quote gestiegen).
+- **Referenz (Komplement 1−Quote):** (0,154 − 0,330) / 0,330 = **−53,2 %** — dieselbe Bewegung im Termintreue-Raum.
+
+Die Abweichung +26,2 % (lokal) gegen −53,3 % (Referenz) ist damit **belegt** und beabsichtigt (E-02): Pfeil und Prozent folgen der angezeigten Quote, die Farbe der fachlichen Richtung. `kpi_produktion_verzug('2026-01-01','2026-09-13')` bzw. `('2025-01-01','2025-09-13')`, Abfrage am 13.09.2026.
+
+## Qualität — Prüfleistung je Prüfer-Tag (QUA-02)
+
+`kpi_qualitaet_pruefmengen('2026-01-01','2026-09-13','fertig')`:
+
+| Klasse | Wert | Prüfer-Tage (eigener Nenner) |
+|---|---:|---:|
+| groß | 16,8 | 234 |
+| klein | 162,8 | 42 |
+| gesamt | 42,7 | 252 |
+
+Jede Klasse hat ihren **eigenen** Nenner `count(distinct (benutzer, pruef_datum))` (Filter `rsc='70000'`, nicht ausgeschlossen, Halbfertig = `artikel ilike 'H%'`). Gesamt (252) ist die echte distinct-Menge über alle Artikel — **nicht** die Summe groß+klein (234+42=276, 24 Kombinationen überschneiden sich). Genau der Nenner, den das Altsystem verworfen hatte und den QUA-02 wiederherstellt. Die Werte treffen die historischen Referenzwerte 16,8 / 162,8 / 42,7.
