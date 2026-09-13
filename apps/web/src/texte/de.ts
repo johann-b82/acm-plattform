@@ -42,6 +42,9 @@ export const de = {
       "Deinem Konto ist noch keine App zugewiesen. Bitte an die Plattform-Verwaltung wenden.",
   },
   anmeldung: {
+    benutzer: "Benutzer",
+    lokalWechseln: "Lokal anmelden",
+    adWechseln: "Mit AD-Konto anmelden",
     titel: "ACM-Plattform",
     aufforderung: "Mit deinem Konto anmelden.",
     email: "E-Mail",
@@ -1726,6 +1729,8 @@ export const de = {
       email: "E-Mails",
       emailText:
         "Über welches Microsoft-365-Konto die Plattform Erinnerungen und Berichte verschickt. Versendet wird nur auf ausdrückliche Aktion.",
+      ad: "Active Directory",
+      adText: "Anmeldung gegen das lokale AD per LDAPS. compute prüft das Passwort beim Login und spiegelt die AD-Gruppen; App-Rechte vergibt ein Admin je Gruppe unter „Nutzer und Gruppen“.",
       zugaenge: "Nutzer und Gruppen",
       zugaengeText:
         "Personen anlegen, Gruppen bilden und ihnen App-Rechte geben. Änderungen wirken, sobald " +
