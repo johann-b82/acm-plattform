@@ -3,9 +3,10 @@
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Languages, LogOut, Settings } from "lucide-react";
+import { Languages, LogOut, Settings, SunMoon } from "lucide-react";
 
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umschalter";
 import { initialen } from "@/lib/initialen";
 import { SPRACHEN, SPRACHE_LABEL } from "@/lib/sprache";
 import { setzeSprache } from "@/app/sprache-aktion";
@@ -125,6 +126,16 @@ export function Benutzermenue({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="mt-2 px-2">
+            <span className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
+              <SunMoon className="h-4 w-4" aria-hidden />
+              {t.kopf.erscheinungsbild}
+            </span>
+            <div className="mt-1">
+              <ErscheinungsbildUmschalter />
+            </div>
           </div>
 
           <div className="mt-2 border-t border-[var(--border)] pt-2">

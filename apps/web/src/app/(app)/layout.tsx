@@ -15,7 +15,6 @@ import { Seitentitel } from "@/components/kopfzeile/seitentitel";
 import { FeedbackGlocke } from "@/components/feedback/glocke";
 import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
-import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umschalter";
 
 /**
  * Shell für alle angemeldeten Seiten. Läuft immer pro Anfrage (die Sitzung
@@ -77,12 +76,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                     wer sie auch abhaken darf. */}
                 {darfMeldungen && <FeedbackGlocke />}
                 {darfMassnahmen && <MassnahmenKnopf />}
-                <ErscheinungsbildUmschalter />
                 <Link href="/hilfe" aria-label={t.kopf.hilfe} title={t.kopf.hilfe} className={KNOPF}>
                   <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
                 </Link>
-                {/* Sprache, Einstellungen und Abmelden liegen im Menü hinter
-                    den Initialen (NAV-02): selten gebraucht, aber immer da. */}
+                {/* Sprache, Erscheinungsbild, Einstellungen und Abmelden liegen
+                    im Menü hinter den Initialen: selten gebraucht, aber immer da. */}
                 <Benutzermenue email={session.email} darfEinstellungen={session.apps.platform === "admin"} />
               </div>
           </header>
