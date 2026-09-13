@@ -23,6 +23,10 @@ Diese Prüfung ist die Entwicklungsabnahme der Koordination, **nicht** die unabh
 | Organigramm | Grafische Hierarchie mit Verbindungslinien, rechteckige Avatare (Personio-Foto bzw. Initialen), Standortfilter, „74 Personen · 7 ohne Vorgesetzten“, schmal horizontal scrollbar | ORG-01 |
 | Produktion | Eine Tabelle mit Segmentwahl „Aufträge in Verzug“/„Überfällige offene Aufträge“, Kunde mit Adr-Nr., sortierbare Spalten, Suche, Seiten | PRO-02, TAB |
 | Sensoren | Zeittakt-Dropdown + „Jetzt messen“; je Kachel Temperatur und Feuchte mit Min/Max und Änderung 1h/24h (fehlend „—“), globale Grenzen mit Warnfarbe; Offline-Leerzustand ohne Ersatzwerte | SEN-02/03, SET-10/11, SEN-01 |
+| Dunkelmodus | Vertrieb-Dashboard im Dunkelmodus (über das Benutzermenü): dunkler Grund, lesbare Diagramme, Vergleichsfarben und Kundenanteile korrekt | Erscheinungsbild |
+| Schreibablauf | Maschine mit allen Feldern angelegt (Name/Inventar-Nr./Standort/Status) → Toast „Maschine angelegt", Wiederanzeige in der sortierbaren Tabelle mit allen Werten; Testdaten danach entfernt | WAR-02 |
+| Leerzustand | Produktion-Wartung ohne Maschinen: „Noch keine Maschine — Leg eine Maschine an …" | — |
+| Kopfzeile/Kacheln | Hell/Dunkel im Benutzermenü; Kacheln einheitlich (zwei Zeilen reserviert, Icon auf volle Höhe); HR-Kachel Personen-Silhouette; App-Kacheln ebenso; mittiger Header-Titel entfernt (Brotkrumen genügen) | UI-Feinschliff |
 
 ## Noch im Browser zu prüfen (nach Abschluss aller Module)
 
