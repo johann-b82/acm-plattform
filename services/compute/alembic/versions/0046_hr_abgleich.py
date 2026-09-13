@@ -33,7 +33,7 @@ damit das nicht noch einmal geschieht.
 from alembic import op
 
 revision = "0046_hr_abgleich"
-down_revision = "0040_bereich_hr"
+down_revision = "0048_atr_abgleich"
 branch_labels = None
 depends_on = None
 
