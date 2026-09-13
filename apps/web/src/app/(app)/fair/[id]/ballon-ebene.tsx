@@ -15,6 +15,7 @@ export function BallonEbene({
   ballons,
   breite,
   hoehe,
+  groesse,
   hervorgehoben,
   vorschau,
   onWaehlen,
@@ -22,6 +23,8 @@ export function BallonEbene({
   ballons: Ballon[];
   breite: number;
   hoehe: number;
+  /** Bubblegröße (FAI-04) — Blase und Nummer, nicht Feld oder Lage. */
+  groesse: number;
   hervorgehoben: string | null;
   /** Das Feld, das gerade aufgezogen wird. */
   vorschau: { x: number; y: number; b: number; h: number } | null;
@@ -50,7 +53,7 @@ export function BallonEbene({
       )}
 
       {ballons.map((b) => {
-        const p = ballonPixel(b, breite, hoehe);
+        const p = ballonPixel(b, breite, hoehe, groesse);
         const aktiv = hervorgehoben === b.id;
         return (
           <g
