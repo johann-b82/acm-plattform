@@ -15,6 +15,11 @@ vi.mock("@/lib/kpi/qualitaet", async (importOriginal) => {
       verlauf: vi.fn(async () => []),
       liste: vi.fn(async () => []),
     },
+    pruefungApi: {
+      mengen: vi.fn(async () => []),
+      verlauf: vi.fn(async () => []),
+      buchungen: vi.fn(async () => []),
+    },
   };
 });
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
@@ -45,6 +50,14 @@ describe("Qualität", () => {
     const zeile = umschalter.parentElement!;
     expect(within(zeile).getByText("Auditart:")).toBeInTheDocument();
     expect(within(zeile).getByRole("button", { name: "Behörde" })).toBeInTheDocument();
+  });
+
+  it("stellt bei der Qualitätsprüfung die Artikelart in dieselbe Zeile wie den Umschalter", () => {
+    zeige();
+    const umschalter = screen.getByRole("radiogroup", { name: "Ansicht" });
+    fireEvent.click(within(umschalter).getByRole("radio", { name: "Qualitätsprüfung" }));
+    const artikelart = screen.getByRole("radio", { name: "Fertigartikel" }).closest('[role="radiogroup"]');
+    expect(artikelart?.parentElement).toBe(umschalter.parentElement);
   });
 
   it("zeigt die Auditart nur bei Audits", () => {

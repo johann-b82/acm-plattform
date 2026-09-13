@@ -93,9 +93,21 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
                 ["pruefung", worte.qualitaet.ansichtPruefung],
               ]}
             />
-            {/* Der Filter der Audits steht in derselben Zeile wie der
-                Umschalter — nur, solange die Audits zu sehen sind. */}
+            {/* Der Filter einer Ansicht steht in derselben Zeile wie der
+                Umschalter — nur, solange die Ansicht zu sehen ist. */}
             {ansicht === "audits" && <AuditartWahl arten={arten} setArten={setArten} />}
+            {ansicht === "pruefung" && (
+              <Segmentwahl
+                beschriftung={worte.qualitaet.artikelart}
+                wert={artikelart}
+                onChange={setArtikelart}
+                optionen={[
+                  ["fertig", worte.qualitaet.artikelFertig],
+                  ["halbfertig", worte.qualitaet.artikelHalbfertig],
+                  ["alle", worte.qualitaet.artikelAlle],
+                ]}
+              />
+            )}
           </>
         }
         bedienung={
@@ -122,7 +134,7 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
         />
       )}
       {ansicht === "pruefung" && (
-        <Pruefung wahl={wahl} artikelart={artikelart} setArtikelart={setArtikelart} zielNach={zielNach} />
+        <Pruefung wahl={wahl} artikelart={artikelart} zielNach={zielNach} />
       )}
     </div>
   );
@@ -613,12 +625,10 @@ const PRUEFZIEL: Record<Pruefklasse, string> = {
 function Pruefung({
   wahl,
   artikelart,
-  setArtikelart,
   zielNach,
 }: {
   wahl: Zeitraumwahl;
   artikelart: Artikelart;
-  setArtikelart: (a: Artikelart) => void;
   zielNach: Record<string, number>;
 }) {
   const worte = useTexte();
@@ -719,19 +729,6 @@ function Pruefung({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmentwahl
-          beschriftung={worte.qualitaet.artikelart}
-          wert={artikelart}
-          onChange={setArtikelart}
-          optionen={[
-            ["fertig", worte.qualitaet.artikelFertig],
-            ["halbfertig", worte.qualitaet.artikelHalbfertig],
-            ["alle", worte.qualitaet.artikelAlle],
-          ]}
-        />
-      </div>
-
       <Ladefehler fehler={mengen.error ?? verlauf.error ?? buchungen.error} />
 
       <Card className="p-5">
