@@ -43,7 +43,7 @@ direkte Ändern der Logozeile.
 from alembic import op
 
 revision = "0051_einstellungen_hilfe"
-down_revision = "0040_bereich_hr"
+down_revision = "0046_hr_abgleich"
 branch_labels = None
 depends_on = None
 
