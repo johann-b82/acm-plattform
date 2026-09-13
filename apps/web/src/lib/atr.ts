@@ -1,5 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { computeJson } from "@/lib/compute";
+import { computeFetch, computeJson } from "@/lib/compute";
 
 /**
  * ATR: Teilekatalog und Vorlage.
@@ -59,9 +59,66 @@ export interface ImportErgebnis {
 }
 
 export const atrKeys = {
-  teile: (suche: string) => ["atr", "teile", suche] as const,
+  teile: () => ["atr", "teile"] as const,
   vorlagen: () => ["atr", "vorlagen"] as const,
 };
+
+/** PostgREST liefert höchstens so viele Zeilen je Anfrage. */
+const SEITE = 1000;
+
+/**
+ * Holt eine Tabelle vollständig, Seite für Seite. Eine Liste, die still bei
+ * 500 oder 1000 aufhört, sieht aus wie eine vollständige (TAB-01).
+ * `abfrage(von, bis)` ist eine sortierte Abfrage mit `.range(von, bis)`.
+ */
+export async function ladeAlle<T>(
+  abfrage: (
+    von: number,
+    bis: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const alle: T[] = [];
+  for (let von = 0; ; von += SEITE) {
+    const { data, error } = await abfrage(von, von + SEITE - 1);
+    if (error) throw new Error(error.message);
+    alle.push(...(data ?? []));
+    if (!data || data.length < SEITE) return alle;
+  }
+}
+
+/** Wie im Altsystem (`formatPoPos`): bis drei Ziffern vorne mit Nullen. */
+export function formatPoPos(wert: string | null | undefined): string {
+  if (wert == null) return "";
+  const text = wert.trim();
+  return /^\d{1,3}$/.test(text) ? text.padStart(3, "0") : wert;
+}
+
+/** Das kommagetrennte Feld des Altsystems als Liste. */
+export function seriennummernAusText(text: string): string[] {
+  return text
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** Je geliefertem Stück eine Seriennummer — sonst warnt die Maske. */
+export function seriennummernAbweichung(seriennummern: readonly string[], menge: number): boolean {
+  return seriennummern.length !== menge;
+}
+
+/** Gewicht aus einem Eingabefeld: Komma oder Punkt, leer heißt keins. */
+export function gewichtAusEingabe(text: string): { wert: string | null } | { fehler: true } {
+  const roh = text.trim().replace(",", ".");
+  if (!roh) return { wert: null };
+  if (!/^\d+(\.\d+)?$/.test(roh)) return { fehler: true };
+  return { wert: roh };
+}
+
+/** Scan-Intervall in ganzen Sekunden ab 0; alles andere ist ungültig. */
+export function intervallAusEingabe(text: string): number | null {
+  const roh = text.trim();
+  return /^\d+$/.test(roh) ? Number(roh) : null;
+}
 
 const TEIL_FELDER =
   "id,teilenummer,teilenummer_norm,lieferantennummer,bezeichnung,zeichnung," +
@@ -79,31 +136,22 @@ function pruefeBetroffen(daten: unknown[] | null): void {
 }
 
 export const atrApi = {
-  /** Sucht über Teilenummer und Bezeichnung. Eine Zifferneingabe trifft auch
-   *  eine anders geschriebene Nummer, weil die normierte Spalte mitgesucht
-   *  wird — genau dafür ist sie da. */
-  teile: async (suche: string): Promise<Teil[]> => {
-    let anfrage = supabaseBrowser()
-      .from("atr_teile")
-      .select(TEIL_FELDER)
-      .order("teilenummer")
-      .limit(500);
-    const text = suche.trim();
-    if (text) {
-      const muster = `%${text}%`;
-      const ziffern = text.replace(/\D/g, "");
-      const teile = [
-        `teilenummer.ilike.${muster}`,
-        `bezeichnung.ilike.${muster}`,
-        `zeichnung.ilike.${muster}`,
-      ];
-      if (ziffern) teile.push(`teilenummer_norm.ilike.%${ziffern}%`);
-      anfrage = anfrage.or(teile.join(","));
-    }
-    const { data, error } = await anfrage;
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as Teil[];
-  },
+  /** Der ganze Katalog. Gesucht wird in der Tabelle — über Teilenummer,
+   *  Bezeichnung und Zeichnung, und eine Zifferneingabe trifft über die
+   *  normierte Spalte auch eine anders geschriebene Nummer. */
+  teile: async (): Promise<Teil[]> =>
+    ladeAlle((von, bis) =>
+      supabaseBrowser()
+        .from("atr_teile")
+        .select(TEIL_FELDER)
+        .order("teilenummer")
+        .order("id")
+        .range(von, bis)
+        .then((r: { data: unknown; error: { message: string } | null }) => ({
+          data: r.data as Teil[] | null,
+          error: r.error,
+        })),
+    ),
 
   teilAendern: async (id: string, felder: Partial<Teil>): Promise<void> => {
     const { data, error } = await supabaseBrowser()
@@ -193,7 +241,8 @@ export const atrApi = {
   },
 };
 
-export type LieferungStatus = "entwurf" | "freigegeben";
+/** Die Zustände des Altsystems: draft, generated, delivered. */
+export type LieferungStatus = "entwurf" | "erzeugt" | "abgelegt";
 
 export interface Lieferung {
   id: string;
@@ -277,14 +326,41 @@ export const lieferungKeys = {
 };
 
 export const lieferungApi = {
-  liste: async (): Promise<Lieferung[]> => {
-    const { data, error } = await supabaseBrowser()
-      .from("atr_lieferungen")
-      .select(LIEFERUNG_FELDER)
-      .order("erstellt_am", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as Lieferung[];
+  liste: async (): Promise<Lieferung[]> =>
+    ladeAlle((von, bis) =>
+      supabaseBrowser()
+        .from("atr_lieferungen")
+        .select(LIEFERUNG_FELDER)
+        .order("erstellt_am", { ascending: false })
+        .order("id")
+        .range(von, bis)
+        .then((r: { data: unknown; error: { message: string } | null }) => ({
+          data: r.data as Lieferung[] | null,
+          error: r.error,
+        })),
+    ),
+
+  /**
+   * Weist den Lieferungen die Containernummer zu und lädt das Etikett des
+   * Containers herunter — über `compute`, weil dort das Word-Dokument entsteht
+   * und Zuweisen und Lesen in einem Schreibvorgang geschehen.
+   */
+  containerEtikett: async (containernummer: string, lieferungen: string[]): Promise<void> => {
+    const antwort = await computeFetch("/api/atr/container-etikett", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ containernummer, lieferungen }),
+    });
+    if (!antwort.ok) {
+      const body = await antwort.json().catch(() => null);
+      throw new Error(body?.detail ? String(body.detail) : `HTTP ${antwort.status}`);
+    }
+    const url = URL.createObjectURL(await antwort.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Container_${containernummer}.docx`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
 
   eine: async (id: string): Promise<Lieferung | null> => {
@@ -378,7 +454,8 @@ export const lieferungApi = {
 };
 
 export interface ScanEinstellung {
-  aktiv: boolean;
+  /** Sekunden zwischen zwei Läufen, 0 = aus. */
+  intervall_s: number;
   modus: "entwurf" | "automatisch";
   rechner: string | null;
   freigabe: string | null;
@@ -405,11 +482,22 @@ export interface ScanLauf {
   hinweise: string[];
 }
 
+/** Was die Maske über das Passwort erfährt — nie das Passwort selbst. */
+export interface PasswortStand {
+  gesetzt: boolean;
+  quelle: "datenbank" | "umgebung" | null;
+  geaendert_am: string | null;
+  schluessel_bereit: boolean;
+}
+
 const SCAN_FELDER =
-  "aktiv,modus,rechner,freigabe,domaene,benutzer,eingang,ausgang,archiv," +
+  "intervall_s,modus,rechner,freigabe,domaene,benutzer,eingang,ausgang,archiv," +
   "zuletzt_am,zuletzt_text";
 
-export const scanKeys = { einstellung: () => ["atr", "scan"] as const };
+export const scanKeys = {
+  einstellung: () => ["atr", "scan"] as const,
+  passwort: () => ["atr", "scan", "passwort"] as const,
+};
 
 export const scanApi = {
   einstellung: async (): Promise<ScanEinstellung | null> => {
@@ -426,7 +514,7 @@ export const scanApi = {
       .from("atr_scan")
       .update(felder)
       .eq("id", true)
-      .select("aktiv");
+      .select("intervall_s");
     if (error) throw new Error(error.message);
     if (!data?.length) {
       throw new Error(
@@ -442,4 +530,15 @@ export const scanApi = {
   /** Sieht den Eingangsordner jetzt durch. */
   lauf: async (): Promise<ScanLauf> =>
     computeJson<ScanLauf>("/api/atr/scan", { method: "POST" }),
+
+  /** Ob ein Passwort hinterlegt ist — nur die Plattform-Verwaltung. */
+  passwortStand: async (): Promise<PasswortStand> =>
+    computeJson<PasswortStand>("/api/atr/scan/passwort"),
+
+  passwortSetzen: async (passwort: string): Promise<PasswortStand> =>
+    computeJson<PasswortStand>("/api/atr/scan/passwort", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passwort }),
+    }),
 };

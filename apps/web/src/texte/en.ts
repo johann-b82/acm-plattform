@@ -35,6 +35,7 @@ export const en: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "Deliveries",
+      "/atr/teilekatalog": "Parts catalogue",
       "/einstellungen": "Settings",
       "/fair": "FAIR",
       "/hilfe": "Help",
@@ -489,6 +490,7 @@ export const en: Texte = {
     offeneSchulungen: "Outstanding training",
     schulungsmatrix: "Training matrix",
     atrLieferungen: "ATR deliveries",
+    atrTeilekatalog: "ATR parts catalogue",
     kpiBewertung: "KPI review",
     anmelden: "Sign in",
   },
@@ -1187,7 +1189,6 @@ export const en: Texte = {
     einleitung:
       "The parts catalogue is the basis: a delivery note takes description, drawing and weight " +
       "from it. Matching goes by the part number without decoration — only the digits count.",
-    zuLieferungen: "To the deliveries",
     teilAnlegen: "Add part by hand",
     teilBeispiel: "Part number, e.g. VR-1234-56",
     anlegen: "Create",
@@ -1204,13 +1205,18 @@ export const en: Texte = {
     zeichnung: "Drawing",
     gewicht: "Weight kg",
     kategorie: "Category",
-    nurErste: "Only the first 500 hits — please narrow the search.",
+    bereich: "Section",
+    lieferungen: "Deliveries",
+    teilekatalog: "Parts catalogue",
+    bearbeiten: "Edit",
+    speichern: "Save",
+    gespeichert: "Saved.",
+    gewichtUngueltig: "Please enter the weight as a number in kg, e.g. 0.44.",
+    nichtGespeichert: (meldung: string) => `Not saved: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "A delivery note is read in, matched against the parts catalogue and stored as a draft. " +
-      "After review it is released.",
-    zumKatalog: "To the parts catalogue",
+      "A delivery note is read in, matched against the parts catalogue and stored as a draft. Once its documents exist it is generated; when the automatic scan writes them to the output folder, it is delivered.",
     wirdGelesen: "Reading …",
     einlesen: "Read in delivery note",
     laeuft: "Running …",
@@ -1227,12 +1233,22 @@ export const en: Texte = {
     msn: "MSN",
     status: "Status",
     entwurf: "Draft",
-    freigegeben: "released",
+    erzeugt: "generated",
+    abgelegt: "delivered",
+    atrNummer: "ATR no.",
+    containernummer: "Container number",
+    erstellt: "Created",
+    auswaehlen: (nr: string) => `Select delivery ${nr}`,
+    ausgewaehlt: (anzahl: number) => `${anzahl} selected`,
+    auswahlAufheben: "Clear selection",
+    containerbeschriftung: "Create container label",
+    containerFrage: "Container number for the selected deliveries:",
+    containerHinweis: "The label lists every delivery assigned to this container — including ones that were already in it.",
+    containerErstellt: (nr: string) => `Assigned to container ${nr} – downloading the label`,
+    erstellen: "Create",
   },
   durchsicht: {
     nichtGefunden: "Delivery not found.",
-    freigeben: "Release",
-    zuruecknehmen: "Withdraw release",
     wirdErzeugt: "Creating …",
     dokumenteErzeugen: "Create documents",
     kopfdaten: "Header data",
@@ -1251,9 +1267,12 @@ export const en: Texte = {
     menge: "Qty",
     seriennummern: "Serial numbers",
     nichtImKatalog: "not in the catalogue",
-    festHinweis:
-      "The delivery is released; the lines are fixed. The database rejects a change — the " +
-      "release can be withdrawn above.",
+    poNummer: "PO number",
+    poPos: "PO Pos",
+    speichern: "Save",
+    gespeichert: "Saved.",
+    seriennummernAbweichung: (anzahl: number, menge: number) => `${anzahl} serial(s) for quantity ${menge}`,
+    seriennummernFeld: (pos: string) => `Serial numbers item ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1615,9 +1634,7 @@ export const en: Texte = {
     qsUnterschrift: "QA signature",
     eingangsordner: "Inbox folder",
     eingangHinweis:
-      "A delivery note in the inbox is read in, becomes a delivery and moves into the archive. " +
-      "The service account's password is not kept here but as ATR_SMB_PASSWORT in the " +
-      "environment; which hosts are eligible is set by ATR_SMB_ERLAUBT.",
+      "A delivery note in the input folder is read, becomes a delivery and moves to the archive. Which hosts are allowed is set by ATR_SMB_ERLAUBT. A password entered here takes precedence over ATR_SMB_PASSWORT from the environment.",
     laeuft: "running",
     aus: "off",
     zuletzt: (zeit: string, text: string) => `Last ${zeit}: ${text}`,
@@ -1642,8 +1659,15 @@ export const en: Texte = {
     wasEinLaufTut: "What a run does",
     entwurfAnlegen: "Create a draft for review",
     dokumenteErzeugen: "Create documents and file them",
-    regelmaessig: "Check regularly",
-    regelmaessigHinweis: "Check regularly — every ten minutes, weekdays 5 am to 7 pm",
+    intervall: "Scan interval (seconds, 0 = off)",
+    intervallUngueltig: "The interval must be a whole number from 0.",
+    passwort: "Service account password",
+    passwortHinterlegt: "set — leave blank to keep",
+    passwortUmgebung: "from the environment (ATR_SMB_PASSWORT) — an entry here takes precedence",
+    passwortFehlt: "none set yet",
+    passwortOhneSchluessel: "GEHEIM_SCHLUESSEL is missing from the environment — without it no password can be stored.",
+    speichern: "Save",
+    gespeichert: "Saved.",
   },
   qualitaetEinstellungen: {
     normmatrix: "Standards matrix",
@@ -1787,6 +1811,7 @@ export const en: Texte = {
     offeneSchulungen: "Outstanding training",
     schulungsmatrix: "Training matrix",
     atrLieferungen: "ATR deliveries",
+    atrTeilekatalog: "ATR parts catalogue",
   },
   kennzahlenHub: {
     titel: "KPI dashboard",

@@ -18,6 +18,7 @@ export type Krume = { titel: string; adresse: string };
 export const TITEL = {
   "/atr": "ATR",
   "/atr/lieferungen": "Lieferungen",
+  "/atr/teilekatalog": "Teilekatalog",
   "/einstellungen": "Einstellungen",
   "/fair": "FAIR",
   "/hilfe": "Hilfe",
@@ -126,5 +127,8 @@ export const LANGER_NAME: Record<string, string> = {
   "/kpi": "kennzahlen",
   "/hr/schulungen/offen": "offeneSchulungen",
   "/hr/schulungen/matrix": "schulungsmatrix",
+  // ATR-10: /atr sind die Lieferungen; die Kopfzeile sagt, welche Ansicht offen ist.
+  "/atr": "atrLieferungen",
   "/atr/lieferungen": "atrLieferungen",
+  "/atr/teilekatalog": "atrTeilekatalog",
 };

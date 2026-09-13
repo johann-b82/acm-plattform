@@ -31,6 +31,7 @@ export const ar: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "التوريدات",
+      "/atr/teilekatalog": "كتالوج القطع",
       "/einstellungen": "الإعدادات",
       "/fair": "FAIR",
       "/hilfe": "المساعدة",
@@ -483,6 +484,7 @@ export const ar: Texte = {
     offeneSchulungen: "التدريبات المتبقّية",
     schulungsmatrix: "مصفوفة التدريب",
     atrLieferungen: "توريدات ATR",
+    atrTeilekatalog: "كتالوج قطع ATR",
     kpiBewertung: "تقييم KPI",
     anmelden: "تسجيل الدخول",
   },
@@ -1174,7 +1176,6 @@ export const ar: Texte = {
     einleitung:
       "كتالوج القطع هو الأساس: منه يأخذ إشعار التسليم الوصف والرسم والوزن. والمطابقة " +
       "تتم برقم القطعة دون زوائد — الأرقام وحدها هي ما يُحتسب.",
-    zuLieferungen: "إلى التوريدات",
     teilAnlegen: "أضف قطعة يدوياً",
     teilBeispiel: "رقم القطعة، مثلاً VR-1234-56",
     anlegen: "أنشئ",
@@ -1191,13 +1192,18 @@ export const ar: Texte = {
     zeichnung: "الرسم",
     gewicht: "الوزن كغ",
     kategorie: "الفئة",
-    nurErste: "أول 500 نتيجة فقط — ضيّق البحث.",
+    bereich: "القسم",
+    lieferungen: "التوريدات",
+    teilekatalog: "كتالوج القطع",
+    bearbeiten: "تعديل",
+    speichern: "حفظ",
+    gespeichert: "تم الحفظ.",
+    gewichtUngueltig: "يرجى إدخال الوزن كرقم بالكيلوغرام، مثل 0.44.",
+    nichtGespeichert: (meldung: string) => `لم يُحفظ: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "يُقرأ إشعار التسليم، ويُطابَق مع كتالوج القطع، ويُحفظ كمسودة. وبعد المراجعة " +
-      "يُعتمد.",
-    zumKatalog: "إلى كتالوج القطع",
+      "يُقرأ إشعار التسليم ويُطابق مع كتالوج القطع ويُحفظ كمسودة. بعد إنشاء المستندات يصبح «مُنشأ»، وعندما يضعها الفحص التلقائي في مجلد الإخراج يصبح «مُسلَّم».",
     wirdGelesen: "جارٍ القراءة …",
     einlesen: "اقرأ إشعار تسليم",
     laeuft: "جارٍ التنفيذ …",
@@ -1214,12 +1220,22 @@ export const ar: Texte = {
     msn: "MSN",
     status: "الحالة",
     entwurf: "مسودة",
-    freigegeben: "معتمد",
+    erzeugt: "مُنشأ",
+    abgelegt: "مُسلَّم",
+    atrNummer: "رقم ATR",
+    containernummer: "رقم الحاوية",
+    erstellt: "تاريخ الإنشاء",
+    auswaehlen: (nr: string) => `تحديد التوريد ${nr}`,
+    ausgewaehlt: (anzahl: number) => `${anzahl} محدد`,
+    auswahlAufheben: "إلغاء التحديد",
+    containerbeschriftung: "إنشاء ملصق الحاوية",
+    containerFrage: "رقم الحاوية للتوريدات المحددة:",
+    containerHinweis: "يعرض الملصق كل التوريدات المخصصة لهذه الحاوية، بما فيها ما كان فيها من قبل.",
+    containerErstellt: (nr: string) => `تم التخصيص للحاوية ${nr} – جارٍ تنزيل الملصق`,
+    erstellen: "إنشاء",
   },
   durchsicht: {
     nichtGefunden: "لم يُعثر على التوريد.",
-    freigeben: "اعتمد",
-    zuruecknehmen: "اسحب الاعتماد",
     wirdErzeugt: "جارٍ الإنشاء …",
     dokumenteErzeugen: "أنشئ المستندات",
     kopfdaten: "بيانات الرأس",
@@ -1238,9 +1254,12 @@ export const ar: Texte = {
     menge: "الكمية",
     seriennummern: "الأرقام التسلسلية",
     nichtImKatalog: "غير موجود في الكتالوج",
-    festHinweis:
-      "التوريد معتمد؛ والبنود ثابتة. قاعدة البيانات ترفض أي تعديل — ويمكن سحب " +
-      "الاعتماد في الأعلى.",
+    poNummer: "رقم PO",
+    poPos: "PO Pos",
+    speichern: "حفظ",
+    gespeichert: "تم الحفظ.",
+    seriennummernAbweichung: (anzahl: number, menge: number) => `${anzahl} رقم تسلسلي للكمية ${menge}`,
+    seriennummernFeld: (pos: string) => `الأرقام التسلسلية للبند ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1596,9 +1615,7 @@ export const ar: Texte = {
     qsUnterschrift: "توقيع ضمان الجودة",
     eingangsordner: "مجلد الوارد",
     eingangHinweis:
-      "إشعار التسليم في الوارد يُقرأ، ويصير توريداً، وينتقل إلى الأرشيف. " +
-      "كلمة مرور حساب الخدمة ليست هنا بل في ATR_SMB_PASSWORT في بيئة الخادم؛ " +
-      "وأي الأجهزة مسموح بها يحدده ATR_SMB_ERLAUBT.",
+      "يُقرأ إشعار التسليم في مجلد الإدخال ويصبح توريدًا ثم يُنقل إلى الأرشيف. يحدد ATR_SMB_ERLAUBT الأجهزة المسموح بها. كلمة المرور المُدخلة هنا لها الأولوية على ATR_SMB_PASSWORT من البيئة.",
     laeuft: "يعمل",
     aus: "متوقف",
     zuletzt: (zeit: string, text: string) => `آخر مرة ${zeit}: ${text}`,
@@ -1624,8 +1641,15 @@ export const ar: Texte = {
     wasEinLaufTut: "ما يفعله التشغيل",
     entwurfAnlegen: "إنشاء مسودة للمراجعة",
     dokumenteErzeugen: "إنشاء المستندات وحفظها",
-    regelmaessig: "مراجعة دورية",
-    regelmaessigHinweis: "مراجعة دورية — كل عشر دقائق، أيام العمل من 5 إلى 19",
+    intervall: "فاصل الفحص (بالثواني، 0 = متوقف)",
+    intervallUngueltig: "يجب أن يكون الفاصل عددًا صحيحًا من 0.",
+    passwort: "كلمة مرور حساب الخدمة",
+    passwortHinterlegt: "محفوظة — اتركها فارغة للإبقاء عليها",
+    passwortUmgebung: "من البيئة (ATR_SMB_PASSWORT) — الإدخال هنا له الأولوية",
+    passwortFehlt: "لم تُحفظ بعد",
+    passwortOhneSchluessel: "GEHEIM_SCHLUESSEL غير موجود في البيئة — بدونه لا يمكن حفظ كلمة المرور.",
+    speichern: "حفظ",
+    gespeichert: "تم الحفظ.",
   },
   qualitaetEinstellungen: {
     normmatrix: "مصفوفة المعايير",
@@ -1772,6 +1796,7 @@ export const ar: Texte = {
     offeneSchulungen: "التدريبات المتبقّية",
     schulungsmatrix: "مصفوفة التدريب",
     atrLieferungen: "توريدات ATR",
+    atrTeilekatalog: "كتالوج قطع ATR",
   },
   kennzahlenHub: {
     titel: "لوحة KPI",

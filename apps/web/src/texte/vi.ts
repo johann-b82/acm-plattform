@@ -31,6 +31,7 @@ export const vi: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "Lô giao",
+      "/atr/teilekatalog": "Danh mục chi tiết",
       "/einstellungen": "Cài đặt",
       "/fair": "FAIR",
       "/hilfe": "Trợ giúp",
@@ -493,6 +494,7 @@ export const vi: Texte = {
     offeneSchulungen: "Đào tạo còn thiếu",
     schulungsmatrix: "Ma trận đào tạo",
     atrLieferungen: "Lô giao ATR",
+    atrTeilekatalog: "Danh mục chi tiết ATR",
     kpiBewertung: "Đánh giá KPI",
     anmelden: "Đăng nhập",
   },
@@ -1191,7 +1193,6 @@ export const vi: Texte = {
     einleitung:
       "Danh mục linh kiện là nền tảng: một phiếu giao hàng lấy từ đó mô tả, bản vẽ và khối " +
       "lượng. Việc khớp dựa trên mã linh kiện không kèm phụ tố — chỉ các chữ số mới tính.",
-    zuLieferungen: "Đến các lô giao",
     teilAnlegen: "Thêm linh kiện bằng tay",
     teilBeispiel: "Mã linh kiện, ví dụ VR-1234-56",
     anlegen: "Tạo",
@@ -1208,13 +1209,18 @@ export const vi: Texte = {
     zeichnung: "Bản vẽ",
     gewicht: "Khối lượng kg",
     kategorie: "Nhóm",
-    nurErste: "Chỉ 500 kết quả đầu — vui lòng thu hẹp tìm kiếm.",
+    bereich: "Mục",
+    lieferungen: "Lô giao",
+    teilekatalog: "Danh mục chi tiết",
+    bearbeiten: "Sửa",
+    speichern: "Lưu",
+    gespeichert: "Đã lưu.",
+    gewichtUngueltig: "Vui lòng nhập khối lượng bằng số kg, ví dụ 0,44.",
+    nichtGespeichert: (meldung: string) => `Chưa lưu: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "Một phiếu giao hàng được đọc vào, đối chiếu với danh mục linh kiện và lưu thành " +
-      "bản nháp. Sau khi rà soát, nó được phát hành.",
-    zumKatalog: "Đến danh mục linh kiện",
+      "Phiếu giao hàng được đọc, đối chiếu với danh mục chi tiết và lưu thành bản nháp. Khi có tài liệu, trạng thái là «đã tạo»; khi lần quét tự động ghi chúng vào thư mục đầu ra, là «đã chuyển».",
     wirdGelesen: "Đang đọc …",
     einlesen: "Đọc vào phiếu giao hàng",
     laeuft: "Đang chạy …",
@@ -1231,12 +1237,22 @@ export const vi: Texte = {
     msn: "MSN",
     status: "Trạng thái",
     entwurf: "Bản nháp",
-    freigegeben: "đã phát hành",
+    erzeugt: "đã tạo",
+    abgelegt: "đã chuyển",
+    atrNummer: "Số ATR",
+    containernummer: "Số container",
+    erstellt: "Ngày tạo",
+    auswaehlen: (nr: string) => `Chọn lô giao ${nr}`,
+    ausgewaehlt: (anzahl: number) => `Đã chọn ${anzahl}`,
+    auswahlAufheben: "Bỏ chọn",
+    containerbeschriftung: "Tạo nhãn container",
+    containerFrage: "Số container cho các lô giao đã chọn:",
+    containerHinweis: "Nhãn liệt kê mọi lô giao thuộc container này — kể cả những lô đã có trong đó từ trước.",
+    containerErstellt: (nr: string) => `Đã gán container ${nr} – đang tải nhãn`,
+    erstellen: "Tạo",
   },
   durchsicht: {
     nichtGefunden: "Không tìm thấy lô giao.",
-    freigeben: "Phát hành",
-    zuruecknehmen: "Thu hồi phát hành",
     wirdErzeugt: "Đang tạo …",
     dokumenteErzeugen: "Tạo tài liệu",
     kopfdaten: "Dữ liệu đầu trang",
@@ -1255,9 +1271,12 @@ export const vi: Texte = {
     menge: "SL",
     seriennummern: "Số sê-ri",
     nichtImKatalog: "không có trong danh mục",
-    festHinweis:
-      "Lô giao đã được phát hành; các hạng mục đã chốt. Cơ sở dữ liệu từ chối mọi thay " +
-      "đổi — có thể thu hồi phát hành ở trên.",
+    poNummer: "Số PO",
+    poPos: "PO Pos",
+    speichern: "Lưu",
+    gespeichert: "Đã lưu.",
+    seriennummernAbweichung: (anzahl: number, menge: number) => `${anzahl} số sê-ri cho số lượng ${menge}`,
+    seriennummernFeld: (pos: string) => `Số sê-ri dòng ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1620,9 +1639,7 @@ export const vi: Texte = {
     qsUnterschrift: "Chữ ký QA",
     eingangsordner: "Thư mục hộp đến",
     eingangHinweis:
-      "Một phiếu giao hàng trong hộp đến được đọc vào, thành một lô giao và chuyển vào " +
-      "kho lưu. Mật khẩu của tài khoản dịch vụ không nằm ở đây mà nằm trong " +
-      "ATR_SMB_PASSWORT của môi trường; những máy nào được phép thì do ATR_SMB_ERLAUBT quy định.",
+      "Phiếu giao hàng trong thư mục đầu vào được đọc, trở thành lô giao và chuyển vào lưu trữ. Máy chủ được phép do ATR_SMB_ERLAUBT quy định. Mật khẩu nhập ở đây được ưu tiên hơn ATR_SMB_PASSWORT trong môi trường.",
     laeuft: "đang chạy",
     aus: "tắt",
     zuletzt: (zeit: string, text: string) => `Lần cuối ${zeit}: ${text}`,
@@ -1648,8 +1665,15 @@ export const vi: Texte = {
     wasEinLaufTut: "Một lượt chạy làm gì",
     entwurfAnlegen: "Tạo bản nháp để rà soát",
     dokumenteErzeugen: "Tạo tài liệu và lưu lại",
-    regelmaessig: "Rà soát định kỳ",
-    regelmaessigHinweis: "Rà soát định kỳ — mười phút một lần, ngày làm việc 5–19 giờ",
+    intervall: "Chu kỳ quét (giây, 0 = tắt)",
+    intervallUngueltig: "Chu kỳ phải là số nguyên từ 0.",
+    passwort: "Mật khẩu tài khoản dịch vụ",
+    passwortHinterlegt: "đã lưu — để trống để giữ nguyên",
+    passwortUmgebung: "từ môi trường (ATR_SMB_PASSWORT) — nhập ở đây được ưu tiên",
+    passwortFehlt: "chưa lưu",
+    passwortOhneSchluessel: "Thiếu GEHEIM_SCHLUESSEL trong môi trường — không có nó thì không lưu được mật khẩu.",
+    speichern: "Lưu",
+    gespeichert: "Đã lưu.",
   },
   qualitaetEinstellungen: {
     normmatrix: "Ma trận tiêu chuẩn",
@@ -1796,6 +1820,7 @@ export const vi: Texte = {
     offeneSchulungen: "Đào tạo còn thiếu",
     schulungsmatrix: "Ma trận đào tạo",
     atrLieferungen: "Lô giao ATR",
+    atrTeilekatalog: "Danh mục chi tiết ATR",
   },
   kennzahlenHub: {
     titel: "Bảng chỉ số KPI",

@@ -31,6 +31,7 @@ export const pl: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "Dostawy",
+      "/atr/teilekatalog": "Katalog części",
       "/einstellungen": "Ustawienia",
       "/fair": "FAIR",
       "/hilfe": "Pomoc",
@@ -495,6 +496,7 @@ export const pl: Texte = {
     offeneSchulungen: "Zaległe szkolenia",
     schulungsmatrix: "Macierz szkoleń",
     atrLieferungen: "Dostawy ATR",
+    atrTeilekatalog: "Katalog części ATR",
     kpiBewertung: "Ocena KPI",
     anmelden: "Logowanie",
   },
@@ -1195,7 +1197,6 @@ export const pl: Texte = {
     einleitung:
       "Katalog części jest podstawą: z niego dowód dostawy bierze nazwę, rysunek i wagę. " +
       "Wyszukiwanie idzie po numerze części bez dodatków — liczą się tylko cyfry.",
-    zuLieferungen: "Do dostaw",
     teilAnlegen: "Załóż część ręcznie",
     teilBeispiel: "Numer części, np. VR-1234-56",
     anlegen: "Załóż",
@@ -1212,13 +1213,18 @@ export const pl: Texte = {
     zeichnung: "Rysunek",
     gewicht: "Waga kg",
     kategorie: "Kategoria",
-    nurErste: "Tylko pierwszych 500 trafień — zawęź proszę wyszukiwanie.",
+    bereich: "Sekcja",
+    lieferungen: "Dostawy",
+    teilekatalog: "Katalog części",
+    bearbeiten: "Edytuj",
+    speichern: "Zapisz",
+    gespeichert: "Zapisano.",
+    gewichtUngueltig: "Podaj wagę jako liczbę w kg, np. 0,44.",
+    nichtGespeichert: (meldung: string) => `Nie zapisano: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "Dowód dostawy zostaje wczytany, porównany z katalogiem części i odłożony jako szkic. " +
-      "Po przejrzeniu jest zwalniany.",
-    zumKatalog: "Do katalogu części",
+      "Dowód dostawy zostaje wczytany, porównany z katalogiem części i zapisany jako szkic. Z dokumentami ma status „wygenerowano”; gdy automatyczne skanowanie zapisze je w folderze wyjściowym — „przekazano”.",
     wirdGelesen: "Wczytywanie …",
     einlesen: "Wczytaj dowód dostawy",
     laeuft: "Trwa …",
@@ -1235,12 +1241,22 @@ export const pl: Texte = {
     msn: "MSN",
     status: "Status",
     entwurf: "Szkic",
-    freigegeben: "zwolniony",
+    erzeugt: "wygenerowano",
+    abgelegt: "przekazano",
+    atrNummer: "Nr ATR",
+    containernummer: "Numer kontenera",
+    erstellt: "Utworzono",
+    auswaehlen: (nr: string) => `Zaznacz dostawę ${nr}`,
+    ausgewaehlt: (anzahl: number) => `Zaznaczono: ${anzahl}`,
+    auswahlAufheben: "Wyczyść zaznaczenie",
+    containerbeschriftung: "Utwórz etykietę kontenera",
+    containerFrage: "Numer kontenera dla zaznaczonych dostaw:",
+    containerHinweis: "Etykieta pokazuje wszystkie dostawy przypisane do tego kontenera — także te, które już w nim były.",
+    containerErstellt: (nr: string) => `Przypisano kontener ${nr} – etykieta jest pobierana`,
+    erstellen: "Utwórz",
   },
   durchsicht: {
     nichtGefunden: "Nie znaleziono dostawy.",
-    freigeben: "Zwolnij",
-    zuruecknehmen: "Cofnij zwolnienie",
     wirdErzeugt: "Tworzenie …",
     dokumenteErzeugen: "Utwórz dokumenty",
     kopfdaten: "Dane nagłówka",
@@ -1259,9 +1275,12 @@ export const pl: Texte = {
     menge: "Ilość",
     seriennummern: "Numery seryjne",
     nichtImKatalog: "nie ma w katalogu",
-    festHinweis:
-      "Dostawa jest zwolniona; pozycje są zamknięte. Baza danych odrzuci zmianę — " +
-      "zwolnienie można cofnąć powyżej.",
+    poNummer: "Numer PO",
+    poPos: "PO Pos",
+    speichern: "Zapisz",
+    gespeichert: "Zapisano.",
+    seriennummernAbweichung: (anzahl: number, menge: number) => `${anzahl} nr seryjnych przy ilości ${menge}`,
+    seriennummernFeld: (pos: string) => `Numery seryjne pozycji ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1623,9 +1642,7 @@ export const pl: Texte = {
     qsUnterschrift: "Podpis QS",
     eingangsordner: "Folder wejściowy",
     eingangHinweis:
-      "Dowód dostawy w folderze wejściowym zostaje wczytany, staje się dostawą i wędruje do " +
-      "archiwum. Hasło konta serwisowego nie stoi tutaj, lecz jako ATR_SMB_PASSWORT w " +
-      "środowisku; które hosty wchodzą w grę, wyznacza ATR_SMB_ERLAUBT.",
+      "Dowód dostawy z folderu wejściowego zostaje wczytany, staje się dostawą i trafia do archiwum. Dozwolone serwery określa ATR_SMB_ERLAUBT. Hasło wpisane tutaj ma pierwszeństwo przed ATR_SMB_PASSWORT ze środowiska.",
     laeuft: "działa",
     aus: "wyłączone",
     zuletzt: (zeit: string, text: string) => `Ostatnio ${zeit}: ${text}`,
@@ -1651,8 +1668,15 @@ export const pl: Texte = {
     wasEinLaufTut: "Co robi przebieg",
     entwurfAnlegen: "Załóż szkic do przejrzenia",
     dokumenteErzeugen: "Utwórz dokumenty i odłóż",
-    regelmaessig: "Przeglądaj regularnie",
-    regelmaessigHinweis: "Przeglądaj regularnie — co dziesięć minut, w dni robocze od 5 do 19",
+    intervall: "Interwał skanowania (sekundy, 0 = wył.)",
+    intervallUngueltig: "Interwał musi być liczbą całkowitą od 0.",
+    passwort: "Hasło konta usługi",
+    passwortHinterlegt: "zapisane — zostaw puste, aby zachować",
+    passwortUmgebung: "ze środowiska (ATR_SMB_PASSWORT) — wpis tutaj ma pierwszeństwo",
+    passwortFehlt: "jeszcze nie zapisano",
+    passwortOhneSchluessel: "Brak GEHEIM_SCHLUESSEL w środowisku — bez niego nie można zapisać hasła.",
+    speichern: "Zapisz",
+    gespeichert: "Zapisano.",
   },
   qualitaetEinstellungen: {
     normmatrix: "Macierz norm",
@@ -1799,6 +1823,7 @@ export const pl: Texte = {
     offeneSchulungen: "Zaległe szkolenia",
     schulungsmatrix: "Macierz szkoleń",
     atrLieferungen: "Dostawy ATR",
+    atrTeilekatalog: "Katalog części ATR",
   },
   kennzahlenHub: {
     titel: "Pulpit KPI",

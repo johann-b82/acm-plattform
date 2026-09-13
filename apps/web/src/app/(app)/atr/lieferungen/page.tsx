@@ -1,11 +1,7 @@
-import { requireApp } from "@/lib/auth";
-import { hasLevel } from "@/lib/rechte";
-import { Lieferungsliste } from "./lieferungsliste";
-import { seitentitel } from "@/lib/sprache-server";
+import { redirect } from "next/navigation";
 
-export const generateMetadata = () => seitentitel((t) => t.titel.atrLieferungen);
-
-export default async function LieferungenPage() {
-  const session = await requireApp("atr");
-  return <Lieferungsliste darfSchreiben={hasLevel(session.apps, "atr", "editor")} />;
+/** Die Lieferungen sind seit ATR-10 der Einstieg unter `/atr`; alte Verweise
+ *  und Lesezeichen kommen dort an. Die Detailseiten bleiben hier darunter. */
+export default function LieferungenPage() {
+  redirect("/atr");
 }
