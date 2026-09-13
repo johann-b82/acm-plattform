@@ -83,6 +83,10 @@ class Umzug:
     #: Ob die alte Tabelle überhaupt einen Schlüssel `id` führt. Ein paar
     #: Ingestionstabellen haben keinen.
     alt_id: bool = True
+    #: f(neue Zeile) → neue Zeile, nach Spalten, Wandlern und festen Werten.
+    #: Für Bedingungen über mehrere Spalten, die ein einzelner `wandler` nicht
+    #: sieht (Stand und Zeitstempel eines Vorgangs etwa).
+    nachbessern: Callable[[dict], dict] | None = None
 
 
 @dataclass
@@ -126,6 +130,8 @@ def _baue(umzug: Umzug, alte_zeile: dict, lauf: Lauf, uuid5_tabellen: set[str]) 
             wert = umzug.wandler[neue_spalte](wert)
         neu[neue_spalte] = wert
     neu.update(umzug.fest)
+    if umzug.nachbessern:
+        neu = umzug.nachbessern(neu)
     if umzug.id_aus == "alt":
         neu["id"] = alte_zeile["id"]
     elif umzug.id_aus == "uuid5":

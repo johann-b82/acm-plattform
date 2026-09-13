@@ -46,6 +46,8 @@ class Bericht:
     geruestdateien: int = 0
     screenshots: int = 0
     zeichnungen: int = 0
+    vorgang_dateien: int = 0
+    nachweise: int = 0
     fehlend: list[str] = field(default_factory=list)
 
     def zeilen(self) -> list[str]:
@@ -56,6 +58,8 @@ class Bericht:
             f"Gerüstdateien: {self.geruestdateien}",
             f"Feedback-Bilder: {self.screenshots}",
             f"FAIR-Zeichnungen: {self.zeichnungen}",
+            f"Dokumentenlauf (Blätter und Scans): {self.vorgang_dateien}",
+            f"Dokumentenlauf (Nachweise): {self.nachweise}",
         ]
         if self.fehlend:
             z.append(f"Ohne Datei geblieben: {len(self.fehlend)}")
@@ -225,6 +229,78 @@ async def _fair(verzeichnis: Path, bericht: Bericht) -> None:
         bericht.zeichnungen += 1
 
 
+#: Was der Eimer `dokumente` für Blätter, Scans und Nachweise annimmt.
+DOKUMENT_TYPEN = {
+    "pdf": "application/pdf",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+}
+
+
+def _mit_endung(pfad: str, datei: Path) -> tuple[str, str] | None:
+    """Pfad samt Endung und Medientyp — oder nichts, wenn der Eimer die Art
+    nicht annimmt. Die Scan-Ansicht leitet den Medientyp aus der Endung ab."""
+    endung = datei.suffix.lower().lstrip(".")
+    typ = DOKUMENT_TYPEN.get(endung)
+    if typ is None:
+        return None
+    return f"{pfad}.{'jpg' if endung == 'jpeg' else endung}", typ
+
+
+async def _dokumente(verzeichnis: Path, bericht: Bericht) -> None:
+    """Blätter, Scans und Nachweise des Dokumentenlaufs aus Directus.
+
+    Der Umzug hat den Pfad aus der alten Dateikennung gerechnet, noch ohne
+    Endung. Hier kommt die Datei dazu, und der Pfad bekommt die Endung, die
+    sie tatsächlich hat. Ein Pfad mit Endung ist schon erledigt — ein zweiter
+    Lauf fasst ihn nicht mehr an."""
+    dateien = {d.name.split(".")[0]: d for d in verzeichnis.iterdir() if d.is_file()}
+    async with SessionLocal() as sitzung:
+        vorgaenge = (
+            await sitzung.execute(
+                sa.text(
+                    "select id, name, pdf_pfad, scan_pfad from public.dokumentvorgaenge"
+                    " where pdf_pfad like 'uebernahme/dokumente/%'"
+                    " or scan_pfad like 'uebernahme/dokumente/%'"
+                )
+            )
+        ).mappings().all()
+        nachweise = (
+            await sitzung.execute(
+                sa.text(
+                    "select id, dateiname, pfad from public.dokument_nachweise"
+                    " where pfad like 'uebernahme/dokumente/%'"
+                )
+            )
+        ).mappings().all()
+
+    async def ablegen(tabelle: str, zeile, spalte: str, bezeichnung: str) -> bool:
+        pfad = zeile[spalte]
+        if not pfad or not pfad.startswith("uebernahme/dokumente/"):
+            return False
+        kennung = pfad.rsplit("/", 1)[-1]
+        if "." in kennung:
+            return False
+        datei = dateien.get(kennung)
+        ziel = _mit_endung(pfad, datei) if datei is not None else None
+        if ziel is None:
+            bericht.fehlend.append(f"Dokumentenlauf ohne Datei: {bezeichnung} ({kennung})")
+            return False
+        neuer_pfad, typ = ziel
+        await _ablegen("dokumente", neuer_pfad, datei.read_bytes(), typ)
+        await _setze(tabelle, zeile["id"], {spalte: neuer_pfad})
+        return True
+
+    for vorgang in vorgaenge:
+        for spalte in ("pdf_pfad", "scan_pfad"):
+            if await ablegen("dokumentvorgaenge", vorgang, spalte, vorgang["name"]):
+                bericht.vorgang_dateien += 1
+    for nachweis in nachweise:
+        if await ablegen("dokument_nachweise", nachweis, "pfad", nachweis["dateiname"]):
+            bericht.nachweise += 1
+
+
 async def uebernehmen(
     quelle: sa.engine.Engine, verzeichnis: Path | None = None
 ) -> Bericht:
@@ -234,4 +310,5 @@ async def uebernehmen(
     await _feedback(quelle, bericht)
     if verzeichnis is not None:
         await _fair(verzeichnis, bericht)
+        await _dokumente(verzeichnis, bericht)
     return bericht
