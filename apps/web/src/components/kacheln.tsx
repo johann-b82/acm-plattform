@@ -37,17 +37,27 @@ export function Kacheln({
             <li key={k.pfad}>
               <Link
                 href={k.pfad}
-                className="flex h-full items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
+                className="flex h-full items-stretch gap-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
               >
-                <Bild
-                  className="h-10 w-10 shrink-0 text-[var(--fg-muted)]"
-                  aria-hidden
-                  strokeWidth={1.5}
-                />
+                {/* Das Sinnbild nutzt die volle Inhaltshöhe: als eigener
+                    gestreckter Flex-Streifen wird es so hoch wie der Text
+                    daneben, der p-4-Rand gibt links und oben denselben Abstand.
+                    w-auto hält es quadratisch. */}
+                <span className="flex shrink-0 self-stretch">
+                  <Bild
+                    className="h-full w-auto text-[var(--fg-muted)]"
+                    aria-hidden
+                    strokeWidth={1.5}
+                  />
+                </span>
                 <div className="min-w-0">
                   <div className="font-medium">{k.name}</div>
-                  {k.beschreibung && (
-                    <div className="mt-1 text-sm text-[var(--fg-muted)]">{k.beschreibung}</div>
+                  {/* Zwei Zeilen sind immer reserviert — auch bei einzeiligem
+                      Text —, damit alle Kacheln gleich hoch wirken. */}
+                  {k.beschreibung !== undefined && (
+                    <div className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm text-[var(--fg-muted)]">
+                      {k.beschreibung}
+                    </div>
                   )}
                   {k.marke && (
                     <div className="mt-1 text-xs uppercase tracking-wide text-[var(--fg-muted)]">

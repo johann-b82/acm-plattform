@@ -21,7 +21,7 @@ import {
   Truck,
   Upload,
   UserPlus,
-  Users,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -37,7 +37,7 @@ const SYMBOLE: Record<string, LucideIcon> = {
   "/atr": Boxes,
   "/einstellungen": Settings,
   "/fair": Ruler,
-  "/hr": Users,
+  "/hr": UserRound,
   "/hr/dokumente": FileText,
   "/hr/einarbeitung": ClipboardList,
   "/hr/kennzahlen": ChartColumn,
