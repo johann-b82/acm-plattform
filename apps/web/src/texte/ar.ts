@@ -730,6 +730,41 @@ export const ar: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} يعني: لا يوجد موعد لهذا الشخص في السجل. ${bald} يعني: خلال الشهرين القادمين. الحالة بتاريخ ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "تحرير التدريب",
+    tabZuweisen: "إسناد تدريب",
+    tabStand: "حالة الموظفين",
+    anforderungsmatrix: "مصفوفة المتطلبات",
+    ebene: "المستوى",
+    matrixLeer: "لا توجد بيانات للمصفوفة بعد.",
+    einzelTitel: "إسناد تدريب فردي",
+    einzelHinweis: "يكمّل مصفوفة المتطلبات التي تعمل على مستوى الإدارة — للأفراد.",
+    mitarbeiterWaehlen: "اختر موظفًا",
+    schulungWaehlen: "اختر تدريبًا",
+    zuweisenAktion: "إسناد",
+    zugewiesen: "تم إسناد التدريب.",
+    schonZugewiesen: "هذا التدريب مُسنَد للشخص بالفعل.",
+    sammelTitel: "تسجيل كمنفَّذ (جماعي)",
+    sammelHinweis: "تدريب واحد، تاريخ واحد، عدة مشاركين. تحتفظ السجلات المكتملة بتاريخها، ويحل تاريخ أحدث محله.",
+    durchgefuehrtAm: "نُفِّذ في",
+    teilnehmerSuche: "بحث عن مشاركين",
+    standort: "الموقع",
+    offeneTitel: "تدريبات مفتوحة",
+    abteilung: "الإدارة",
+    frist: "الاستحقاق",
+    mitarbeiterTitel: "نظرة عامة على الموظفين",
+    anzahl: "العدد",
+    naechste: "الاستحقاق التالي",
+    matrixTitel: "المصفوفة الإجمالية",
+    abteilungenTitel: "الإدارات والمشرفون",
+    vorgesetzter: "المشرف المسؤول",
+    abteilungenHinweis: "يُشتق المشرف من Personio؛ فإن لم يوجد يبقى العمود فارغًا.",
+    sammelAktion: (anzahl: number) => `تسجيل ${anzahl} كمنفَّذ`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} مُسجَّل${unveraendert ? `، ${unveraendert} دون تغيير` : ""}.`,
+    seit: (tage: number) => `منذ ${tage} يوم`,
+    in: (tage: number) => `خلال ${tage} يوم`,
+  },
   schulung: {
     gibtEsNicht: "هذا التدريب غير موجود",
     gibtEsNichtText: "على الأرجح أنه أُزيل.",
@@ -801,6 +836,14 @@ export const ar: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "القوالب النصية",
+    bausteineHinweis: "صياغة واحدة لكل مجال تقييم ودرجة. يُحفظ المتغيّر فقط؛ ويُستبدل [NAME] والضمائر عند الإنشاء.",
+    speichern: "حفظ",
+    gespeichert: "تم الحفظ.",
+    note1: "ممتاز",
+    note2: "جيد",
+    note3: "مُرضٍ",
+    note4: "مقبول",
     einleitung:
       "من الدرجات والنقاط تُصاغ لغة شهادة العمل. تُنسخ البيانات الأساسية عند الإنشاء — " +
       "فالشهادة الصادرة لا تتغير لأن Personio تغيّر.",
@@ -850,6 +893,9 @@ export const ar: Texte = {
     abteilungFuer: (inhalt: string) => `قسم لـ ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "تحرير",
+    bearbeitenFertig: "تم",
+    ohneKategorie: "بدون فئة",
     gibtEsNicht: "هذه المصفوفة غير موجودة",
     gibtEsNichtText: "على الأرجح أنها استُبدلت.",
     blattStand: (blatt: string) => `الورقة ${blatt}`,
@@ -953,6 +999,11 @@ export const ar: Texte = {
     hinweisDeutsch: "شهادة العمل نفسها تُكتب بالألمانية.",
   },
   dokumentenlauf: {
+    erstelltAm: "أُنشئ",
+    uebergebenAm: "سُلِّم",
+    zurueckAm: "أُعيد",
+    geprueftAm: "فُحص",
+    aktionen: "إجراءات",
     einleitung:
       "استمارات برمز QR: إنشاء، تسليم، استرجاع بعد التعبئة، فحص. رمز QR يعيد ربط " +
       "المسح الضوئي — أياً كان اسم الملف.",
@@ -998,6 +1049,15 @@ export const ar: Texte = {
     schulungsnachweis: "إثبات التدريب",
   },
   onboarding: {
+    aktive: "النشطون",
+    personenwahl: "أي الأشخاص",
+    eintritteTitel: "المنضمون الجدد",
+    inhalteTitel: "محتويات التأهيل",
+    matrixTitel: "مصفوفة التأهيل",
+    matrixHinweis: "أي محتوى تحتاجه كل إدارة. تسري العلامة فورًا.",
+    matrixLeer: "لا توجد محتويات أو إدارات بعد.",
+    vorgaengeTitel: "إجراءات التأهيل والتدريب",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "من هو الجديد وأي تدريبات تطلبها مصفوفة المتطلبات له. الخطة لا تُخزَّن بل " +
       "تُحسب — فإذا تغيرت المصفوفة تغيرت الخطة.",
@@ -1980,7 +2040,7 @@ export const ar: Texte = {
       "/hr/organigramm": "من يرفع تقاريره إلى من",
       "/hr/kompetenzen": "مصفوفة المؤهلات لكل قسم",
       "/hr/schulungen": "التدريبات الإلزامية والمواعيد والإثباتات",
-      "/hr/onboarding": "الالتحاقات وما يلزم لها",
+      "/hr/onboarding": "المنضمون الجدد والتأهيل والإجراءات",
       "/hr/einarbeitung": "خطط التأهيل وحالتها",
       "/hr/dokumente": "إنشاء الاستمارات وطباعتها وإعادة قراءتها ممسوحة",
       "/hr/zeugnisse": "كتابة شهادات العمل وإصدارها",

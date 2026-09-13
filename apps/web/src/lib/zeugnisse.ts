@@ -129,6 +129,30 @@ function sb() {
   return supabaseBrowser();
 }
 
+/** Der Schlüssel eines Textbausteins im Entwurf. */
+export function bausteinSchluessel(dimension: string, note: number): string {
+  return `${dimension}|${note}`;
+}
+
+/**
+ * Was am Entwurf der Textbausteine wirklich neu ist (ZEU-02). Unveränderte
+ * Formulierungen werden nicht angefasst; leere werden nicht gespeichert — ein
+ * Baustein ohne Text ergäbe eine Lücke mitten im Zeugnis.
+ */
+export function geaenderteBausteine(
+  bestand: readonly Pick<Baustein, "dimension" | "note" | "text">[],
+  entwurf: Readonly<Record<string, string>>,
+): { dimension: string; note: number; text: string }[] {
+  const alt = new Map(bestand.map((b) => [bausteinSchluessel(b.dimension, b.note), b.text]));
+  return Object.entries(entwurf)
+    .filter(([schluessel, text]) => text.trim() !== "" && text !== alt.get(schluessel))
+    .map(([schluessel, text]) => {
+      const [dimension, note] = schluessel.split("|");
+      return { dimension, note: Number(note), text };
+    })
+    .sort((a, b) => a.dimension.localeCompare(b.dimension) || a.note - b.note);
+}
+
 /** Die Zufriedenheitsformel zur Durchschnittsnote — zum Nachlesen in der Maske. */
 export function zufriedenheit(schnitt: number | null): string | null {
   if (schnitt === null) return null;
@@ -238,6 +262,23 @@ export const zeugnisApi = {
     if (error) throw new Error(error.message);
   },
 
+  /** Mehrere Bausteine auf einmal — nur die geänderten (siehe `geaenderteBausteine`). */
+  bausteineSetzen: async (
+    liste: readonly { dimension: string; note: number; text: string }[],
+  ): Promise<void> => {
+    if (liste.length === 0) return;
+    const jetzt = new Date().toISOString();
+    const { data, error } = await sb()
+      .from("zeugnis_bausteine")
+      .upsert(
+        liste.map((b) => ({ ...b, geaendert_am: jetzt })),
+        { onConflict: "dimension,note" },
+      )
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");
+  },
+
   aussteller: async (): Promise<Aussteller | null> => {
     const { data, error } = await sb()
       .from("zeugnis_aussteller")
@@ -253,8 +294,9 @@ export const zeugnisApi = {
   ausstellerAendern: async (felder: Partial<Aussteller>): Promise<void> => {
     const { data, error } = await sb()
       .from("zeugnis_aussteller")
-      .update(felder)
-      .eq("id", true)
+      // Anlegen oder ändern: nach der Übernahme fehlte die Einzelzeile, und
+      // ein bloßes Ändern lief dann ins Leere (0046).
+      .upsert({ id: true, ...felder }, { onConflict: "id" })
       .select("firma");
     if (error) throw new Error(error.message);
     if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");

@@ -1,10 +1,9 @@
-import { requireApp } from "@/lib/auth";
-import { OffeneSchulungen } from "./offene-schulungen";
-import { seitentitel } from "@/lib/sprache-server";
+import { redirect } from "next/navigation";
 
-export const generateMetadata = () => seitentitel((t) => t.titel.offeneSchulungen);
-
-export default async function OffenPage() {
-  await requireApp("hr");
-  return <OffeneSchulungen />;
+/**
+ * Die offenen Schulungen stehen jetzt im Register „Stand der Mitarbeiter“
+ * (SCH-04). Die alte Adresse bleibt und leitet dorthin.
+ */
+export default function OffenPage() {
+  redirect("/hr/schulungen?ansicht=stand");
 }

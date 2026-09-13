@@ -737,6 +737,41 @@ export const uk: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} означає: для цієї особи в історії немає жодної дати. ${bald} означає: протягом наступних двох місяців. Станом на ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "Редагувати навчання",
+    tabZuweisen: "Призначити навчання",
+    tabStand: "Стан працівників",
+    anforderungsmatrix: "Матриця вимог",
+    ebene: "Рівень",
+    matrixLeer: "Ще немає даних для матриці.",
+    einzelTitel: "Призначити окреме навчання",
+    einzelHinweis: "Доповнює матрицю вимог, що діє на рівні відділу — для окремих осіб.",
+    mitarbeiterWaehlen: "Обрати працівника",
+    schulungWaehlen: "Обрати навчання",
+    zuweisenAktion: "Призначити",
+    zugewiesen: "Навчання призначено.",
+    schonZugewiesen: "Це навчання вже призначено особі.",
+    sammelTitel: "Позначити як проведене (гуртом)",
+    sammelHinweis: "Одне навчання, одна дата, кілька учасників. Завершені записи зберігають дату, новіша заміщує її.",
+    durchgefuehrtAm: "Проведено",
+    teilnehmerSuche: "Пошук учасників",
+    standort: "Локація",
+    offeneTitel: "Відкриті навчання",
+    abteilung: "Відділ",
+    frist: "Термін",
+    mitarbeiterTitel: "Огляд працівників",
+    anzahl: "Кількість",
+    naechste: "Наступний термін",
+    matrixTitel: "Загальна матриця",
+    abteilungenTitel: "Відділи та керівники",
+    vorgesetzter: "Відповідальний керівник",
+    abteilungenHinweis: "Керівник виводиться з Personio; якщо немає, стовпець лишається порожнім.",
+    sammelAktion: (anzahl: number) => `Позначити ${anzahl} як проведені`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} внесено${unveraendert ? `, ${unveraendert} без змін` : ""}.`,
+    seit: (tage: number) => `${tage} дн. тому`,
+    in: (tage: number) => `за ${tage} дн.`,
+  },
   schulung: {
     gibtEsNicht: "Такого навчання немає",
     gibtEsNichtText: "Імовірно, його було видалено.",
@@ -808,6 +843,14 @@ export const uk: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "Текстові блоки",
+    bausteineHinweis: "Одне формулювання на область оцінювання та оцінку. Зберігаються лише зміни; [NAME] і займенники підставляються при формуванні.",
+    speichern: "Зберегти",
+    gespeichert: "Збережено.",
+    note1: "дуже добре",
+    note2: "добре",
+    note3: "задовільно",
+    note4: "достатньо",
     einleitung:
       "З оцінок і тез постає мова характеристики. Основні дані переписуються під час " +
       "створення — видана характеристика вже не змінюється через зміни в Personio.",
@@ -856,6 +899,9 @@ export const uk: Texte = {
     abteilungFuer: (inhalt: string) => `Відділ для ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "Редагувати",
+    bearbeitenFertig: "Готово",
+    ohneKategorie: "Без категорії",
     gibtEsNicht: "Такої матриці немає",
     gibtEsNichtText: "Імовірно, її було замінено.",
     blattStand: (blatt: string) => `Аркуш ${blatt}`,
@@ -960,6 +1006,11 @@ export const uk: Texte = {
     hinweisDeutsch: "Сама характеристика складається німецькою.",
   },
   dokumentenlauf: {
+    erstelltAm: "Створено",
+    uebergebenAm: "Передано",
+    zurueckAm: "Повернуто",
+    geprueftAm: "Перевірено",
+    aktionen: "Дії",
     einleitung:
       "Бланки з QR-кодом: створити, видати, прийняти заповненими, перевірити. QR прив’язує " +
       "скан назад — незалежно від того, як названо файл.",
@@ -1004,6 +1055,15 @@ export const uk: Texte = {
     schulungsnachweis: "Свідчення про навчання",
   },
   onboarding: {
+    aktive: "Активні",
+    personenwahl: "Які особи",
+    eintritteTitel: "Нові працівники",
+    inhalteTitel: "Зміст адаптації",
+    matrixTitel: "Матриця адаптації",
+    matrixHinweis: "Який зміст потрібен якому відділу. Позначка діє одразу.",
+    matrixLeer: "Ще немає змісту або відділів.",
+    vorgaengeTitel: "Процеси адаптації та навчання",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "Хто новий і яких навчань вимагає для нього матриця вимог. План не зберігається, а " +
       "обчислюється — змінюється матриця, змінюється і план.",
@@ -1991,7 +2051,7 @@ export const uk: Texte = {
       "/hr/organigramm": "Хто кому підпорядковується",
       "/hr/kompetenzen": "Матриця кваліфікацій за відділами",
       "/hr/schulungen": "Обов’язкові навчання, дати, підтвердження",
-      "/hr/onboarding": "Прийняття і що для них треба зробити",
+      "/hr/onboarding": "Нові працівники, адаптація та процеси",
       "/hr/einarbeitung": "Плани адаптації та їхній стан",
       "/hr/dokumente": "Створювати бланки, друкувати, зчитувати скани назад",
       "/hr/zeugnisse": "Писати і видавати характеристики",

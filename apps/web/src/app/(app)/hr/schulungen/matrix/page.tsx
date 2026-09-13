@@ -1,10 +1,9 @@
-import { requireApp } from "@/lib/auth";
-import { Schulungsmatrix } from "./schulungsmatrix";
-import { seitentitel } from "@/lib/sprache-server";
+import { redirect } from "next/navigation";
 
-export const generateMetadata = () => seitentitel((t) => t.titel.schulungsmatrix);
-
-export default async function MatrixPage() {
-  await requireApp("hr");
-  return <Schulungsmatrix />;
+/**
+ * Die Schulungsmatrix ist jetzt ein Abschnitt im Register „Stand der
+ * Mitarbeiter“ (SCH-04). Die alte Adresse bleibt und leitet dorthin.
+ */
+export default function MatrixPage() {
+  redirect("/hr/schulungen?ansicht=stand");
 }

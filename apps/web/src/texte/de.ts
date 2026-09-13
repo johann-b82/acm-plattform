@@ -702,6 +702,41 @@ export const de = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} heißt: für diese Person steht kein Termin in der Historie. ${bald} heißt: innerhalb der nächsten zwei Monate. Stand vom ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "Schulungen bearbeiten",
+    tabZuweisen: "Schulung zuweisen",
+    tabStand: "Stand der Mitarbeiter",
+    anforderungsmatrix: "Anforderungsmatrix",
+    ebene: "Ebene",
+    matrixLeer: "Noch keine Daten für die Matrix.",
+    einzelTitel: "Einzelne Schulung zuweisen",
+    einzelHinweis: "Ergänzt die Anforderungsmatrix, die abteilungsweit wirkt — für einzelne Personen.",
+    mitarbeiterWaehlen: "Mitarbeiter wählen",
+    schulungWaehlen: "Schulung wählen",
+    zuweisenAktion: "Zuweisen",
+    zugewiesen: "Schulung zugewiesen.",
+    schonZugewiesen: "Diese Schulung ist der Person bereits zugewiesen.",
+    sammelTitel: "Als durchgeführt eintragen (Sammel)",
+    sammelHinweis: "Eine Schulung, ein Datum, mehrere Teilnehmer. Abgeschlossene Teilnahmen behalten ihr Datum, ein jüngeres rückt nach.",
+    durchgefuehrtAm: "Durchgeführt am",
+    teilnehmerSuche: "Teilnehmer suchen",
+    standort: "Standort",
+    offeneTitel: "Offene Schulungen",
+    abteilung: "Abteilung",
+    frist: "Frist",
+    mitarbeiterTitel: "Mitarbeiterübersicht",
+    anzahl: "Anzahl",
+    naechste: "Nächste Fälligkeit",
+    matrixTitel: "Gesamtmatrix",
+    abteilungenTitel: "Abteilungen & Vorgesetzte",
+    vorgesetzter: "Verantwortlicher Vorgesetzter",
+    abteilungenHinweis: "Der Vorgesetzte wird aus Personio abgeleitet; fehlt er, bleibt die Spalte leer.",
+    sammelAktion: (anzahl: number) => `${anzahl} als durchgeführt eintragen`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} eingetragen${unveraendert ? `, ${unveraendert} unverändert` : ""}.`,
+    seit: (tage: number) => `seit ${tage} Tg.`,
+    in: (tage: number) => `in ${tage} Tg.`,
+  },
   schulung: {
     gibtEsNicht: "Diese Schulung gibt es nicht",
     gibtEsNichtText: "Vermutlich wurde sie entfernt.",
@@ -774,6 +809,14 @@ export const de = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "Textbausteine",
+    bausteineHinweis: "Je Bewertungsbereich und Note eine Formulierung. Nur Geändertes wird gespeichert; [NAME] und die Pronomen werden beim Erzeugen ersetzt.",
+    speichern: "Speichern",
+    gespeichert: "Gespeichert.",
+    note1: "sehr gut",
+    note2: "gut",
+    note3: "befriedigend",
+    note4: "ausreichend",
     einleitung:
       "Aus Noten und Stichpunkten wird Zeugnissprache. Die Stammdaten werden beim Anlegen " +
       "abgeschrieben — ein ausgestelltes Zeugnis ändert sich nicht mehr, weil sich Personio ändert.",
@@ -823,6 +866,9 @@ export const de = {
     abteilungFuer: (inhalt: string) => `Abteilung für ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "Bearbeiten",
+    bearbeitenFertig: "Fertig",
+    ohneKategorie: "Ohne Kategorie",
     gibtEsNicht: "Diese Matrix gibt es nicht",
     gibtEsNichtText: "Vermutlich wurde sie ersetzt.",
     blattStand: (blatt: string) => `Blatt ${blatt}`,
@@ -929,6 +975,11 @@ export const de = {
     hinweisDeutsch: "Das Zeugnis selbst wird auf Deutsch geschrieben.",
   },
   dokumentenlauf: {
+    erstelltAm: "Erstellt",
+    uebergebenAm: "Übergeben",
+    zurueckAm: "Zurück",
+    geprueftAm: "Geprüft",
+    aktionen: "Aktionen",
     einleitung:
       "Blätter mit QR-Code: erzeugen, aushändigen, ausgefüllt zurücknehmen, prüfen. Der QR " +
       "ordnet den Scan wieder zu — unabhängig davon, wie die Datei heißt.",
@@ -974,6 +1025,15 @@ export const de = {
     schulungsnachweis: "Schulungsnachweis",
   },
   onboarding: {
+    aktive: "Aktive",
+    personenwahl: "Welche Personen",
+    eintritteTitel: "Eintritte",
+    inhalteTitel: "Einarbeitungsinhalte",
+    matrixTitel: "Einarbeitungsmatrix",
+    matrixHinweis: "Welcher Inhalt für welche Abteilung nötig ist. Ein Häkchen gilt sofort.",
+    matrixLeer: "Noch keine Inhalte oder Abteilungen.",
+    vorgaengeTitel: "Einarbeitungs- & Schulungsvorgänge",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "Wer neu ist und welche Schulungen die Anforderungsmatrix für ihn verlangt. Der Plan wird " +
       "nicht gespeichert, sondern gerechnet — ändert sich die Matrix, ändert sich der Plan.",
@@ -1972,7 +2032,7 @@ export const de = {
       "/hr/organigramm": "Wer wem berichtet",
       "/hr/kompetenzen": "Qualifikationsmatrix je Abteilung",
       "/hr/schulungen": "Pflichtschulungen, Termine, Nachweise",
-      "/hr/onboarding": "Eintritte und was dafür zu tun ist",
+      "/hr/onboarding": "Eintritte, Einarbeitung und Vorgänge",
       "/hr/einarbeitung": "Einarbeitungspläne und ihr Stand",
       "/hr/dokumente": "Formblätter erzeugen, drucken, eingescannt zurücklesen",
       "/hr/zeugnisse": "Arbeitszeugnisse schreiben und ausgeben",

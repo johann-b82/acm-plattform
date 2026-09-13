@@ -1,11 +1,10 @@
-import { requireApp } from "@/lib/auth";
-import { hasLevel } from "@/lib/rechte";
-import { Dokumentenlauf } from "./dokumentenlauf";
-import { seitentitel } from "@/lib/sprache-server";
+import { redirect } from "next/navigation";
 
-export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hr/dokumente"]);
-
-export default async function DokumentePage() {
-  const session = await requireApp("hr");
-  return <Dokumentenlauf darfSchreiben={hasLevel(session.apps, "hr", "editor")} />;
+/**
+ * Der Dokumentenlauf heißt jetzt „Einarbeitungs- & Schulungsvorgänge“ und
+ * steht unter Onboarding wie im Altsystem (DOK-02). Die alte Adresse bleibt
+ * und springt auf den Abschnitt.
+ */
+export default function DokumentePage() {
+  redirect("/hr/onboarding#vorgaenge");
 }

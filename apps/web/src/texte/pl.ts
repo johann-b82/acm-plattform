@@ -742,6 +742,41 @@ export const pl: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} znaczy: dla tej osoby nie ma w historii żadnej daty. ${bald} znaczy: w ciągu najbliższych dwóch miesięcy. Stan z ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "Edytuj szkolenia",
+    tabZuweisen: "Przypisz szkolenie",
+    tabStand: "Stan pracowników",
+    anforderungsmatrix: "Macierz wymagań",
+    ebene: "Poziom",
+    matrixLeer: "Brak danych do macierzy.",
+    einzelTitel: "Przypisz pojedyncze szkolenie",
+    einzelHinweis: "Uzupełnia macierz wymagań działającą na poziomie działu — dla osób.",
+    mitarbeiterWaehlen: "Wybierz pracownika",
+    schulungWaehlen: "Wybierz szkolenie",
+    zuweisenAktion: "Przypisz",
+    zugewiesen: "Szkolenie przypisane.",
+    schonZugewiesen: "To szkolenie jest już przypisane osobie.",
+    sammelTitel: "Oznacz jako przeprowadzone (zbiorczo)",
+    sammelHinweis: "Jedno szkolenie, jedna data, wielu uczestników. Ukończone wpisy zachowują datę, nowsza ją zastępuje.",
+    durchgefuehrtAm: "Przeprowadzono",
+    teilnehmerSuche: "Szukaj uczestników",
+    standort: "Lokalizacja",
+    offeneTitel: "Otwarte szkolenia",
+    abteilung: "Dział",
+    frist: "Termin",
+    mitarbeiterTitel: "Przegląd pracowników",
+    anzahl: "Liczba",
+    naechste: "Następny termin",
+    matrixTitel: "Macierz zbiorcza",
+    abteilungenTitel: "Działy i przełożeni",
+    vorgesetzter: "Odpowiedzialny przełożony",
+    abteilungenHinweis: "Przełożony jest wyprowadzany z Personio; przy braku kolumna pozostaje pusta.",
+    sammelAktion: (anzahl: number) => `Oznacz ${anzahl} jako przeprowadzone`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} zapisano${unveraendert ? `, ${unveraendert} bez zmian` : ""}.`,
+    seit: (tage: number) => `${tage} dni temu`,
+    in: (tage: number) => `za ${tage} dni`,
+  },
   schulung: {
     gibtEsNicht: "Takiego szkolenia nie ma",
     gibtEsNichtText: "Prawdopodobnie zostało usunięte.",
@@ -814,6 +849,14 @@ export const pl: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "Bloki tekstowe",
+    bausteineHinweis: "Jedno sformułowanie na obszar oceny i ocenę. Zapisywane są tylko zmiany; [NAME] i zaimki są zastępowane przy generowaniu.",
+    speichern: "Zapisz",
+    gespeichert: "Zapisano.",
+    note1: "bardzo dobry",
+    note2: "dobry",
+    note3: "dostateczny",
+    note4: "wystarczający",
     einleitung:
       "Z ocen i punktów powstaje język świadectw. Dane podstawowe są przepisywane przy " +
       "zakładaniu — wystawione świadectwo nie zmienia się już dlatego, że zmienia się Personio.",
@@ -863,6 +906,9 @@ export const pl: Texte = {
     abteilungFuer: (inhalt: string) => `Dział dla ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "Edytuj",
+    bearbeitenFertig: "Gotowe",
+    ohneKategorie: "Bez kategorii",
     gibtEsNicht: "Takiej macierzy nie ma",
     gibtEsNichtText: "Prawdopodobnie została zastąpiona.",
     blattStand: (blatt: string) => `Arkusz ${blatt}`,
@@ -968,6 +1014,11 @@ export const pl: Texte = {
     hinweisDeutsch: "Samo świadectwo jest pisane po niemiecku.",
   },
   dokumentenlauf: {
+    erstelltAm: "Utworzono",
+    uebergebenAm: "Przekazano",
+    zurueckAm: "Zwrócono",
+    geprueftAm: "Sprawdzono",
+    aktionen: "Akcje",
     einleitung:
       "Arkusze z kodem QR: utworzyć, wydać, odebrać wypełnione, sprawdzić. Kod QR " +
       "przyporządkowuje skan z powrotem — niezależnie od tego, jak nazywa się plik.",
@@ -1013,6 +1064,15 @@ export const pl: Texte = {
     schulungsnachweis: "Dowód szkolenia",
   },
   onboarding: {
+    aktive: "Aktywni",
+    personenwahl: "Które osoby",
+    eintritteTitel: "Nowo zatrudnieni",
+    inhalteTitel: "Treści wdrożenia",
+    matrixTitel: "Macierz wdrożenia",
+    matrixHinweis: "Które treści są potrzebne w którym dziale. Zaznaczenie działa od razu.",
+    matrixLeer: "Brak treści lub działów.",
+    vorgaengeTitel: "Procesy wdrożenia i szkoleń",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "Kto jest nowy i jakich szkoleń wymaga dla niego macierz wymagań. Plan nie jest " +
       "zapisywany, tylko liczony — zmienia się macierz, zmienia się plan.",
@@ -2008,7 +2068,7 @@ export const pl: Texte = {
       "/hr/organigramm": "Kto komu podlega",
       "/hr/kompetenzen": "Macierz kwalifikacji wg działu",
       "/hr/schulungen": "Szkolenia obowiązkowe, terminy, dowody",
-      "/hr/onboarding": "Przyjęcia i co trzeba w związku z nimi zrobić",
+      "/hr/onboarding": "Nowo zatrudnieni, wdrożenie i procesy",
       "/hr/einarbeitung": "Plany wdrożenia i ich stan",
       "/hr/dokumente": "Tworzenie i drukowanie formularzy, wczytywanie skanów",
       "/hr/zeugnisse": "Pisanie i wydawanie świadectw pracy",

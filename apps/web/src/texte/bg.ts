@@ -741,6 +741,41 @@ export const bg: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} значи: за този човек няма дата в историята. ${bald} значи: в следващите два месеца. Към ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "Редактиране на обучения",
+    tabZuweisen: "Възлагане на обучение",
+    tabStand: "Състояние на служителите",
+    anforderungsmatrix: "Матрица на изискванията",
+    ebene: "Ниво",
+    matrixLeer: "Все още няма данни за матрицата.",
+    einzelTitel: "Възлагане на отделно обучение",
+    einzelHinweis: "Допълва матрицата на изискванията, която действа по отдели — за отделни лица.",
+    mitarbeiterWaehlen: "Изберете служител",
+    schulungWaehlen: "Изберете обучение",
+    zuweisenAktion: "Възлагане",
+    zugewiesen: "Обучението е възложено.",
+    schonZugewiesen: "Това обучение вече е възложено на лицето.",
+    sammelTitel: "Отбелязване като проведено (групово)",
+    sammelHinweis: "Едно обучение, една дата, няколко участници. Завършените записи запазват датата си, по-нова я измества.",
+    durchgefuehrtAm: "Проведено на",
+    teilnehmerSuche: "Търсене на участници",
+    standort: "Локация",
+    offeneTitel: "Отворени обучения",
+    abteilung: "Отдел",
+    frist: "Срок",
+    mitarbeiterTitel: "Преглед на служителите",
+    anzahl: "Брой",
+    naechste: "Следващ срок",
+    matrixTitel: "Обща матрица",
+    abteilungenTitel: "Отдели и ръководители",
+    vorgesetzter: "Отговорен ръководител",
+    abteilungenHinweis: "Ръководителят се извежда от Personio; ако липсва, колоната остава празна.",
+    sammelAktion: (anzahl: number) => `Отбележи ${anzahl} като проведени`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} записани${unveraendert ? `, ${unveraendert} без промяна` : ""}.`,
+    seit: (tage: number) => `преди ${tage} дни`,
+    in: (tage: number) => `след ${tage} дни`,
+  },
   schulung: {
     gibtEsNicht: "Това обучение не съществува",
     gibtEsNichtText: "Вероятно е премахнато.",
@@ -813,6 +848,14 @@ export const bg: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "Текстови блокове",
+    bausteineHinweis: "По една формулировка за област на оценяване и оценка. Записва се само промененото; [NAME] и местоименията се заместват при генериране.",
+    speichern: "Запиши",
+    gespeichert: "Записано.",
+    note1: "много добър",
+    note2: "добър",
+    note3: "задоволителен",
+    note4: "достатъчен",
     einleitung:
       "От оценки и кратки бележки става език на препоръката. Основните данни се преписват при " +
       "създаването — издадена препоръка не се променя, защото Personio се е променил.",
@@ -862,6 +905,9 @@ export const bg: Texte = {
     abteilungFuer: (inhalt: string) => `Отдел за ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "Редактиране",
+    bearbeitenFertig: "Готово",
+    ohneKategorie: "Без категория",
     gibtEsNicht: "Тази матрица не съществува",
     gibtEsNichtText: "Вероятно е заменена.",
     blattStand: (blatt: string) => `Лист ${blatt}`,
@@ -968,6 +1014,11 @@ export const bg: Texte = {
     hinweisDeutsch: "Самата препоръка се изготвя на немски език.",
   },
   dokumentenlauf: {
+    erstelltAm: "Създаден",
+    uebergebenAm: "Предаден",
+    zurueckAm: "Върнат",
+    geprueftAm: "Проверен",
+    aktionen: "Действия",
     einleitung:
       "Формуляри с QR код: създаване, връчване, връщане попълнени, проверка. QR кодът " +
       "свързва сканирането обратно — независимо как се казва файлът.",
@@ -1013,6 +1064,15 @@ export const bg: Texte = {
     schulungsnachweis: "Удостоверение за обучение",
   },
   onboarding: {
+    aktive: "Активни",
+    personenwahl: "Кои лица",
+    eintritteTitel: "Постъпили",
+    inhalteTitel: "Съдържание на въвеждането",
+    matrixTitel: "Матрица на въвеждането",
+    matrixHinweis: "Кое съдържание е нужно на кой отдел. Отметката важи веднага.",
+    matrixLeer: "Все още няма съдържание или отдели.",
+    vorgaengeTitel: "Процеси по въвеждане и обучение",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "Кой е нов и какви обучения изисква матрицата на изискванията за него. Планът не се " +
       "записва, а се изчислява — промени ли се матрицата, променя се и планът.",
@@ -2013,7 +2073,7 @@ export const bg: Texte = {
       "/hr/organigramm": "Кой на кого се отчита",
       "/hr/kompetenzen": "Квалификационна матрица по отдели",
       "/hr/schulungen": "Задължителни обучения, дати, доказателства",
-      "/hr/onboarding": "Постъпили и какво трябва да се направи за тях",
+      "/hr/onboarding": "Постъпили, въвеждане и процеси",
       "/hr/einarbeitung": "Планове за въвеждане и докъде са стигнали",
       "/hr/dokumente": "Създаване, печат и обратно прочитане на формуляри",
       "/hr/zeugnisse": "Писане и издаване на препоръки",

@@ -735,6 +735,41 @@ export const fa: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} یعنی: برای این نفر تاریخی در سابقه نیست. ${bald} یعنی: در دو ماه آینده. به تاریخ ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "ویرایش آموزش",
+    tabZuweisen: "تخصیص آموزش",
+    tabStand: "وضعیت کارکنان",
+    anforderungsmatrix: "ماتریس الزامات",
+    ebene: "سطح",
+    matrixLeer: "هنوز داده‌ای برای ماتریس نیست.",
+    einzelTitel: "تخصیص یک آموزش",
+    einzelHinweis: "مکمل ماتریس الزامات که در سطح واحد عمل می‌کند — برای افراد.",
+    mitarbeiterWaehlen: "انتخاب کارمند",
+    schulungWaehlen: "انتخاب آموزش",
+    zuweisenAktion: "تخصیص",
+    zugewiesen: "آموزش تخصیص یافت.",
+    schonZugewiesen: "این آموزش قبلاً به این فرد تخصیص یافته است.",
+    sammelTitel: "ثبت به‌عنوان انجام‌شده (گروهی)",
+    sammelHinweis: "یک آموزش، یک تاریخ، چند شرکت‌کننده. رکوردهای انجام‌شده تاریخ خود را نگه می‌دارند و تاریخ جدیدتر جایگزین می‌شود.",
+    durchgefuehrtAm: "انجام‌شده در",
+    teilnehmerSuche: "جست‌وجوی شرکت‌کنندگان",
+    standort: "محل",
+    offeneTitel: "آموزش‌های باز",
+    abteilung: "واحد",
+    frist: "سررسید",
+    mitarbeiterTitel: "نمای کلی کارکنان",
+    anzahl: "تعداد",
+    naechste: "سررسید بعدی",
+    matrixTitel: "ماتریس کلی",
+    abteilungenTitel: "واحدها و سرپرستان",
+    vorgesetzter: "سرپرست مسئول",
+    abteilungenHinweis: "سرپرست از Personio استخراج می‌شود؛ اگر نباشد ستون خالی می‌ماند.",
+    sammelAktion: (anzahl: number) => `ثبت ${anzahl} به‌عنوان انجام‌شده`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} ثبت شد${unveraendert ? `، ${unveraendert} بدون تغییر` : ""}.`,
+    seit: (tage: number) => `${tage} روز پیش`,
+    in: (tage: number) => `تا ${tage} روز`,
+  },
   schulung: {
     gibtEsNicht: "این آموزش وجود ندارد",
     gibtEsNichtText: "احتمالاً حذف شده است.",
@@ -806,6 +841,14 @@ export const fa: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "بلوک‌های متنی",
+    bausteineHinweis: "برای هر حوزهٔ ارزیابی و نمره یک عبارت. فقط تغییرات ذخیره می‌شود؛ [NAME] و ضمایر هنگام تولید جایگزین می‌شوند.",
+    speichern: "ذخیره",
+    gespeichert: "ذخیره شد.",
+    note1: "بسیار خوب",
+    note2: "خوب",
+    note3: "رضایت‌بخش",
+    note4: "کافی",
     einleitung:
       "از نمره‌ها و نکته‌ها زبان گواهی ساخته می‌شود. داده‌های پایه هنگام ساخت رونویسی " +
       "می‌شوند — گواهی صادرشده با تغییر Personio تغییر نمی‌کند.",
@@ -855,6 +898,9 @@ export const fa: Texte = {
     abteilungFuer: (inhalt: string) => `بخش برای ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "ویرایش",
+    bearbeitenFertig: "پایان",
+    ohneKategorie: "بدون دسته",
     gibtEsNicht: "این ماتریس وجود ندارد",
     gibtEsNichtText: "احتمالاً جایگزین شده است.",
     blattStand: (blatt: string) => `برگهٔ ${blatt}`,
@@ -959,6 +1005,11 @@ export const fa: Texte = {
     hinweisDeutsch: "خود گواهی به آلمانی نوشته می‌شود.",
   },
   dokumentenlauf: {
+    erstelltAm: "ایجاد",
+    uebergebenAm: "تحویل",
+    zurueckAm: "بازگشت",
+    geprueftAm: "بررسی",
+    aktionen: "اقدامات",
     einleitung:
       "برگه‌های دارای QR: ساختن، تحویل دادن، پرشده پس گرفتن، بررسی کردن. QR اسکن را " +
       "دوباره نسبت می‌دهد — فارغ از اینکه نام فایل چیست.",
@@ -1003,6 +1054,15 @@ export const fa: Texte = {
     schulungsnachweis: "مستند آموزش",
   },
   onboarding: {
+    aktive: "فعال",
+    personenwahl: "کدام افراد",
+    eintritteTitel: "ورودهای جدید",
+    inhalteTitel: "محتوای آشناسازی",
+    matrixTitel: "ماتریس آشناسازی",
+    matrixHinweis: "هر واحد به کدام محتوا نیاز دارد. تیک بلافاصله اعمال می‌شود.",
+    matrixLeer: "هنوز محتوا یا واحدی وجود ندارد.",
+    vorgaengeTitel: "فرایندهای آشناسازی و آموزش",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "چه کسی تازه‌وارد است و ماتریس الزام‌ها چه آموزش‌هایی برای او می‌خواهد. برنامه " +
       "ذخیره نمی‌شود بلکه محاسبه می‌شود — با تغییر ماتریس، برنامه هم تغییر می‌کند.",
@@ -1990,7 +2050,7 @@ export const fa: Texte = {
       "/hr/organigramm": "چه کسی به چه کسی گزارش می‌دهد",
       "/hr/kompetenzen": "ماتریس صلاحیت‌ها به تفکیک بخش",
       "/hr/schulungen": "آموزش‌های الزامی، موعدها، مستندها",
-      "/hr/onboarding": "ورودی‌ها و آنچه برایشان باید انجام شود",
+      "/hr/onboarding": "ورودها، آشناسازی و فرایندها",
       "/hr/einarbeitung": "برنامه‌های آشناسازی و وضعیت آن‌ها",
       "/hr/dokumente": "ساختن فرم‌ها، چاپ و بازخوانی اسکن‌ها",
       "/hr/zeugnisse": "نوشتن و صادرکردن گواهی‌های کار",
