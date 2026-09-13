@@ -395,10 +395,13 @@ export function Zugaenge({ eigeneId }: { eigeneId: string }) {
         </Card>
       )}
 
-      <p className="text-xs text-[var(--fg-muted)]">
-        <span className="font-medium">V</span> {worte.zugaenge.stufen.viewer} ·{" "}
-        <span className="font-medium">E</span> {worte.zugaenge.stufen.editor} ·{" "}
-        <span className="font-medium">A</span> {worte.zugaenge.stufen.admin}
+      <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--fg-muted)]">
+        {LEVELS.map((l) => (
+          <span key={l}>
+            <span className="font-medium">{worte.zugaenge.stufen[l].charAt(0).toUpperCase()}</span>{" "}
+            {worte.zugaenge.stufen[l]}
+          </span>
+        ))}
       </p>
 
       <p className="text-xs text-[var(--fg-muted)]">
@@ -575,19 +578,24 @@ function RechtZelle({
   stufen: Record<Level, string>;
   onChange: (level: Level | null) => void;
 }) {
-  const buchstabe = wert ? wert.charAt(0).toUpperCase() : "—";
+  // Buchstabe aus dem angezeigten Wort, nicht aus dem (englischen) Schlüssel —
+  // sonst zeigt „Ansehen" ein V und „Verwalten" ein A, also scheinbar vertauscht.
+  const buchstabe = wert ? stufen[wert].charAt(0).toUpperCase() : "—";
+  // Aufsteigende Betonung: Ansehen schwach (gefüllt-gedämpft), Bearbeiten
+  // umrandet, Verwalten voll gefüllt — mit den Theme-Tokens des Primär-Buttons.
   const stil =
     wert === "admin"
-      ? "bg-[var(--accent)] text-white"
+      ? "bg-[var(--fg)] text-[var(--bg)]"
       : wert === "editor"
-        ? "border border-[var(--accent)] text-[var(--accent)]"
+        ? "border border-[var(--fg-muted)] text-[var(--fg)]"
         : wert === "viewer"
-          ? "border border-[var(--border)]"
+          ? "bg-[var(--muted)] text-[var(--fg-muted)]"
           : "text-[var(--fg-muted)]";
   return (
     <div className="relative mx-auto h-7 w-8">
       <span
         aria-hidden
+        title={wert ? stufen[wert] : keinZugriff}
         className={`pointer-events-none absolute inset-0 flex items-center justify-center rounded-md text-xs font-semibold ${stil}`}
       >
         {buchstabe}
