@@ -32,3 +32,21 @@ Auf Nutzerwunsch ist der dritte Weg gebaut: `compute` prüft Benutzer+Passwort p
 - Anmeldung: `POST /api/anmeldung/ad` (öffentlich, ratenbegrenzt), Login-Maske mit lokaler Rückfallanmeldung für den Break-Glass-Admin.
 - Getestet gegen eine LDAP-Attrappe (Provisionierung, Gruppen-Sync, Entfernen verwaister AD-Mitgliedschaften, Schutz handgepflegter Gruppen).
 - **Offen:** Verifikation gegen ein echtes AD (LDAPS erreichbar, Dienstkonto). Kein SSO — dafür bleibt SAML/AD FS oder Keycloak (Weg 1/2) eine spätere Option. HTTPS/TLS am DC in Produktion Pflicht (`tls_pruefen`).
+
+### Rechte-Mapping (freigegeben 2026-09-13): AD-Gruppen → App-Rechte
+
+Umstellung auf AD als alleinige Rechtequelle. Da die AD-Gruppen erst beim ersten Login eines Mitglieds entstehen (`source='ad'`), ist das Mapping **kein Alembic-Seed**, sondern ein wiederholbares Skript `scripts/ad-rechte-mapping.sql`, das über den Gruppennamen zuordnet und noch nicht gespiegelte Gruppen überspringt. `platform:admin` sieht alles; `uploads`, `sensors`, `settings` haben bewusst keine eigene Gruppe.
+
+| AD-Gruppe | Recht |
+|---|---|
+| `grp_IT` | platform:admin |
+| `grp_GL`, `grp_Management`, `grp_Vertrieb`, `grp_Angebote`, `grp_FTM_Marketing-Sales`, `grp_Einkauf`, `grp_SupplierManagement`, `grp_Finance`, `grp_Buchhaltung` | kpi:viewer |
+| `grp_QS` | quality:editor, kpi:viewer |
+| `grp_Produktion`, `grp_Arbeitsvorbereitung` | production:editor, kpi:viewer |
+| `grp_Konstruktion`, `grp__Engineering` | fair:editor, atr:editor |
+| `grp_Logistik` | atr:editor, kpi:viewer |
+| `grp_Personalabteilung` | hr:admin |
+| `grp_HR_Reisemngmt` | hr:viewer |
+| `grp_Marketing` | newsletter:editor |
+
+Bewusst **ohne** Recht: `ACM_D3_ADMIN`, `Domänen-Admins`, alle `lw_*`, `grp_Trainee_*`, `grp_Azubi`/`grp_Working student`/`grp_ausgeschiedeneMitarbeiter`, Regions-/Projekt-/Technik-Gruppen (VPN, VDI, Drucker, Remotedesktop, …). Admin läuft ausschließlich über `grp_IT`, nicht `Domänen-Admins`. Die lokale Break-Glass-Gruppe „Plattform-Admins" bleibt bestehen; alte manuelle Rechte (Gruppe „Vertrieb") wurden entfernt. Neue Gruppen ordnet ein Admin unter „Nutzer und Gruppen" zu bzw. ergänzt sie im Skript. App-Rechte greifen im JWT-Claim `apps` beim **nächsten Login**.
