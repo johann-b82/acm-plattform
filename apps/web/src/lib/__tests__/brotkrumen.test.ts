@@ -27,7 +27,7 @@ describe("krumen", () => {
   it("baut die Kette aus den Vorsilben", () => {
     expect(krumen("/hr/schulungen/matrix").map((k) => k.titel)).toEqual([
       "Start",
-      "Personal",
+      "HR",
       "Schulungen",
       "Matrix",
     ]);
@@ -41,6 +41,15 @@ describe("krumen", () => {
       "Start",
       "ATR",
       "Lieferungen",
+    ]);
+  });
+
+  it("führt den Teilekatalog unter ATR", () => {
+    // ATR-10: /atr sind die Lieferungen, der Katalog hängt darunter.
+    expect(krumen("/atr/teilekatalog").map((k) => k.adresse)).toEqual([
+      "/",
+      "/atr",
+      "/atr/teilekatalog",
     ]);
   });
 

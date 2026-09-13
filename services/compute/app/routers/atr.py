@@ -11,23 +11,30 @@ PostgREST — auch das Pflegen einzelner Teile.
     POST /api/atr/referenz       Mappe einlesen und in den Katalog übernehmen
     POST /api/atr/lieferschein   Lieferschein einlesen, abgleichen, als Entwurf ablegen
     POST /api/atr/lieferungen/{id}/erzeugen   Mappe, PDF und Etikett erzeugen
+    POST /api/atr/container-etikett   Containernummer zuweisen, Beschriftung holen
     POST /api/atr/scan/probe     Verbindung zum Dateiserver pruefen
     POST /api/atr/scan           Eingangsordner von Hand durchsehen
     POST /api/atr/scan/geplant   derselbe Lauf aus pg_cron, gemeinsames Geheimnis
+    GET  /api/atr/scan/passwort  ob ein Passwort hinterlegt ist (Plattform-Verwaltung)
+    PUT  /api/atr/scan/passwort  Passwort eintragen oder ersetzen (Plattform-Verwaltung)
 """
 from __future__ import annotations
 
+import re
+import uuid
 from datetime import date, datetime, timezone
+from urllib.parse import quote
 
 import sqlalchemy as sa
 import hmac
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Path, UploadFile, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Response, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from app.auth import require_app
+from app import geheim
+from app.auth import Claims, require_app
 from app.config import settings
 from app.db import (
     SessionLocal,
@@ -46,7 +53,7 @@ from app.atr import dateiserver, scan as scan_modul
 from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
 from app.atr.format import programmfamilie
-from app.atr.etikett import baue_etikett
+from app.atr.etikett import baue_container_etikett, baue_etikett
 from app.dokumente.pdf import PdfFehlgeschlagen, nach_pdf
 from app.atr.speicher import SpeicherFehler, ablegen
 from app.parsing.atr_referenz import MappeUnbrauchbar, lies_referenzmappe
@@ -480,6 +487,9 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
                     pdf_pfad=pdf_pfad,
                     etikett_pfad=etikett_pfad,
                     erzeugt_am=jetzt,
+                    # Wie im Altsystem: jede Erzeugung heißt `generated`, auch
+                    # eine erneute nach dem Ablegen.
+                    status="erzeugt",
                 )
             )
 
@@ -520,6 +530,88 @@ async def _hole_geruest(pfad: str) -> bytes:
             502, f"Die Gerüstdatei ließ sich nicht laden ({antwort.status_code})."
         )
     return antwort.content
+
+
+DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+_UNZULAESSIG = re.compile(r'[\\/:*?"<>|\x00-\x1f]+')
+
+
+class ContainerAuftrag(BaseModel):
+    containernummer: str
+    lieferungen: list[str]
+
+
+async def container_etikett_bauen(nummer: str, lieferungen: list[str]) -> tuple[str, bytes]:
+    """Weist den ausgewählten Lieferungen die Containernummer zu und baut das
+    Etikett des ganzen Containers.
+
+    Wie im Altsystem (`/api/atr/deliveries/container-label`): auf dem Etikett
+    steht alles, was diesem Container zugeordnet ist — auch eine Lieferung,
+    die schon vorher darin lag. Zuweisen und Lesen in einem Schreibvorgang;
+    ist eine der ausgewählten Lieferungen nicht da, bleibt alles, wie es war.
+    """
+    nr = (nummer or "").strip()
+    if not nr or len(nr) > 40:
+        raise HTTPException(422, "Bitte eine Containernummer mit höchstens 40 Zeichen angeben.")
+    try:
+        kennungen = {uuid.UUID(k) for k in lieferungen}
+    except ValueError as fehler:
+        raise HTTPException(422, "Unbekannte Kennung einer Lieferung.") from fehler
+    if not kennungen:
+        raise HTTPException(422, "Keine Lieferung ausgewählt.")
+
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            getroffen = (
+                await sitzung.execute(
+                    atr_lieferungen.update()
+                    .where(atr_lieferungen.c.id.in_(kennungen))
+                    .values(containernummer=nr)
+                    .returning(atr_lieferungen.c.id)
+                )
+            ).scalars().all()
+            if set(getroffen) != kennungen:
+                raise HTTPException(404, "Lieferung nicht gefunden.")
+
+            im_container = [
+                dict(z)
+                for z in (
+                    await sitzung.execute(
+                        sa.select(atr_lieferungen)
+                        .where(atr_lieferungen.c.containernummer == nr)
+                        .order_by(atr_lieferungen.c.erstellt_am, atr_lieferungen.c.id)
+                    )
+                ).mappings()
+            ]
+            positionen: dict = {z["id"]: [] for z in im_container}
+            for p in (
+                await sitzung.execute(
+                    sa.select(atr_positionen)
+                    .where(atr_positionen.c.lieferung_id.in_(list(positionen)))
+                    .order_by(atr_positionen.c.reihenfolge)
+                )
+            ).mappings():
+                positionen[p["lieferung_id"]].append(dict(p))
+
+    daten = await run_in_threadpool(
+        baue_container_etikett, nr, [(z, positionen[z["id"]]) for z in im_container]
+    )
+    name = f"Container_{_UNZULAESSIG.sub('', nr) or 'ATR'}.docx"
+    return name, daten
+
+
+@router.post("/container-etikett")
+async def container_etikett(auftrag: ContainerAuftrag) -> Response:
+    name, daten = await container_etikett_bauen(auftrag.containernummer, auftrag.lieferungen)
+    einfach = name.encode("ascii", "replace").decode()
+    return Response(
+        content=daten,
+        media_type=DOCX,
+        headers={
+            "Content-Disposition": f'attachment; filename="{einfach}"; '
+            f"filename*=UTF-8''{quote(name)}"
+        },
+    )
 
 
 class ScanErgebnis(BaseModel):
@@ -565,12 +657,18 @@ async def _lauf() -> ScanErgebnis:
         _, dateien = await _erzeuge(lieferung_id)
         return dateien
 
+    # Nie zwei Läufe zugleich — sonst läsen beide dieselbe Datei und legten
+    # die Lieferung doppelt an.
+    if not await scan_modul.belegen():
+        raise HTTPException(409, "Der Eingangsordner wird gerade durchgesehen.")
     try:
         ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
     except scan_modul.NichtEingerichtet as fehler:
         raise HTTPException(503, str(fehler)) from fehler
     except DateiserverFehler as fehler:
         raise HTTPException(502, str(fehler)) from fehler
+    finally:
+        await scan_modul.freigeben()
 
     return ScanErgebnis(
         gelesen=ergebnis.gelesen,
@@ -602,3 +700,52 @@ async def scan_geplant(
     if not hmac.compare_digest(x_atr_scan_token, settings.ATR_SCAN_TOKEN):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     return await _lauf()
+
+
+# Das Passwort des Dienstkontos. Nicht am Router-Gate oben: wohin und womit
+# sich `compute` am Dateiserver anmeldet, bestimmt die Plattform-Verwaltung,
+# nicht wer ATR bearbeitet. Heraus kommt nur, ob eines dasteht.
+verwaltung = APIRouter(
+    prefix="/api/atr",
+    tags=["atr"],
+    dependencies=[Depends(require_app("platform", "admin"))],
+)
+
+
+class PasswortStand(BaseModel):
+    gesetzt: bool
+    quelle: str | None
+    geaendert_am: str | None = None
+    schluessel_bereit: bool
+
+
+class PasswortEingabe(BaseModel):
+    # Leer heißt in der Maske „beibehalten“ — und wird deshalb gar nicht erst
+    # geschickt. Kommt es doch, wird nichts überschrieben.
+    passwort: str = Field(min_length=1, max_length=500)
+
+
+async def _passwort_stand() -> PasswortStand:
+    stand = await scan_modul.passwort_stand()
+    return PasswortStand(
+        gesetzt=stand.gesetzt,
+        quelle=stand.quelle,
+        geaendert_am=stand.geaendert_am.isoformat() if stand.geaendert_am else None,
+        schluessel_bereit=stand.schluessel_bereit,
+    )
+
+
+@verwaltung.get("/scan/passwort", response_model=PasswortStand)
+async def passwort_stand() -> PasswortStand:
+    return await _passwort_stand()
+
+
+@verwaltung.put("/scan/passwort", response_model=PasswortStand)
+async def passwort_setzen(
+    eingabe: PasswortEingabe, claims: Claims = Depends(require_app("platform", "admin"))
+) -> PasswortStand:
+    try:
+        await scan_modul.passwort_setzen(eingabe.passwort, claims.sub)
+    except geheim.KeinSchluessel as fehler:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(fehler)) from fehler
+    return await _passwort_stand()

@@ -131,6 +131,52 @@ class TestAendern:
             )
 
 
+class TestGesamtpruefziel:
+    """Das Gesamtprüfziel ist anfangs leer — leer heißt: keine Ziellinie. Leer
+    darf nur ein Zielwert sein, der dafür vorgesehen ist; sonst verlöre eine
+    Kachel ihre Einordnung durch ein versehentlich geleertes Feld."""
+
+    async def test_ist_da_und_leer(self, db):
+        (zeile,) = await als(
+            NUR_KPI,
+            "select wert, einheit, richtung, leer_erlaubt from public.zielwerte"
+            " where schluessel = 'qualitaet_pruefung_gesamt'",
+        )
+        assert zeile == {"wert": None, "einheit": "anzahl", "richtung": "min", "leer_erlaubt": True}
+
+    async def test_einzelziele_bleiben(self, db):
+        zeilen = await als(
+            NUR_KPI,
+            "select schluessel, wert from public.zielwerte"
+            " where schluessel in ('qualitaet_pruefung_gross', 'qualitaet_pruefung_klein')",
+        )
+        assert {z["schluessel"]: float(z["wert"]) for z in zeilen} == {
+            "qualitaet_pruefung_gross": 150.0,
+            "qualitaet_pruefung_klein": 400.0,
+        }
+
+    async def test_laesst_sich_setzen_und_wieder_leeren(self, db):
+        gesetzt = await als(
+            EINSTELLUNGEN_PFLEGEN,
+            "update public.zielwerte set wert = 180 where schluessel = 'qualitaet_pruefung_gesamt'"
+            " returning wert",
+        )
+        assert float(gesetzt[0]["wert"]) == 180.0
+        geleert = await als(
+            EINSTELLUNGEN_PFLEGEN,
+            "update public.zielwerte set wert = null where schluessel = 'qualitaet_pruefung_gesamt'"
+            " returning wert",
+        )
+        assert geleert == [{"wert": None}]
+
+    async def test_andere_zielwerte_duerfen_nicht_leer_sein(self, db):
+        with pytest.raises(Exception, match="zielwerte_leer_nur_wo_erlaubt"):
+            await als(
+                EINSTELLUNGEN_PFLEGEN,
+                "update public.zielwerte set wert = null where schluessel = 'qualitaet_pruefung_gross'",
+            )
+
+
 class TestStufenhelfer:
     @pytest.mark.parametrize(
         "stufe,verlangt,erwartet",

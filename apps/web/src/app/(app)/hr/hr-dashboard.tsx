@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import {
+  Area,
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Legend,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/kpi/gemeinsam";
 import { personalApi, personalKeys } from "@/lib/kpi/personal";
 import { ladeZielwerte, nachSchluessel, verfehlt, zielwerteKeys } from "@/lib/zielwerte";
+import { alterInTagen } from "@/lib/datenstand";
 import { Card } from "@/components/ui/primitives";
 import { Kennzahl } from "@/components/kpi/kennzahl";
 import { Seitenkopf } from "@/components/seitenkopf";
@@ -31,6 +33,7 @@ import { useFormate } from "@/lib/kpi/use-formate";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { STUFEN_MIT_FENSTER, Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
+import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
 import { Belegschaft } from "./belegschaft";
 import { Mitarbeitertabelle } from "./mitarbeitertabelle";
@@ -45,8 +48,20 @@ function personalFenster(zeitraum: Zeitraum): { von: string; bis: string } {
   return { von: von!, bis: bis! };
 }
 
+const TOOLTIP_STIL = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  color: "var(--fg)",
+};
 
-function Abgleichzeile({ darfAbgleichen }: { darfAbgleichen: boolean }) {
+/**
+ * Der Datenstand der Seite unter der Zeitraumwahl (KPI-08): wann der
+ * Personio-Abgleich zuletzt lief. Darauf stehen alle Zahlen hier außer dem
+ * Auftragswert der Kachel „Umsatz / Produktions-MA“. Wer HR verwalten darf,
+ * stößt den Abgleich direkt darunter an.
+ */
+function Abgleichstand({ darfAbgleichen }: { darfAbgleichen: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
   const tag = ZAHL_TAG[useSprache()];
@@ -60,58 +75,47 @@ function Abgleichzeile({ darfAbgleichen }: { darfAbgleichen: boolean }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: personalKeys.alle() }),
   });
 
+  if (stand.isLoading) return null;
   const s = stand.data;
-  const zeitpunkt = s
-    ? new Date(s.gelaufen_am).toLocaleString(tag, {
-        day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-      })
-    : null;
+  const alter = (tage: number) =>
+    tage === 0 ? worte.datenstand.heute : tage === 1 ? worte.datenstand.gestern : worte.datenstand.vorTagen(tage);
 
   return (
-    <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-      <div className="text-sm">
-        {stand.isLoading && <span className="text-[var(--fg-muted)]">{worte.personal.standLaedt}</span>}
-        {!stand.isLoading && !s && (
-          <span className="text-[var(--fg-muted)]">
-            {worte.personal.keinAbgleich}
-          </span>
-        )}
-        {s && (
-          <span className={cn(s.status === "fehler" && "text-[var(--danger)]")}>
-            {worte.personal.letzterAbgleich(zeitpunkt ?? "—", s.status)} ·{" "}
-            <span className="text-[var(--fg-muted)] tabular-nums">
-              {worte.personal.bestand(
-                fmt.zahl(s.mitarbeiter),
-                fmt.zahl(s.anwesenheiten),
-                fmt.zahl(s.abwesenheiten),
-              )}
-            </span>
-            {s.fehler && (
-              <span className="mt-1 block text-xs text-[var(--danger)]">{s.fehler}</span>
-            )}
-          </span>
-        )}
-      </div>
+    <div className="flex flex-col items-end gap-0.5 text-xs text-[var(--fg-muted)]">
+      {s ? (
+        <p
+          className={cn(s.status === "fehler" && "text-[var(--danger)]")}
+          title={[
+            worte.personal.bestand(fmt.zahl(s.mitarbeiter), fmt.zahl(s.anwesenheiten), fmt.zahl(s.abwesenheiten)),
+            s.fehler,
+          ]
+            .filter(Boolean)
+            .join("\n")}
+        >
+          {worte.personal.abgleichStand(
+            new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" }).format(new Date(s.gelaufen_am)),
+            alter(alterInTagen(s.gelaufen_am)),
+          )}
+          {s.status === "fehler" && ` · ${worte.personal.abgleichFehler}`}
+        </p>
+      ) : (
+        <p>{worte.personal.keinAbgleich}</p>
+      )}
       {darfAbgleichen && (
         <button
           type="button"
           onClick={() => anstossen.mutate()}
           disabled={anstossen.isPending}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm",
-            "hover:bg-[var(--muted)] disabled:opacity-50",
-          )}
+          className="inline-flex items-center gap-1 rounded hover:text-[var(--fg)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
         >
-          <RefreshCw className={cn("h-4 w-4", anstossen.isPending && "animate-spin")} />
+          <RefreshCw className={cn("h-3 w-3", anstossen.isPending && "animate-spin")} aria-hidden />
           {anstossen.isPending ? worte.personal.abgleichLaeuft : worte.personal.abgleichen}
         </button>
       )}
       {anstossen.error && (
-        <p className="w-full text-sm text-[var(--danger)]">
-          {(anstossen.error as Error).message}
-        </p>
+        <p className="max-w-64 text-end text-[var(--danger)]">{(anstossen.error as Error).message}</p>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -127,6 +131,8 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
     [wahl.von, wahl.bis],
   );
   const t = takt(von, bis);
+  const [artQuoten, setArtQuoten] = useDiagrammart();
+  const [artKopf, setArtKopf] = useDiagrammart();
 
   const ueber = useQuery({
     queryKey: [...personalKeys.fenster(von, bis), "ueberstunden"],
@@ -140,6 +146,10 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
     queryKey: [...personalKeys.fenster(von, bis), "fluktuation"],
     queryFn: () => personalApi.fluktuation(von, bis),
   });
+  const kopf = useQuery({
+    queryKey: [...personalKeys.fenster(von, bis), "umsatz-je-kopf"],
+    queryFn: () => personalApi.umsatzJeProduktionskopf(von, bis),
+  });
   const vglUeber = useVergleich(
     ["hr", "ueberstunden"],
     zeitraum,
@@ -149,13 +159,25 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
   );
   const vglKrank = useVergleich(["hr", "krankheit"], zeitraum, von, bis, personalApi.krankheit);
   const vglFluk = useVergleich(["hr", "fluktuation"], zeitraum, von, bis, personalApi.fluktuation);
+  const vglKopf = useVergleich(
+    ["hr", "umsatz-je-kopf"],
+    zeitraum,
+    von,
+    bis,
+    personalApi.umsatzJeProduktionskopf,
+  );
 
   const verlauf = useQuery({
     queryKey: [...personalKeys.fenster(von, bis), "verlauf"],
     queryFn: () => personalApi.verlauf(von, bis),
   });
+  const kopfVerlauf = useQuery({
+    queryKey: [...personalKeys.fenster(von, bis), "umsatz-je-kopf-verlauf"],
+    queryFn: () => personalApi.umsatzJeProduktionskopfVerlauf(von, bis),
+  });
   const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
   const ziel = nachSchluessel(ziele.data ?? []);
+  const zielKopf = ziel["hr_umsatz_je_produktionskopf"];
 
   const verlaufDaten = verlauf.data;
   const chartDaten = useMemo(
@@ -167,19 +189,32 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
       })),
     [verlaufDaten, t, fmt],
   );
+  const kopfVerlaufDaten = kopfVerlauf.data;
+  const kopfDaten = useMemo(
+    () => (kopfVerlaufDaten ?? []).map((p) => ({ label: fmt.bucket(p.bucket, t), wert: p.wert })),
+    [kopfVerlaufDaten, t, fmt],
+  );
 
   const laedt = ueber.isLoading || krank.isLoading || fluk.isLoading;
   const keineDaten = !ueber.isLoading && ueber.data?.ist_stunden === 0 && ueber.data?.personen === 0;
-  const fehler = ueber.error ?? krank.error ?? fluk.error ?? verlauf.error ?? ziele.error;
+  const fehler =
+    ueber.error ?? krank.error ?? fluk.error ?? kopf.error ?? verlauf.error ?? kopfVerlauf.error ?? ziele.error;
+  const taktText = t === "day" ? worte.dashboard.jeTag : t === "week" ? worte.dashboard.jeWoche : worte.dashboard.jeMonat;
+  const reiheName = (name: unknown) =>
+    name === "ueberstunden" ? worte.personal.reiheUeberstunden : worte.personal.reiheKrankheit;
 
   return (
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.personal.einleitung}
-        bedienung={<Zeitraumwahl wahl={wahl} stufen={STUFEN_MIT_FENSTER} />}
+        bedienung={
+          <Zeitraumwahl
+            wahl={wahl}
+            stufen={STUFEN_MIT_FENSTER}
+            datenstand={<Abgleichstand darfAbgleichen={darfAbgleichen} />}
+          />
+        }
       />
-
-      <Abgleichzeile darfAbgleichen={darfAbgleichen} />
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
@@ -196,7 +231,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Kennzahl
           titel={worte.personal.ueberstunden}
           erklaerung={{ seite: "personal", abschnitt: "Die Quoten" }}
@@ -216,6 +251,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               vorperiode={vglUeber.vorperiode?.quote}
               vorjahr={vglUeber.vorjahr?.quote}
               vorperiodeLabel={vglUeber.label}
+              vorjahrLabel={vglUeber.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -243,6 +279,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               vorperiode={vglKrank.vorperiode?.quote}
               vorjahr={vglKrank.vorjahr?.quote}
               vorperiodeLabel={vglKrank.label}
+              vorjahrLabel={vglKrank.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -266,6 +303,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
               vorperiode={vglFluk.vorperiode?.quote}
               vorjahr={vglFluk.vorjahr?.quote}
               vorperiodeLabel={vglFluk.label}
+              vorjahrLabel={vglFluk.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -277,6 +315,29 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
           wert={fmt.zahl(ueber.data?.personen)}
           hinweis={worte.personal.personenHinweis}
           laedt={laedt}
+        />
+        <Kennzahl
+          titel={worte.personal.umsatzJeKopf}
+          wert={kopf.data?.eingerichtet === false ? "—" : fmt.eur(kopf.data?.wert)}
+          hinweis={
+            kopf.data?.eingerichtet === false
+              ? worte.personal.produktionFehlt
+              : kopf.data
+                ? worte.personal.umsatzJeKopfHinweis(fmt.eur(kopf.data.auftragswert), fmt.zahl(kopf.data.koepfe))
+                : undefined
+          }
+          warnung={verfehlt(kopf.data?.wert ?? null, zielKopf, "min")}
+          vergleich={
+            <Vergleiche
+              aktuell={kopf.data?.wert}
+              vorperiode={vglKopf.vorperiode?.wert}
+              vorjahr={vglKopf.vorjahr?.wert}
+              vorperiodeLabel={vglKopf.label}
+              vorjahrLabel={vglKopf.labelVorjahr}
+              richtung="mehr_ist_besser"
+            />
+          }
+          laedt={kopf.isLoading}
         />
       </div>
 
@@ -300,22 +361,21 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
       {darfAbgleichen && <Wochenbericht />}
 
       <Card className="p-4">
-        <h2 className="text-base font-semibold">{worte.personal.verlauf}</h2>
-        <p className="mt-1 text-xs text-[var(--fg-muted)]">
-          {t === "day"
-            ? worte.dashboard.jeTag
-            : t === "week"
-              ? worte.dashboard.jeWoche
-              : worte.dashboard.jeMonat}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold">{worte.personal.verlauf}</h2>
+            <p className="mt-1 text-xs text-[var(--fg-muted)]">{taktText}</p>
+          </div>
+          <DiagrammartWahl art={artQuoten} onChange={setArtQuoten} />
+        </div>
         <div className="mt-4 h-72">
           {chartDaten.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-[var(--fg-muted)]">
-              {verlauf.isLoading ? "wird geladen …" : "keine Werte im Zeitraum"}
+              {verlauf.isLoading ? worte.dashboard.laedt : worte.wochenbericht.keineWerte}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartDaten} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+              <ComposedChart data={chartDaten} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="label"
@@ -333,29 +393,12 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                   tickFormatter={(v: number) => `${v} %`}
                 />
                 <Tooltip
-                  contentStyle={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    color: "var(--fg)",
-                  }}
+                  contentStyle={TOOLTIP_STIL}
                   formatter={(wert, name) =>
-                    [
-                      wert == null ? "—" : `${Number(wert).toFixed(2)} %`,
-                      name === "ueberstunden"
-                        ? worte.personal.reiheUeberstunden
-                        : worte.personal.reiheKrankheit,
-                    ] as [string, string]
+                    [wert == null ? "—" : `${Number(wert).toFixed(2)} %`, reiheName(name)] as [string, string]
                   }
                 />
-                <Legend
-                  formatter={(name) =>
-                    name === "ueberstunden"
-                      ? worte.personal.reiheUeberstunden
-                      : worte.personal.reiheKrankheit
-                  }
-                  wrapperStyle={{ fontSize: 12 }}
-                />
+                <Legend formatter={reiheName} wrapperStyle={{ fontSize: 12 }} />
                 {ziel["hr_ueberstunden"] != null && (
                   <ReferenceLine
                     y={ziel["hr_ueberstunden"] * 100}
@@ -364,25 +407,113 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     ifOverflow="extendDomain"
                   />
                 )}
-                <Line
-                  type="monotone"
-                  dataKey="ueberstunden"
-                  stroke="var(--ring)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
+                {artQuoten === "balken" && (
+                  <Bar dataKey="ueberstunden" fill="var(--ring)" isAnimationActive={false} />
+                )}
+                {artQuoten === "balken" && (
+                  <Bar dataKey="krankheit" fill="var(--danger)" isAnimationActive={false} />
+                )}
+                {/* Übereinander, nicht gestapelt: die Quoten sind keine Summe. */}
+                {artQuoten === "flaeche" && (
+                  <Area
+                    type="monotone"
+                    dataKey="ueberstunden"
+                    stroke="var(--ring)"
+                    fill="var(--ring)"
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
+                {artQuoten === "flaeche" && (
+                  <Area
+                    type="monotone"
+                    dataKey="krankheit"
+                    stroke="var(--danger)"
+                    fill="var(--danger)"
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold">{worte.personal.reiheUmsatzJeKopf}</h2>
+            <p className="mt-1 text-xs text-[var(--fg-muted)]">{taktText}</p>
+          </div>
+          <DiagrammartWahl art={artKopf} onChange={setArtKopf} />
+        </div>
+        <div className="mt-4 h-72">
+          {kopfDaten.every((p) => p.wert == null) ? (
+            <div className="flex h-full items-center justify-center text-sm text-[var(--fg-muted)]">
+              {kopfVerlauf.isLoading
+                ? worte.dashboard.laedt
+                : kopf.data?.eingerichtet === false
+                  ? worte.personal.produktionFehlt
+                  : worte.wochenbericht.keineWerte}
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={kopfDaten} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  stroke="var(--fg-muted)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={{ stroke: "var(--border)" }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="krankheit"
-                  stroke="var(--danger)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
+                <YAxis
+                  stroke="var(--fg-muted)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  width={80}
+                  tickFormatter={(v: number) => fmt.eur(v)}
                 />
-              </LineChart>
+                <Tooltip
+                  contentStyle={TOOLTIP_STIL}
+                  formatter={(wert) =>
+                    [wert == null ? "—" : fmt.eur(Number(wert)), worte.personal.umsatzJeKopf] as [string, string]
+                  }
+                />
+                {zielKopf != null && (
+                  <ReferenceLine
+                    y={zielKopf}
+                    stroke="var(--fg-muted)"
+                    strokeDasharray="4 4"
+                    ifOverflow="extendDomain"
+                    label={{
+                      value: worte.personal.ziel(fmt.eur(zielKopf)),
+                      position: "insideBottomRight",
+                      fill: "var(--fg-muted)",
+                      fontSize: 11,
+                    }}
+                  />
+                )}
+                {artKopf === "balken" && <Bar dataKey="wert" fill="var(--ring)" isAnimationActive={false} />}
+                {artKopf === "flaeche" && (
+                  <Area
+                    type="monotone"
+                    dataKey="wert"
+                    stroke="var(--ring)"
+                    fill="var(--ring)"
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
           )}
         </div>

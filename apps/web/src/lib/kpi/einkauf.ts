@@ -1,4 +1,4 @@
-import { rpc, takt } from "@/lib/kpi/gemeinsam";
+import { rpc, rpcAlle, takt } from "@/lib/kpi/gemeinsam";
 
 /**
  * Liefertermintreue der Lieferanten (OTD). Rechenweg in Alembic 0004.
@@ -25,12 +25,16 @@ export interface OtdPosition {
   auftrag: string;
   pos: number;
   upos: number;
+  adr_nr: string | null;
   supplier_name: string | null;
   article_number: string | null;
   article_name: string | null;
   target_date: string | null;
   delivered_date: string | null;
   verzug_tage: number | null;
+  /** Liefermenge der Position aus der Spalte „Menge“ — nicht der Lagerbestand. */
+  quantity: number | null;
+  unit: string | null;
 }
 
 export const einkaufApi = {
@@ -40,8 +44,12 @@ export const einkaufApi = {
   },
   verlauf: (von: string | null, bis: string | null) =>
     rpc<OtdVerlaufPunkt[]>("kpi_einkauf_otd_verlauf", { von, bis, takt: takt(von, bis) }),
-  positionen: (von: string | null, bis: string | null, grenze = 500) =>
-    rpc<OtdPosition[]>("kpi_einkauf_positionen", { von, bis, grenze }),
+  /** Alle Positionen des Zeitraums — die Tabelle sucht, sortiert und blättert selbst (TAB-01). */
+  positionen: async (von: string | null, bis: string | null): Promise<OtdPosition[]> => {
+    const rows = await rpcAlle<OtdPosition>("kpi_einkauf_positionen", { von, bis });
+    // `numeric` kommt über PostgREST als Text; eine fehlende Menge bleibt fehlend.
+    return rows.map((z) => ({ ...z, quantity: z.quantity == null ? null : Number(z.quantity) }));
+  },
 };
 
 /** Verzug mit Vorzeichen, eine Nachkommastelle — negativ heißt zu früh. */
@@ -73,10 +81,13 @@ export interface LadenhueterZeile {
 export const LIEGETAGE = 28;
 
 export const ladenhueterApi = {
-  top: async (grenze = 20): Promise<LadenhueterZeile[]> => {
-    const rows = await rpc<LadenhueterZeile[]>("kpi_einkauf_ladenhueter", {
+  /**
+   * Alle Ladenhüter, höchster Wert zuerst. Das Altsystem zeigte die ersten 20;
+   * hier blättert die Tabelle, und die erste Seite ist dieselbe Rangliste.
+   */
+  alle: async (): Promise<LadenhueterZeile[]> => {
+    const rows = await rpcAlle<LadenhueterZeile>("kpi_einkauf_ladenhueter", {
       tage_ohne_bewegung: LIEGETAGE,
-      grenze,
     });
     return rows.map((z) => ({
       ...z,
@@ -87,7 +98,7 @@ export const ladenhueterApi = {
   },
 };
 
-/** Gebundenes Kapital: Summe der angezeigten Zeilen, nicht des ganzen Lagers. */
+/** Gebundenes Kapital: Summe der übergebenen Zeilen — hier aller Ladenhüter. */
 export function gebundenesKapital(zeilen: readonly LadenhueterZeile[]): number {
   return zeilen.reduce((summe, z) => summe + z.wert, 0);
 }

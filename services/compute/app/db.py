@@ -219,6 +219,29 @@ material_movements = sa.Table(
     sa.Column("raw", JSONB),
 )
 
+# Materialpreise (Wareneingang): dieselbe Datei wie `goods_receipt_records`,
+# aber ein eigener Upload — die Preisquelle der Materialkostenquote.
+material_prices = sa.Table(
+    "material_prices",
+    metadata,
+    sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+    sa.Column("upload_batch_id", sa.Integer, sa.ForeignKey("upload_batches.id", ondelete="SET NULL")),
+    sa.Column("vorgang_nr", sa.String(50), nullable=False),
+    sa.Column("pos", sa.Integer, nullable=False),
+    sa.Column("upos", sa.Integer, nullable=False, server_default="0"),
+    sa.Column("typ", sa.String(10)),
+    sa.Column("datum", sa.Date),
+    sa.Column("artnr", sa.String(50), nullable=False),
+    sa.Column("article_name", sa.String(255)),
+    sa.Column("menge", sa.Numeric(15, 3)),
+    sa.Column("unit", sa.String(20)),
+    sa.Column("preis", sa.Numeric(15, 4)),
+    sa.Column("pos_wert", sa.Numeric(15, 2)),
+    sa.Column("imported_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+    sa.Column("raw", JSONB),
+    sa.UniqueConstraint("vorgang_nr", "pos", "upos", name="uq_material_prices_vorgang_pos"),
+)
+
 stock_article_prices = sa.Table(
     "stock_article_prices",
     metadata,
@@ -432,7 +455,6 @@ atr_scan = sa.Table(
     "atr_scan",
     metadata,
     sa.Column("id", sa.Boolean, primary_key=True),
-    sa.Column("aktiv", sa.Boolean, nullable=False),
     sa.Column("modus", sa.String(16), nullable=False),
     sa.Column("rechner", sa.String(255)),
     sa.Column("freigabe", sa.String(255)),
@@ -444,6 +466,9 @@ atr_scan = sa.Table(
     sa.Column("zuletzt_am", sa.DateTime(timezone=True)),
     sa.Column("zuletzt_text", sa.Text),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("intervall_s", sa.Integer, nullable=False),
+    sa.Column("angestossen_am", sa.DateTime(timezone=True)),
+    sa.Column("lauf_seit", sa.DateTime(timezone=True)),
 )
 
 sensoren = sa.Table(
@@ -764,6 +789,50 @@ plattform_logo = sa.Table(
     sa.Column("dateiname", sa.Text),
     sa.Column("mime", sa.String(64)),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    # Das PNG für die Formblätter, wenn das Logo ein SVG ist; sonst dieselbe
+    # Datei wie `pfad`.
+    sa.Column("raster_pfad", sa.Text),
+)
+
+plattform_einstellungen = sa.Table(
+    "plattform_einstellungen",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("tabellen_seitengroesse", sa.Integer, nullable=False),
+    sa.Column("app_name", sa.String(60), nullable=False),
+    sa.Column("farben", JSONB),
+    sa.Column("personio_sync_intervall_h", sa.Integer, nullable=False),
+    sa.Column("personio_nachweis_aktiv", sa.Boolean, nullable=False),
+    sa.Column("personio_nachweis_kategorie", sa.String(64)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+personio_nachweise = sa.Table(
+    "personio_nachweise",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("art", sa.String(16), nullable=False),
+    sa.Column("angelegt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("erledigt_am", sa.DateTime(timezone=True)),
+    sa.Column("versuche", sa.Integer, nullable=False),
+    sa.Column("fehler", sa.Text),
+    sa.Column("inhalt_hash", sa.String(64)),
+)
+
+email_einstellungen = sa.Table(
+    "email_einstellungen",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+    sa.Column("modus", sa.String(16), nullable=False),
+    sa.Column("tenant_id", sa.String(64)),
+    sa.Column("client_id", sa.String(64)),
+    sa.Column("absender", sa.String(254)),
+    sa.Column("absender_name", sa.String(120)),
+    sa.Column("delegiert_konto", sa.String(254)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_von", UUID(as_uuid=False)),
 )
 
 zeugnis_aussteller = sa.Table(
@@ -845,6 +914,21 @@ geheimnisse = sa.Table(
     sa.Column("geaendert_von", UUID(as_uuid=False)),
 )
 
+ad_konfiguration = sa.Table(
+    "ad_konfiguration",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+    sa.Column("host", sa.Text),
+    sa.Column("port", sa.Integer, nullable=False),
+    sa.Column("upn_suffix", sa.Text),
+    sa.Column("basis_dn", sa.Text),
+    sa.Column("dienst_konto_dn", sa.Text),
+    sa.Column("gruppen_basis_dn", sa.Text),
+    sa.Column("tls_pruefen", sa.Boolean, nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -856,6 +940,7 @@ TABLES = {
     "goods_receipt_records": goods_receipt_records,
     "inspection_records": inspection_records,
     "material_movements": material_movements,
+    "material_prices": material_prices,
     "stock_article_prices": stock_article_prices,
     "sales_contacts": sales_contacts,
     "offers": offers,
@@ -899,4 +984,5 @@ TABLES = {
     "zeugnis_notenvorlagen": zeugnis_notenvorlagen,
     "zeugnis_bausteine": zeugnis_bausteine,
     "geheimnisse": geheimnisse,
+    "ad_konfiguration": ad_konfiguration,
 }

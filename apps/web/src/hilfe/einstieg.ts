@@ -75,7 +75,7 @@ auch in anderen offenen Tabs.
 | Prüfmengen, Reklamationen, Audits | Qualität |
 | Materialkosten, Personalkosten | Kennzahlen → Finanzen |
 | Überstunden, Krankheit, Belegschaft | Personal |
-| Schulungen, Zeugnisse, Onboarding | Personal → jeweilige Seite |
+| Schulungen, Zeugnisse, Onboarding | HR → jeweilige Seite |
 | Dateien einlesen | Uploads |
 
 ## Zeiträume
@@ -94,7 +94,7 @@ fehlt. Drei häufige Fälle:
 * **Eine Einstellung fehlt.** Die Krankheitsquote braucht die Liste der
   Abwesenheitsarten, die als Krankheit zählen. Ohne sie bleibt die Kachel
   sichtbar leer — absichtlich, statt still eine Null zu zeigen.
-* **Der Personio-Abgleich lief nicht.** Das Personal-Dashboard zeigt oben,
+* **Der Personio-Abgleich lief nicht.** Das HR-Dashboard zeigt oben,
   wann er zuletzt lief und ob er Fehler meldete.
 
 ## Etwas stimmt nicht

@@ -44,6 +44,86 @@ from __future__ import annotations
 
 from app.uebernahme.motor import Umzug
 
+# --- Helfer für den Dokumentenlauf ---------------------------------------------
+
+
+def _datei(kennung: str | None) -> str | None:
+    """Der vorläufige Ablageort einer Directus-Datei im Eimer `dokumente`.
+
+    Noch ohne Endung — welche Art Datei es ist, zeigt erst die Datei selbst.
+    `dateien.py` legt die Bytes ab und setzt dann den Pfad samt Endung."""
+    return f"uebernahme/dokumente/{kennung}" if kennung else None
+
+
+#: Die Stationen und ihre Zeitstempel — dieselben wie in `app.dokumente.vorgang`.
+_WEG = ("erstellt", "uebergeben", "zurueck", "geprueft")
+_STEMPEL = {"uebergeben": "uebergeben_am", "zurueck": "zurueck_am", "geprueft": "geprueft_am"}
+
+
+def _weg_schliessen(zeile: dict) -> dict:
+    """Stand und Zeitstempel so angleichen, dass die neuen Bedingungen halten.
+
+    Neu verlangt `dokumentvorgaenge`, dass der Stand zu den Zeitstempeln passt
+    und kein Schritt fehlt. Das Altsystem setzte beim Statuswechsel nur den
+    Stempel des Ziels; eine einzige solche Zeile ließe den ganzen Umzug
+    scheitern. Der Stand ist der späteste belegte Schritt. Fehlt einem früheren
+    Schritt der Stempel, bekommt er den des nächsten — spätestens dann ist er
+    geschehen. Ohne jeden späteren Beleg bleibt nur der Zeitpunkt der Anlage."""
+    stand = _WEG.index(zeile["status"]) if zeile.get("status") in _WEG else 0
+    for i, schritt in enumerate(_WEG[1:], start=1):
+        if zeile.get(_STEMPEL[schritt]) is not None:
+            stand = max(stand, i)
+    zeile["status"] = _WEG[stand]
+    spaeter = None
+    for i in range(stand, 0, -1):
+        feld = _STEMPEL[_WEG[i]]
+        if zeile.get(feld) is None:
+            zeile[feld] = spaeter or zeile.get("erstellt_am")
+        spaeter = zeile[feld]
+    return zeile
+
+
+def _abteilungen_als_inhalt(abteilungen: list | None) -> list[dict] | None:
+    """Alt steht am Einarbeitungsvorgang nur, aus welchen Abteilungen der Bogen
+    gebaut wurde; neu ist `inhalt` die Abschrift der Blattzeilen. Übernommen
+    wird, was da ist — je Abteilung ein Eintrag, kein erfundener Inhalt. Die
+    eigentliche Abschrift ist das Blatt selbst, und das kommt als Datei mit."""
+    if not abteilungen:
+        return None
+    return [{"abteilung": a} for a in abteilungen if a]
+
+
+def _schulungen_als_inhalt(schulungen: list | None) -> list[dict] | None:
+    """Alt `{name, trainer}` je Zeile, neu `{bezeichnung, anbieter}` — dieselben
+    Angaben unter den Namen, die `routers/dokumente.py` beim Anlegen schreibt."""
+    if not schulungen:
+        return None
+    return [
+        {"bezeichnung": s.get("name") or "", "anbieter": s.get("trainer") or ""}
+        for s in schulungen
+        if isinstance(s, dict)
+    ]
+
+
+#: Die Spalten, die beide alten Vorgangstabellen gleich führen.
+_VORGANG_SPALTEN = {
+    "doc_uid": "doc_uid",
+    "employee_id": "employee_id",
+    "name": "mitarbeiter_name",
+    "pdf_pfad": "pdf_uuid",
+    "scan_pfad": "scan_uuid",
+    "feld_layout": "feld_layout",
+    "status": "status",
+    "erstellt_am": "erstellt_am",
+    "uebergeben_am": "uebergeben_am",
+    "zurueck_am": "zurueck_am",
+    "geprueft_am": "geprueft_am",
+    "pruef_ergebnis": "pruef_ergebnis",
+    "vollstaendig": "vollstaendig",
+    "kommentar": "kommentar",
+}
+
+
 UMZUEGE: list[Umzug] = [
     # --- Kompetenzen ---------------------------------------------------------
     # Die Matrix zuerst: an ihr hängen Kategorien, Qualifikationen und Personen.
@@ -320,5 +400,50 @@ UMZUEGE: list[Umzug] = [
         },
         verweise={"zeugnis_id": "zeugnis"},
         schluessel=("zeugnis_id", "dimension"),
+    ),
+    # --- Dokumentenlauf ------------------------------------------------------
+    # Alt zwei Tabellen mit demselben Laufweg, neu eine mit der Spalte `art`
+    # (siehe 0035). Beide wandern nach `dokumentvorgaenge`; der gerechnete
+    # Schlüssel nimmt den alten Tabellennamen mit, zwei Vorgänge mit derselben
+    # alten Zahl bekommen also verschiedene UUIDs. Natürlicher Schlüssel ist
+    # der QR-Token — über ihn ordnet ein später eingescannter Bogen sich zu.
+    #
+    # Die Dateien liegen in Directus, nicht im Abzug: der Pfad entsteht hier
+    # aus der alten Kennung, die Bytes legt `dateien.py` ab.
+    Umzug(
+        alt="einarbeitung_dokument",
+        neu="dokumentvorgaenge",
+        id_aus="uuid5",
+        spalten={**_VORGANG_SPALTEN, "funktion": "stelle", "beginn": "beginn", "inhalt": "abteilungen"},
+        fest={"art": "einarbeitung"},
+        wandler={"inhalt": _abteilungen_als_inhalt, "pdf_pfad": _datei, "scan_pfad": _datei},
+        nachbessern=_weg_schliessen,
+        schluessel=("doc_uid",),
+    ),
+    Umzug(
+        alt="schulung_dokument",
+        neu="dokumentvorgaenge",
+        id_aus="uuid5",
+        spalten={**_VORGANG_SPALTEN, "funktion": "funktion", "inhalt": "schulungen"},
+        fest={"art": "schulung"},
+        wandler={"inhalt": _schulungen_als_inhalt, "pdf_pfad": _datei, "scan_pfad": _datei},
+        nachbessern=_weg_schliessen,
+        schluessel=("doc_uid",),
+    ),
+    # Das Zertifikat je Schulungszeile ist neu ein Nachweis am Vorgang; die
+    # Zeilenbezeichnung bleibt als `zeile` daran stehen.
+    Umzug(
+        alt="schulung_zertifikat",
+        neu="dokument_nachweise",
+        id_aus="uuid5",
+        spalten={
+            "vorgang_id": "dokument_id",
+            "zeile": "schulung_bezeichnung",
+            "pfad": "datei_uuid",
+            "dateiname": "dateiname",
+            "hochgeladen_am": "hochgeladen_am",
+        },
+        verweise={"vorgang_id": "schulung_dokument"},
+        wandler={"pfad": _datei},
     ),
 ]

@@ -26,5 +26,7 @@ export const GRUPPEN: Gruppe[] = [
   { id: "zeugnisse" },
   { id: "erscheinung" },
   { id: "anzeigen" },
+  { id: "email" },
+  { id: "ad" },
   { id: "zugaenge" },
 ];

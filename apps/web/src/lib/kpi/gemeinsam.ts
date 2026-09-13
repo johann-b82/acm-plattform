@@ -65,6 +65,27 @@ export async function rpc<T>(name: string, args: Record<string, unknown>): Promi
 }
 
 /**
+ * Wie `rpc`, für Listen, die eine Tabelle vollständig braucht (TAB-01): Seite
+ * um Seite über `range`, bis eine Seite nicht mehr voll ist. So schneidet das
+ * Zeilenmaximum von PostgREST (bei Supabase üblich 1000) nichts still ab.
+ *
+ * Die SQL-Funktion muss eindeutig sortieren — sonst verrutschen Zeilen
+ * zwischen zwei Seiten.
+ */
+export async function rpcAlle<T>(name: string, args: Record<string, unknown>, seite = 1000): Promise<T[]> {
+  const alle: T[] = [];
+  for (let start = 0; ; start += seite) {
+    const { data, error } = await supabaseBrowser()
+      .rpc(name, args)
+      .range(start, start + seite - 1);
+    if (error) throw new Error(error.message);
+    const teil = (data ?? []) as T[];
+    alle.push(...teil);
+    if (teil.length < seite) return alle;
+  }
+}
+
+/**
  * Zahlen und Beträge in einer Sprache.
  *
  * Die Währung bleibt der Euro — er ist keine Frage der Anzeigesprache,

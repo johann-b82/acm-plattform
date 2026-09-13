@@ -223,14 +223,45 @@ class TestAblauf:
         async def erzeugen(lieferung_id):
             return [("704511_ATR.xlsx", b"XLSX"), ("704511_ATR.pdf", b"PDF")]
 
+        async def abgelegt(lieferung_id):
+            server.ablauf.append(f"abgelegt:{lieferung_id}")
+
         with als_dateiserver(server), als_einstellungen("automatisch"):
             with patch.object(scan_modul, "_vermerken", return_value=None):
-                ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
+                with patch.object(scan_modul, "_abgelegt", abgelegt):
+                    ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
 
         assert ergebnis.erzeugt == 1
         assert set(server.ausgang) == {"704511_ATR.xlsx", "704511_ATR.pdf"}
-        # Auch hier: erst schreiben, dann archivieren.
-        assert server.ablauf[-1] == "archiv:a.pdf"
+        # Wie im Altsystem: geschrieben → `abgelegt` (delivered), erst dann
+        # wandert die Quelle ins Archiv.
+        assert server.ablauf == [
+            "lies:a.pdf",
+            "schreib:704511_ATR.xlsx",
+            "schreib:704511_ATR.pdf",
+            "abgelegt:id-1",
+            "archiv:a.pdf",
+        ]
+
+    async def test_im_entwurfsmodus_wird_nichts_abgelegt(self):
+        server = Dateiserver({"a.pdf": b"A"})
+
+        async def einlesen(daten, name):
+            return "id-1"
+
+        async def erzeugen(lieferung_id):
+            raise AssertionError("im Entwurfsmodus wird nicht erzeugt")
+
+        async def abgelegt(lieferung_id):
+            raise AssertionError("ein Entwurf ist nicht abgelegt")
+
+        with als_dateiserver(server), als_einstellungen("entwurf"):
+            with patch.object(scan_modul, "_vermerken", return_value=None):
+                with patch.object(scan_modul, "_abgelegt", abgelegt):
+                    ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
+
+        assert (ergebnis.angelegt, ergebnis.erzeugt) == (1, 0)
+        assert server.ausgang == {}
 
     async def test_ein_wegbrechender_dateiserver_haelt_den_lauf_an(self):
         """Weitere Versuche hätten dasselbe Ergebnis."""
@@ -256,11 +287,13 @@ class TestAblauf:
 
 
 class TestEinrichtung:
-    async def test_ohne_passwort_laeuft_nichts_an(self, monkeypatch):
-        from app.config import settings as s
+    async def test_ohne_passwort_laeuft_nichts_an(self):
+        async def keins():
+            return None
 
-        monkeypatch.setattr(s, "ATR_SMB_PASSWORT", "")
-        with patch("app.atr.scan.SessionLocal") as sitzung:
+        with patch("app.atr.scan.SessionLocal") as sitzung, patch.object(
+            scan_modul, "passwort", keins
+        ):
             sitzung.return_value.__aenter__.return_value.execute.return_value = _Zeile(
                 {
                     "rechner": "srv", "freigabe": "S", "benutzer": "u",
@@ -268,7 +301,7 @@ class TestEinrichtung:
                     "domaene": None, "modus": "entwurf",
                 }
             )
-            with pytest.raises(scan_modul.NichtEingerichtet, match="ATR_SMB_PASSWORT"):
+            with pytest.raises(scan_modul.NichtEingerichtet, match="Passwort des Dienstkontos"):
                 await scan_modul.einstellungen()
 
 

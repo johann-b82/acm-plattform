@@ -5,15 +5,15 @@ import { Kacheln } from "@/components/kacheln";
 export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hr"]);
 
 /** Die Unterbereiche des Personals. Die Kennzahlen sind einer davon — sonst
- *  hinge die halbe Personalarbeit unter einer Seite, die „Zahlen“ heißt. */
+ *  hinge die halbe Personalarbeit unter einer Seite, die „Zahlen“ heißt.
+ *  Einarbeitung und Dokumentenlauf haben keine eigene Kachel mehr: sie stehen
+ *  wie im Altsystem unter Onboarding (NAV-01). */
 const BEREICHE = [
   "/hr/kennzahlen",
   "/hr/organigramm",
   "/hr/kompetenzen",
   "/hr/schulungen",
   "/hr/onboarding",
-  "/hr/einarbeitung",
-  "/hr/dokumente",
   "/hr/zeugnisse",
 ] as const;
 

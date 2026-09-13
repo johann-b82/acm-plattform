@@ -7,12 +7,16 @@ from sqlalchemy import text
 from app.auth import Claims, get_claims
 from app.config import settings
 from app.db import engine
+from app.routers.anmeldung import konfig_router as ad_konfig_router
+from app.routers.anmeldung import router as anmeldung_router
 from app.routers.atr import geplant as atr_geplant
 from app.routers.atr import router as atr_router
+from app.routers.atr import verwaltung as atr_verwaltung
 from app.routers.dokumente import router as dokumente_router
 from app.routers.einarbeitung import router as einarbeitung_router
 from app.routers.einstellungen import router as einstellungen_router
 from app.routers.embed import router as embed_router
+from app.routers.hr import nachweise_router
 from app.routers.hr import router as hr_router
 from app.routers.kompetenzen import router as kompetenzen_router
 from app.routers.onboarding import router as onboarding_router
@@ -32,10 +36,14 @@ logging.basicConfig(
 )
 
 app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
+app.include_router(anmeldung_router)
+app.include_router(ad_konfig_router)
 app.include_router(uploads_router)
 app.include_router(atr_router)
 app.include_router(atr_geplant)
+app.include_router(atr_verwaltung)
 app.include_router(hr_router)
+app.include_router(nachweise_router)
 app.include_router(dokumente_router)
 app.include_router(einstellungen_router)
 app.include_router(einarbeitung_router)

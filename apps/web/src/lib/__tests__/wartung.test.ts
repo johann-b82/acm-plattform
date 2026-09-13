@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { intervallText, laufendesHalbjahr } from "@/lib/wartung";
+import { intervallText, laufendesHalbjahr, maschinenEingabe } from "@/lib/wartung";
 
 describe("intervallText", () => {
   it("nennt bekannte Intervalle beim Namen", () => {
@@ -30,6 +30,30 @@ describe("laufendesHalbjahr", () => {
     expect(laufendesHalbjahr(new Date("2026-07-01T12:00:00"))).toEqual({
       jahr: 2026,
       halbjahr: 2,
+    });
+  });
+});
+
+describe("maschinenEingabe", () => {
+  it("nimmt alle Felder der Anlage mit, leer wird zu nichts", () => {
+    expect(
+      maschinenEingabe({
+        name: " Fräse 4 ",
+        inventarnummer: "INV-1",
+        standort: " ",
+        hersteller: "DMG",
+        modell: "",
+        verantwortlich: "M. Muster",
+        status: "stillgelegt",
+      }),
+    ).toEqual({
+      name: "Fräse 4",
+      inventarnummer: "INV-1",
+      standort: null,
+      hersteller: "DMG",
+      modell: null,
+      verantwortlich: "M. Muster",
+      status: "stillgelegt",
     });
   });
 });

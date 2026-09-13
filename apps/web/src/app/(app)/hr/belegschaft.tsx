@@ -11,6 +11,7 @@ import {
   prozente,
 } from "@/lib/kpi/personal";
 import { Card } from "@/components/ui/primitives";
+import { Kennzahl } from "@/components/kpi/kennzahl";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 
@@ -18,7 +19,8 @@ import { useFormate } from "@/lib/kpi/use-formate";
  * Belegschaft und Kompetenzentwicklung — beides Stichtagswerte.
  *
  * Der Zeitraumwähler der Seite gilt hier nicht: „wie viele sind wir" ist
- * kein Zeitraum. Angezeigt wird der heutige Stand.
+ * kein Zeitraum. Angezeigt wird der heutige Stand — ohne Vergleichszeilen,
+ * weil es keinen historischen Stand gibt, gegen den verglichen werden könnte.
  *
  * Wichtig beim Lesen und deshalb auch am Bildschirm vermerkt: die
  * Verteilungen nutzen die **heutigen** Stammdaten. Personio liefert keine
@@ -115,52 +117,46 @@ export function Belegschaft() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.beschaeftigte}</div>
-          <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-            {kopf.isLoading ? "…" : fmt.zahl(kopf.data?.gesamt)}
-          </div>
-          <div className="mt-1 text-xs text-[var(--fg-muted)]">
-            {worte.belegschaft.beschaeftigteHinweis}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.neuImQuartal}</div>
-          <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-            {kopf.isLoading ? "…" : fmt.zahl(kopf.data?.neu)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.bestand}</div>
-          <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-            {kopf.isLoading ? "…" : fmt.zahl(kopf.data?.bestand)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.kompetenzen}</div>
-          <div className="mt-1 font-mono text-2xl font-medium tabular-nums">
-            {kompetenz.isLoading
-              ? "…"
-              : kompetenz.data?.eingerichtet === false
-                ? "—"
-                : fmt.prozent(kompetenz.data?.quote)}
-          </div>
-          <div className="mt-1 text-xs text-[var(--fg-muted)]">
-            {kompetenz.data?.eingerichtet === false ? (
-              <>
-                {worte.belegschaft.felderFehlen}
-                <Link href="/einstellungen" className="underline underline-offset-4">
-                  {worte.pfad.seiten["/einstellungen"]}
-                </Link>
-              </>
-            ) : (
-              worte.belegschaft.kompetenzHinweis(
-                fmt.zahl(kompetenz.data?.mit_kompetenz),
-                fmt.zahl(kompetenz.data?.aktive),
-              )
+        <Kennzahl
+          titel={worte.belegschaft.beschaeftigte}
+          wert={fmt.zahl(kopf.data?.gesamt)}
+          hinweis={worte.belegschaft.beschaeftigteHinweis}
+          laedt={kopf.isLoading}
+        />
+        <Kennzahl
+          titel={worte.belegschaft.neuImQuartal}
+          wert={fmt.zahl(kopf.data?.neu)}
+          laedt={kopf.isLoading}
+        />
+        <Kennzahl
+          titel={worte.belegschaft.bestand}
+          wert={fmt.zahl(kopf.data?.bestand)}
+          laedt={kopf.isLoading}
+        />
+        {kompetenz.data?.eingerichtet === false ? (
+          // Nicht eingerichtet: der Satz trägt einen Verweis, deshalb keine
+          // `Kennzahl` — deren Hinweis ist reiner Text.
+          <Card className="p-4">
+            <div className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.kompetenzen}</div>
+            <div className="mt-1 font-mono text-2xl font-medium tabular-nums">—</div>
+            <div className="mt-1 truncate text-xs text-[var(--fg-muted)]">
+              {worte.belegschaft.felderFehlen}
+              <Link href="/einstellungen" className="underline underline-offset-4">
+                {worte.pfad.seiten["/einstellungen"]}
+              </Link>
+            </div>
+          </Card>
+        ) : (
+          <Kennzahl
+            titel={worte.belegschaft.kompetenzen}
+            wert={fmt.prozent(kompetenz.data?.quote)}
+            hinweis={worte.belegschaft.kompetenzHinweis(
+              fmt.zahl(kompetenz.data?.mit_kompetenz),
+              fmt.zahl(kompetenz.data?.aktive),
             )}
-          </div>
-        </Card>
+            laedt={kompetenz.isLoading}
+          />
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

@@ -10,10 +10,13 @@ import { cn } from "@/lib/cn";
 /**
  * Eine Kennzahlenkachel.
  *
- * Stand vorher in jedem Dashboard einmal, bis auf eine Kleinigkeit identisch.
- * Als sechsmal dasselbe Feld für die Vergleichswerte zu ergänzen gewesen wäre,
- * war klar, dass es eine Kachel sein muss und nicht sechs — sonst wiche beim
- * siebten Dashboard eine Kleinigkeit ab.
+ * Hauptzahl links, die beiden Vergleichszeilen rechts daneben (KPI-05). Ist
+ * die Kachel zu schmal, rutschen die Vergleiche darunter, statt die Zahl
+ * abzuschneiden.
+ *
+ * Der Satz unter der Zahl bleibt einzeilig (UI-01), damit Kacheln einer Reihe
+ * gleich hoch sind und ihre Zahlen auf einer Linie stehen. Was abgeschnitten
+ * wird, steht vollständig in der Beschriftung und im Rechenweg hinter dem „i“.
  */
 export function Kennzahl({
   titel,
@@ -30,7 +33,7 @@ export function Kennzahl({
   /** Färbt den Wert rot — wenn er einen Zielwert reißt. */
   warnung?: boolean;
   laedt: boolean;
-  /** Die Abzeichen zur Vorperiode und zum Vorjahr, falls es welche gibt. */
+  /** Die Vergleichszeilen zur Vorperiode und zum Vorjahr, falls es welche gibt. */
   vergleich?: ReactNode;
   /** Welcher Hilfe-Abschnitt den Rechenweg beschreibt. Ohne ihn kein „i“. */
   erklaerung?: Erklaerung;
@@ -41,17 +44,23 @@ export function Kennzahl({
         <span className="min-w-0">{titel}</span>
         {erklaerung && <ErklaerungKnopf titel={titel} erklaerung={erklaerung} />}
       </div>
-      <div
-        className={cn(
-          "mt-1 font-mono text-2xl font-medium tabular-nums",
-          warnung && "text-[var(--danger)]",
-        )}
-      >
-        {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
+      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div
+          className={cn(
+            "font-mono text-2xl font-medium tabular-nums",
+            warnung && "text-[var(--danger)]",
+          )}
+        >
+          {laedt ? <span className="text-[var(--fg-muted)]">…</span> : wert}
+        </div>
+        {/* Erst wenn der Wert steht: ein Vergleich neben „…“ wäre sinnlos. */}
+        {!laedt && vergleich}
       </div>
-      {hinweis && <div className="mt-1 text-xs text-[var(--fg-muted)]">{hinweis}</div>}
-      {/* Erst wenn der Wert steht: ein Abzeichen neben „…" wäre sinnlos. */}
-      {!laedt && vergleich}
+      {hinweis && (
+        <div className="mt-1 truncate text-xs text-[var(--fg-muted)]" title={hinweis}>
+          {hinweis}
+        </div>
+      )}
     </Card>
   );
 }

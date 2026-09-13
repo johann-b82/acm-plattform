@@ -9,6 +9,7 @@ import { ArrowDown, ArrowUp, ImagePlus, Plus, Snowflake } from "lucide-react";
 import {
   newsletterApi,
   newsletterKeys,
+  quartalVon,
   type Ausgabe,
   type Kapitel,
   type KapitelArt,
@@ -49,9 +50,7 @@ export function Redaktion({
   const jetzt = new Date();
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [neuJahr, setNeuJahr] = useState(String(jetzt.getFullYear()));
-  const [neuQuartal, setNeuQuartal] = useState(
-    String(Math.floor(jetzt.getMonth() / 3) + 1),
-  );
+  const [neuQuartal, setNeuQuartal] = useState(String(quartalVon(jetzt)));
   const [neuesKapitel, setNeuesKapitel] = useState("");
   const [neueArt, setNeueArt] = useState<KapitelArt>("eintraege");
 
@@ -155,7 +154,7 @@ export function Redaktion({
       <Seitenkopf
         untertitel={worte.newsletter.redaktionEinleitung}
         unter={
-          <div className="mt-2 flex justify-center text-sm">
+          <div className="mt-2 flex justify-start text-sm">
             <Link href="/newsletter" className="underline-offset-4 hover:underline">
               {worte.newsletter.zurLeseransicht}
             </Link>

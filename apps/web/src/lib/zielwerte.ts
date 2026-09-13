@@ -8,7 +8,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
  * Dashboard neu und irgendwann falsch.
  */
 
-export type Einheit = "anzahl" | "anteil";
+export type Einheit = "anzahl" | "anteil" | "euro";
 export type Richtung = "min" | "max";
 
 export interface Zielwert {
@@ -16,10 +16,12 @@ export interface Zielwert {
   bereich: string;
   label: string;
   beschreibung: string | null;
-  wert: number;
+  /** Leer heißt: kein Ziel, keine Ziellinie. Nur wo `leer_erlaubt`. */
+  wert: number | null;
   einheit: Einheit;
   richtung: Richtung;
   sortierung: number;
+  leer_erlaubt: boolean;
   geaendert_am: string;
 }
 
@@ -29,7 +31,7 @@ export const BEREICH_LABEL: Record<string, string> = {
   produktion: "Produktion",
   qualitaet: "Qualität",
   finanzen: "Finanzen",
-  personal: "Personal",
+  personal: "HR",
 };
 
 export const zielwerteKeys = {
@@ -39,10 +41,10 @@ export const zielwerteKeys = {
 export async function ladeZielwerte(): Promise<Zielwert[]> {
   const { data, error } = await supabaseBrowser()
     .from("zielwerte")
-    .select("schluessel,bereich,label,beschreibung,wert,einheit,richtung,sortierung,geaendert_am")
+    .select("schluessel,bereich,label,beschreibung,wert,einheit,richtung,sortierung,leer_erlaubt,geaendert_am")
     .order("sortierung");
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Zielwert[]).map((z) => ({ ...z, wert: Number(z.wert) }));
+  return ((data ?? []) as Zielwert[]).map((z) => ({ ...z, wert: z.wert == null ? null : Number(z.wert) }));
 }
 
 /**
@@ -54,7 +56,7 @@ export async function ladeZielwerte(): Promise<Zielwert[]> {
  * „Gespeichert", während sich nichts geändert hat. Mit `.select()` kommen
  * die geänderten Zeilen zurück, und eine leere Antwort ist die Absage.
  */
-export async function setzeZielwert(schluessel: string, wert: number): Promise<void> {
+export async function setzeZielwert(schluessel: string, wert: number | null): Promise<void> {
   const { data, error } = await supabaseBrowser()
     .from("zielwerte")
     .update({ wert, geaendert_am: new Date().toISOString() })
@@ -66,9 +68,25 @@ export async function setzeZielwert(schluessel: string, wert: number): Promise<v
   }
 }
 
-/** Aus einer Liste eine Nachschlagetabelle machen. */
+/** Aus einer Liste eine Nachschlagetabelle machen. Leere Zielwerte fehlen darin
+ *  — für die Kacheln ist „kein Ziel“ dasselbe wie „nicht eingetragen“. */
 export function nachSchluessel(zielwerte: readonly Zielwert[]): Record<string, number> {
-  return Object.fromEntries(zielwerte.map((z) => [z.schluessel, z.wert]));
+  return Object.fromEntries(
+    zielwerte.flatMap((z) => (z.wert == null ? [] : [[z.schluessel, z.wert] as const])),
+  );
+}
+
+/** Eingabefeld → Zielwert. Leer ergibt `null`, aber nur wo leer erlaubt ist. */
+export function zielwertAusEingabe(
+  roh: string,
+  einheit: Einheit,
+  leerErlaubt: boolean,
+): number | null | "ungueltig" {
+  const text = roh.trim();
+  if (text === "") return leerErlaubt ? null : "ungueltig";
+  const zahl = Number(text.replace(",", "."));
+  if (!Number.isFinite(zahl) || zahl < 0) return "ungueltig";
+  return ausAnzeige(zahl, einheit);
 }
 
 /** Anzeigewert: Anteile als Prozent, Anzahlen unverändert. */

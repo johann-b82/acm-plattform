@@ -73,7 +73,7 @@ getrennt vergebbar.
 ## Der Lieferschein
 
 Ein Diehl-Lieferschein wird eingelesen, gegen den Katalog abgeglichen und als
-**Entwurf** abgelegt. Nach der Durchsicht wird er freigegeben.
+**Entwurf** abgelegt. Nach der Durchsicht werden die Dokumente erzeugt.
 
 Der Parser ist zweigeteilt, und das ist der Grund, warum er prüfbar ist:
 `pdftotext -layout` holt den Text, die Auswertung ist eine reine Funktion.
@@ -122,17 +122,24 @@ später umbenannt oder neu gewogen, bleibt die Lieferung, wie sie freigegeben
 wurde. Ein Test räumt den Katalog ab und prüft, dass Bezeichnung und Gewicht
 in der Position stehen bleiben.
 
-## Freigegeben ist fest
+## Die Zustände sind die des Altsystems
 
-Nach der Freigabe weist ein Trigger jede Änderung an den Positionen ab —
-Einfügen, Ändern und Löschen. Das hängt an der Tabelle, nicht an der
-Oberfläche: über PostgREST gäbe es sonst einen Weg daran vorbei.
+`entwurf` → `erzeugt` → `abgelegt` (Migration `0048_atr_abgleich`, Befund
+ATR-09). Ein Entwurf wartet auf Durchsicht; mit den Dokumenten ist die
+Lieferung `erzeugt` (Altsystem `generated`); legt der automatische Scan sie im
+Ausgangsordner ab, ist sie `abgelegt` (`delivered`). Eine Freigabe gibt es
+nicht, und kein Zustand sperrt die Positionen — Seriennummern und Gewichte
+werden auch nach der Erzeugung nachgetragen und die Dokumente dann neu erzeugt.
+So macht es das Altprojekt (`services/atr_deliver.py`).
 
-Zwei Dinge bleiben absichtlich möglich:
-
-- **Die Freigabe zurücknehmen.** Sonst wäre ein Tippfehler endgültig.
-- **Kopfdaten nachtragen.** Containernummer, Wiegedatum und QS-Unterschrift
-  entstehen oft erst nach der Freigabe der Positionen.
+Bis 0048 kannte die neue Tabelle nur `entwurf`/`freigegeben`, und ein Trigger
+weis Änderungen an den Positionen einer freigegebenen Lieferung ab. Die
+Übernahme legte `generated` deshalb auf `entwurf` — die erzeugten Dokumente
+kamen damals nicht mit. Seit sie nachgeholt sind (`uebernahme/dateien.py`),
+stimmt `erzeugt` wieder; 0048 korrigiert die schon übernommenen Zeilen aus dem
+Erzeugungsdatum (`erzeugt_am gesetzt ⇒ erzeugt`), niemals pauschal. Ein
+Statuswechsel zählt nicht als Änderung — er zieht `geaendert_am` nicht hoch,
+sonst stünde jede gerade erzeugte Mappe als „danach geändert" da.
 
 ## Die Erzeugung
 
@@ -241,14 +248,25 @@ Lieferschein löst aus, wer mit Lieferungen arbeitet.
 
 **Der Takt kommt aus der Datenbank, nicht aus dem Dienst.** Im Altprojekt hielt
 ein Scheduler-Thread in der API den Zeitplan; ein Neustart hätte ihn mitgenommen.
-Hier stößt `pg_cron` alle zehn Minuten (werktags 5–19 Uhr) über `pg_net` die
-Route `/api/atr/scan/geplant` an. `compute` bleibt zwischen den Aufrufen
-zustandslos, und ein Deployment kostet höchstens einen ausgelassenen Lauf.
+Der Takt ist frei in Sekunden einstellbar, `0 = aus` (Befund SET-14, Migration
+`0048`) — der feste Zehn-Minuten-Plan werktags 5–19 Uhr ist weg. `pg_cron`
+klopft alle zehn Sekunden über `pg_net` an; ob wirklich ein Lauf dran ist,
+entscheidet `atr_scan_faellig()` mit **einem** Schreibvorgang auf
+`angestossen_am`: zwei Anstöße zugleich können ihn nicht beide auslösen, und
+ein halber Takt Spielraum verhindert, dass aus 60 Sekunden durch
+Laufzeitschwankung 70 werden. `compute` bleibt zwischen den Aufrufen zustandslos.
+
+**Nie zwei Läufe zugleich.** `lauf_seit` steht in der Datenbank, nicht im
+Prozess: der Dienst setzt es beim Betreten und löscht es am Ende (`belegen()`
+/ `freigeben()`), ein zweiter Lauf — geplant oder von Hand — bekommt den Ordner
+nicht. Ein Stempel, der älter als eine Stunde ist, gehört zu einem
+abgestürzten Lauf und hält nicht ewig auf. So darf `compute` mehrfach laufen,
+ohne dieselbe Datei doppelt zu verarbeiten.
 
 **Der geplante Lauf hängt nicht am Router-Gate.** Ein SQL-Job hat kein
 Nutzertoken. Statt dessen ein gemeinsames Geheimnis: `ATR_SCAN_TOKEN` steht in
 der Umgebung von `compute` und als `acm.atr_scan_token` in der Datenbank, und
-die Route vergleicht mit `hmac.compare_digest`. Steht `aktiv` auf `false`,
+die Route vergleicht mit `hmac.compare_digest`. Steht das Intervall auf `0`,
 schickt die Datenbank gar nichts erst los — der Schalter wirkt vor dem Netz.
 
 ### Wohin der Dienst greifen darf
@@ -259,11 +277,17 @@ prüft **jede** zurückgegebene Adresse gegen diese Liste. Damit ist der Befund 
 aus dem Altprojekt geschlossen: dort durfte ein Admin ein beliebiges Ziel im
 Netz eintragen, und der Dienst meldete sich mit dem Dienstkonto dort an.
 
-Das Passwort steht aus demselben Grund nicht in der Tabelle, sondern als
-`ATR_SMB_PASSWORT` in der Umgebung: ein Geheimnis in der Datenbank bräuchte
-einen zweiten Schlüssel zum Entschlüsseln, und der Geheimtext läge in jeder
-Sicherung. Deshalb auch die zwei Rechtestufen oben — durchsehen darf, wer ATR
-bearbeitet; **worauf** gezeigt wird, setzt nur die Plattform-Verwaltung.
+Das Passwort des Dienstkontos trägt die Plattform-Verwaltung über ein
+geschütztes Feld ein (Befund SET-13): verschlüsselt in `geheimnisse` unter
+`atr_smb_passwort`, mit dem `GEHEIM_SCHLUESSEL` aus der Umgebung — dasselbe
+Fernet-Verfahren wie bei Personio und den Sensoren. Es kommt nie im Klartext
+zurück; die Maske erfährt nur, ob eines hinterlegt ist und woher. Ein leeres
+Feld behält das gespeicherte. `ATR_SMB_PASSWORT` in der Umgebung gilt weiter
+als Rückfall — die Datenbank geht vor, damit ein einmal eingetragenes Passwort
+sticht, ohne dass jemand an den Server muss (`GET`/`PUT /api/atr/scan/passwort`,
+nur `platform: admin`). Deshalb auch die zwei Rechtestufen oben — durchsehen
+darf, wer ATR bearbeitet; **worauf** gezeigt und **womit** angemeldet wird,
+setzt nur die Plattform-Verwaltung.
 
 ### Was ein Lauf aushält
 

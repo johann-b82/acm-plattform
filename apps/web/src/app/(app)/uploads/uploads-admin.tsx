@@ -8,7 +8,9 @@ import { FileUp, Loader2 } from "lucide-react";
 import { computeJson } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-import { Badge, Button, Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Badge, Button, Card } from "@/components/ui/primitives";
+import { Datentabelle } from "@/components/ui/datentabelle";
+import { ladeAlle } from "@/lib/seitenweise";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
@@ -62,6 +64,10 @@ const ARTEN: readonly Art[] = [
     datei: "AswLagBew.txt",
   },
   {
+    kind: "materialpreise",
+    datei: "AswKpf_WE.txt",
+  },
+  {
     kind: "lagerpreise",
     datei: "AswLagBew-Preiskonditionen",
   },
@@ -107,6 +113,10 @@ interface Batch {
   error_count: number;
   status: string;
 }
+
+// Eine feste leere Menge: `?? []` erzeugte bei jedem Rendern eine neue, und die
+// Tabelle spränge jedes Mal auf Seite 1.
+const KEINE_BATCHES: Batch[] = [];
 
 const STATUS_KLASSE: Record<string, string> = {
   success: "status-ok",
@@ -192,18 +202,22 @@ export function UploadsAdmin() {
   const [laufend, setLaufend] = useState<string | null>(null);
 
   // Der Verlauf kommt über PostgREST; die Zeilen-Policy lässt nur Nutzer mit
-  // einem Recht auf die App `uploads` lesen.
+  // einem Recht auf die App `uploads` lesen. Vollständig, nicht die letzten 20
+  // (UPL-02): die Tabelle blättert selbst. `id` als zweiter Schlüssel, damit
+  // gleichzeitige Uploads beim seitenweisen Laden nicht die Seite wechseln.
   const verlauf = useQuery({
     queryKey: ["uploads", "batches"],
-    queryFn: async (): Promise<Batch[]> => {
-      const { data, error } = await supabaseBrowser()
-        .from("upload_batches")
-        .select("id,filename,uploaded_at,kind,row_count,error_count,status")
-        .order("uploaded_at", { ascending: false })
-        .limit(20);
-      if (error) throw new Error(error.message);
-      return data as Batch[];
-    },
+    queryFn: () =>
+      ladeAlle<Batch>(async (von, bis) => {
+        const { data, error } = await supabaseBrowser()
+          .from("upload_batches")
+          .select("id,filename,uploaded_at,kind,row_count,error_count,status")
+          .order("uploaded_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(von, bis);
+        if (error) throw new Error(error.message);
+        return data as Batch[];
+      }),
   });
 
   const upload = useMutation({
@@ -262,77 +276,94 @@ export function UploadsAdmin() {
               ergebnis.errors.length,
             )}
           </p>
-          <TableWrap className="mt-3">
-            <Table>
-              <thead>
-                <tr>
-                  <Th className="w-20">{worte.uploads.zeile}</Th>
-                  <Th className="w-48">{worte.uploads.spalte}</Th>
-                  <Th>{worte.uploads.grund}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {ergebnis.errors.slice(0, 50).map((f, i) => (
-                  <tr key={i}>
-                    <Td className="font-mono tabular-nums">{f.row}</Td>
-                    <Td className="font-mono text-xs">{f.field}</Td>
-                    <Td>{f.message}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
-          {ergebnis.errors.length > 50 && (
-            <p className="mt-2 text-xs text-[var(--fg-muted)]">
-              Es werden die ersten 50 von {ergebnis.errors.length} gezeigt.
-            </p>
-          )}
+          <div className="mt-3">
+            <Datentabelle
+              zeilen={ergebnis.errors}
+              zeilenSchluessel={(f) => `${f.row}|${f.field}|${f.message}`}
+              beschriftung={worte.uploads.uebersprungen(ergebnis.filename)}
+              vorsortierung={{ spalte: "zeile", richtung: "auf" }}
+              spalten={[
+                {
+                  schluessel: "zeile",
+                  titel: worte.uploads.zeile,
+                  typ: "zahl",
+                  wert: (f) => f.row,
+                  className: "w-20 font-mono",
+                },
+                {
+                  schluessel: "spalte",
+                  titel: worte.uploads.spalte,
+                  typ: "text",
+                  wert: (f) => f.field,
+                  className: "w-48 font-mono text-xs",
+                },
+                { schluessel: "grund", titel: worte.uploads.grund, typ: "text", wert: (f) => f.message },
+              ]}
+            />
+          </div>
         </Card>
       )}
 
       <div>
         <h2 className="mb-2 text-base font-semibold">{worte.uploads.zuletzt}</h2>
-        <TableWrap>
-          <Table>
-            <thead>
-              <tr>
-                <Th>{worte.uploads.datei}</Th>
-                <Th>{worte.uploads.art}</Th>
-                <Th className="text-end">{worte.uploads.zeilen}</Th>
-                <Th className="text-end">{worte.uploads.uebersprungenSpalte}</Th>
-                <Th>{worte.uploads.status}</Th>
-                <Th>{worte.uploads.zeitpunkt}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {(verlauf.data ?? []).map((b) => (
-                <tr key={b.id}>
-                  <Td className="font-mono text-xs">{b.filename}</Td>
-                  <Td>{arten[b.kind] ?? b.kind}</Td>
-                  <Td className="text-end font-mono tabular-nums">{fmt.zahl(b.row_count)}</Td>
-                  <Td className="text-end font-mono tabular-nums">
-                    {b.error_count > 0 ? fmt.zahl(b.error_count) : "—"}
-                  </Td>
-                  <Td>
-                    <Badge className={STATUS_KLASSE[b.status] ?? "status-none"}>
-                      {statusText[b.status] ?? b.status}
-                    </Badge>
-                  </Td>
-                  <Td className="text-[var(--fg-muted)]">
-                    {zeitFmt.format(new Date(b.uploaded_at))}
-                  </Td>
-                </tr>
-              ))}
-              {verlauf.data?.length === 0 && (
-                <tr>
-                  <Td colSpan={6} className="text-[var(--fg-muted)]">
-                    {worte.uploads.nochNichts}
-                  </Td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        </TableWrap>
+        <Datentabelle
+          zeilen={verlauf.data ?? KEINE_BATCHES}
+          laedt={verlauf.isLoading}
+          leer={worte.uploads.nochNichts}
+          zeilenSchluessel={(b) => b.id}
+          beschriftung={worte.uploads.zuletzt}
+          spalten={[
+            {
+              schluessel: "datei",
+              titel: worte.uploads.datei,
+              typ: "text",
+              wert: (b) => b.filename,
+              className: "font-mono text-xs",
+            },
+            {
+              schluessel: "art",
+              titel: worte.uploads.art,
+              typ: "text",
+              wert: (b) => arten[b.kind] ?? b.kind,
+            },
+            {
+              schluessel: "zeilen",
+              titel: worte.uploads.zeilen,
+              typ: "zahl",
+              wert: (b) => b.row_count,
+              zelle: (b) => fmt.zahl(b.row_count),
+              ausrichtung: "end",
+            },
+            {
+              schluessel: "uebersprungen",
+              titel: worte.uploads.uebersprungenSpalte,
+              typ: "zahl",
+              wert: (b) => b.error_count,
+              zelle: (b) => (b.error_count > 0 ? fmt.zahl(b.error_count) : "—"),
+              ausrichtung: "end",
+            },
+            {
+              schluessel: "status",
+              titel: worte.uploads.status,
+              typ: "text",
+              wert: (b) => statusText[b.status] ?? b.status,
+              zelle: (b) => (
+                <Badge className={STATUS_KLASSE[b.status] ?? "status-none"}>
+                  {statusText[b.status] ?? b.status}
+                </Badge>
+              ),
+            },
+            {
+              schluessel: "zeitpunkt",
+              titel: worte.uploads.zeitpunkt,
+              typ: "datum",
+              wert: (b) => b.uploaded_at,
+              zelle: (b) => zeitFmt.format(new Date(b.uploaded_at)),
+              suchtext: (b) => zeitFmt.format(new Date(b.uploaded_at)),
+              className: "text-[var(--fg-muted)]",
+            },
+          ]}
+        />
       </div>
     </div>
   );

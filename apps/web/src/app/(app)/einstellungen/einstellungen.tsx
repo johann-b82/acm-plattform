@@ -9,11 +9,15 @@ import { PersonioZugang } from "./abschnitte/personio-zugang";
 import { AtrVorlagen } from "./abschnitte/atr-vorlagen";
 import { Eingangsordner } from "./abschnitte/atr-eingangsordner";
 import { Logo } from "./abschnitte/logo";
+import { Erscheinung } from "./abschnitte/erscheinung";
+import { Tabellen } from "./abschnitte/tabellen";
 import { Anzeigen } from "./abschnitte/anzeigen";
+import { Email } from "./abschnitte/email";
 import { Zeugnisse } from "./abschnitte/zeugnisse";
 import { Qualitaet } from "./abschnitte/qualitaet";
 import { Sensoren } from "./abschnitte/sensoren";
 import { Zugaenge } from "./abschnitte/zugaenge";
+import { ActiveDirectory } from "./abschnitte/ad";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useTexte } from "@/components/sprache/anbieter";
 
@@ -98,9 +102,19 @@ function Inhalt({ gruppe, eigeneId }: { gruppe: Gruppe; eigeneId: string }) {
     case "zeugnisse":
       return <Zeugnisse />;
     case "erscheinung":
-      return <Logo />;
+      return (
+        <div className="space-y-4">
+          <Erscheinung />
+          <Logo />
+          <Tabellen />
+        </div>
+      );
     case "anzeigen":
       return <Anzeigen />;
+    case "email":
+      return <Email />;
+    case "ad":
+      return <ActiveDirectory />;
     case "zugaenge":
       return <Zugaenge eigeneId={eigeneId} />;
     default:

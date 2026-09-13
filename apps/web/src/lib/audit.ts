@@ -139,6 +139,59 @@ export interface VerlaufZeile {
   wann: string;
 }
 
+/** Was die Anlage fragt — Felder und Pflicht wie im Altsystem (AUD-03). */
+export interface NeuesAudit {
+  nummer: string;
+  titel: string;
+  art: "intern" | "extern";
+  kategorien: Kategorie[];
+  bereich: string;
+  leitender_auditor: string;
+  geplant_von: string;
+  geplant_bis: string;
+  vorlage_id: string;
+}
+
+export type AnlageFehler = "nummer" | "titel" | "kategorie" | "zeitraum";
+
+/** Pflicht sind Nummer, Titel und mindestens eine Kategorie; das Ende liegt
+ *  nicht vor dem Beginn. Die Datenbank prüft dasselbe noch einmal. */
+export function anlageFehler(
+  neu: Pick<NeuesAudit, "nummer" | "titel" | "geplant_von" | "geplant_bis"> & {
+    kategorien: readonly string[];
+  },
+): AnlageFehler[] {
+  const fehler: AnlageFehler[] = [];
+  if (!neu.nummer.trim()) fehler.push("nummer");
+  if (!neu.titel.trim()) fehler.push("titel");
+  if (neu.kategorien.length === 0) fehler.push("kategorie");
+  if (neu.geplant_von && neu.geplant_bis && neu.geplant_bis < neu.geplant_von) fehler.push("zeitraum");
+  return fehler;
+}
+
+/** Status- und Artfilter der Liste; leer heißt „Alle" (AUD-04). */
+export function filtereAudits(
+  liste: readonly Audit[],
+  filter: { status: string; art: string },
+): Audit[] {
+  return liste.filter(
+    (a) => (!filter.status || a.status === filter.status) && (!filter.art || a.art === filter.art),
+  );
+}
+
+/** Was eine Phase beim Speichern braucht — dieselben zwei Bedingungen wie
+ *  an der Tabelle, damit die Maske es vorher sagt. */
+export function phasenFehler(
+  entwurf: { status: PhasenStatus; erledigt_am: string; uebersprungen_warum: string },
+  pflicht: boolean,
+): "grund" | "datum" | null {
+  if (entwurf.status === "nicht_zutreffend" && pflicht && !entwurf.uebersprungen_warum.trim()) {
+    return "grund";
+  }
+  if (entwurf.status === "erledigt" && !entwurf.erledigt_am) return "datum";
+  return null;
+}
+
 const AUDIT_FELDER =
   "id,nummer,titel,art,bereich,ziel,leitender_auditor,team,geplant_von," +
   "geplant_bis,prioritaet,status,vorlage_id";
@@ -153,6 +206,7 @@ export const auditKeys = {
   phasen: (id: string) => ["audit", "phasen", id] as const,
   kategorien: (id: string) => ["audit", "kategorien", id] as const,
   normbezug: (id: string) => ["audit", "normbezug", id] as const,
+  alleKategorien: () => ["audit", "alleKategorien"] as const,
   verlauf: (id: string) => ["audit", "verlauf", id] as const,
   normen: () => ["audit", "normen"] as const,
   vorlagen: () => ["audit", "vorlagen"] as const,
@@ -197,19 +251,32 @@ export const auditApi = {
     return (data as unknown as Audit) ?? null;
   },
 
-  anlegen: async (felder: {
-    nummer: string;
-    titel: string;
-    art: "intern" | "extern";
-    vorlage_id: string | null;
-  }): Promise<Audit> => {
-    const { data, error } = await sb()
-      .from("audits")
-      .insert(felder)
-      .select(AUDIT_FELDER)
-      .single();
+  /** Audit samt Kategorien in einer Transaktion (AUD-03). Gibt die neue Kennung zurück. */
+  anlegen: async (neu: NeuesAudit): Promise<string> => {
+    const { data, error } = await sb().rpc("audit_anlegen", {
+      p_nummer: neu.nummer.trim(),
+      p_titel: neu.titel.trim(),
+      p_art: neu.art,
+      p_kategorien: neu.kategorien,
+      p_bereich: neu.bereich.trim(),
+      p_leitender_auditor: neu.leitender_auditor.trim() || null,
+      p_geplant_von: neu.geplant_von || null,
+      p_geplant_bis: neu.geplant_bis || null,
+      p_vorlage_id: neu.vorlage_id || null,
+    });
     if (error) throw new Error(error.message);
-    return data as unknown as Audit;
+    return data as unknown as string;
+  },
+
+  /** Die Kategorien aller Audits auf einmal — für die Spalte in der Liste. */
+  alleKategorien: async (): Promise<{ audit_id: string; kategorie: Kategorie }[]> => {
+    const { data, error } = await sb()
+      .from("audit_kategorien")
+      .select("audit_id,kategorie")
+      .order("audit_id")
+      .order("kategorie");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as { audit_id: string; kategorie: Kategorie }[];
   },
 
   aendern: async (id: string, felder: Partial<Audit>): Promise<void> => {

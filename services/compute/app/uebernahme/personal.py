@@ -291,7 +291,7 @@ UMZUEGE: list[Umzug] = [
     # Vorgang als erledigte Unterlage ausgibt.
     #
     # Sein richtiges Zuhause hat der Vorgang in `dokumentvorgaenge` /
-    # `dokument_nachweise`. Die bearbeitet ein anderer Fachbereich; ihm hier
-    # vorzugreifen hieße, dieselbe Zeile zweimal anzulegen. Der Abgleich zeigt
-    # für dieses Paar 1 gegen 0 — das ist die Absicht, nicht ein Rest.
+    # `dokument_nachweise`; dorthin zieht ihn `qualifizierung.py` um, samt dem
+    # Einarbeitungsvorgang. Hier noch einmal hieße, dieselbe Zeile zweimal
+    # anzulegen.
 ]

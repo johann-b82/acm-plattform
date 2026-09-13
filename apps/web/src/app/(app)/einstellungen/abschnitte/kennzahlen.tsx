@@ -6,9 +6,9 @@ import { toast } from "sonner";
 
 import {
   alsAnzeige,
-  ausAnzeige,
   ladeZielwerte,
   setzeZielwert,
+  zielwertAusEingabe,
   zielwerteKeys,
   type Zielwert,
 } from "@/lib/zielwerte";
@@ -35,7 +35,7 @@ export function Kennzahlen() {
   });
 
   const speichern = useMutation({
-    mutationFn: ({ schluessel, wert }: { schluessel: string; wert: number }) =>
+    mutationFn: ({ schluessel, wert }: { schluessel: string; wert: number | null }) =>
       setzeZielwert(schluessel, wert),
     onSuccess: (_daten, { schluessel }) => {
       setEntwurf((v) => {
@@ -59,18 +59,19 @@ export function Kennzahlen() {
   }, [daten]);
 
   function anzeigewert(z: Zielwert): string {
-    return entwurf[z.schluessel] ?? String(alsAnzeige(z.wert, z.einheit));
+    return entwurf[z.schluessel] ?? (z.wert == null ? "" : String(alsAnzeige(z.wert, z.einheit)));
   }
 
   function absenden(z: Zielwert) {
     const roh = entwurf[z.schluessel];
     if (roh === undefined) return;
-    const zahl = Number(roh.replace(",", "."));
-    if (!Number.isFinite(zahl) || zahl < 0) {
+    // Leer heißt „kein Ziel, keine Ziellinie“ — nur wo die Zeile das erlaubt.
+    const wert = zielwertAusEingabe(roh, z.einheit, z.leer_erlaubt);
+    if (wert === "ungueltig") {
       toast.error(worte.einstellungenText.zahlAbNull);
       return;
     }
-    speichern.mutate({ schluessel: z.schluessel, wert: ausAnzeige(zahl, z.einheit) });
+    speichern.mutate({ schluessel: z.schluessel, wert });
   }
 
   if (zielwerte.error) {
@@ -100,6 +101,7 @@ export function Kennzahlen() {
                     id={z.schluessel}
                     inputMode="decimal"
                     value={anzeigewert(z)}
+                    placeholder={z.leer_erlaubt ? "—" : undefined}
                     onChange={(e) =>
                       setEntwurf((v) => ({ ...v, [z.schluessel]: e.target.value }))
                     }
@@ -109,7 +111,7 @@ export function Kennzahlen() {
                     className="max-w-32 text-end tabular-nums"
                   />
                   <span className="text-sm text-[var(--fg-muted)]">
-                    {z.einheit === "anteil" ? "%" : worte.allgemein.stueck}
+                    {z.einheit === "anteil" ? "%" : z.einheit === "euro" ? "€" : worte.allgemein.stueck}
                   </span>
                   {entwurf[z.schluessel] !== undefined && (
                     <Button size="sm" disabled={speichern.isPending} onClick={() => absenden(z)}>

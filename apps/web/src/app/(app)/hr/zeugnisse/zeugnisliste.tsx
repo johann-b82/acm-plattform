@@ -7,24 +7,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-import { ARTEN, zeugnisApi, zeugnisKeys } from "@/lib/zeugnisse";
+import { ARTEN, zeugnisApi, zeugnisKeys, type Zeugnis } from "@/lib/zeugnisse";
 import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
-import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Label,
-  Select,
-  Table,
-  TableWrap,
-  Td,
-  Th,
-} from "@/components/ui/primitives";
+import { Badge, Button, Card, Label, Select } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useZeugnisart } from "@/lib/tafeln";
+import { Klappbar } from "../klappbar";
+import { Textbausteine } from "./textbausteine";
 
 
 
@@ -75,11 +67,72 @@ export function Zeugnisliste() {
 
   const liste = zeugnisse.data ?? [];
 
+  const spalten: Tabellenspalte<Zeugnis>[] = [
+    {
+      schluessel: "name",
+      titel: worte.zeugnisse.person,
+      typ: "text",
+      wert: (z) => z.name,
+      zelle: (z) => (
+        <Link href={`/hr/zeugnisse/${z.id}`} className="font-medium underline-offset-4 hover:underline">
+          {z.name}
+        </Link>
+      ),
+    },
+    { schluessel: "art", titel: worte.zeugnisse.art, typ: "text", wert: (z) => artLabel[z.art] ?? z.art },
+    {
+      schluessel: "zeitraum",
+      titel: worte.zeugnisse.zeitraum,
+      typ: "datum",
+      suchtext: false,
+      wert: (z) => z.eintritt,
+      zelle: (z) => (
+        <>
+          {z.eintritt ? DATUM.format(new Date(z.eintritt)) : "—"}
+          {z.austritt ? ` – ${DATUM.format(new Date(z.austritt))}` : ""}
+        </>
+      ),
+    },
+    {
+      schluessel: "note",
+      titel: worte.zeugnisse.note,
+      typ: "zahl",
+      suchtext: false,
+      ausrichtung: "end",
+      wert: (z) => (z.schlussnote === null ? null : Number(z.schlussnote)),
+      zelle: (z) => z.schlussnote ?? "—",
+    },
+    {
+      schluessel: "stand",
+      titel: worte.zeugnisse.stand,
+      typ: "text",
+      wert: (z) => z.status,
+      zelle: (z) =>
+        z.status === "fertig" ? (
+          <Badge>{worte.zeugnisse.fertig}</Badge>
+        ) : (
+          <Badge variant="outline">{worte.zeugnisse.entwurf}</Badge>
+        ),
+    },
+    {
+      schluessel: "angelegt",
+      titel: worte.zeugnisse.angelegt,
+      typ: "datum",
+      suchtext: false,
+      wert: (z) => z.erstellt_am,
+      zelle: (z) => DATUM.format(new Date(z.erstellt_am)),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.zeugnisse.einleitung}
       />
+
+      <Klappbar titel={worte.zeugnisse.bausteineTitel} offenStart={false}>
+        <Textbausteine />
+      </Klappbar>
 
       <Card className="flex flex-wrap items-end gap-3 p-4">
         <div className="flex min-w-56 flex-col gap-1">
@@ -113,57 +166,15 @@ export function Zeugnisliste() {
         </Button>
       </Card>
 
-      {zeugnisse.isLoading ? (
-        <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>
-      ) : liste.length === 0 ? (
-        <EmptyState
-          title={worte.zeugnisse.keines}
-          body={worte.zeugnisse.keinesText}
-        />
-      ) : (
-        <TableWrap>
-          <Table>
-            <thead>
-              <tr>
-                <Th>{worte.zeugnisse.person}</Th>
-                <Th>{worte.zeugnisse.art}</Th>
-                <Th>{worte.zeugnisse.zeitraum}</Th>
-                <Th>{worte.zeugnisse.note}</Th>
-                <Th>{worte.zeugnisse.stand}</Th>
-                <Th>{worte.zeugnisse.angelegt}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {liste.map((z) => (
-                <tr key={z.id}>
-                  <Td>
-                    <Link
-                      href={`/hr/zeugnisse/${z.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {z.name}
-                    </Link>
-                  </Td>
-                  <Td>{artLabel[z.art] ?? z.art}</Td>
-                  <Td>
-                    {z.eintritt ? DATUM.format(new Date(z.eintritt)) : "—"}
-                    {z.austritt ? ` – ${DATUM.format(new Date(z.austritt))}` : ""}
-                  </Td>
-                  <Td className="tabular-nums">{z.schlussnote ?? "—"}</Td>
-                  <Td>
-                    {z.status === "fertig" ? (
-                      <Badge>{worte.zeugnisse.fertig}</Badge>
-                    ) : (
-                      <Badge variant="outline">{worte.zeugnisse.entwurf}</Badge>
-                    )}
-                  </Td>
-                  <Td>{DATUM.format(new Date(z.erstellt_am))}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </TableWrap>
-      )}
+      <Datentabelle
+        zeilen={liste}
+        spalten={spalten}
+        zeilenSchluessel={(z) => z.id}
+        laedt={zeugnisse.isLoading}
+        leer={worte.zeugnisse.keinesText}
+        beschriftung={worte.pfad.seiten["/hr/zeugnisse"]}
+        vorsortierung={{ spalte: "angelegt", richtung: "ab" }}
+      />
     </div>
   );
 }

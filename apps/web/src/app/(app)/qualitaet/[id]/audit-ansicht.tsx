@@ -13,6 +13,7 @@ import {
   auditApi,
   auditKeys,
   fortschritt,
+  phasenFehler,
   type Audit,
   type Kategorie,
   type Phase,
@@ -26,21 +27,17 @@ import {
   Input,
   Label,
   Select,
-  Table,
-  TableWrap,
-  Td,
   Textarea,
-  Th,
 } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useAuditworte } from "@/lib/tafeln";
 import type { Texte } from "@/texte";
 
+type StammFeld = "titel" | "bereich" | "leitender_auditor" | "team" | "geplant_von" | "geplant_bis";
 
-
-
-const STAMM: { feld: keyof Audit; wort: keyof Texte["auditAnsicht"]; art?: "date" }[] = [
+const STAMM: { feld: StammFeld; wort: keyof Texte["auditAnsicht"]; art?: "date" }[] = [
   { feld: "titel", wort: "titel" },
   { feld: "bereich", wort: "bereich" },
   { feld: "leitender_auditor", wort: "leitenderAuditor" },
@@ -48,6 +45,27 @@ const STAMM: { feld: keyof Audit; wort: keyof Texte["auditAnsicht"]; art?: "date
   { feld: "geplant_von", wort: "geplantVon", art: "date" },
   { feld: "geplant_bis", wort: "geplantBis", art: "date" },
 ];
+
+type Stammentwurf = Record<StammFeld, string> & { prioritaet: string; ziel: string };
+
+function entwurfAus(a: Audit): Stammentwurf {
+  return {
+    titel: a.titel,
+    bereich: a.bereich,
+    leitender_auditor: a.leitender_auditor ?? "",
+    team: a.team,
+    geplant_von: a.geplant_von ?? "",
+    geplant_bis: a.geplant_bis ?? "",
+    prioritaet: String(a.prioritaet),
+    ziel: a.ziel,
+  };
+}
+
+/** Heute als `JJJJ-MM-TT` in Ortszeit — `toISOString` läge nachts einen Tag daneben. */
+function heute(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export function AuditAnsicht({
   id,
@@ -60,6 +78,7 @@ export function AuditAnsicht({
   const auditworte = useAuditworte();
   const tag = ZAHL_TAG[useSprache()];
   const ZEIT = new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" });
+  const DATUM = new Intl.DateTimeFormat(tag, { dateStyle: "medium" });
   const prioritaet: Record<number, string> = {
     1: worte.auditAnsicht.niedrig,
     2: worte.auditAnsicht.mittel,
@@ -74,6 +93,11 @@ export function AuditAnsicht({
   };
   const queryClient = useQueryClient();
   const [neuePhase, setNeuePhase] = useState("");
+  // EDIT-01: die Stammdaten stehen erst lesend da; „Bearbeiten" öffnet einen
+  // Entwurf, der erst mit „Speichern" in die Zeile geht.
+  const [stamm, setStamm] = useState<Stammentwurf | null>(null);
+  // Welche Phase gerade bearbeitet wird — höchstens eine.
+  const [offen, setOffen] = useState<string | null>(null);
 
   const audit = useQuery({ queryKey: auditKeys.eines(id), queryFn: () => auditApi.eines(id) });
   const phasen = useQuery({ queryKey: auditKeys.phasen(id), queryFn: () => auditApi.phasen(id) });
@@ -101,16 +125,41 @@ export function AuditAnsicht({
     onError: melde,
   });
 
-  const phaseAendern = useMutation({
+  const stammSpeichern = useMutation({
+    mutationFn: (e: Stammentwurf) =>
+      auditApi.aendern(id, {
+        titel: e.titel.trim(),
+        bereich: e.bereich.trim(),
+        leitender_auditor: e.leitender_auditor.trim() || null,
+        team: e.team.trim(),
+        geplant_von: e.geplant_von || null,
+        geplant_bis: e.geplant_bis || null,
+        prioritaet: Number(e.prioritaet),
+        ziel: e.ziel,
+      }),
+    onSuccess: () => {
+      setStamm(null);
+      toast.success(worte.auditAnsicht.gespeichert);
+      return neuLaden();
+    },
+    onError: (fehler: Error) =>
+      toast.error(/audits_zeitraum/.test(fehler.message) ? worte.audit.zeitraumFehler : fehler.message),
+  });
+
+  const phaseSpeichern = useMutation({
     mutationFn: ({ phase, felder }: { phase: Phase; felder: Partial<Phase> }) =>
       auditApi.phaseAendern(phase.id, felder),
-    onSuccess: neuLaden,
+    onSuccess: () => {
+      setOffen(null);
+      toast.success(worte.auditAnsicht.phaseGespeichert);
+      return neuLaden();
+    },
     onError: (fehler: Error) =>
       toast.error(
         /audit_phasen_grund/.test(fehler.message)
-          ? "Eine Pflichtphase braucht eine Begründung, bevor sie entfällt."
+          ? worte.auditAnsicht.grundPflicht
           : /audit_phasen_erledigt/.test(fehler.message)
-            ? "Erledigt braucht ein Datum."
+            ? worte.auditAnsicht.datumPflicht
             : fehler.message,
       ),
   });
@@ -156,11 +205,94 @@ export function AuditAnsicht({
   const prozent = fortschritt(meinStand);
 
   if (audit.isLoading) {
-    return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
+    return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</Card>;
   }
   if (!a) {
     return <EmptyState title={worte.auditAnsicht.gibtEsNicht} body={worte.auditAnsicht.gibtEsNichtText} />;
   }
+
+  const stammFehler = stamm
+    ? !stamm.titel.trim() ||
+      (stamm.geplant_von !== "" && stamm.geplant_bis !== "" && stamm.geplant_bis < stamm.geplant_von)
+    : false;
+
+  const anzeige = (feld: StammFeld): string => {
+    const wert = a[feld];
+    if (!wert) return "—";
+    return feld === "geplant_von" || feld === "geplant_bis" ? DATUM.format(new Date(wert)) : wert;
+  };
+
+  const phasenSpalten: Tabellenspalte<Phase>[] = [
+    { schluessel: "position", titel: "#", typ: "zahl", wert: (p) => p.position },
+    {
+      schluessel: "titel",
+      titel: worte.auditAnsicht.phase,
+      typ: "text",
+      wert: (p) => p.titel,
+      zelle: (p) => (
+        <>
+          {p.titel}
+          {p.pflicht && (
+            <Badge variant="outline" className="ms-2">
+              {worte.auditAnsicht.pflicht}
+            </Badge>
+          )}
+        </>
+      ),
+    },
+    {
+      schluessel: "status",
+      titel: worte.auditAnsicht.status,
+      typ: "text",
+      wert: (p) => auditworte[p.status],
+      zelle: (p) => (
+        <Badge variant={p.status === "erledigt" ? "secondary" : "outline"}>{auditworte[p.status]}</Badge>
+      ),
+    },
+    {
+      schluessel: "verantwortlich",
+      titel: worte.auditAnsicht.verantwortlich,
+      typ: "text",
+      wert: (p) => p.verantwortlich,
+    },
+    {
+      schluessel: "faellig_am",
+      titel: worte.auditAnsicht.faellig,
+      typ: "datum",
+      wert: (p) => p.faellig_am,
+      zelle: (p) => (p.faellig_am ? DATUM.format(new Date(p.faellig_am)) : "—"),
+    },
+    {
+      schluessel: "erledigt_am",
+      titel: worte.auditAnsicht.erledigtAm,
+      typ: "datum",
+      wert: (p) => p.erledigt_am,
+      zelle: (p) => (p.erledigt_am ? DATUM.format(new Date(p.erledigt_am)) : "—"),
+    },
+    ...(darfSchreiben
+      ? [
+          {
+            schluessel: "bearbeiten",
+            titel: "",
+            typ: "text" as const,
+            wert: () => null,
+            suchtext: false as const,
+            sortierbar: false,
+            ausrichtung: "end" as const,
+            zelle: (p: Phase) => (
+              <Button
+                size="sm"
+                variant="outline"
+                aria-expanded={offen === p.id}
+                onClick={() => setOffen(offen === p.id ? null : p.id)}
+              >
+                {offen === p.id ? worte.auditAnsicht.abbrechen : worte.auditAnsicht.bearbeiten}
+              </Button>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-6">
@@ -202,60 +334,92 @@ export function AuditAnsicht({
       </div>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">{worte.auditAnsicht.stammdaten}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {STAMM.map(({ feld, wort, art }) => (
-            <div key={feld} className="flex flex-col gap-1">
-              <Label htmlFor={feld}>{worte.auditAnsicht[wort] as string}</Label>
-              <Input
-                id={feld}
-                type={art === "date" ? "date" : "text"}
-                defaultValue={(a[feld] as string | null) ?? ""}
-                placeholder="—"
-                disabled={!darfSchreiben}
-                onBlur={(e) => {
-                  const wert = e.target.value.trim();
-                  const alt = (a[feld] as string | null) ?? "";
-                  if (wert === alt) return;
-                  aendern.mutate({ [feld]: wert || null } as Partial<Audit>);
-                }}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-medium">{worte.auditAnsicht.stammdaten}</h2>
+          {darfSchreiben && !stamm && (
+            <Button size="sm" variant="outline" onClick={() => setStamm(entwurfAus(a))}>
+              {worte.auditAnsicht.bearbeiten}
+            </Button>
+          )}
+        </div>
+
+        {stamm ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {STAMM.map(({ feld, wort, art }) => (
+                <div key={feld} className="flex flex-col gap-1">
+                  <Label htmlFor={feld}>{worte.auditAnsicht[wort] as string}</Label>
+                  <Input
+                    id={feld}
+                    type={art === "date" ? "date" : "text"}
+                    value={stamm[feld]}
+                    required={feld === "titel"}
+                    maxLength={art === "date" ? undefined : 255}
+                    onChange={(e) => setStamm({ ...stamm, [feld]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="prioritaet">{worte.auditAnsicht.prioritaetFeld}</Label>
+                <Select
+                  id="prioritaet"
+                  value={stamm.prioritaet}
+                  onChange={(e) => setStamm({ ...stamm, prioritaet: e.target.value })}
+                >
+                  <option value="1">{worte.auditAnsicht.niedrig}</option>
+                  <option value="2">{worte.auditAnsicht.mittel}</option>
+                  <option value="3">{worte.auditAnsicht.hoch}</option>
+                </Select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="ziel">{worte.auditAnsicht.auditziel}</Label>
+              <Textarea
+                id="ziel"
+                rows={3}
+                value={stamm.ziel}
+                onChange={(e) => setStamm({ ...stamm, ziel: e.target.value })}
               />
             </div>
-          ))}
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="prioritaet">{worte.auditAnsicht.prioritaetFeld}</Label>
-            <Select
-              id="prioritaet"
-              value={String(a.prioritaet)}
-              disabled={!darfSchreiben}
-              onChange={(e) => aendern.mutate({ prioritaet: Number(e.target.value) })}
-            >
-              <option value="1">{worte.auditAnsicht.niedrig}</option>
-              <option value="2">{worte.auditAnsicht.mittel}</option>
-              <option value="3">{worte.auditAnsicht.hoch}</option>
-            </Select>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="ziel">{worte.auditAnsicht.auditziel}</Label>
-          <Textarea
-            id="ziel"
-            rows={3}
-            defaultValue={a.ziel}
-            disabled={!darfSchreiben}
-            onBlur={(e) => {
-              if (e.target.value !== a.ziel) aendern.mutate({ ziel: e.target.value });
-            }}
-          />
-        </div>
+            {stamm.geplant_von !== "" && stamm.geplant_bis !== "" && stamm.geplant_bis < stamm.geplant_von && (
+              <p className="text-xs text-[var(--danger)]">{worte.audit.zeitraumFehler}</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={stammFehler || stammSpeichern.isPending}
+                onClick={() => stammSpeichern.mutate(stamm)}
+              >
+                {worte.allgemein.speichern}
+              </Button>
+              <Button variant="outline" onClick={() => setStamm(null)}>
+                {worte.allgemein.abbrechen}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {STAMM.map(({ feld, wort }) => (
+              <div key={feld} className="min-w-0">
+                <dt className="text-xs text-[var(--fg-muted)]">{worte.auditAnsicht[wort] as string}</dt>
+                <dd className="text-sm break-words">{anzeige(feld)}</dd>
+              </div>
+            ))}
+            <div>
+              <dt className="text-xs text-[var(--fg-muted)]">{worte.auditAnsicht.prioritaetFeld}</dt>
+              <dd className="text-sm">{prioritaet[a.prioritaet]}</dd>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <dt className="text-xs text-[var(--fg-muted)]">{worte.auditAnsicht.auditziel}</dt>
+              <dd className="text-sm whitespace-pre-wrap">{a.ziel || "—"}</dd>
+            </div>
+          </dl>
+        )}
       </Card>
 
       <Card className="space-y-3 p-5">
         <h2 className="font-medium">{worte.auditAnsicht.kategorien}</h2>
         <p className="max-w-prose text-sm text-[var(--fg-muted)]">
-          Ein Audit ist oft mehreres zugleich — das interne Programm fährt
-          Prozess- und Produktaudit in derselben Sitzung. Deshalb eine Auswahl,
-          keine einzelne Angabe.
+          {worte.auditAnsicht.kategorienHinweis}
         </p>
         <div className="flex flex-wrap gap-2">
           {KATEGORIEN.map((k) => {
@@ -310,35 +474,29 @@ export function AuditAnsicht({
 
       <Card className="space-y-4 p-5">
         <h2 className="font-medium">{worte.auditAnsicht.phasen}</h2>
-        {(phasen.data ?? []).length === 0 ? (
+        {!phasen.isLoading && (phasen.data ?? []).length === 0 ? (
           <p className="text-sm text-[var(--fg-muted)]">
             {worte.auditAnsicht.keinePhasen}
           </p>
         ) : (
-          <TableWrap>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>#</Th>
-                  <Th>{worte.auditAnsicht.phase}</Th>
-                  <Th>{worte.auditAnsicht.status}</Th>
-                  <Th>{worte.auditAnsicht.verantwortlich}</Th>
-                  <Th>{worte.auditAnsicht.faellig}</Th>
-                  <Th>{worte.auditAnsicht.erledigtAm}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {(phasen.data ?? []).map((p) => (
-                  <PhasenZeile
-                    key={p.id}
-                    phase={p}
-                    darfSchreiben={darfSchreiben}
-                    aendern={(felder) => phaseAendern.mutate({ phase: p, felder })}
-                  />
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
+          <Datentabelle
+            zeilen={phasen.data ?? []}
+            spalten={phasenSpalten}
+            zeilenSchluessel={(p) => p.id}
+            vorsortierung={{ spalte: "position", richtung: "auf" }}
+            laedt={phasen.isLoading}
+            beschriftung={worte.auditAnsicht.phasen}
+            unterZeile={(p) =>
+              offen === p.id ? (
+                <PhasenMaske
+                  phase={p}
+                  speichert={phaseSpeichern.isPending}
+                  onSpeichern={(felder) => phaseSpeichern.mutate({ phase: p, felder })}
+                  onAbbrechen={() => setOffen(null)}
+                />
+              ) : null
+            }
+          />
         )}
 
         {darfSchreiben && (
@@ -400,61 +558,57 @@ export function AuditAnsicht({
 }
 
 /**
- * Eine Phasenzeile.
+ * Eine Phase bearbeiten — wie im Altsystem unter der Zeile, mit Status,
+ * Verantwortlich, Soll- und Ist-Termin und Kommentar (AUD-02).
  *
- * Der Statuswechsel trägt die zwei Bedingungen der Datenbank mit: „erledigt"
- * setzt das Datum gleich mit, und eine Pflichtphase, die entfallen soll,
- * fragt vorher nach dem Grund. Ohne das käme die Meldung erst aus Postgres —
- * richtig, aber unhöflich.
+ * Nichts geht, bevor „Phase speichern" gedrückt ist: kein Speichern beim
+ * Verlassen eines Felds. Die zwei Bedingungen der Datenbank sagt die Maske
+ * vorher — eine Pflichtphase entfällt nur mit Begründung, „erledigt" braucht
+ * einen Ist-Termin (beim Wechsel auf „erledigt" mit heute vorbelegt).
  */
-function PhasenZeile({
+function PhasenMaske({
   phase,
-  darfSchreiben,
-  aendern,
+  speichert,
+  onSpeichern,
+  onAbbrechen,
 }: {
   phase: Phase;
-  darfSchreiben: boolean;
-  aendern: (felder: Partial<Phase>) => void;
+  speichert: boolean;
+  onSpeichern: (felder: Partial<Phase>) => void;
+  onAbbrechen: () => void;
 }) {
   const worte = useTexte();
   const auditworte = useAuditworte();
-  const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
-  const [grund, setGrund] = useState(false);
-  const [text, setText] = useState("");
-
-  function statusWechsel(status: PhasenStatus) {
-    if (status === "erledigt") {
-      aendern({ status, erledigt_am: new Date().toISOString().slice(0, 10) });
-      return;
-    }
-    if (status === "nicht_zutreffend" && phase.pflicht) {
-      setGrund(true);
-      return;
-    }
-    aendern({ status, erledigt_am: null });
-  }
+  const [e, setE] = useState({
+    status: phase.status,
+    verantwortlich: phase.verantwortlich ?? "",
+    faellig_am: phase.faellig_am ?? "",
+    erledigt_am: phase.erledigt_am ?? "",
+    kommentar: phase.kommentar,
+    uebersprungen_warum: phase.uebersprungen_warum ?? "",
+  });
+  const fehler = phasenFehler(e, phase.pflicht);
+  const feld = (name: string) => `phase-${phase.id}-${name}`;
 
   return (
-    <>
-      <tr>
-        <Td className="tabular-nums">{phase.position}</Td>
-        <Td>
-          {phase.titel}
-          {phase.pflicht && (
-            <Badge variant="outline" className="ms-2">
-              Pflicht
-            </Badge>
-          )}
-        </Td>
-        <Td>
+    <div className="space-y-3 py-2">
+      {phase.beschreibung && (
+        <p className="text-xs text-[var(--fg-muted)]">{phase.beschreibung}</p>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={feld("status")}>{worte.auditAnsicht.status}</Label>
           <Select
-            // In einer Tabellenzelle schrumpft ein `select` sonst auf den
-            // Pfeil zusammen und zeigt seinen Wert gar nicht mehr.
-            className="min-w-40"
-            aria-label={`Status von ${phase.titel}`}
-            value={phase.status}
-            disabled={!darfSchreiben}
-            onChange={(e) => statusWechsel(e.target.value as PhasenStatus)}
+            id={feld("status")}
+            value={e.status}
+            onChange={(ev) => {
+              const status = ev.target.value as PhasenStatus;
+              setE({
+                ...e,
+                status,
+                erledigt_am: status === "erledigt" && !e.erledigt_am ? heute() : e.erledigt_am,
+              });
+            }}
           >
             {PHASEN_STATUS.map((s) => (
               <option key={s.wert} value={s.wert}>
@@ -462,66 +616,84 @@ function PhasenZeile({
               </option>
             ))}
           </Select>
-        </Td>
-        <Td>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={feld("verantwortlich")}>{worte.auditAnsicht.verantwortlich}</Label>
           <Input
-            defaultValue={phase.verantwortlich ?? ""}
-            placeholder="—"
-            disabled={!darfSchreiben}
-            onBlur={(e) => {
-              const wert = e.target.value.trim() || null;
-              if (wert !== phase.verantwortlich) aendern({ verantwortlich: wert });
-            }}
+            id={feld("verantwortlich")}
+            value={e.verantwortlich}
+            maxLength={255}
+            onChange={(ev) => setE({ ...e, verantwortlich: ev.target.value })}
           />
-        </Td>
-        <Td>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={feld("soll")}>{worte.auditAnsicht.faellig}</Label>
           <Input
+            id={feld("soll")}
             type="date"
-            defaultValue={phase.faellig_am ?? ""}
-            disabled={!darfSchreiben}
-            onBlur={(e) => {
-              const wert = e.target.value || null;
-              if (wert !== phase.faellig_am) aendern({ faellig_am: wert });
-            }}
+            value={e.faellig_am}
+            onChange={(ev) => setE({ ...e, faellig_am: ev.target.value })}
           />
-        </Td>
-        <Td>{phase.erledigt_am ? DATUM.format(new Date(phase.erledigt_am)) : "—"}</Td>
-      </tr>
-      {grund && (
-        <tr>
-          <Td />
-          <Td colSpan={5}>
-            <div className="flex flex-wrap items-end gap-2 py-2">
-              <div className="flex min-w-64 flex-1 flex-col gap-1">
-                <Label htmlFor={`grund-${phase.id}`}>{worte.auditAnsicht.warumEntfaellt}</Label>
-                <Input
-                  id={`grund-${phase.id}`}
-                  value={text}
-                  autoFocus
-                  onChange={(e) => setText(e.target.value)}
-                />
-              </div>
-              <Button
-                disabled={!text.trim()}
-                onClick={() => {
-                  aendern({
-                    status: "nicht_zutreffend",
-                    uebersprungen_warum: text.trim(),
-                    erledigt_am: null,
-                  });
-                  setGrund(false);
-                  setText("");
-                }}
-              >
-                {worte.auditAnsicht.uebernehmen}
-              </Button>
-              <Button variant="outline" onClick={() => setGrund(false)}>
-                {worte.auditAnsicht.abbrechen}
-              </Button>
-            </div>
-          </Td>
-        </tr>
-      )}
-    </>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={feld("ist")}>{worte.auditAnsicht.erledigtAm}</Label>
+          <Input
+            id={feld("ist")}
+            type="date"
+            value={e.erledigt_am}
+            onChange={(ev) => setE({ ...e, erledigt_am: ev.target.value })}
+          />
+          {fehler === "datum" && (
+            <span className="text-xs text-[var(--danger)]">{worte.auditAnsicht.datumPflicht}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <Label htmlFor={feld("kommentar")}>{worte.auditAnsicht.kommentar}</Label>
+          <Input
+            id={feld("kommentar")}
+            value={e.kommentar}
+            onChange={(ev) => setE({ ...e, kommentar: ev.target.value })}
+          />
+        </div>
+        {e.status === "nicht_zutreffend" && (
+          <div className="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
+            <Label htmlFor={feld("grund")}>
+              {worte.auditAnsicht.begruendung}
+              {phase.pflicht && <span className="text-[var(--danger)]"> *</span>}
+            </Label>
+            <Input
+              id={feld("grund")}
+              value={e.uebersprungen_warum}
+              required={phase.pflicht}
+              onChange={(ev) => setE({ ...e, uebersprungen_warum: ev.target.value })}
+            />
+            {fehler === "grund" && (
+              <span className="text-xs text-[var(--danger)]">{worte.auditAnsicht.grundPflicht}</span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={fehler !== null || speichert}
+          onClick={() =>
+            onSpeichern({
+              status: e.status,
+              verantwortlich: e.verantwortlich.trim() || null,
+              faellig_am: e.faellig_am || null,
+              erledigt_am: e.erledigt_am || null,
+              kommentar: e.kommentar,
+              uebersprungen_warum:
+                e.status === "nicht_zutreffend" ? e.uebersprungen_warum.trim() || null : null,
+            })
+          }
+        >
+          {worte.auditAnsicht.phaseSpeichern}
+        </Button>
+        <Button variant="outline" onClick={onAbbrechen}>
+          {worte.auditAnsicht.abbrechen}
+        </Button>
+      </div>
+    </div>
   );
 }

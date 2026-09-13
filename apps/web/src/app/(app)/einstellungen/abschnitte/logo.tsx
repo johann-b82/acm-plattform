@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileUp } from "lucide-react";
 
-import { logoApi, logoKeys } from "@/lib/logo";
+import { logoApi, logoKeys, LOGO_TYPEN } from "@/lib/logo";
 import { Card } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
 
@@ -13,10 +13,9 @@ const DATUM = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });
 /**
  * Das Firmenlogo — oben links in der Anwendung und auf jedem Formblatt.
  *
- * Nur PNG oder JPEG. Das Altprojekt lässt zusätzlich SVG zu und muss es dafür
- * reinigen, weil eine SVG-Datei Skripte tragen kann — gebraucht wird das Logo
- * aber nur in den Formblättern, und dort lässt sich ohnehin kein SVG
- * einbetten. Der Fall entfällt, statt behandelt zu werden.
+ * PNG, JPEG oder SVG bis 5 MB (SET-07). Ein SVG wird in `compute` gereinigt
+ * und für die Formblätter gerastert; der Upload geht deshalb über `compute`,
+ * nicht direkt in den Eimer.
  */
 export function Logo() {
   const worte = useTexte();
@@ -76,7 +75,7 @@ export function Logo() {
               : worte.einstellungenText.hochladen}
           <input
             type="file"
-            accept="image/png,image/jpeg"
+            accept={LOGO_TYPEN.join(",")}
             className="sr-only"
             aria-label={worte.einstellungenText.logoHochladen}
             disabled={hochladen.isPending}

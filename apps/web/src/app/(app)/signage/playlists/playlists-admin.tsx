@@ -16,11 +16,9 @@ import {
   Input,
   Label,
   Switch,
-  Table,
   TableWrap,
-  Td,
-  Th,
 } from "@/components/ui/primitives";
+import { Datentabelle } from "@/components/ui/datentabelle";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { TagPicker } from "@/components/signage/tag-picker";
@@ -185,46 +183,78 @@ export function PlaylistsAdmin() {
 
   return (
     <div className="space-y-4">
-      <TableWrap>
-        <Table>
-          <thead>
-            <tr>
-              <Th>{worte.signage.name}</Th>
-              <Th>{worte.signage.tags}</Th>
-              <Th className="text-end">Priorität</Th>
-              <Th>{worte.signage.aktiv}</Th>
-              <Th>{worte.signage.erstellt}</Th>
-              <Th className="text-end">Aktionen</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {playlists.map((p) => (
-              <tr key={p.id}>
-                <Td className="font-medium">
-                  <Link href={`/signage/playlists/${p.id}`} className="hover:underline">
-                    {p.name}
-                  </Link>
-                </Td>
-                <Td>
-                  <div className="flex flex-wrap gap-1">
-                    {(p.tag_ids ?? []).map((id) => (
-                      <Badge key={id} variant="secondary">
-                        {tagName.get(id) ?? id}
-                      </Badge>
-                    ))}
-                  </div>
-                </Td>
-                <Td className="text-end font-mono tabular-nums">{p.priority}</Td>
-                <Td>
-                  <Switch
-                    checked={p.enabled}
-                    label={`${p.name} aktiv`}
-                    disabled={toggleMutation.isPending}
-                    onCheckedChange={(enabled) => toggleMutation.mutate({ id: p.id, enabled })}
-                  />
-                </Td>
-                <Td className="text-[var(--fg-muted)]">{dateFmt.format(new Date(p.created_at))}</Td>
-                <Td>
+      <Datentabelle
+        zeilen={playlists}
+        zeilenSchluessel={(p) => p.id}
+        beschriftung={worte.signage.playlists}
+        spalten={[
+          {
+            schluessel: "name",
+            titel: worte.signage.name,
+            typ: "text",
+            wert: (p) => p.name,
+            zelle: (p) => (
+              <Link href={`/signage/playlists/${p.id}`} className="font-medium hover:underline">
+                {p.name}
+              </Link>
+            ),
+          },
+          {
+            schluessel: "tags",
+            titel: worte.signage.tags,
+            typ: "text",
+            wert: (p) => (p.tag_ids ?? []).map((id) => tagName.get(id) ?? String(id)).join(", "),
+            zelle: (p) => (
+              <div className="flex flex-wrap gap-1">
+                {(p.tag_ids ?? []).map((id) => (
+                  <Badge key={id} variant="secondary">
+                    {tagName.get(id) ?? id}
+                  </Badge>
+                ))}
+              </div>
+            ),
+          },
+          {
+            schluessel: "prioritaet",
+            titel: worte.signage.prioritaet,
+            typ: "zahl",
+            wert: (p) => p.priority,
+            ausrichtung: "end",
+            className: "font-mono",
+          },
+          {
+            schluessel: "aktiv",
+            titel: worte.signage.aktiv,
+            typ: "zahl",
+            wert: (p) => (p.enabled ? 1 : 0),
+            suchtext: false,
+            zelle: (p) => (
+              <Switch
+                checked={p.enabled}
+                label={`${p.name} aktiv`}
+                disabled={toggleMutation.isPending}
+                onCheckedChange={(enabled) => toggleMutation.mutate({ id: p.id, enabled })}
+              />
+            ),
+          },
+          {
+            schluessel: "erstellt",
+            titel: worte.signage.erstellt,
+            typ: "datum",
+            wert: (p) => p.created_at,
+            zelle: (p) => dateFmt.format(new Date(p.created_at)),
+            suchtext: (p) => dateFmt.format(new Date(p.created_at)),
+            className: "text-[var(--fg-muted)]",
+          },
+          {
+            schluessel: "aktionen",
+            titel: worte.signage.aktionen,
+            typ: "text",
+            wert: () => null,
+            sortierbar: false,
+            suchtext: false,
+            ausrichtung: "end",
+            zelle: (p) => (
                   <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
@@ -256,12 +286,10 @@ export function PlaylistsAdmin() {
                       }}
                     />
                   </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableWrap>
+            ),
+          },
+        ]}
+      />
 
       <div className="flex justify-end">
         <Button onClick={() => setNewOpen(true)}>{worte.signage.neuePlaylist}</Button>

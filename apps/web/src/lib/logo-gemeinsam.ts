@@ -5,5 +5,5 @@
  * das von dort nur den Eimernamen bräuchte, schleppte ihn mit.
  */
 export const LOGO_EIMER = "plattform";
-export const LOGO_TYPEN = ["image/png", "image/jpeg"];
+export const LOGO_TYPEN = ["image/png", "image/jpeg", "image/svg+xml"];
 export const LOGO_MAX_BYTES = 5 * 1024 * 1024;

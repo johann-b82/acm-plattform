@@ -68,3 +68,20 @@ class TestUebernommeneFelder:
         """Die alte Tabelle weiss nicht, wer hochgeladen hat."""
         (zeile,), _ = aufbereiten([batch()])
         assert zeile["uploaded_by"] is None
+
+
+class TestAtrStatus:
+    """ATR-09: die Zustände des Altsystems kommen an, statt auf Entwurf zu fallen."""
+
+    def test_jeder_alte_zustand_hat_seinen_neuen(self):
+        from app.uebernahme.atr_stamm import _status
+
+        assert _status("draft") == "entwurf"
+        assert _status("generated") == "erzeugt"
+        assert _status("delivered") == "abgelegt"
+
+    def test_unbekanntes_bleibt_vorsichtig_entwurf(self):
+        from app.uebernahme.atr_stamm import _status
+
+        assert _status(None) == "entwurf"
+        assert _status("irgendwas") == "entwurf"

@@ -520,18 +520,21 @@ Level-Ableitung im Parser: Text enthält `Major … Level 1` → Level 1, `Minor
 - **Sonderfälle**: Nenner ≤ 0 → `rate = None` → „—", im Chart Lücke. `NULL`-Mengen zählen als 0. Zähler- und Nennerdatum sind verschiedene Felder (`report_date` vs. `delivery_date`), eine Reklamation kann in einem anderen Bucket liegen als die zugehörige Lieferung.
 - **Code**: `complaint_rate_aggregation.py`; `ComplaintRateCardGrid.tsx`, `ComplaintRateChart.tsx`.
 
-### Große Produkte (geprüft) / Kleine Produkte (geprüft)
+### Große Produkte (geprüft) / Kleine Produkte (geprüft) / Gesamt (geprüft)
 
-- **Anzeige**: Kacheln „Große Produkte (geprüft)" und „Kleine Produkte (geprüft)", Einheit „Produkte/Tag/Mitarbeiter". `GET /api/quality/inspections` → `large_count`, `small_count`. Registry-Key `quality.inspections`.
+- **Anzeige**: Kacheln „Große Produkte (geprüft)", „Kleine Produkte (geprüft)" und „Gesamt (geprüft)", Einheit „Produkte/Tag/Mitarbeiter", je Klasse ein Verlauf. `GET /api/quality/inspections` → `large_per_person_day`, `small_per_person_day`, `total_per_person_day`. Registry-Keys `quality.inspection_large|small|total`.
 - **Daten**: `inspection_records`. Klassifikation beim Parsen: Produktgruppe enthält `DIEHL` → klein; Bezeichnung enthält `LITERATURE POCKET`, `LIT POCKET`, `STRAP `, `STRAP,`, `LEDERRIEMEN`, `STOWAGE POUCH`, `AUFBEWAHRUNGSTASCHE` → klein; Regex `net|netz` als Wortanfang → klein; sonst groß. `Typ = WKZ` wird verworfen.
-- **Rechenweg**:
-  1. Filter: `pruef_datum` im Fenster, `rsc = '70000'` (echte Qualitätsprüfung), `excluded = false`.
-  2. Zähler je Klasse = `SUM(buchungs_menge)`.
-  3. **Gemeinsamer** Nenner über beide Klassen = `COUNT(DISTINCT benutzer) × COUNT(DISTINCT pruef_datum)`.
-  4. `count = round(Zähler / Nenner)` (Python-`round`, Banker's Rounding, Integer).
-- **Zielwerte**: `target_inspection_large` (Fallback 150), `target_inspection_small` (Fallback 400).
+- **Rechenweg** (`inspection_aggregation.py`, Stand `ffc9ba0`):
+  1. Filter: `pruef_datum` im Fenster, `rsc = '70000'` (echte Qualitätsprüfung), `excluded = false`, Artikelart.
+  2. Artikelart `artikel_filter`: `fertig` (Default) = Artikel beginnt **nicht** mit „H" (NULL zählt als fertig), `halbfertig` = `artikel ILIKE 'H%'`, `alle` = kein Filter. Unabhängig von groß/klein.
+  3. Zähler je Klasse = `SUM(buchungs_menge)`; Gesamt über alle Buchungen.
+  4. Nenner **je Klasse** = `COUNT(DISTINCT (benutzer, pruef_datum))` über die Buchungen dieser Klasse; Gesamt hat einen eigenen Nenner über alle Buchungen. Groß + Klein ≠ Gesamt, Gesamt ist auch kein Mittel.
+  5. Wert = `round(Zähler / Nenner, 1)`.
+  6. Vorperiode/Vorjahr auf demselben Wert; ohne Prüfer-Tage im Vergleichsfenster kein Vergleich.
+- **Früherer Stand**: ein gemeinsamer Nenner `COUNT(DISTINCT benutzer) × COUNT(DISTINCT pruef_datum)` und ganzzahlige Rundung. Das Kreuzprodukt zählt Paare mit, an denen niemand geprüft hat, und rechnete drei- bis sechsfach zu klein; im Altsystem ersetzt.
+- **Zielwerte**: `target_inspection_large` (Fallback 150), `target_inspection_small` (Fallback 400), `target_inspection_total` (leer = keine Linie).
 - **Sonderfälle**: Nenner ≤ 0 → **0**, nicht `None` (Kachel zeigt „0"). Per Admin-Häkchen ausgeschlossene Buchungen (`PATCH /api/quality/inspections/bookings/{id}`) fallen aus Zähler und Nenner. Re-Upload ersetzt alle Zeilen im Datumsbereich der Datei; dabei gehen gesetzte `excluded`-Häkchen im Bereich verloren.
-- **Code**: `inspection_aggregation.py`, `inspection_parser.py`; `QualityInspectionCardGrid.tsx`, `QualityInspectionCharts.tsx`.
+- **Code**: `inspection_aggregation.py`, `inspection_parser.py`; `QualityInspectionCardGrid.tsx`, `QualityInspectionCharts.tsx`. Plattform: Alembic `0044_qualitaet_abgleich`.
 
 ### Ausschussquote je Produkt (nur Tabelle)
 
@@ -558,6 +561,38 @@ Dashboard `/finance`, Router `backend/app/routers/finance_kpis.py`, Services `ma
 - **Sonderfälle**: Umsatz ≤ 0 → `None`. Negativer Nettoverbrauch (mehr Storno als Entnahme) ergibt negative Kosten (kein Guard). Bewegungs-Re-Upload derselben Datei ist ein No-Op.
 - **Code**: `material_cost_aggregation.py`; `MaterialCostRatioCardGrid.tsx`, `MaterialCostRatioChart.tsx`, `MaterialCostRatioTable.tsx`.
 
+#### Im neuen Stack
+
+Migration `0010_materialkosten`, Preisquelle seit `0043_materialpreise`:
+eigene Tabelle `material_prices` aus dem Import „Materialpreise
+(Wareneingang)“ (`POST /api/uploads/materialpreise`, Upsert auf
+Vorgang/Pos/UPos), gelesen über die Sicht `artikel_preise`. Kein Rückfall auf
+die Wareneingänge der Reklamationsquote. Die Prüftabelle hat keine
+Zeilengrenze; die Oberfläche lädt sie seitenweise.
+
+`0010` hatte die Preisliste als Sicht auf `goods_receipt_records` gebaut, weil
+beide Uploads dieselbe Datei lesen. Die Uploads laufen aber getrennt und haben
+verschiedene Stände. Nachgerechnet auf der lokalen Kopie (Stand 12.09.2026,
+Jahr 01.01.–12.09., Quartal 01.07.–12.09., Monat 01.09.–12.09.): mit allen
+Wareneingängen 117.091,33 / 57.734,46 / 32,61 € und 489 Artikel ohne Preis —
+das war der Nachbau. Nur mit Wareneingängen bis 31.07. (der Upload vom 03.09.
+kam in der Produktion nie als Materialpreise an; die letzten Materialpreise
+kamen am 03.08.) 114.953,85 / 56.477,12 / 31,94 € und 492 ohne Preis — genau
+die Referenz. Die Abweichung war der Datenstand der Preistabelle, nicht die
+Preisregel.
+
+**Übergang bis zum ersten Upload bzw. zur Übernahme.** Damit die
+Materialkosten nach der Migration nicht auf null fallen, befüllt `0043` die
+Tabelle einmal aus den schon eingelesenen `goods_receipt_records` (dieselbe
+Datei; Datum = `entry_date`, Schlüssel Vorgang/Pos/UPos, Menge und
+Positionswert unverändert, ohne Upload-Protokoll) — nur für Schlüssel, die
+noch fehlen. Die lokale Kopie ergibt damit die bisherigen Werte des Nachbaus
+(117.091,33 / 57.734,46 / 32,61 €, 489 ohne Preis), **nicht** die Referenz.
+Referenzparität entsteht über den Upload-Weg: ein Upload „Materialpreise
+(Wareneingang)" überschreibt die Übergangszeilen per Upsert; die Übernahme
+läuft auf einem Stack mit Bestand ohnehin mit `--leeren` und bringt dann den
+Stand der alten Tabelle.
+
 ### Personalkostenquote
 
 - **Anzeige**: Kachel „Personalkostenquote" (Untertitel „Personalkosten / Umsatz"), Kacheln „Personalkosten", „Umsatz", „Mitarbeiter (mit Kosten im Zeitraum)"; Chart und Tabelle „Personalkosten je Abteilung". `GET /api/finance/personnel-cost-ratio`, `/history`, `/list`. Registry-Key `finance.personnel_cost_ratio`.
@@ -579,13 +614,32 @@ und `kpi_finanzen_personalkosten_abteilung`, Anzeige im Finanz-Dashboard.
 Rechenweg unverändert — auch das Bewerten alter Zeiträume mit heutigen
 Gehältern, weil es keine Gehaltshistorie gibt.
 
-Eine Abweichung, und sie betrifft den Datenschutz: **Abteilungen mit weniger
-als drei beitragenden Personen wandern nach „Übrige".** Das Altprojekt gibt
-jede Abteilung einzeln heraus; eine Abteilung mit einer Person ist damit
-deren Gehalt, sichtbar für jeden mit dem Recht `kpi`. Die Gesamtsumme bleibt
-richtig, die einzelne Person verschwindet in der Sammelzeile. Die Schwelle
-ist ein Aufrufparameter, lässt sich aber nicht unter drei drücken — sonst
-wäre der Schutz mit einem Argument abzuschalten.
+**Jede Abteilung einzeln** wie im Altprojekt (Nutzerentscheidung FIN-05,
+`0043_materialpreise`). Bis dahin fasste `0014` Abteilungen mit weniger als
+drei Personen zu „Übrige“ zusammen. Heraus kommen weiterhin nur Summen je
+Abteilung, nie eine Person.
+
+**Differenz zur Referenz (FIN-02).** Jahr 1.404.487 / 1.404.417 €, Quartal
+452.709 / 452.640 €, Monat 76.566 / 76.496 € — über alle drei Fenster
+dieselben ≈ 70 €, also liegt sie im September. Nur die Abteilung Quality
+Assurance weicht ab (60.620 / 60.551 €); ihr einziger Stundenlöhner hat
+13,90 €/h. Die gerundeten Werte begrenzen die Differenz auf 69,61–69,91 €,
+das sind 5,01–5,03 Stunden. Die Formel ist es nicht: die Stundenrechnung des
+Altsystems (`end − start − break` je Zeile, Summe je Person, negativ → 0) auf
+die lokalen Anwesenheiten angewandt ergibt dieselben Stundenkosten wie
+`hr_ist_stunden_tag` (Jahr 25.810,92 €). Die lokale Kopie wurde am 11.09.
+02:02 UTC abgeglichen, ihre letzte Anwesenheit ist der 10.09.; der Vergleich
+lief am 12.09. Die Freitagsschicht vom 11.09. (seine Freitage liegen bei
+rund 5 Stunden) fehlt der Kopie. Ohne Zugriff auf die Produktionsdatenbank
+ist das der belegte Datenstand, keine Rundung und keine Rechenregel — geändert
+wurde daran nichts.
+
+Eine Formelabweichung gibt es, sie wirkt heute nicht: `hr_ist_stunden_tag`
+setzt eine einzelne Zeile mit Ende vor Beginn auf 0, das Altsystem zieht sie
+von der Summe ab. Die sieben solchen Zeilen der Kopie (Nachtschichten über
+Mitternacht) gehören Festgehaltenen oder Personen ohne Gehalt und gehen in
+keine Personalkosten ein. Beide Regeln sind für Nachtschichten falsch; die
+Sicht gehört dem HR-Modul und bleibt, wie sie ist.
 
 Dazu: `hr_personalkosten_je_person` liefert die Zeilen je Person und ist
 **nicht** an `authenticated` freigegeben. Nur die beiden Aggregatfunktionen

@@ -17,10 +17,12 @@ FROM base AS deps
 # libreoffice-writer: dasselbe für das Zeugnis — das entsteht als .docx auf der
 # echten Briefvorlage, und Calc kann eine .docx nicht öffnen („source file
 # could not be loaded"). Impress und Java bleiben draußen.
+# libcairo2: cairosvg rastert ein SVG-Logo für die Formblätter.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         poppler-utils \
         libzbar0 \
+        libcairo2 \
         libreoffice-calc \
         libreoffice-writer \
         fonts-dejavu-core \

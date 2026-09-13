@@ -105,14 +105,73 @@ export function prozente<T extends { anzahl: number }>(
   });
 }
 
+/**
+ * Umsatz je Produktionskopf wie im Altsystem: Auftragswert über null im
+ * Zeitraum durch die Köpfe der Produktionsabteilungen am letzten Tag.
+ */
+export interface UmsatzJeKopf {
+  auftragswert: number;
+  koepfe: number;
+  wert: number | null;
+  /** Ohne hinterlegte Produktionsabteilungen gibt es keinen Nenner. */
+  eingerichtet: boolean;
+}
+
+export interface KopfumsatzPunkt {
+  bucket: string;
+  wert: number | null;
+}
+
 /** Eine Zeile der Mitarbeitertabelle. Trägt Namen — braucht `hr`. */
 export interface MitarbeiterZeile {
   employee_id: number;
   name: string | null;
   department: string | null;
+  position: string | null;
+  /** Personio-Status: `active`, `inactive`, `onboarding`, `leave`. */
+  status: string | null;
+  /** Aus dem Arbeitszeitmodell, nicht aus `weekly_working_hours`. */
+  wochenstunden: number | null;
   ist_stunden: number;
   ueberstunden: number;
   quote: number | null;
+}
+
+/** Die Auswahl über der Mitarbeitertabelle (HR-07). */
+export type Mitarbeiterauswahl = "ueberstunden" | "aktive" | "alle";
+
+/**
+ * Die fachliche Menge der Tabelle — vor Suche, Sortierung und Seiten.
+ * Definitionen wie im Altsystem (`EmployeeTable.tsx`): Überstunden heißt mehr
+ * als null im Zeitraum, aktiv heißt Personio-Status `active`.
+ */
+export function waehleMitarbeiter(
+  zeilen: readonly MitarbeiterZeile[],
+  auswahl: Mitarbeiterauswahl,
+): MitarbeiterZeile[] {
+  if (auswahl === "ueberstunden") return zeilen.filter((z) => z.ueberstunden > 0);
+  if (auswahl === "aktive") return zeilen.filter((z) => z.status === "active");
+  return [...zeilen];
+}
+
+/** Wie viele Personen ein Wochenberichtsdiagramm zeigt — wie im Altsystem. */
+export const SPITZE = 5;
+
+/**
+ * Die Personen mit den höchsten Werten der Woche, für die Diagramme im
+ * Wochenbericht. Werte bis 0,01 zählen nicht (Rundungsreste), wie im
+ * Altsystem. Die vollständige Liste steht in der Tabelle darunter.
+ */
+export function spitze(
+  zeilen: readonly WochenZeile[],
+  wert: (zeile: WochenZeile) => number,
+  anzahl = SPITZE,
+): { name: string; wert: number }[] {
+  return zeilen
+    .map((z) => ({ name: z.name ?? `#${z.employee_id}`, wert: wert(z) }))
+    .filter((p) => p.wert > 0.01)
+    .sort((a, b) => b.wert - a.wert)
+    .slice(0, anzahl);
 }
 
 /** Eine Zeile des Wochenberichts. Trägt Namen — nur für `hr:admin`. */
@@ -237,6 +296,29 @@ export const personalApi = {
    * die Kachel darüber — die Summe der Zeilen ergibt die Kachel. Im
    * Altprojekt tut sie das nicht.
    */
+  umsatzJeProduktionskopf: async (von: string, bis: string): Promise<UmsatzJeKopf> => {
+    const rows = await rpc<UmsatzJeKopf[]>("kpi_hr_umsatz_je_produktionskopf", {
+      p_von: von,
+      p_bis: bis,
+    });
+    const r = rows[0];
+    return {
+      auftragswert: zahl(r?.auftragswert),
+      koepfe: zahl(r?.koepfe),
+      wert: quote(r?.wert),
+      eingerichtet: Boolean(r?.eingerichtet),
+    };
+  },
+
+  umsatzJeProduktionskopfVerlauf: async (von: string, bis: string): Promise<KopfumsatzPunkt[]> => {
+    const rows = await rpc<KopfumsatzPunkt[]>("kpi_hr_umsatz_je_produktionskopf_verlauf", {
+      p_von: von,
+      p_bis: bis,
+      p_takt: takt(von, bis),
+    });
+    return rows.map((r) => ({ bucket: r.bucket, wert: quote(r.wert) }));
+  },
+
   mitarbeiter: async (von: string, bis: string): Promise<MitarbeiterZeile[]> => {
     const rows = await rpc<MitarbeiterZeile[]>("kpi_hr_mitarbeiter", {
       p_von: von,
@@ -244,6 +326,7 @@ export const personalApi = {
     });
     return rows.map((r) => ({
       ...r,
+      wochenstunden: r.wochenstunden == null ? null : Number(r.wochenstunden),
       ist_stunden: zahl(r.ist_stunden),
       ueberstunden: zahl(r.ueberstunden),
       quote: r.quote == null ? null : Number(r.quote),

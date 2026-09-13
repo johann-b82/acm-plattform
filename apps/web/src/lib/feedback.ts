@@ -43,6 +43,15 @@ export interface Meldung {
   bild?: Blob | null;
 }
 
+/** Die Kanban-Spalten: genau die beiden Status. Ob eine Meldung gesehen ist,
+ *  ist ein eigener Zustand und keine Spalte. */
+export function nachStatus(meldungen: readonly Feedback[]): Record<FeedbackStatus, Feedback[]> {
+  return {
+    neu: meldungen.filter((m) => m.status === "neu"),
+    erledigt: meldungen.filter((m) => m.status === "erledigt"),
+  };
+}
+
 export const feedbackKeys = {
   liste: () => ["feedback", "liste"] as const,
   offen: () => ["feedback", "offen"] as const,

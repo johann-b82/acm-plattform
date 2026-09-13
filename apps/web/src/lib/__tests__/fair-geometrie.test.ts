@@ -4,6 +4,7 @@ import {
   alsCsv,
   alsTsv,
   ausDrehung,
+  inDrehung,
   ballonPixel,
   begrenze01,
   einpassen,
@@ -156,5 +157,20 @@ describe("Ausgabe für die Prüfliste", () => {
 describe("runde6", () => {
   it("rundet auf sechs Stellen", () => {
     expect(runde6(0.12345678)).toBe(0.123457);
+  });
+});
+
+describe("Drehung für die PDF-Ausgabe", () => {
+  it("inDrehung kehrt ausDrehung für alle vier Lagen um", () => {
+    for (const d of [0, 90, 180, 270] as const) {
+      const g = inDrehung(120, 45, 800, 600, d);
+      const k = ausDrehung(g.x, g.y, 800, 600, d);
+      expect([k.x, k.y]).toEqual([120, 45]);
+    }
+  });
+
+  it("legt die linke obere Ecke bei 90° an den rechten Rand", () => {
+    // 800×600 im Uhrzeigersinn gedreht wird 600×800; oben links wandert nach oben rechts.
+    expect(inDrehung(0, 0, 800, 600, 90)).toEqual({ x: 600, y: 0 });
   });
 });

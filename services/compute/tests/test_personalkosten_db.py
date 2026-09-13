@@ -4,9 +4,10 @@ Die Zahlen sind von Hand nachgerechnet. Zwei Dinge stehen hier besonders im
 Blick, weil sie leicht falsch werden:
 
   * die anteilige Verteilung des Monatsbruttos über Ein- und Austritte,
-  * die Schwelle, unter der eine Abteilung zu „Übrige" wird — ohne sie wäre
-    eine Abteilung mit einer Person deren Gehalt, sichtbar für jeden mit dem
-    Recht `kpi`.
+  * die Aufteilung nach Abteilung: jede Abteilung steht einzeln da, auch
+    eine mit nur einer Person (Nutzerentscheidung FIN-05, wie im Altsystem).
+    Die Zeile je Person bleibt trotzdem verschlossen — heraus kommen nur
+    Summen je Abteilung.
 """
 from __future__ import annotations
 
@@ -199,7 +200,7 @@ class TestQuote:
         assert punkte[1]["quote"] == Decimal("0.25000000000000000000")
 
 
-class TestAbteilungUndSchutz:
+class TestAbteilung:
     async def _drei_abteilungen(self):
         # Fertigung: 3 Personen — bleibt sichtbar.
         for i in (1, 2, 3):
@@ -211,34 +212,35 @@ class TestAbteilungUndSchutz:
         await person(6, abteilung="Geschäftsführung", raw=mit_gehalt(fix="12000"))
         await umsatz("100000")
 
-    async def test_kleine_abteilungen_werden_gebuendelt(self, db):
+    async def test_jede_abteilung_steht_einzeln_auch_mit_einer_person(self, db):
+        """FIN-05: keine Sammelzeile „Übrige" mehr. Früher verlangte dieser
+        Test die Schwelle von drei Personen; der Nutzer hat entschieden, alle
+        Abteilungen einzeln zu zeigen, wie das Altsystem."""
         await self._drei_abteilungen()
         zeilen = await funktion("kpi_finanzen_personalkosten_abteilung",
-                                date(2026, 3, 1), date(2026, 3, 31), 3)
+                                date(2026, 3, 1), date(2026, 3, 31))
         nach = {z["abteilung"]: z for z in zeilen}
-        assert set(nach) == {"Fertigung", "Übrige"}
-        assert nach["Fertigung"]["kosten"] == Decimal("9000.00")
-        # 2 × 4000 + 1 × 12000
-        assert nach["Übrige"]["kosten"] == Decimal("20000.00")
-        assert nach["Übrige"]["personen"] == 3
-        assert nach["Übrige"]["gebuendelt"] is True
-        assert nach["Fertigung"]["gebuendelt"] is False
+        assert set(nach) == {"Fertigung", "Vertrieb", "Geschäftsführung"}
+        assert (nach["Fertigung"]["kosten"], nach["Fertigung"]["personen"]) == (Decimal("9000.00"), 3)
+        assert (nach["Vertrieb"]["kosten"], nach["Vertrieb"]["personen"]) == (Decimal("8000.00"), 2)
+        assert (nach["Geschäftsführung"]["kosten"], nach["Geschäftsführung"]["personen"]) == (Decimal("12000.00"), 1)
+        # Teuerste zuerst.
+        assert [z["abteilung"] for z in zeilen] == ["Geschäftsführung", "Fertigung", "Vertrieb"]
+
+    async def test_ohne_abteilung_steht_ein_strich(self, db):
+        await person(1, abteilung=None, raw=mit_gehalt(fix="3000"))
+        zeilen = await funktion("kpi_finanzen_personalkosten_abteilung",
+                                date(2026, 3, 1), date(2026, 3, 31))
+        assert [(z["abteilung"], z["personen"]) for z in zeilen] == [("—", 1)]
 
     async def test_die_summe_bleibt_richtig(self, db):
         await self._drei_abteilungen()
         zeilen = await funktion("kpi_finanzen_personalkosten_abteilung",
-                                date(2026, 3, 1), date(2026, 3, 31), 3)
+                                date(2026, 3, 1), date(2026, 3, 31))
         gesamt = (await funktion("kpi_finanzen_personalkosten",
                                  date(2026, 3, 1), date(2026, 3, 31)))[0]
         assert sum(z["kosten"] for z in zeilen) == gesamt["personalkosten"]
-
-    async def test_schwelle_laesst_sich_nicht_unter_drei_druecken(self, db):
-        """Sonst wäre der Schutz mit einem Aufrufparameter abzuschalten."""
-        await self._drei_abteilungen()
-        for versuch in (1, 0, -5, None):
-            zeilen = await funktion("kpi_finanzen_personalkosten_abteilung",
-                                    date(2026, 3, 1), date(2026, 3, 31), versuch)
-            assert "Geschäftsführung" not in {z["abteilung"] for z in zeilen}
+        assert sum(z["personen"] for z in zeilen) == gesamt["personen"]
 
     async def test_die_zeile_je_person_ist_nicht_freigegeben(self, db):
         """Sie trägt Gehälter — nur die Aggregatfunktionen dürfen sie rufen."""

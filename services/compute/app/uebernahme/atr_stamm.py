@@ -66,24 +66,18 @@ from __future__ import annotations
 from app.atr.format import programmfamilie
 from app.uebernahme.motor import Umzug
 
-#: Alter Status → neuer. Der neue Check lässt nur `entwurf` und `freigegeben`
-#: zu, der alte kennt `draft` (3 Zeilen) und `generated` (129) — verworfen wird
-#: keine davon, aber **beide landen auf `entwurf`**, und das ist Absicht:
-#: `atr_positionen` trägt den Trigger `atr_freigegeben_ist_fest`, der jedes
-#: Einfügen in eine freigegebene Lieferung abweist. Käme eine Lieferung als
-#: `freigegeben` an, scheiterte der nächste Umzug an genau ihren Positionen.
-#: Sachlich passt `entwurf` ohnehin: `generated` heißt „ATR-Dokument erzeugt“,
-#: und genau diese Dokumente kommen nicht mit (siehe oben) — die Lieferung ist
-#: im neuen Stack wieder ein Entwurf, bis sie einmal erzeugt wurde.
-#: Wer den alten Stand trotzdem braucht, setzt ihn nach dem Positionslauf
-#: nach; die alte Datenbank sagt, welche es waren, und die Kennung ist
-#: gerechnet: `neue_id("atr_delivery", <alte id>)`.
-STATUS = {"draft": "entwurf", "generated": "entwurf"}
+#: Alter Status → neuer, Zustand für Zustand (ATR-09, Migration 0048). Die
+#: Produktion kennt `draft` (3 Zeilen) und `generated` (129); `delivered`
+#: setzt dort nur der automatische Scan. Bis 0048 landete `generated` auf
+#: `entwurf`, weil die Dokumente nicht mitkamen — seit `dateien.py` sie
+#: nachholt, stimmt „erzeugt“ wieder, und ein Riegel, der Positionen einer
+#: fertigen Lieferung abweist, steht dem Umzug nicht mehr im Weg.
+STATUS = {"draft": "entwurf", "generated": "erzeugt", "delivered": "abgelegt"}
 
 
 def _status(wert: str | None) -> str:
-    """Unbekanntes gilt als Entwurf — ein erfundenes `freigegeben` wäre
-    schlimmer als ein zu vorsichtiger Status."""
+    """Unbekanntes gilt als Entwurf — ein erfundener Zustand wäre schlimmer
+    als ein zu vorsichtiger."""
     return STATUS.get(wert or "", "entwurf")
 
 

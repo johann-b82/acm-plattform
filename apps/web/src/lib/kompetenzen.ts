@@ -124,6 +124,34 @@ export function istLuecke(zelle: Bewertung | undefined): boolean {
   return (zelle.erfuellungsgrad ?? 0) < 100;
 }
 
+/** Eine Qualifikationsgruppe der Matrix; `kategorie` leer heißt „ohne Kategorie“. */
+export interface Gruppe {
+  kategorie: string | null;
+  zeilen: Qualifikation[];
+}
+
+/**
+ * Die Zeilen nach Kategorie gruppieren (KOM-04) — in der Reihenfolge der
+ * Matrix. Eine Gruppe steht dort, wo ihre erste Zeile steht; Zeilen ohne
+ * Kategorie sammeln sich am Ende. Nichts wird umsortiert außer nach
+ * `reihenfolge`, damit Einklappen keine Zeile an eine andere Stelle rückt.
+ */
+export function gruppiere(qualifikationen: readonly Qualifikation[]): Gruppe[] {
+  const gruppen = new Map<string, Gruppe>();
+  const ohne: Qualifikation[] = [];
+  for (const q of [...qualifikationen].sort((a, b) => a.reihenfolge - b.reihenfolge)) {
+    const kategorie = q.kategorie?.trim();
+    if (!kategorie) {
+      ohne.push(q);
+      continue;
+    }
+    const gruppe = gruppen.get(kategorie) ?? { kategorie, zeilen: [] };
+    gruppe.zeilen.push(q);
+    gruppen.set(kategorie, gruppe);
+  }
+  return ohne.length ? [...gruppen.values(), { kategorie: null, zeilen: ohne }] : [...gruppen.values()];
+}
+
 export const kompetenzApi = {
   matrizen: async (): Promise<Matrix[]> => {
     const { data, error } = await sb()

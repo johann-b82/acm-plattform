@@ -18,6 +18,7 @@ function person(id: number, name: string, chef: number | null, extra: Partial<Pe
     department: null,
     standort: null,
     vorgesetzter_id: chef,
+    hat_foto: false,
     ...extra,
   };
 }

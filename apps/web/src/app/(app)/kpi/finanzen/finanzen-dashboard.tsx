@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
+  Bar,
   CartesianGrid,
-  Line,
-  LineChart,
+  ComposedChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -14,27 +15,120 @@ import {
   YAxis,
 } from "recharts";
 
+import { takt } from "@/lib/kpi/gemeinsam";
 import {
-  takt,
-} from "@/lib/kpi/gemeinsam";
-import { finanzenApi } from "@/lib/kpi/finanzen";
+  finanzenApi,
+  type PersonalkostenAbteilung,
+  type VerbrauchZeile,
+} from "@/lib/kpi/finanzen";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
-import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
-import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
+import { UploadVerweis } from "@/components/kpi/upload-verweis";
+import { Zeitraumwahl, useZeitraumwahl, type Zeitraumwahl as Wahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
+import { cn } from "@/lib/cn";
 
+type Ansicht = "material" | "personal";
 
+/**
+ * Finanzen, getrennt in Material und Personal (FIN-04) wie im Altsystem.
+ *
+ * Der Umschalter steht links auf Höhe der Zeitraumwahl. Die Zeitraumwahl
+ * gehört der Seite, nicht der Ansicht — ein Wechsel behält den Zeitraum. Jede
+ * Ansicht ist eine eigene Komponente, damit nur ihre Abfragen laufen.
+ */
+export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
+  const worte = useTexte();
+  const wahl = useZeitraumwahl();
+  const [ansicht, setAnsicht] = useState<Ansicht>("material");
 
-export function FinanzenDashboard() {
+  const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
+  const zielNach = nachSchluessel(ziele.data ?? []);
+
+  return (
+    <div className="space-y-6">
+      <Seitenkopf
+        untertitel={worte.finanzen.einleitung}
+        links={<AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />}
+        bedienung={
+          <>
+            {darfUploads && <UploadVerweis />}
+            <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="finanzen" />} />
+          </>
+        }
+      />
+
+      {ansicht === "material" ? (
+        <MaterialAnsicht
+          wahl={wahl}
+          ziel={zielNach["finanzen_materialkostenquote"]}
+          zieleFehler={ziele.error}
+        />
+      ) : (
+        <PersonalAnsicht
+          wahl={wahl}
+          ziel={zielNach["finanzen_personalkostenquote"]}
+          zieleFehler={ziele.error}
+        />
+      )}
+    </div>
+  );
+}
+
+function AnsichtWahl({ ansicht, onChange }: { ansicht: Ansicht; onChange: (a: Ansicht) => void }) {
+  const worte = useTexte();
+  const stufen: [Ansicht, string][] = [
+    ["material", worte.finanzen.ansichtMaterial],
+    ["personal", worte.finanzen.ansichtPersonal],
+  ];
+  return (
+    <div
+      role="radiogroup"
+      aria-label={worte.finanzen.ansicht}
+      className="inline-flex h-9 items-center rounded-md border border-[var(--border)] bg-[var(--surface)] p-0.5"
+    >
+      {stufen.map(([wert, name]) => (
+        <button
+          key={wert}
+          type="button"
+          role="radio"
+          aria-checked={ansicht === wert}
+          onClick={() => onChange(wert)}
+          className={cn(
+            "h-full rounded px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ring)]",
+            ansicht === wert
+              ? "bg-[var(--muted)] font-medium text-[var(--fg)]"
+              : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+          )}
+        >
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Fehlerkarte({ fehler }: { fehler: unknown }) {
+  const worte = useTexte();
+  if (!fehler) return null;
+  return (
+    <Card className="p-4 text-sm text-[var(--danger)]">
+      {worte.dashboard.ladeFehler((fehler as Error).message)}
+    </Card>
+  );
+}
+
+function MaterialAnsicht({ wahl, ziel, zieleFehler }: { wahl: Wahl; ziel: number | undefined; zieleFehler: unknown }) {
   const worte = useTexte();
   const fmt = useFormate();
-  const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
 
@@ -50,39 +144,7 @@ export function FinanzenDashboard() {
     queryKey: ["kpi", "finanzen", "verbrauch", von, bis],
     queryFn: () => finanzenApi.verbrauch(von, bis),
   });
-  const vglMaterial = useVergleich(
-    ["kpi", "finanzen", "material"],
-    zeitraum,
-    von,
-    bis,
-    finanzenApi.materialkosten,
-  );
-  const vglPersonal = useVergleich(
-    ["kpi", "finanzen", "personal"],
-    zeitraum,
-    von,
-    bis,
-    finanzenApi.personalkosten,
-  );
-
-  const ziele = useQuery({ queryKey: zielwerteKeys.alle(), queryFn: ladeZielwerte });
-  const zielNach = nachSchluessel(ziele.data ?? []);
-  const ziel = zielNach["finanzen_materialkostenquote"];
-  const zielPersonal = zielNach["finanzen_personalkostenquote"];
-
-  // Die Personalkostenquote verteilt Monatsbrutto anteilig — ohne Fenster
-  // ergibt das nichts. Beim Zeitraum „Alles" bleibt sie deshalb aus.
-  const hatFenster = von != null && bis != null;
-  const personal = useQuery({
-    queryKey: ["kpi", "finanzen", "personal", von, bis],
-    queryFn: () => finanzenApi.personalkosten(von!, bis!),
-    enabled: hatFenster,
-  });
-  const jeAbteilung = useQuery({
-    queryKey: ["kpi", "finanzen", "personal-abteilung", von, bis],
-    queryFn: () => finanzenApi.personalkostenJeAbteilung(von!, bis!),
-    enabled: hatFenster,
-  });
+  const vgl = useVergleich(["kpi", "finanzen", "material"], zeitraum, von, bis, finanzenApi.materialkosten);
 
   const verlaufDaten = verlauf.data;
   const chartDaten = useMemo(
@@ -95,27 +157,62 @@ export function FinanzenDashboard() {
     [verlaufDaten, t, fmt],
   );
 
-  const zeilenDaten = verbrauch.data;
-  const zeilen = useMemo(() => zeilenDaten ?? [], [zeilenDaten]);
+  const spalten = useMemo<Tabellenspalte<VerbrauchZeile>[]>(
+    () => [
+      {
+        schluessel: "artikel",
+        titel: worte.finanzen.artikel,
+        typ: "text",
+        wert: (z) => z.artikelnr,
+        zelle: (z) => <span className="font-mono text-xs">{z.artikelnr}</span>,
+      },
+      {
+        schluessel: "bezeichnung",
+        titel: worte.finanzen.bezeichnung,
+        typ: "text",
+        wert: (z) => z.article_name,
+        zelle: (z) => <span className="block max-w-sm truncate">{z.article_name ?? "—"}</span>,
+      },
+      {
+        schluessel: "menge",
+        titel: worte.finanzen.menge,
+        typ: "zahl",
+        wert: (z) => z.menge,
+        zelle: (z) => fmt.zahl(z.menge),
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "stueckpreis",
+        titel: worte.finanzen.stueckpreis,
+        typ: "zahl",
+        wert: (z) => z.stueckpreis,
+        zelle: (z) =>
+          z.stueckpreis == null ? (
+            <span className="text-[var(--danger)]">{worte.finanzen.keinPreis}</span>
+          ) : (
+            fmt.eurGenau(z.stueckpreis)
+          ),
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "kosten",
+        titel: worte.finanzen.kosten,
+        typ: "zahl",
+        wert: (z) => z.kosten,
+        zelle: (z) => fmt.eur(z.kosten),
+        ausrichtung: "end",
+      },
+    ],
+    [worte, fmt],
+  );
 
+  const zeilen = verbrauch.data;
   const keineDaten = !summe.isLoading && summe.data?.materialkosten === 0 && summe.data?.umsatz === 0;
-  const fehler =
-    summe.error ?? verlauf.error ?? verbrauch.error ?? ziele.error ??
-    personal.error ?? jeAbteilung.error;
+  const fehler = summe.error ?? verlauf.error ?? verbrauch.error ?? zieleFehler;
 
   return (
-    <div className="space-y-6">
-      <Seitenkopf
-        untertitel={worte.finanzen.einleitung}
-        unter={<Datenstand bereich="finanzen" />}
-        bedienung={<Zeitraumwahl wahl={wahl} />}
-      />
-
-      {fehler && (
-        <Card className="p-4 text-sm text-[var(--danger)]">
-          {worte.dashboard.ladeFehler((fehler as Error).message)}
-        </Card>
-      )}
+    <>
+      <Fehlerkarte fehler={fehler} />
 
       {keineDaten && (
         <Card className="p-8 text-center">
@@ -130,23 +227,20 @@ export function FinanzenDashboard() {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kennzahl
           titel={worte.finanzen.materialquote}
           erklaerung={{ seite: "finanzen", abschnitt: "Materialkostenquote" }}
           wert={fmt.prozent(summe.data?.quote)}
-          hinweis={
-            ziel == null
-              ? worte.finanzen.materialquoteHinweis
-              : worte.finanzen.hoechstens(fmt.prozent(ziel))
-          }
+          hinweis={ziel == null ? worte.finanzen.materialquoteHinweis : worte.finanzen.hoechstens(fmt.prozent(ziel))}
           warnung={ziel != null && summe.data?.quote != null && summe.data.quote > ziel}
           vergleich={
             <Vergleiche
               aktuell={summe.data?.quote}
-              vorperiode={vglMaterial.vorperiode?.quote}
-              vorjahr={vglMaterial.vorjahr?.quote}
-              vorperiodeLabel={vglMaterial.label}
+              vorperiode={vgl.vorperiode?.quote}
+              vorjahr={vgl.vorjahr?.quote}
+              vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
               richtung="weniger_ist_besser"
             />
           }
@@ -166,39 +260,11 @@ export function FinanzenDashboard() {
           vergleich={
             <Vergleiche
               aktuell={summe.data?.umsatz}
-              vorperiode={vglMaterial.vorperiode?.umsatz}
-              vorjahr={vglMaterial.vorjahr?.umsatz}
-              vorperiodeLabel={vglMaterial.label}
-            />
-          }
-        />
-        <Kennzahl
-          titel={worte.finanzen.personalquote}
-          erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
-          wert={hatFenster ? fmt.prozent(personal.data?.quote) : "—"}
-          hinweis={
-            !hatFenster
-              ? worte.finanzen.brauchtZeitraum
-              : personal.data
-                ? worte.finanzen.personalHinweis(
-                    fmt.eur(personal.data.personalkosten),
-                    fmt.zahl(personal.data.personen),
-                  )
-                : undefined
-          }
-          warnung={
-            zielPersonal != null &&
-            personal.data?.quote != null &&
-            personal.data.quote > zielPersonal
-          }
-          laedt={personal.isLoading}
-          vergleich={
-            <Vergleiche
-              aktuell={personal.data?.quote}
-              vorperiode={vglPersonal.vorperiode?.quote}
-              vorjahr={vglPersonal.vorjahr?.quote}
-              vorperiodeLabel={vglPersonal.label}
-              richtung="weniger_ist_besser"
+              vorperiode={vgl.vorperiode?.umsatz}
+              vorjahr={vgl.vorjahr?.umsatz}
+              vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
+              richtung="mehr_ist_besser"
             />
           }
         />
@@ -212,138 +278,266 @@ export function FinanzenDashboard() {
         />
       </div>
 
-      {hatFenster && (jeAbteilung.data?.length ?? 0) > 0 && (
-        <Card className="p-5">
-          <h2 className="font-medium">{worte.finanzen.jeAbteilung}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            Abteilungen mit weniger als drei beitragenden Personen stehen unter{" "}
-            {"„Übrige“"} — eine Abteilung mit einer Person wäre sonst deren Gehalt.
-          </p>
-          <TableWrap className="mt-4">
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.finanzen.abteilung}</Th>
-                  <Th className="text-end">{worte.finanzen.personen}</Th>
-                  <Th className="text-end">{worte.finanzen.kosten}</Th>
-                  <Th className="text-end">{worte.finanzen.anteil}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {(jeAbteilung.data ?? []).map((z) => (
-                  <tr key={z.abteilung}>
-                    <Td className={z.gebuendelt ? "text-[var(--fg-muted)]" : ""}>
-                      {z.abteilung}
-                    </Td>
-                    <Td className="text-end font-mono tabular-nums">{fmt.zahl(z.personen)}</Td>
-                    <Td className="text-end font-mono tabular-nums">{fmt.eur(z.kosten)}</Td>
-                    <Td className="text-end font-mono tabular-nums">
-                      {personal.data && personal.data.personalkosten > 0
-                        ? fmt.prozent(z.kosten / personal.data.personalkosten)
-                        : "—"}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
-        </Card>
+      {chartDaten.length > 0 && (
+        <QuotenVerlauf titel={worte.finanzen.verlauf} daten={chartDaten} ziel={ziel} />
       )}
 
-      {chartDaten.length > 0 && (
+      {zeilen && zeilen.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">{worte.finanzen.verlauf}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            {worte.finanzen.verlaufHinweis}
-          </p>
-          <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              {/* Rechter Rand trägt die Beschriftung der Ziellinie. */}
-              <LineChart data={chartDaten} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--fg-muted)" />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  stroke="var(--fg-muted)"
-                  tickFormatter={(v: number) => `${v} %`}
-                  width={56}
-                />
-                <Tooltip
-                  formatter={(wert, _name, eintrag) => {
-                    const zahl = typeof wert === "number" ? wert : null;
-                    const kosten = (eintrag?.payload as { kosten?: number } | undefined)?.kosten ?? 0;
-                    return [
-                      zahl == null ? "—" : `${zahl.toFixed(1)} %`,
-                      `Quote (${fmt.eur(kosten)} Material)`,
-                    ] as [string, string];
-                  }}
-                />
-                {ziel != null && (
-                  <ReferenceLine
-                    y={ziel * 100}
-                    stroke="var(--fg-muted)"
-                    strokeDasharray="4 4"
-                    label={{
-                      value: worte.finanzen.ziellinie,
-                      position: "right",
-                      fontSize: 11,
-                      fill: "var(--fg-muted)",
-                    }}
-                  />
-                )}
-                <Line
-                  type="monotone"
-                  dataKey="quote"
-                  stroke="var(--accent, #2f6f8f)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <h2 className="font-medium">{worte.finanzen.verbrauch}</h2>
+          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">{worte.finanzen.verbrauchHinweis}</p>
+          <div className="mt-4">
+            <Datentabelle
+              beschriftung={worte.finanzen.verbrauch}
+              zeilen={zeilen}
+              spalten={spalten}
+              zeilenSchluessel={(z) => z.artikelnr}
+              vorsortierung={{ spalte: "kosten", richtung: "ab" }}
+            />
           </div>
         </Card>
       )}
+    </>
+  );
+}
 
-      {zeilen.length > 0 && (
+function PersonalAnsicht({ wahl, ziel, zieleFehler }: { wahl: Wahl; ziel: number | undefined; zieleFehler: unknown }) {
+  const worte = useTexte();
+  const fmt = useFormate();
+  const { zeitraum, von, bis } = wahl;
+  const t = takt(von, bis);
+
+  // Die Personalkostenquote verteilt Monatsbrutto anteilig — ohne Fenster
+  // ergibt das nichts. Beim Zeitraum „Alles" bleibt sie deshalb aus (E-03).
+  const hatFenster = von != null && bis != null;
+  const personal = useQuery({
+    queryKey: ["kpi", "finanzen", "personal", von, bis],
+    queryFn: () => finanzenApi.personalkosten(von!, bis!),
+    enabled: hatFenster,
+  });
+  const jeAbteilung = useQuery({
+    queryKey: ["kpi", "finanzen", "personal-abteilung", von, bis],
+    queryFn: () => finanzenApi.personalkostenJeAbteilung(von!, bis!),
+    enabled: hatFenster,
+  });
+  const verlauf = useQuery({
+    queryKey: ["kpi", "finanzen", "personal-verlauf", von, bis],
+    queryFn: () => finanzenApi.personalVerlauf(von!, bis!),
+    enabled: hatFenster,
+  });
+  const vgl = useVergleich(["kpi", "finanzen", "personal"], zeitraum, von, bis, finanzenApi.personalkosten);
+
+  const verlaufDaten = verlauf.data;
+  const chartDaten = useMemo(
+    () =>
+      (verlaufDaten ?? []).map((p) => ({
+        label: fmt.bucket(p.bucket, t),
+        quote: p.quote == null ? null : p.quote * 100,
+        kosten: p.personalkosten,
+      })),
+    [verlaufDaten, t, fmt],
+  );
+
+  const gesamt = personal.data?.personalkosten ?? 0;
+  const spalten = useMemo<Tabellenspalte<PersonalkostenAbteilung>[]>(
+    () => [
+      { schluessel: "abteilung", titel: worte.finanzen.abteilung, typ: "text", wert: (z) => z.abteilung },
+      {
+        schluessel: "personen",
+        titel: worte.finanzen.personen,
+        typ: "zahl",
+        wert: (z) => z.personen,
+        zelle: (z) => fmt.zahl(z.personen),
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "kosten",
+        titel: worte.finanzen.kosten,
+        typ: "zahl",
+        wert: (z) => z.kosten,
+        zelle: (z) => fmt.eur(z.kosten),
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "anteil",
+        titel: worte.finanzen.anteil,
+        typ: "zahl",
+        wert: (z) => (gesamt > 0 ? z.kosten / gesamt : null),
+        zelle: (z) => (gesamt > 0 ? fmt.prozent(z.kosten / gesamt) : "—"),
+        ausrichtung: "end",
+      },
+    ],
+    [worte, fmt, gesamt],
+  );
+
+  const ohneFenster = hatFenster ? undefined : worte.finanzen.brauchtZeitraum;
+  const zeilen = jeAbteilung.data;
+  const fehler = personal.error ?? jeAbteilung.error ?? verlauf.error ?? zieleFehler;
+
+  return (
+    <>
+      <Fehlerkarte fehler={fehler} />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Kennzahl
+          titel={worte.finanzen.personalquote}
+          erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
+          wert={hatFenster ? fmt.prozent(personal.data?.quote) : "—"}
+          hinweis={
+            ohneFenster ??
+            (ziel == null ? worte.finanzen.personalquoteHinweis : worte.finanzen.hoechstens(fmt.prozent(ziel)))
+          }
+          warnung={ziel != null && personal.data?.quote != null && personal.data.quote > ziel}
+          laedt={personal.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={personal.data?.quote}
+              vorperiode={vgl.vorperiode?.quote}
+              vorjahr={vgl.vorjahr?.quote}
+              vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
+              richtung="weniger_ist_besser"
+            />
+          }
+        />
+        <Kennzahl
+          titel={worte.finanzen.personalkosten}
+          erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
+          wert={hatFenster ? fmt.eur(personal.data?.personalkosten) : "—"}
+          hinweis={ohneFenster}
+          laedt={personal.isLoading}
+        />
+        <Kennzahl
+          titel={worte.finanzen.umsatz}
+          erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
+          wert={hatFenster ? fmt.eur(personal.data?.umsatz) : "—"}
+          hinweis={ohneFenster}
+          laedt={personal.isLoading}
+          vergleich={
+            <Vergleiche
+              aktuell={personal.data?.umsatz}
+              vorperiode={vgl.vorperiode?.umsatz}
+              vorjahr={vgl.vorjahr?.umsatz}
+              vorperiodeLabel={vgl.label}
+              vorjahrLabel={vgl.labelVorjahr}
+              richtung="mehr_ist_besser"
+            />
+          }
+        />
+        <Kennzahl
+          titel={worte.finanzen.mitarbeiter}
+          erklaerung={{ seite: "finanzen", abschnitt: "Personalkostenquote" }}
+          wert={hatFenster ? fmt.zahl(personal.data?.personen) : "—"}
+          hinweis={ohneFenster ?? worte.finanzen.mitarbeiterHinweis}
+          laedt={personal.isLoading}
+        />
+      </div>
+
+      {hatFenster && chartDaten.length > 0 && (
+        <QuotenVerlauf
+          titel={worte.finanzen.personalVerlauf}
+          hinweis={worte.finanzen.verlaufHinweis}
+          daten={chartDaten}
+          ziel={ziel}
+        />
+      )}
+
+      {hatFenster && zeilen && zeilen.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">{worte.finanzen.verbrauch}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            {worte.finanzen.verbrauchHinweis}
-          </p>
-          <TableWrap className="mt-4">
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.finanzen.artikel}</Th>
-                  <Th>{worte.finanzen.bezeichnung}</Th>
-                  <Th className="text-end">{worte.finanzen.menge}</Th>
-                  <Th className="text-end">{worte.finanzen.stueckpreis}</Th>
-                  <Th className="text-end">{worte.finanzen.kosten}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {zeilen.map((z) => (
-                  <tr key={z.artikelnr}>
-                    <Td className="font-mono text-xs">{z.artikelnr}</Td>
-                    <Td className="max-w-sm truncate">{z.article_name ?? "—"}</Td>
-                    <Td className="text-end tabular-nums">{fmt.zahl(z.menge)}</Td>
-                    <Td className="text-end tabular-nums">
-                      {z.stueckpreis == null ? (
-                        <span className="text-[var(--danger)]">{worte.finanzen.keinPreis}</span>
-                      ) : (
-                        fmt.eurGenau(z.stueckpreis)
-                      )}
-                    </Td>
-                    <Td className="text-end tabular-nums">{fmt.eur(z.kosten)}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
+          <h2 className="font-medium">{worte.finanzen.jeAbteilung}</h2>
+          <div className="mt-4">
+            <Datentabelle
+              beschriftung={worte.finanzen.jeAbteilung}
+              zeilen={zeilen}
+              spalten={spalten}
+              zeilenSchluessel={(z) => z.abteilung}
+              vorsortierung={{ spalte: "kosten", richtung: "ab" }}
+            />
+          </div>
         </Card>
       )}
-    </div>
+    </>
+  );
+}
+
+/** Quote je Takt, als Balken oder Fläche (VER-04B). Lücken bleiben Lücken. */
+function QuotenVerlauf({
+  titel,
+  hinweis,
+  daten,
+  ziel,
+}: {
+  titel: string;
+  hinweis?: string;
+  daten: { label: string; quote: number | null; kosten: number }[];
+  ziel: number | undefined;
+}) {
+  const worte = useTexte();
+  const fmt = useFormate();
+  const [art, setArt] = useDiagrammart();
+  const farbe = "var(--accent, #2f6f8f)";
+
+  return (
+    <Card className="p-5">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="font-medium">{titel}</h2>
+          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">{hinweis ?? worte.finanzen.verlaufHinweis}</p>
+        </div>
+        <DiagrammartWahl art={art} onChange={setArt} />
+      </div>
+      <div className="mt-4 h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          {/* Rechter Rand trägt die Beschriftung der Ziellinie. */}
+          <ComposedChart data={daten} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--fg-muted)" />
+            <YAxis
+              tick={{ fontSize: 12 }}
+              stroke="var(--fg-muted)"
+              tickFormatter={(v: number) => `${v} %`}
+              width={56}
+            />
+            <Tooltip
+              formatter={(wert, _name, eintrag) => {
+                const zahl = typeof wert === "number" ? wert : null;
+                const kosten = (eintrag?.payload as { kosten?: number } | undefined)?.kosten ?? 0;
+                return [
+                  zahl == null ? "—" : `${zahl.toFixed(1)} %`,
+                  worte.finanzen.quoteBeiKosten(fmt.eur(kosten)),
+                ] as [string, string];
+              }}
+            />
+            {ziel != null && (
+              <ReferenceLine
+                y={ziel * 100}
+                stroke="var(--fg-muted)"
+                strokeDasharray="4 4"
+                label={{
+                  value: worte.finanzen.ziellinie,
+                  position: "right",
+                  fontSize: 11,
+                  fill: "var(--fg-muted)",
+                }}
+              />
+            )}
+            {art === "balken" ? (
+              <Bar dataKey="quote" fill={farbe} isAnimationActive={false} />
+            ) : (
+              <Area
+                type="monotone"
+                dataKey="quote"
+                stroke={farbe}
+                strokeWidth={2}
+                fill={farbe}
+                fillOpacity={0.2}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </Card>
   );
 }

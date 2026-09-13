@@ -16,17 +16,21 @@ abgeglichen und stehen in keiner Tabelle.
 Der Cron-Weg braucht ein eigenes Verfahren, weil ein SQL-Job kein Nutzer-Token
 besitzt und keins erzeugen kann, ohne den JWT-Schlüssel in der Datenbank zu
 haben. Ohne gesetztes `HR_SYNC_TOKEN` ist diese Route zu.
+
+Und `GET /api/hr/foto/{id}`: das Profilbild fürs Organigramm, durchgereicht
+von Personio.
 """
 from __future__ import annotations
 
 import hmac
 import logging
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from pydantic import BaseModel
 
 from app.auth import require_app
 from app.config import settings
+from app.personio import nachweise, zugang
 from app.personio.client import PersonioFehler
 from app.personio.listen import sammeln
 from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
@@ -34,6 +38,9 @@ from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/hr", tags=["hr"])
+#: Die Nachweise nach Personio (SET-09) — derselbe pg_cron-Schlüssel wie der
+#: Abgleich, weil beides mit denselben Zugangsdaten zu Personio spricht.
+nachweise_router = APIRouter(prefix="/api/personio", tags=["hr"])
 
 
 class ArtRead(BaseModel):
@@ -113,6 +120,29 @@ async def sync_geplant() -> AbgleichErgebnis:
     return await _laufen_lassen()
 
 
+class NachweisLauf(BaseModel):
+    hochgeladen: int
+    unveraendert: int
+    fehlgeschlagen: int
+
+
+@nachweise_router.post(
+    "/nachweise/geplant",
+    response_model=NachweisLauf,
+    dependencies=[Depends(_geheimnis_pruefen)],
+    include_in_schema=False,
+)
+async def nachweise_geplant() -> NachweisLauf:
+    """Wird von pg_cron gerufen, wenn ein Nachweis offen ist (SET-09). Denselben
+    Schlüssel wie der Abgleich, weil beides mit Personio spricht."""
+    lauf = await nachweise.abarbeiten()
+    return NachweisLauf(
+        hochgeladen=lauf.hochgeladen,
+        unveraendert=lauf.unveraendert,
+        fehlgeschlagen=lauf.fehlgeschlagen,
+    )
+
+
 @router.get(
     "/listen",
     response_model=ListenRead,
@@ -132,4 +162,31 @@ async def auswahllisten() -> ListenRead:
         felder=listen.felder,
         hinweis=listen.hinweis,
         arten_aus_bestand=listen.arten_aus_bestand,
+    )
+
+
+@router.get("/foto/{employee_id}", dependencies=[Depends(require_app("hr"))])
+async def foto(employee_id: int) -> Response:
+    """Das Personio-Profilbild einer Person, gefunden über ihre Personio-Kennung.
+
+    Kein Bild, kein Zugang zu Personio — beides ist 404: das Organigramm zeigt
+    dann die Initialen. Zwischengespeichert wird im Browser, nicht hier; der
+    Dienst bleibt ohne Zustand.
+    """
+    klient = await zugang.klient()
+    if klient is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein Bild.")
+    try:
+        bild = await klient.profilbild(employee_id)
+    except PersonioFehler as fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Personio antwortet nicht.") from fehler
+    finally:
+        await klient.schliessen()
+    if bild is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein Bild.")
+    daten, typ = bild
+    return Response(
+        content=daten,
+        media_type=typ,
+        headers={"Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff"},
     )
