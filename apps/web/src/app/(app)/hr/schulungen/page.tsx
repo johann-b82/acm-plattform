@@ -1,11 +1,19 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
-import { Schulungsuebersicht } from "./schulungsuebersicht";
+import { Schulungen, type Ansicht } from "./schulungen";
 import { seitentitel } from "@/lib/sprache-server";
 
 export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hr/schulungen"]);
 
-export default async function SchulungenPage() {
+const ANSICHTEN: Ansicht[] = ["bearbeiten", "zuweisen", "stand"];
+
+export default async function SchulungenPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ansicht?: string }>;
+}) {
   const session = await requireApp("hr");
-  return <Schulungsuebersicht darfSchreiben={hasLevel(session.apps, "hr", "editor")} />;
+  const { ansicht } = await searchParams;
+  const start = ANSICHTEN.find((a) => a === ansicht);
+  return <Schulungen darfSchreiben={hasLevel(session.apps, "hr", "editor")} start={start} />;
 }
