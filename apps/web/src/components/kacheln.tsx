@@ -59,13 +59,15 @@ export function Kacheln({
                     )}
                   </div>
                 </div>
-                {/* Das Sinnbild sitzt am rechten Rand und nimmt drei Viertel
-                    der Inhaltshöhe: der gestreckte Flex-Streifen ist so hoch
-                    wie der Text daneben, darin sitzt das Bild vertikal mittig.
-                    w-auto hält es quadratisch. */}
+                {/* Das Sinnbild sitzt am rechten Rand, vertikal mittig im
+                    gestreckten Streifen. Die Höhe ist fest — drei Viertel der
+                    einzeiligen Kachel (Name 1.5rem + Abstand 0.25rem + zwei
+                    reservierte Zeilen 2.5rem = 4.25rem) —, damit ein
+                    umbrechender Name das Bild nicht größer macht. w-auto hält
+                    es quadratisch. */}
                 <span className="flex shrink-0 items-center self-stretch">
                   <Bild
-                    className="h-3/4 w-auto text-[var(--fg-muted)]"
+                    className="h-[3.1875rem] w-auto text-[var(--fg-muted)]"
                     aria-hidden
                     strokeWidth={1.5}
                   />
