@@ -236,7 +236,7 @@ class TestLesen:
 def _backfill_sql() -> str:
     """Die UPGRADE-Anweisung aus 0052 direkt lesen, damit Test und Migration
     nicht auseinanderlaufen."""
-    mig = Path(__file__).parents[1] / "alembic" / "versions" / "0052_materialpreise_erstbefuellung.py"
+    mig = Path(__file__).parents[1] / "alembic" / "versions" / "0052_materialpreise_vorbelegen.py"
     return mig.read_text().split('UPGRADE = """')[1].split('"""')[0]
 
 
