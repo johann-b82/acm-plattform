@@ -9,14 +9,18 @@ import { FileDown, FileUp, Plus } from "lucide-react";
 
 import {
   INTERVALLE,
+  STAMMFELDER,
   intervallText,
   laufendesHalbjahr,
+  maschinenEingabe,
   wartungApi,
   wartungKeys,
   type Aufgabe,
   type Datei,
   type Intervall,
   type Maschine,
+  type MaschinenEntwurf,
+  type Status,
 } from "@/lib/wartung";
 import { computeFetch } from "@/lib/compute";
 import {
@@ -27,28 +31,28 @@ import {
   Input,
   Label,
   Select,
-  Table,
-  TableWrap,
-  Td,
   Textarea,
-  Th,
 } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useIntervall } from "@/lib/tafeln";
-import type { Texte } from "@/texte";
 
+type Stammentwurf = MaschinenEntwurf & { notizen: string };
 
-
-const STAMMDATEN: { feld: keyof Maschine; wort: keyof Texte["maschine"] }[] = [
-  { feld: "name", wort: "name" },
-  { feld: "inventarnummer", wort: "inventarnummer" },
-  { feld: "standort", wort: "standort" },
-  { feld: "hersteller", wort: "hersteller" },
-  { feld: "modell", wort: "modell" },
-  { feld: "verantwortlich", wort: "verantwortlich" },
-];
+function entwurfAus(m: Maschine): Stammentwurf {
+  return {
+    name: m.name,
+    inventarnummer: m.inventarnummer ?? "",
+    standort: m.standort ?? "",
+    hersteller: m.hersteller ?? "",
+    modell: m.modell ?? "",
+    verantwortlich: m.verantwortlich ?? "",
+    status: m.status,
+    notizen: m.notizen,
+  };
+}
 
 export function MaschineAnsicht({
   id,
@@ -70,6 +74,8 @@ export function MaschineAnsicht({
     intervall: "monatlich",
     wochen: "4",
   });
+  // EDIT-01: Stammdaten erst lesend, „Bearbeiten" öffnet einen Entwurf.
+  const [stamm, setStamm] = useState<Stammentwurf | null>(null);
 
   const maschine = useQuery({
     queryKey: wartungKeys.maschine(id),
@@ -86,9 +92,14 @@ export function MaschineAnsicht({
 
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["wartung"] });
 
-  const aendern = useMutation({
-    mutationFn: (felder: Partial<Maschine>) => wartungApi.aendern(id, felder),
-    onSuccess: neuLaden,
+  const stammSpeichern = useMutation({
+    mutationFn: (e: Stammentwurf) =>
+      wartungApi.aendern(id, { ...maschinenEingabe(e), notizen: e.notizen }),
+    onSuccess: () => {
+      setStamm(null);
+      toast.success(worte.maschine.gespeichert);
+      return neuLaden();
+    },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
@@ -162,13 +173,61 @@ export function MaschineAnsicht({
 
   const m = maschine.data;
   if (maschine.isLoading) {
-    return <Card className="p-5 text-sm text-[var(--fg-muted)]">wird geladen …</Card>;
+    return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.allgemein.laedt}</Card>;
   }
   if (!m) {
     return <EmptyState title={worte.maschine.gibtEsNicht} body={worte.maschine.gibtEsNichtText} />;
   }
 
-  const liste = aufgaben.data ?? [];
+  const aufgabenSpalten: Tabellenspalte<Aufgabe>[] = [
+    {
+      schluessel: "titel",
+      titel: worte.maschine.aufgabe,
+      typ: "text",
+      wert: (a) => a.titel,
+      zelle: (a) => (
+        <Input
+          defaultValue={a.titel}
+          aria-label={worte.maschine.aufgabe}
+          disabled={!darfSchreiben}
+          onBlur={(e) => {
+            const wert = e.target.value.trim();
+            if (wert && wert !== a.titel) {
+              wartungApi
+                .aufgabeAendern(a.id, { titel: wert })
+                .then(neuLaden)
+                .catch((f: Error) => toast.error(f.message));
+            }
+          }}
+        />
+      ),
+    },
+    {
+      schluessel: "intervall",
+      titel: worte.maschine.intervall,
+      typ: "text",
+      wert: (a) => intervallText(a, intervall, worte.maschine.alleNWochenZahl),
+    },
+    ...(darfSchreiben
+      ? [
+          {
+            schluessel: "loeschen",
+            titel: "",
+            typ: "text" as const,
+            wert: () => null,
+            suchtext: false as const,
+            sortierbar: false,
+            ausrichtung: "end" as const,
+            zelle: (a: Aufgabe) => (
+              <ConfirmDeleteButton
+                itemLabel={a.titel}
+                onConfirm={() => aufgabeWeg.mutateAsync(a).then(() => undefined)}
+              />
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-6">
@@ -193,57 +252,86 @@ export function MaschineAnsicht({
       </div>
 
       <Card className="space-y-4 p-5">
-        <h2 className="font-medium">{worte.maschine.stammdaten}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {STAMMDATEN.map(({ feld, wort }) => (
-            <div key={feld} className="flex flex-col gap-1">
-              <Label htmlFor={feld}>{worte.maschine[wort] as string}</Label>
-              <Input
-                id={feld}
-                defaultValue={(m[feld] as string | null) ?? ""}
-                placeholder="—"
-                disabled={!darfSchreiben}
-                onBlur={(e) => {
-                  const wert = e.target.value.trim();
-                  const alt = (m[feld] as string | null) ?? "";
-                  if (wert === alt) return;
-                  if (feld === "name" && !wert) {
-                    toast.error("Ohne Namen geht es nicht.");
-                    e.target.value = alt;
-                    return;
-                  }
-                  aendern.mutate({ [feld]: wert || null } as Partial<Maschine>);
-                }}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-medium">{worte.maschine.stammdaten}</h2>
+          {darfSchreiben && !stamm && (
+            <Button size="sm" variant="outline" onClick={() => setStamm(entwurfAus(m))}>
+              {worte.maschine.bearbeiten}
+            </Button>
+          )}
+        </div>
+
+        {stamm ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {STAMMFELDER.map((feld) => (
+                <div key={feld} className="flex flex-col gap-1">
+                  <Label htmlFor={feld}>{worte.maschine[feld]}</Label>
+                  <Input
+                    id={feld}
+                    value={stamm[feld]}
+                    required={feld === "name"}
+                    maxLength={feld === "inventarnummer" ? 64 : 255}
+                    onChange={(e) => setStamm({ ...stamm, [feld]: e.target.value })}
+                  />
+                  {feld === "name" && !stamm.name.trim() && (
+                    <span className="text-xs text-[var(--danger)]">{worte.maschine.nameFehlt}</span>
+                  )}
+                </div>
+              ))}
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="status">{worte.maschine.status}</Label>
+                <Select
+                  id="status"
+                  value={stamm.status}
+                  onChange={(e) => setStamm({ ...stamm, status: e.target.value as Status })}
+                >
+                  <option value="aktiv">{worte.maschine.aktiv}</option>
+                  <option value="stillgelegt">{worte.maschine.stillgelegt}</option>
+                </Select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="notizen">{worte.maschine.notizen}</Label>
+              <Textarea
+                id="notizen"
+                rows={3}
+                value={stamm.notizen}
+                onChange={(e) => setStamm({ ...stamm, notizen: e.target.value })}
               />
             </div>
-          ))}
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="status">{worte.maschine.status}</Label>
-            <Select
-              id="status"
-              value={m.status}
-              disabled={!darfSchreiben}
-              onChange={(e) =>
-                aendern.mutate({ status: e.target.value as Maschine["status"] })
-              }
-            >
-              <option value="aktiv">{worte.maschine.aktiv}</option>
-              <option value="stillgelegt">{worte.maschine.stillgelegt}</option>
-            </Select>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="notizen">{worte.maschine.notizen}</Label>
-          <Textarea
-            id="notizen"
-            defaultValue={m.notizen}
-            rows={3}
-            disabled={!darfSchreiben}
-            onBlur={(e) => {
-              if (e.target.value !== m.notizen) aendern.mutate({ notizen: e.target.value });
-            }}
-          />
-        </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={!stamm.name.trim() || stammSpeichern.isPending}
+                onClick={() => stammSpeichern.mutate(stamm)}
+              >
+                {worte.allgemein.speichern}
+              </Button>
+              <Button variant="outline" onClick={() => setStamm(null)}>
+                {worte.allgemein.abbrechen}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {STAMMFELDER.map((feld) => (
+              <div key={feld} className="min-w-0">
+                <dt className="text-xs text-[var(--fg-muted)]">{worte.maschine[feld]}</dt>
+                <dd className="text-sm break-words">{m[feld] || "—"}</dd>
+              </div>
+            ))}
+            <div>
+              <dt className="text-xs text-[var(--fg-muted)]">{worte.maschine.status}</dt>
+              <dd className="text-sm">
+                {m.status === "aktiv" ? worte.maschine.aktiv : worte.maschine.stillgelegt}
+              </dd>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <dt className="text-xs text-[var(--fg-muted)]">{worte.maschine.notizen}</dt>
+              <dd className="text-sm whitespace-pre-wrap">{m.notizen || "—"}</dd>
+            </div>
+          </dl>
+        )}
       </Card>
 
       <Card className="space-y-4 p-5">
@@ -330,52 +418,18 @@ export function MaschineAnsicht({
           </div>
         )}
 
-        {liste.length === 0 ? (
+        {!aufgaben.isLoading && (aufgaben.data ?? []).length === 0 ? (
           <p className="text-sm text-[var(--fg-muted)]">
             {worte.maschine.keineAufgabe}
           </p>
         ) : (
-          <TableWrap>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.maschine.aufgabe}</Th>
-                  <Th>{worte.maschine.intervall}</Th>
-                  <Th className="text-end" />
-                </tr>
-              </thead>
-              <tbody>
-                {liste.map((a) => (
-                  <tr key={a.id}>
-                    <Td>
-                      <Input
-                        defaultValue={a.titel}
-                        disabled={!darfSchreiben}
-                        onBlur={(e) => {
-                          const wert = e.target.value.trim();
-                          if (wert && wert !== a.titel) {
-                            wartungApi
-                              .aufgabeAendern(a.id, { titel: wert })
-                              .then(neuLaden)
-                              .catch((f: Error) => toast.error(f.message));
-                          }
-                        }}
-                      />
-                    </Td>
-                    <Td>{intervallText(a, intervall, worte.maschine.alleNWochenZahl)}</Td>
-                    <Td className="text-end">
-                      {darfSchreiben && (
-                        <ConfirmDeleteButton
-                          itemLabel={a.titel}
-                          onConfirm={() => aufgabeWeg.mutateAsync(a).then(() => undefined)}
-                        />
-                      )}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
+          <Datentabelle
+            zeilen={aufgaben.data ?? []}
+            spalten={aufgabenSpalten}
+            zeilenSchluessel={(a) => a.id}
+            laedt={aufgaben.isLoading}
+            beschriftung={worte.maschine.wartungsaufgaben}
+          />
         )}
       </Card>
 

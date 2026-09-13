@@ -13,11 +13,8 @@ import {
   Input,
   Label,
   Switch,
-  Table,
-  TableWrap,
-  Td,
-  Th,
 } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useAuditworte } from "@/lib/tafeln";
@@ -109,6 +106,49 @@ export function Qualitaet() {
     return m;
   }, [schritteDaten]);
 
+  // Die Normmatrix trägt über 150 Klauseln — sie blättert, sucht und sortiert
+  // wie jede Tabelle (TAB-01/02/03). Die Schalter sortieren nach ihrem Stand.
+  const normSpalten: Tabellenspalte<Norm>[] = [
+    { schluessel: "regelwerk", titel: worte.qualitaetEinstellungen.regelwerk, typ: "text", wert: (n) => n.regelwerk },
+    { schluessel: "revision", titel: worte.qualitaetEinstellungen.revision, typ: "text", wert: (n) => n.revision },
+    {
+      schluessel: "klausel",
+      titel: worte.qualitaetEinstellungen.klausel,
+      typ: "text",
+      wert: (n) => n.klausel,
+      className: "tabular-nums",
+    },
+    { schluessel: "kurztext", titel: worte.qualitaetEinstellungen.kurztext, typ: "text", wert: (n) => n.kurztext },
+    {
+      schluessel: "geprueft",
+      titel: worte.qualitaetEinstellungen.geprueft,
+      typ: "zahl",
+      wert: (n) => (n.geprueft ? 1 : 0),
+      suchtext: false,
+      zelle: (n) => (
+        <Switch
+          checked={n.geprueft}
+          label={worte.qualitaetEinstellungen.geprueftSchalter(`${n.regelwerk} ${n.klausel}`)}
+          onCheckedChange={(geprueft) => normAendern.mutate({ id: n.id, felder: { geprueft } })}
+        />
+      ),
+    },
+    {
+      schluessel: "aktiv",
+      titel: worte.qualitaetEinstellungen.aktiv,
+      typ: "zahl",
+      wert: (n) => (n.aktiv ? 1 : 0),
+      suchtext: false,
+      zelle: (n) => (
+        <Switch
+          checked={n.aktiv}
+          label={worte.qualitaetEinstellungen.aktivSchalter(`${n.regelwerk} ${n.klausel}`)}
+          onCheckedChange={(aktiv) => normAendern.mutate({ id: n.id, felder: { aktiv } })}
+        />
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <Card className="space-y-4 p-5">
@@ -169,48 +209,12 @@ export function Qualitaet() {
         </div>
 
         {(normen.data ?? []).length > 0 && (
-          <TableWrap>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.qualitaetEinstellungen.regelwerk}</Th>
-                  <Th>{worte.qualitaetEinstellungen.revision}</Th>
-                  <Th>{worte.qualitaetEinstellungen.klausel}</Th>
-                  <Th>{worte.qualitaetEinstellungen.kurztext}</Th>
-                  <Th>{worte.qualitaetEinstellungen.geprueft}</Th>
-                  <Th>{worte.qualitaetEinstellungen.aktiv}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {(normen.data ?? []).map((n) => (
-                  <tr key={n.id}>
-                    <Td>{n.regelwerk}</Td>
-                    <Td>{n.revision || "—"}</Td>
-                    <Td className="tabular-nums">{n.klausel}</Td>
-                    <Td>{n.kurztext || "—"}</Td>
-                    <Td>
-                      <Switch
-                        checked={n.geprueft}
-                        label={worte.qualitaetEinstellungen.geprueftSchalter(`${n.regelwerk} ${n.klausel}`)}
-                        onCheckedChange={(geprueft) =>
-                          normAendern.mutate({ id: n.id, felder: { geprueft } })
-                        }
-                      />
-                    </Td>
-                    <Td>
-                      <Switch
-                        checked={n.aktiv}
-                        label={worte.qualitaetEinstellungen.aktivSchalter(`${n.regelwerk} ${n.klausel}`)}
-                        onCheckedChange={(aktiv) =>
-                          normAendern.mutate({ id: n.id, felder: { aktiv } })
-                        }
-                      />
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
+          <Datentabelle
+            zeilen={normen.data ?? []}
+            spalten={normSpalten}
+            zeilenSchluessel={(n) => n.id}
+            beschriftung={worte.qualitaetEinstellungen.normmatrix}
+          />
         )}
       </Card>
 

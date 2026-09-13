@@ -80,6 +80,33 @@ export interface Datei {
   hochgeladen_am: string;
 }
 
+/** Die Stammdaten, die Anlage und Bearbeitung fragen (WAR-02). */
+export const STAMMFELDER = [
+  "name",
+  "inventarnummer",
+  "standort",
+  "hersteller",
+  "modell",
+  "verantwortlich",
+] as const;
+
+export type MaschinenEntwurf = Record<(typeof STAMMFELDER)[number], string> & { status: Status };
+export type MaschinenEingabe = Pick<Maschine, (typeof STAMMFELDER)[number] | "status">;
+
+/** Aus der Maske wird die Zeile: getrimmt, leere Angaben werden zu nichts. */
+export function maschinenEingabe(entwurf: MaschinenEntwurf): MaschinenEingabe {
+  const leerIstNichts = (w: string) => w.trim() || null;
+  return {
+    name: entwurf.name.trim(),
+    inventarnummer: leerIstNichts(entwurf.inventarnummer),
+    standort: leerIstNichts(entwurf.standort),
+    hersteller: leerIstNichts(entwurf.hersteller),
+    modell: leerIstNichts(entwurf.modell),
+    verantwortlich: leerIstNichts(entwurf.verantwortlich),
+    status: entwurf.status,
+  };
+}
+
 const MASCHINE_FELDER =
   "id,name,inventarnummer,standort,hersteller,modell,verantwortlich,status," +
   "notizen,geaendert_am";
@@ -123,10 +150,10 @@ export const wartungApi = {
     return (data as unknown as Maschine) ?? null;
   },
 
-  anlegen: async (name: string): Promise<Maschine> => {
+  anlegen: async (felder: MaschinenEingabe): Promise<Maschine> => {
     const { data, error } = await sb()
       .from("maschinen")
-      .insert({ name })
+      .insert(felder)
       .select(MASCHINE_FELDER)
       .single();
     if (error) throw new Error(error.message);

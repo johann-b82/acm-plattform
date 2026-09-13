@@ -5,7 +5,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PlugZap, Plus } from "lucide-react";
 
-import { sensorApi, sensorKeys, type Sensor } from "@/lib/sensoren";
+import {
+  einstellungenAusEntwurf,
+  einstellungsFehler,
+  sensorApi,
+  sensorKeys,
+  type EinstellungsEntwurf,
+  type Sensor,
+  type SensorEinstellungen,
+} from "@/lib/sensoren";
 import {
   Button,
   Card,
@@ -18,7 +26,8 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
 import type { Texte } from "@/texte";
 
-/** Was sich an einem angelegten Gerät ändern lässt, in der Reihenfolge der Maske. */
+/** Was sich an einem angelegten Gerät ändern lässt, in der Reihenfolge der Maske.
+ *  Grenzwerte gehören nicht mehr dazu — sie gelten global (SET-11). */
 const FELDER: {
   feld: keyof Sensor;
   wort: keyof Texte["sensorEinstellungen"];
@@ -32,10 +41,6 @@ const FELDER: {
   { feld: "feuchte_oid", wort: "kennungLuftfeuchte", breit: true },
   { feld: "temperatur_faktor", wort: "faktorTemperatur", hinweis: "faktorHinweis" },
   { feld: "feuchte_faktor", wort: "faktorLuftfeuchte" },
-  { feld: "temperatur_min", wort: "temperaturAb" },
-  { feld: "temperatur_max", wort: "temperaturBis" },
-  { feld: "feuchte_min", wort: "feuchteAb" },
-  { feld: "feuchte_max", wort: "feuchteBis" },
   { feld: "farbe", wort: "farbe", hinweis: "farbeHinweis" },
 ];
 
@@ -43,10 +48,6 @@ const ZAHLENFELDER = new Set<keyof Sensor>([
   "port",
   "temperatur_faktor",
   "feuchte_faktor",
-  "temperatur_min",
-  "temperatur_max",
-  "feuchte_min",
-  "feuchte_max",
 ]);
 
 const LEER = {
@@ -140,6 +141,8 @@ export function Sensoren() {
 
   return (
     <div className="space-y-4">
+      <TaktUndGrenzen />
+
       <Card className="space-y-3 p-5">
         <h3 className="font-medium">{worte.sensorEinstellungen.neuesGeraet}</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -301,5 +304,121 @@ export function Sensoren() {
         ))
       )}
     </div>
+  );
+}
+
+const GRENZFELDER: { feld: keyof SensorEinstellungen; wort: keyof Texte["sensorEinstellungen"] }[] = [
+  { feld: "temperatur_min", wort: "temperaturMin" },
+  { feld: "temperatur_max", wort: "temperaturMax" },
+  { feld: "feuchte_min", wort: "feuchteMin" },
+  { feld: "feuchte_max", wort: "feuchteMax" },
+];
+
+function alsEntwurf(e: SensorEinstellungen): EinstellungsEntwurf {
+  const text = (w: number | null) => (w === null ? "" : String(w));
+  return {
+    abfrage_sekunden: String(e.abfrage_sekunden),
+    temperatur_min: text(e.temperatur_min),
+    temperatur_max: text(e.temperatur_max),
+    feuchte_min: text(e.feuchte_min),
+    feuchte_max: text(e.feuchte_max),
+  };
+}
+
+/**
+ * Takt und Grenzwerte für alle Geräte (SET-10, SET-11).
+ *
+ * Wie im Altsystem ein Entwurf mit „Speichern" und „Verwerfen": vier Grenzen
+ * und ein Intervall gehören zusammen, und eine halb eingetippte Grenze soll
+ * nicht schon gelten.
+ */
+function TaktUndGrenzen() {
+  const worte = useTexte();
+  const w = worte.sensorEinstellungen;
+  const queryClient = useQueryClient();
+  const einstellungen = useQuery({
+    queryKey: sensorKeys.einstellungen(),
+    queryFn: sensorApi.einstellungen,
+  });
+  const [entwurf, setEntwurf] = useState<EinstellungsEntwurf | null>(null);
+
+  const speichern = useMutation({
+    mutationFn: (e: EinstellungsEntwurf) => sensorApi.einstellungenSpeichern(einstellungenAusEntwurf(e)),
+    onSuccess: () => {
+      setEntwurf(null);
+      toast.success(w.einstellungenGespeichert);
+      return queryClient.invalidateQueries({ queryKey: sensorKeys.einstellungen() });
+    },
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  if (einstellungen.isLoading) {
+    return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>;
+  }
+  if (!einstellungen.data) return null;
+
+  const werte = entwurf ?? alsEntwurf(einstellungen.data);
+  const fehler = einstellungsFehler(werte);
+  const setze = (feld: keyof EinstellungsEntwurf, wert: string) => setEntwurf({ ...werte, [feld]: wert });
+
+  return (
+    <Card className="space-y-5 p-5">
+      <div className="space-y-2">
+        <h3 className="font-medium">{w.taktTitel}</h3>
+        <div className="flex max-w-sm flex-col gap-1">
+          <Label htmlFor="sensor-intervall">{w.intervall}</Label>
+          <Input
+            id="sensor-intervall"
+            type="number"
+            min={5}
+            max={86400}
+            step={1}
+            value={werte.abfrage_sekunden}
+            aria-invalid={fehler.includes("intervall")}
+            onChange={(e) => setze("abfrage_sekunden", e.target.value)}
+          />
+          <span
+            className={
+              fehler.includes("intervall") ? "text-xs text-[var(--danger)]" : "text-xs text-[var(--fg-muted)]"
+            }
+          >
+            {fehler.includes("intervall") ? w.intervallFehler : w.intervallHinweis}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-medium">{w.grenzenTitel}</h3>
+        <p className="text-xs text-[var(--fg-muted)]">{w.grenzenHinweis}</p>
+        <div className="grid max-w-xl gap-3 sm:grid-cols-2">
+          {GRENZFELDER.map(({ feld, wort }) => (
+            <div key={feld} className="flex flex-col gap-1">
+              <Label htmlFor={`sensor-${feld}`}>{w[wort] as string}</Label>
+              <Input
+                id={`sensor-${feld}`}
+                inputMode="decimal"
+                value={werte[feld]}
+                onChange={(e) => setze(feld, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+        {fehler.includes("zahl") && <p className="text-xs text-[var(--danger)]">{w.zahlEingeben}</p>}
+        {fehler.includes("temperatur") && <p className="text-xs text-[var(--danger)]">{w.temperaturFehler}</p>}
+        {fehler.includes("feuchte") && <p className="text-xs text-[var(--danger)]">{w.feuchteFehler}</p>}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={entwurf === null || fehler.length > 0 || speichern.isPending}
+          onClick={() => entwurf && speichern.mutate(entwurf)}
+        >
+          {worte.allgemein.speichern}
+        </Button>
+        <Button variant="outline" disabled={entwurf === null} onClick={() => setEntwurf(null)}>
+          {w.verwerfen}
+        </Button>
+      </div>
+    </Card>
   );
 }
