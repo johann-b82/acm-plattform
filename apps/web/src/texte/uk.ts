@@ -31,6 +31,7 @@ export const uk: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "Поставки",
+      "/atr/teilekatalog": "Каталог деталей",
       "/einstellungen": "Налаштування",
       "/fair": "FAIR",
       "/hilfe": "Довідка",
@@ -557,6 +558,7 @@ export const uk: Texte = {
     offeneSchulungen: "Відкриті навчання",
     schulungsmatrix: "Матриця навчань",
     atrLieferungen: "Поставки ATR",
+    atrTeilekatalog: "Каталог деталей ATR",
     kpiBewertung: "Оцінка KPI і заходи",
     anmelden: "Вхід",
   },
@@ -1310,7 +1312,6 @@ export const uk: Texte = {
     einleitung:
       "Каталог деталей — це основа: з нього накладна бере назву, креслення і вагу. Пошук іде " +
       "за номером деталі без оздоблення — рахуються лише цифри.",
-    zuLieferungen: "До поставок",
     teilAnlegen: "Створити деталь вручну",
     teilBeispiel: "Номер деталі, напр., VR-1234-56",
     anlegen: "Створити",
@@ -1327,13 +1328,18 @@ export const uk: Texte = {
     zeichnung: "Креслення",
     gewicht: "Вага кг",
     kategorie: "Категорія",
-    nurErste: "Лише перші 500 збігів — звузьте запит.",
+    bereich: "Розділ",
+    lieferungen: "Поставки",
+    teilekatalog: "Каталог деталей",
+    bearbeiten: "Редагувати",
+    speichern: "Зберегти",
+    gespeichert: "Збережено.",
+    gewichtUngueltig: "Вкажіть вагу числом у кг, напр. 0,44.",
+    nichtGespeichert: (meldung: string) => `Не збережено: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "Накладна зчитується, звіряється з каталогом деталей і зберігається як чернетка. Після " +
-      "перегляду її випускають.",
-    zumKatalog: "До каталогу деталей",
+      "Накладну зчитують, звіряють із каталогом деталей і зберігають як чернетку. Із документами вона «створено»; коли автоматичне сканування кладе їх у вихідну папку — «передано».",
     wirdGelesen: "Зчитування …",
     einlesen: "Зчитати накладну",
     laeuft: "Виконується …",
@@ -1350,12 +1356,22 @@ export const uk: Texte = {
     msn: "MSN",
     status: "Статус",
     entwurf: "Чернетка",
-    freigegeben: "випущено",
+    erzeugt: "створено",
+    abgelegt: "передано",
+    atrNummer: "№ ATR",
+    containernummer: "Номер контейнера",
+    erstellt: "Створено",
+    auswaehlen: (nr: string) => `Вибрати поставку ${nr}`,
+    ausgewaehlt: (anzahl: number) => `Вибрано: ${anzahl}`,
+    auswahlAufheben: "Скасувати вибір",
+    containerbeschriftung: "Створити етикетку контейнера",
+    containerFrage: "Номер контейнера для вибраних поставок:",
+    containerHinweis: "Етикетка показує всі поставки цього контейнера — також ті, що були в ньому раніше.",
+    containerErstellt: (nr: string) => `Призначено контейнер ${nr} – етикетка завантажується`,
+    erstellen: "Створити",
   },
   durchsicht: {
     nichtGefunden: "Поставку не знайдено.",
-    freigeben: "Випустити",
-    zuruecknehmen: "Відкликати випуск",
     wirdErzeugt: "Створення …",
     dokumenteErzeugen: "Створити документи",
     kopfdaten: "Дані шапки",
@@ -1374,9 +1390,13 @@ export const uk: Texte = {
     menge: "К-ть",
     seriennummern: "Серійні номери",
     nichtImKatalog: "немає в каталозі",
-    festHinweis:
-      "Поставку випущено; позиції зафіксовані. База даних відхиляє зміну — випуск можна " +
-      "відкликати вгорі.",
+    poNummer: "Номер PO",
+    poPos: "PO Pos",
+    speichern: "Зберегти",
+    gespeichert: "Збережено.",
+    seriennummernAbweichung: (anzahl: number, menge: number) =>
+      `${anzahl} серійн. номер(ів) при кількості ${menge}`,
+    seriennummernFeld: (pos: string) => `Серійні номери позиції ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1757,9 +1777,7 @@ export const uk: Texte = {
     qsUnterschrift: "Підпис ВТК",
     eingangsordner: "Тека вхідних",
     eingangHinweis:
-      "Накладна у вхідних зчитується, стає поставкою і переходить в архів. Пароль службового " +
-      "облікового запису стоїть не тут, а як ATR_SMB_PASSWORT в оточенні; які хости придатні, " +
-      "задає ATR_SMB_ERLAUBT.",
+      "Накладна у вхідній папці зчитується, стає поставкою і переходить в архів. Дозволені сервери задає ATR_SMB_ERLAUBT. Пароль, введений тут, має перевагу над ATR_SMB_PASSWORT із середовища.",
     laeuft: "працює",
     aus: "вимкнено",
     zuletzt: (zeit: string, text: string) => `Востаннє ${zeit}: ${text}`,
@@ -1784,8 +1802,15 @@ export const uk: Texte = {
     wasEinLaufTut: "Що робить прогін",
     entwurfAnlegen: "Створити чернетку на перегляд",
     dokumenteErzeugen: "Створити документи і покласти їх",
-    regelmaessig: "Переглядати регулярно",
-    regelmaessigHinweis: "Переглядати регулярно — кожні десять хвилин, у будні з 5 до 19 год",
+    intervall: "Інтервал сканування (секунди, 0 = вимк.)",
+    intervallUngueltig: "Інтервал — ціле число від 0.",
+    passwort: "Пароль службового облікового запису",
+    passwortHinterlegt: "збережено — залиште порожнім, щоб не змінювати",
+    passwortUmgebung: "із середовища (ATR_SMB_PASSWORT) — запис тут має перевагу",
+    passwortFehlt: "ще не збережено",
+    passwortOhneSchluessel: "У середовищі немає GEHEIM_SCHLUESSEL — без нього пароль не зберегти.",
+    speichern: "Зберегти",
+    gespeichert: "Збережено.",
   },
   qualitaetEinstellungen: {
     normmatrix: "Матриця стандартів",
@@ -1943,6 +1968,7 @@ export const uk: Texte = {
     offeneSchulungen: "Відкриті навчання",
     schulungsmatrix: "Матриця навчань",
     atrLieferungen: "Поставки ATR",
+    atrTeilekatalog: "Каталог деталей ATR",
   },
   kennzahlenHub: {
     titel: "Дашборд KPI",

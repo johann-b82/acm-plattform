@@ -91,14 +91,14 @@ Status je Zeile getrennt: **Umsetzung** (offen / in Arbeit / umgesetzt / bewusst
 | SEN-03 | Temperatur- und Feuchteverlauf, 30 Tage | Register | offen | offen | |
 | SEN-04 | 1 Stunde | Register | offen | offen | |
 | SEN-02 | Min/Max, Änderung 1h/24h | Prüfauftrag | offen | offen | |
-| ATR-01 | Lieferungs-/Dokumentenparität | Befund | — | offen | |
-| ATR-04 | Katalog lesen/Bearbeiten/Speichern | Register | offen | offen | |
-| ATR-05 | Zusatznummer ausblenden | Register | offen | offen | |
-| ATR-06 | Mehrfachauswahl, Containerbeschriftung | Register | offen | offen | |
-| ATR-07 | PO-Nummer/-Positionen, exakte Labels | Register | offen | offen | |
-| ATR-08 | Seriennummern je Position bearbeiten | Register | offen | offen | |
-| ATR-09 | Statusmodell wie Altsystem | Register | offen | offen | |
-| ATR-10 | Einstieg Lieferungen, Dropdown | Register | offen | offen | |
+| ATR-01 | Lieferungs-/Dokumentenparität | Befund | umgesetzt | offen | Paritätszahlen der lokalen Kopie im Bericht (132 Lieferungen, 851 Positionen, 292 Teile) |
+| ATR-04 | Katalog lesen/Bearbeiten/Speichern | Register | umgesetzt | offen | Zeile lesend, „Bearbeiten“ gibt Bezeichnung/Zeichnung/Gewicht frei, „Speichern“ explizit; `teilekatalog.tsx` |
+| ATR-05 | Zusatznummer ausblenden | Register | umgesetzt | offen | normalisierte Nummer aus Anzeige entfernt, sucht weiter mit; `limit(500)` weg, `Datentabelle` |
+| ATR-06 | Mehrfachauswahl, Containerbeschriftung | Register | umgesetzt | offen | Auswahl über Seiten, `POST /api/atr/container-etikett`; `limit(200)` weg |
+| ATR-07 | PO-Nummer/-Positionen, exakte Labels | Register | umgesetzt | offen | „PO-Nummer“ (bestellnummer) im Kopf, „PO Pos“ je Position mit führenden Nullen; Felder existierten in der Übernahme |
+| ATR-08 | Seriennummern je Position bearbeiten | Register | umgesetzt | offen | kommagetrenntes Feld, Warnung bei Anzahl ≠ Menge; `durchsicht.tsx` |
+| ATR-09 | Statusmodell wie Altsystem | Register | umgesetzt | offen | entwurf→erzeugt→abgelegt, Migration 0048 korrigiert aus erzeugt_am; Übernahme-Mapping belegt |
+| ATR-10 | Einstieg Lieferungen, Dropdown | Register | umgesetzt | offen | `/atr`=Lieferungen, `/atr/teilekatalog`=Katalog, Dropdown, `/atr/lieferungen`→`/atr` |
 | FAI-01 | Kundenfilter/-sortierung, flach | Fortsetzung | offen | offen | |
 | FAI-02 | PDF, Tabelle rechts neben Zeichnung | Register | offen | offen | |
 | FAI-03 | Kopf Kunde/Artikelnr./P/N | Register | offen | offen | |
@@ -124,9 +124,9 @@ Status je Zeile getrennt: **Umsetzung** (offen / in Arbeit / umgesetzt / bewusst
 | SET-10 | Sensor-Abfragetakt 5–86400 s | Register | offen | offen | |
 | SET-11 | Nur globale Sensorgrenzen | Register | offen | offen | |
 | SET-12 | Kein OID-Finder | Register | bewusst nicht | — | |
-| SET-13 | ATR-Dateiserverpasswort als Admin-Feld | Register | offen | offen | |
-| SET-14 | ATR-Scanintervall in Sekunden, 0 = aus | Register | offen | offen | |
-| SET-15 | ATR-Verarbeitungsdropdown bleibt | Register | bleibt | offen | |
+| SET-13 | ATR-Dateiserverpasswort als Admin-Feld | Register | umgesetzt | offen | Fernet in `geheimnisse`, DB vor ATR_SMB_PASSWORT, nie Klartext; `platform:admin` |
+| SET-14 | ATR-Scanintervall in Sekunden, 0 = aus | Register | umgesetzt | offen | freies Intervall, pg_cron alle 10 s + atr_scan_faellig(), lauf_seit gegen Doppelläufe |
+| SET-15 | ATR-Verarbeitungsdropdown bleibt | Register | umgesetzt | offen | Dropdown „Was ein Lauf tut“ bleibt; beide Modi getestet |
 | SET-16 | E-Mail Microsoft 365 / Graph | Register | offen | offen | |
 | SET-17 | Keine WM/Tippspiele | Register | bewusst nicht | — | |
 | UPL-01 | Import Materialpreise (Wareneingang) | Fortsetzung | offen | offen | |

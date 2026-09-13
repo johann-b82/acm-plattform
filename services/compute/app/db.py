@@ -455,7 +455,6 @@ atr_scan = sa.Table(
     "atr_scan",
     metadata,
     sa.Column("id", sa.Boolean, primary_key=True),
-    sa.Column("aktiv", sa.Boolean, nullable=False),
     sa.Column("modus", sa.String(16), nullable=False),
     sa.Column("rechner", sa.String(255)),
     sa.Column("freigabe", sa.String(255)),
@@ -467,6 +466,9 @@ atr_scan = sa.Table(
     sa.Column("zuletzt_am", sa.DateTime(timezone=True)),
     sa.Column("zuletzt_text", sa.Text),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("intervall_s", sa.Integer, nullable=False),
+    sa.Column("angestossen_am", sa.DateTime(timezone=True)),
+    sa.Column("lauf_seit", sa.DateTime(timezone=True)),
 )
 
 sensoren = sa.Table(

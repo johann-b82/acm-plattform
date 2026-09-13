@@ -44,6 +44,15 @@ describe("krumen", () => {
     ]);
   });
 
+  it("führt den Teilekatalog unter ATR", () => {
+    // ATR-10: /atr sind die Lieferungen, der Katalog hängt darunter.
+    expect(krumen("/atr/teilekatalog").map((k) => k.adresse)).toEqual([
+      "/",
+      "/atr",
+      "/atr/teilekatalog",
+    ]);
+  });
+
   it("hängt eine Seite dorthin, wo ELTERN es sagt", () => {
     // /platform leitet auf die Einstellungen um; die Meldungen hängen dort.
     expect(krumen("/platform/feedback").map((k) => k.adresse)).toEqual([

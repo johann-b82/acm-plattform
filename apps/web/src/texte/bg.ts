@@ -31,6 +31,7 @@ export const bg: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "Доставки",
+      "/atr/teilekatalog": "Каталог на части",
       "/einstellungen": "Настройки",
       "/fair": "FAIR",
       "/hilfe": "Помощ",
@@ -560,6 +561,7 @@ export const bg: Texte = {
     offeneSchulungen: "Неизпълнени обучения",
     schulungsmatrix: "Матрица на обученията",
     atrLieferungen: "ATR доставки",
+    atrTeilekatalog: "ATR каталог на части",
     kpiBewertung: "KPI оценка и мерки",
     anmelden: "Вход",
   },
@@ -1326,7 +1328,6 @@ export const bg: Texte = {
     einleitung:
       "Каталогът на частите е основата: от него стоковата разписка взема наименование, чертеж " +
       "и тегло. Търси се по номера на частта без украса — броят се само цифрите.",
-    zuLieferungen: "Към доставките",
     teilAnlegen: "Създай част на ръка",
     teilBeispiel: "Номер на част, напр. VR-1234-56",
     anlegen: "Създай",
@@ -1343,13 +1344,18 @@ export const bg: Texte = {
     zeichnung: "Чертеж",
     gewicht: "Тегло кг",
     kategorie: "Категория",
-    nurErste: "Само първите 500 резултата — моля, търсете по-тясно.",
+    bereich: "Раздел",
+    lieferungen: "Доставки",
+    teilekatalog: "Каталог на части",
+    bearbeiten: "Редактиране",
+    speichern: "Запазване",
+    gespeichert: "Запазено.",
+    gewichtUngueltig: "Въведете теглото като число в kg, напр. 0,44.",
+    nichtGespeichert: (meldung: string) => `Не е запазено: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "Стоковата разписка се зарежда, сверява се с каталога на частите и се записва като " +
-      "чернова. След прегледа се освобождава.",
-    zumKatalog: "Към каталога на частите",
+      "Товарителницата се прочита, сравнява се с каталога на части и се записва като чернова. С документите е „генерирана“; когато автоматичното сканиране ги запише в изходната папка — „предадена“.",
     wirdGelesen: "Чете се …",
     einlesen: "Зареди стокова разписка",
     laeuft: "Тече …",
@@ -1367,12 +1373,22 @@ export const bg: Texte = {
     msn: "MSN",
     status: "Състояние",
     entwurf: "Чернова",
-    freigegeben: "освободена",
+    erzeugt: "генерирана",
+    abgelegt: "предадена",
+    atrNummer: "ATR №",
+    containernummer: "Номер на контейнер",
+    erstellt: "Създадена",
+    auswaehlen: (nr: string) => `Избор на доставка ${nr}`,
+    ausgewaehlt: (anzahl: number) => `Избрани: ${anzahl}`,
+    auswahlAufheben: "Изчистване на избора",
+    containerbeschriftung: "Създаване на етикет за контейнер",
+    containerFrage: "Номер на контейнер за избраните доставки:",
+    containerHinweis: "Етикетът показва всички доставки към този контейнер — и тези, които вече са били в него.",
+    containerErstellt: (nr: string) => `Зададен контейнер ${nr} – етикетът се изтегля`,
+    erstellen: "Създаване",
   },
   durchsicht: {
     nichtGefunden: "Доставката не е намерена.",
-    freigeben: "Освободи",
-    zuruecknehmen: "Оттегли освобождаването",
     wirdErzeugt: "Създава се …",
     dokumenteErzeugen: "Създай документите",
     kopfdaten: "Заглавни данни",
@@ -1391,9 +1407,13 @@ export const bg: Texte = {
     menge: "Кол.",
     seriennummern: "Серийни номера",
     nichtImKatalog: "не е в каталога",
-    festHinweis:
-      "Доставката е освободена; позициите са фиксирани. Базата данни отхвърля " +
-      "промяна — освобождаването може да се оттегли горе.",
+    poNummer: "PO номер",
+    poPos: "PO Pos",
+    speichern: "Запазване",
+    gespeichert: "Запазено.",
+    seriennummernAbweichung: (anzahl: number, menge: number) =>
+      `${anzahl} серийни номера при количество ${menge}`,
+    seriennummernFeld: (pos: string) => `Серийни номера позиция ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1777,9 +1797,7 @@ export const bg: Texte = {
     qsUnterschrift: "Подпис ОТК",
     eingangsordner: "Входяща папка",
     eingangHinweis:
-      "Стокова разписка във входящата папка се зарежда, става доставка и отива в архива. " +
-      "Паролата на служебния профил не стои тук, а като ATR_SMB_PASSWORT в " +
-      "средата; кои хостове са допустими, задава ATR_SMB_ERLAUBT.",
+      "Товарителница във входната папка се прочита, става доставка и отива в архива. Кои сървъри са разрешени, определя ATR_SMB_ERLAUBT. Парола, въведена тук, има предимство пред ATR_SMB_PASSWORT от средата.",
     laeuft: "работи",
     aus: "изключено",
     zuletzt: (zeit: string, text: string) => `Последно ${zeit}: ${text}`,
@@ -1805,8 +1823,15 @@ export const bg: Texte = {
     wasEinLaufTut: "Какво прави едно преминаване",
     entwurfAnlegen: "Създай чернова за преглед",
     dokumenteErzeugen: "Създай документите и ги подреди",
-    regelmaessig: "Преглеждай редовно",
-    regelmaessigHinweis: "Преглеждай редовно — на всеки десет минути, в делник от 5 до 19 ч.",
+    intervall: "Интервал на сканиране (секунди, 0 = изкл.)",
+    intervallUngueltig: "Интервалът е цяло число от 0.",
+    passwort: "Парола на служебния акаунт",
+    passwortHinterlegt: "зададена — оставете празно, за да се запази",
+    passwortUmgebung: "от средата (ATR_SMB_PASSWORT) — запис тук има предимство",
+    passwortFehlt: "още не е зададена",
+    passwortOhneSchluessel: "GEHEIM_SCHLUESSEL липсва в средата — без него парола не може да се запази.",
+    speichern: "Запазване",
+    gespeichert: "Запазено.",
   },
   qualitaetEinstellungen: {
     normmatrix: "Матрица на стандартите",
@@ -1964,6 +1989,7 @@ export const bg: Texte = {
     offeneSchulungen: "Неизпълнени обучения",
     schulungsmatrix: "Матрица на обученията",
     atrLieferungen: "ATR доставки",
+    atrTeilekatalog: "ATR каталог на части",
   },
   kennzahlenHub: {
     titel: "KPI табло",

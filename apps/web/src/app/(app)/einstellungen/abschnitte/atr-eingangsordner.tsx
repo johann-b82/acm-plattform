@@ -5,24 +5,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FolderSearch, PlugZap } from "lucide-react";
 
-import { scanApi, scanKeys, type ScanEinstellung } from "@/lib/atr";
 import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  Label,
-  Select,
-  Switch,
-} from "@/components/ui/primitives";
+  intervallAusEingabe,
+  scanApi,
+  scanKeys,
+  type PasswortStand,
+  type ScanEinstellung,
+} from "@/lib/atr";
+import { Badge, Button, Card, Input, Label, Select } from "@/components/ui/primitives";
 import { Hinweis } from "@/components/ui/hinweis";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import type { Texte } from "@/texte";
 
-
 const FELDER: {
-  feld: keyof ScanEinstellung;
+  feld: "rechner" | "freigabe" | "domaene" | "benutzer" | "eingang" | "ausgang" | "archiv";
   wort: keyof Texte["atrEinstellungen"];
   hinweis?: keyof Texte["atrEinstellungen"];
 }[] = [
@@ -43,12 +40,11 @@ const FELDER: {
  * Grenze, unabhängig von dieser Maske. Den Eingang von Hand durchsehen darf
  * dagegen, wer ATR bearbeitet; dieser Knopf sitzt bei den Lieferungen.
  *
- * Das Passwort steht nicht hier, sondern als `ATR_SMB_PASSWORT` in der
- * Umgebung von `compute`: ein Geheimnis in der Datenbank bräuchte zusätzlich
- * einen Schlüssel, und der Geheimtext läge in jeder Sicherung. Und welche
- * Rechner überhaupt in Frage kommen, gibt `ATR_SMB_ERLAUBT` vor — sonst wäre
- * diese Maske ein Weg, den Dienst gegen ein beliebiges Ziel im Netz laufen zu
- * lassen.
+ * Wie im Altsystem eine Maske mit „Speichern“ (SET-13/14): das Intervall in
+ * Sekunden, 0 = aus, und das Passwort des Dienstkontos. Das Passwort geht
+ * verschlüsselt an `compute` und kommt nie zurück; die Maske erfährt nur, ob
+ * eines hinterlegt ist. Leer lassen behält es. Welche Rechner überhaupt in
+ * Frage kommen, gibt weiter `ATR_SMB_ERLAUBT` vor.
  */
 export function Eingangsordner() {
   const worte = useTexte();
@@ -63,15 +59,11 @@ export function Eingangsordner() {
     queryKey: scanKeys.einstellung(),
     queryFn: scanApi.einstellung,
   });
-  const s = einstellung.data;
-
-  const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["atr"] });
-
-  const aendern = useMutation({
-    mutationFn: (felder: Partial<ScanEinstellung>) => scanApi.aendern(felder),
-    onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+  const passwort = useQuery({
+    queryKey: scanKeys.passwort(),
+    queryFn: scanApi.passwortStand,
   });
+  const s = einstellung.data;
 
   const pruefen = useMutation({
     mutationFn: scanApi.probe,
@@ -92,7 +84,7 @@ export function Eingangsordner() {
       setProbe(null);
       toast.success(worte.atrEinstellungen.gelesenAngelegt(e.gelesen, e.angelegt));
       for (const hinweis of e.hinweise) toast.error(hinweis);
-      return neuLaden();
+      return queryClient.invalidateQueries({ queryKey: ["atr"] });
     },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
@@ -104,13 +96,9 @@ export function Eingangsordner() {
       <div className="flex flex-wrap items-center gap-3">
         <h3 className="flex items-center gap-1.5 font-medium">
           {worte.atrEinstellungen.eingangsordner}
-          <Hinweis
-            text={
-              worte.atrEinstellungen.eingangHinweis
-            }
-          />
+          <Hinweis text={worte.atrEinstellungen.eingangHinweis} />
         </h3>
-        {s.aktiv ? (
+        {s.intervall_s > 0 ? (
           <Badge>{worte.atrEinstellungen.laeuft}</Badge>
         ) : (
           <Badge variant="outline">{worte.atrEinstellungen.aus}</Badge>
@@ -141,20 +129,83 @@ export function Eingangsordner() {
 
       {probe && <p className="text-sm text-[var(--fg-muted)]">{probe}</p>}
 
+      {/* Neu aufgesetzt, sobald sich die gespeicherte Einstellung ändert —
+          nicht bei jedem Lauf, der nur „zuletzt“ fortschreibt. */}
+      <Formular
+        key={[s.intervall_s, s.modus, ...FELDER.map(({ feld }) => s[feld])].join("|")}
+        einstellung={s}
+        passwort={passwort.data}
+      />
+    </Card>
+  );
+}
+
+function Formular({
+  einstellung: s,
+  passwort,
+}: {
+  einstellung: ScanEinstellung;
+  passwort: PasswortStand | undefined;
+}) {
+  const worte = useTexte();
+  const queryClient = useQueryClient();
+  const anfang: Record<string, string> = Object.fromEntries(
+    FELDER.map(({ feld }) => [feld, s[feld] ?? ""]),
+  );
+  const [entwurf, setEntwurf] = useState(anfang);
+  const [intervall, setIntervall] = useState(String(s.intervall_s));
+  const [modus, setModus] = useState(s.modus);
+  const [kennwort, setKennwort] = useState("");
+  const [fehler, setFehler] = useState<string | null>(null);
+
+  const speichern = useMutation({
+    mutationFn: async () => {
+      const sekunden = intervallAusEingabe(intervall);
+      if (sekunden === null) throw new Error(worte.atrEinstellungen.intervallUngueltig);
+      const felder: Partial<ScanEinstellung> = {};
+      for (const { feld } of FELDER) {
+        if (entwurf[feld].trim() !== anfang[feld]) felder[feld] = entwurf[feld].trim() || null;
+      }
+      if (sekunden !== s.intervall_s) felder.intervall_s = sekunden;
+      if (modus !== s.modus) felder.modus = modus;
+      if (Object.keys(felder).length > 0) await scanApi.aendern(felder);
+      // Leer heißt: das hinterlegte Passwort bleibt.
+      if (kennwort) await scanApi.passwortSetzen(kennwort);
+    },
+    onSuccess: () => {
+      setKennwort("");
+      setFehler(null);
+      toast.success(worte.atrEinstellungen.gespeichert);
+      return queryClient.invalidateQueries({ queryKey: ["atr"] });
+    },
+    onError: (f: Error) => setFehler(f.message),
+  });
+
+  const passwortText = !passwort
+    ? undefined
+    : passwort.quelle === "datenbank"
+      ? worte.atrEinstellungen.passwortHinterlegt
+      : passwort.quelle === "umgebung"
+        ? worte.atrEinstellungen.passwortUmgebung
+        : worte.atrEinstellungen.passwortFehlt;
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        speichern.mutate();
+      }}
+    >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {FELDER.map(({ feld, wort, hinweis }) => (
           <div key={feld} className="flex flex-col gap-1">
             <Label htmlFor={feld}>{worte.atrEinstellungen[wort] as string}</Label>
             <Input
               id={feld}
-              defaultValue={(s[feld] as string | null) ?? ""}
+              value={entwurf[feld]}
               placeholder="—"
-              onBlur={(e) => {
-                const wert = e.target.value.trim() || null;
-                if (wert !== ((s[feld] as string | null) ?? null)) {
-                  aendern.mutate({ [feld]: wert } as Partial<ScanEinstellung>);
-                }
-              }}
+              onChange={(e) => setEntwurf((alt) => ({ ...alt, [feld]: e.target.value }))}
             />
             {hinweis && (
               <span className="text-xs text-[var(--fg-muted)]">
@@ -164,13 +215,40 @@ export function Eingangsordner() {
           </div>
         ))}
         <div className="flex flex-col gap-1">
+          <Label htmlFor="passwort">{worte.atrEinstellungen.passwort}</Label>
+          <Input
+            id="passwort"
+            type="password"
+            autoComplete="new-password"
+            value={kennwort}
+            placeholder={passwortText}
+            onChange={(e) => setKennwort(e.target.value)}
+          />
+          {passwortText && <span className="text-xs text-[var(--fg-muted)]">{passwortText}</span>}
+          {passwort && !passwort.schluessel_bereit && (
+            <span className="text-xs text-[var(--danger)]">
+              {worte.atrEinstellungen.passwortOhneSchluessel}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="intervall">{worte.atrEinstellungen.intervall}</Label>
+          <Input
+            id="intervall"
+            type="number"
+            min={0}
+            step={1}
+            inputMode="numeric"
+            value={intervall}
+            onChange={(e) => setIntervall(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
           <Label htmlFor="modus">{worte.atrEinstellungen.wasEinLaufTut}</Label>
           <Select
             id="modus"
-            value={s.modus}
-            onChange={(e) =>
-              aendern.mutate({ modus: e.target.value as ScanEinstellung["modus"] })
-            }
+            value={modus}
+            onChange={(e) => setModus(e.target.value as ScanEinstellung["modus"])}
           >
             <option value="entwurf">{worte.atrEinstellungen.entwurfAnlegen}</option>
             <option value="automatisch">{worte.atrEinstellungen.dokumenteErzeugen}</option>
@@ -178,16 +256,16 @@ export function Eingangsordner() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Switch
-          checked={s.aktiv}
-          onCheckedChange={(an) => aendern.mutate({ aktiv: an })}
-          label={worte.atrEinstellungen.regelmaessig}
-        />
-        <span className="text-sm">
-          {worte.atrEinstellungen.regelmaessigHinweis}
-        </span>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {fehler && (
+          <p role="alert" className="me-auto text-sm text-[var(--danger)]">
+            {fehler}
+          </p>
+        )}
+        <Button type="submit" disabled={speichern.isPending}>
+          {worte.atrEinstellungen.speichern}
+        </Button>
       </div>
-    </Card>
+    </form>
   );
 }

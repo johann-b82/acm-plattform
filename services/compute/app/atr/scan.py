@@ -22,11 +22,13 @@ from datetime import datetime, timezone
 
 import sqlalchemy as sa
 from fastapi.concurrency import run_in_threadpool
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app import geheim
 from app.atr import dateiserver
 from app.atr.dateiserver import DateiserverFehler, Ziel
 from app.config import settings
-from app.db import SessionLocal, atr_scan
+from app.db import SessionLocal, atr_lieferungen, atr_scan, geheimnisse
 
 log = logging.getLogger(__name__)
 
@@ -55,8 +57,8 @@ class Ergebnis:
 async def einstellungen() -> tuple[dict, Ziel]:
     """Liest die Einstellungen und baut daraus ein Ziel.
 
-    Fehlt ein Stück — auch das Passwort aus der Umgebung —, ist der Scan nicht
-    eingerichtet und läuft gar nicht erst an.
+    Fehlt ein Stück — auch das Passwort —, ist der Scan nicht eingerichtet
+    und läuft gar nicht erst an.
     """
     async with SessionLocal() as sitzung:
         zeile = (
@@ -71,8 +73,9 @@ async def einstellungen() -> tuple[dict, Ziel]:
         for name in ("rechner", "freigabe", "benutzer", "eingang", "archiv")
         if not zeile[name]
     ]
-    if not settings.ATR_SMB_PASSWORT:
-        fehlt.append("ATR_SMB_PASSWORT (Umgebung)")
+    kennwort = await passwort()
+    if not kennwort:
+        fehlt.append("Passwort des Dienstkontos")
     if fehlt:
         raise NichtEingerichtet("Es fehlt: " + ", ".join(fehlt) + ".")
 
@@ -81,7 +84,7 @@ async def einstellungen() -> tuple[dict, Ziel]:
         freigabe=zeile["freigabe"],
         domaene=zeile["domaene"],
         benutzer=zeile["benutzer"],
-        passwort=settings.ATR_SMB_PASSWORT,
+        passwort=kennwort,
         eingang=zeile["eingang"],
         ausgang=zeile["ausgang"] or "",
         archiv=zeile["archiv"],
@@ -124,6 +127,9 @@ async def durchsehen(einlesen, erzeugen) -> Ergebnis:
                     await run_in_threadpool(
                         dateiserver.schreibe_ausgang, ziel, dateiname, inhalt
                     )
+                # Wie im Altsystem: geschrieben heißt `abgelegt` (delivered) —
+                # vor dem Archivieren, das danach noch scheitern darf.
+                await _abgelegt(lieferung_id)
                 ergebnis.erzeugt += 1
 
             # Zuletzt: bis hierher ist alles gutgegangen.
@@ -141,3 +147,127 @@ async def durchsehen(einlesen, erzeugen) -> Ergebnis:
 
     await _vermerken(ergebnis.als_text())
     return ergebnis
+
+
+async def _abgelegt(lieferung_id: str) -> None:
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            await sitzung.execute(
+                atr_lieferungen.update()
+                .where(atr_lieferungen.c.id == lieferung_id)
+                .values(status="abgelegt")
+            )
+
+
+# ---------------------------------------------------------------------------
+# Nie zwei Läufe zugleich
+# ---------------------------------------------------------------------------
+#
+# Der Stempel steht in der Datenbank, nicht im Prozess: `compute` darf mehrfach
+# laufen, und ein Lauf von Hand darf nicht neben den geplanten geraten. Ein
+# Stempel, der älter als eine Stunde ist, gehört zu einem abgestürzten Lauf.
+
+
+async def belegen() -> bool:
+    """Setzt den Laufstempel, wenn keiner steht. Gibt zurück, ob es geklappt hat."""
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            getroffen = await sitzung.execute(
+                atr_scan.update()
+                .where(
+                    atr_scan.c.id,
+                    sa.or_(
+                        atr_scan.c.lauf_seit.is_(None),
+                        atr_scan.c.lauf_seit < sa.literal_column("now() - interval '1 hour'"),
+                    ),
+                )
+                .values(lauf_seit=sa.func.now())
+                .returning(atr_scan.c.id)
+            )
+            return getroffen.first() is not None
+
+
+async def freigeben() -> None:
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            await sitzung.execute(atr_scan.update().where(atr_scan.c.id).values(lauf_seit=None))
+
+
+# ---------------------------------------------------------------------------
+# Das Passwort des Dienstkontos
+# ---------------------------------------------------------------------------
+#
+# Zuerst aus `geheimnisse`, sonst `ATR_SMB_PASSWORT` aus der Umgebung — wie bei
+# den Personio-Zugangsdaten. Wo es schon in der `.env` steht, gilt es weiter,
+# bis jemand in der Maske eines einträgt. Heraus kommt es nur hier, für die
+# Anmeldung am Dateiserver; die Maske erfährt bloß, ob eines dasteht.
+
+PASSWORT = "atr_smb_passwort"
+
+
+@dataclass(frozen=True)
+class PasswortStand:
+    gesetzt: bool
+    quelle: str | None  # "datenbank" | "umgebung" | None
+    geaendert_am: datetime | None = None
+    schluessel_bereit: bool = True
+
+
+async def _abgelegtes_passwort() -> tuple[bytes, datetime] | None:
+    async with SessionLocal() as sitzung:
+        zeile = (
+            await sitzung.execute(
+                sa.select(geheimnisse.c.geheimtext, geheimnisse.c.geaendert_am).where(
+                    geheimnisse.c.schluessel == PASSWORT
+                )
+            )
+        ).first()
+    return (zeile.geheimtext, zeile.geaendert_am) if zeile else None
+
+
+async def passwort() -> str | None:
+    abgelegt = await _abgelegtes_passwort()
+    if abgelegt:
+        try:
+            return geheim.entschluesseln(abgelegt[0])
+        except (geheim.KeinSchluessel, geheim.NichtLesbar):
+            # Schlüssel weg oder gewechselt: lieber die Umgebung als gar nichts.
+            log.warning("ATR-Scan: abgelegtes Passwort nicht lesbar, Umgebung gilt")
+    return settings.ATR_SMB_PASSWORT or None
+
+
+async def passwort_stand() -> PasswortStand:
+    abgelegt = await _abgelegtes_passwort()
+    if abgelegt:
+        return PasswortStand(
+            gesetzt=True,
+            quelle="datenbank",
+            geaendert_am=abgelegt[1],
+            schluessel_bereit=geheim.einsatzbereit(),
+        )
+    aus_umgebung = bool(settings.ATR_SMB_PASSWORT)
+    return PasswortStand(
+        gesetzt=aus_umgebung,
+        quelle="umgebung" if aus_umgebung else None,
+        schluessel_bereit=geheim.einsatzbereit(),
+    )
+
+
+async def passwort_setzen(klartext: str, benutzer_id: str | None) -> None:
+    jetzt = datetime.now(timezone.utc)
+    zeile = {
+        "schluessel": PASSWORT,
+        "geheimtext": geheim.verschluesseln(klartext),
+        "geaendert_am": jetzt,
+        "geaendert_von": benutzer_id,
+    }
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            await sitzung.execute(
+                pg_insert(geheimnisse)
+                .values(**zeile)
+                .on_conflict_do_update(
+                    index_elements=[geheimnisse.c.schluessel],
+                    set_={k: v for k, v in zeile.items() if k != "schluessel"},
+                )
+            )

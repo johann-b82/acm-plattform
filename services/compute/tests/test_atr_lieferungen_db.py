@@ -1,12 +1,14 @@
 """ATR-Lieferungen gegen eine echte Datenbank.
 
-Zwei Eigenschaften stehen im Blick. Erstens: eine freigegebene Lieferung wird
-nicht mehr geändert, und das hängt an der Tabelle, nicht an der Oberfläche —
-über PostgREST gäbe es sonst einen Weg daran vorbei. Zweitens: eine Position
-trägt ihre Werte selbst, damit ein aufgeräumter Katalog einen freigegebenen
-ATR nicht rückwirkend verändert.
+Zwei Eigenschaften stehen im Blick. Erstens: die Zustände sind die des
+Altsystems — Entwurf, erzeugt, abgelegt — und keiner davon sperrt die
+Positionen. Zweitens: eine Position trägt ihre Werte selbst, damit ein
+aufgeräumter Katalog einen erzeugten ATR nicht rückwirkend verändert.
 """
 from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -71,51 +73,71 @@ POSITION = (
 )
 
 
-class TestFreigabe:
-    async def test_ein_entwurf_laesst_sich_aendern(self, db):
-        l = await lieferung("entwurf")
-        await anlegen(POSITION, l=l, r=1, p=10, t="VR-1", b="Halter", g=1.5)
-        await anlegen("update public.atr_positionen set gewicht_kg = 2.0")
-        zeile = (await anlegen("select gewicht_kg from public.atr_positionen"))[0]
-        assert float(zeile["gewicht_kg"]) == 2.0
+class TestStatus:
+    """Die Zustände des Altsystems: `draft` → `generated` → `delivered`."""
 
-    async def test_freigegeben_ist_fest(self, db):
-        """Der Riegel haengt an der Tabelle, nicht an der Oberflaeche."""
-        l = await lieferung("entwurf")
-        await anlegen(POSITION, l=l, r=1, p=10, t="VR-1", b="Halter", g=1.5)
-        await anlegen("update public.atr_lieferungen set status = 'freigegeben'")
+    @pytest.mark.parametrize("status", ["entwurf", "erzeugt", "abgelegt"])
+    async def test_die_drei_zustaende_gibt_es(self, db, status):
+        await lieferung(status)
 
-        for anweisung in (
-            "update public.atr_positionen set gewicht_kg = 9.9",
-            "delete from public.atr_positionen",
-        ):
-            with pytest.raises(Exception) as fehler:
-                await anlegen(anweisung)
-            assert "freigegeben" in str(fehler.value).lower()
-
+    async def test_freigegeben_gibt_es_nicht_mehr(self, db):
         with pytest.raises(Exception) as fehler:
-            await anlegen(POSITION, l=l, r=2, p=20, t="VR-2", b="Neu", g=1.0)
-        assert "freigegeben" in str(fehler.value).lower()
+            await lieferung("freigegeben")
+        assert "check" in str(fehler.value).lower()
 
-    async def test_zuruecknehmen_bleibt_moeglich(self, db):
-        """Sonst waere ein Tippfehler endgueltig."""
-        l = await lieferung("entwurf")
+    async def test_nach_der_erzeugung_bleiben_positionen_aenderbar(self, db):
+        """Im Altsystem sperrt `generated` nichts: Seriennummern und Gewichte
+        werden nachgetragen und die Dokumente neu erzeugt."""
+        l = await lieferung("erzeugt")
         await anlegen(POSITION, l=l, r=1, p=10, t="VR-1", b="Halter", g=1.5)
-        await anlegen("update public.atr_lieferungen set status = 'freigegeben'")
-        await anlegen("update public.atr_lieferungen set status = 'entwurf'")
-        await anlegen("update public.atr_positionen set gewicht_kg = 3.0")
-        zeile = (await anlegen("select gewicht_kg from public.atr_positionen"))[0]
-        assert float(zeile["gewicht_kg"]) == 3.0
+        await anlegen("update public.atr_positionen set seriennummern = '{A1,A2}'")
+        await anlegen(POSITION, l=l, r=2, p=20, t="VR-2", b="Neu", g=1.0)
+        await anlegen("delete from public.atr_positionen where reihenfolge = 2")
+        zeile = (await anlegen("select seriennummern from public.atr_positionen"))[0]
+        assert zeile["seriennummern"] == ["A1", "A2"]
 
-    async def test_die_lieferung_selbst_bleibt_aenderbar(self, db):
-        """Der Riegel gilt den Positionen. Kopfdaten wie die Containernummer
-        traegt man auch nach der Freigabe noch nach."""
-        l = await lieferung("freigegeben")
+
+def _migration():
+    pfad = Path(__file__).parents[1] / "alembic" / "versions" / "0048_atr_abgleich.py"
+    spec = importlib.util.spec_from_file_location("m0048", pfad)
+    modul = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modul)
+    return modul
+
+
+class TestDatenkorrektur:
+    """ATR-09: die Übernahme hat `generated` auf `entwurf` gelegt. Korrigiert
+    wird nur aus dem, was dasteht — ein Erzeugungsdatum."""
+
+    async def test_mit_erzeugungsdatum_ist_erzeugt(self, db):
+        erzeugt = await lieferung("entwurf")
+        offen = await lieferung("entwurf")
         await anlegen(
-            "update public.atr_lieferungen set containernummer = 'C-77'")
-        zeile = (await anlegen(
-            "select containernummer from public.atr_lieferungen"))[0]
-        assert zeile["containernummer"] == "C-77"
+            "update public.atr_lieferungen set erzeugt_am = now(),"
+            " mappe_pfad = 'erzeugt/x/atr.xlsx' where id = cast(:i as uuid)", i=erzeugt)
+        vorher = {
+            str(z["id"]): z["geaendert_am"]
+            for z in await anlegen("select id, geaendert_am from public.atr_lieferungen")
+        }
+
+        await anlegen(_migration().KORREKTUR)
+
+        zeilen = {
+            str(z["id"]): z
+            for z in await anlegen("select id, status, geaendert_am from public.atr_lieferungen")
+        }
+        assert zeilen[erzeugt]["status"] == "erzeugt"
+        assert zeilen[offen]["status"] == "entwurf"
+        # Eine Korrektur ist keine Änderung an der Lieferung — sonst meldete
+        # die Maske jede übernommene Mappe als veraltet.
+        assert {k: z["geaendert_am"] for k, z in zeilen.items()} == vorher
+
+    async def test_abgelegt_bleibt_abgelegt(self, db):
+        l = await lieferung("abgelegt")
+        await anlegen("update public.atr_lieferungen set erzeugt_am = now()")
+        await anlegen(_migration().KORREKTUR)
+        zeile = (await anlegen("select status from public.atr_lieferungen"))[0]
+        assert zeile["status"] == "abgelegt"
 
 
 class TestPositionStehtAlleine:
@@ -169,14 +191,14 @@ class TestRechte:
         assert await als(FREMD, "select * from public.atr_lieferungen") == []
         assert await als(FREMD, "select * from public.atr_positionen") == []
 
-    async def test_freigeben_braucht_editor(self, db):
+    async def test_status_aendern_braucht_editor(self, db):
         await lieferung()
         assert await als(
             LESER,
-            "update public.atr_lieferungen set status = 'freigegeben' returning id") == []
+            "update public.atr_lieferungen set status = 'erzeugt' returning id") == []
         assert len(await als(
             BEARBEITER,
-            "update public.atr_lieferungen set status = 'freigegeben' returning id")) == 1
+            "update public.atr_lieferungen set status = 'erzeugt' returning id")) == 1
 
     async def test_unbekannter_status_wird_abgelehnt(self, db):
         with pytest.raises(Exception) as fehler:
@@ -204,6 +226,18 @@ class TestErzeugungsstempel:
         assert zeile["geaendert_am"] == vorher
         # Und die Mappe gilt damit als frisch, nicht als veraltet.
         assert zeile["erzeugt_am"] >= zeile["geaendert_am"]
+
+    async def test_der_status_der_erzeugung_zaehlt_auch_nicht(self, db):
+        """Die Erzeugung setzt `erzeugt` im selben Schreibvorgang wie die Pfade."""
+        l = await lieferung()
+        vorher = (await anlegen(
+            "select geaendert_am from public.atr_lieferungen"))[0]["geaendert_am"]
+        await anlegen(
+            "update public.atr_lieferungen set mappe_pfad = 'erzeugt/a/atr.xlsx',"
+            " erzeugt_am = now(), status = 'erzeugt'")
+        zeile = (await anlegen(
+            "select geaendert_am, status from public.atr_lieferungen"))[0]
+        assert (zeile["geaendert_am"], zeile["status"]) == (vorher, "erzeugt")
 
     async def test_eine_echte_aenderung_zaehlt_weiter(self, db):
         l = await lieferung()

@@ -1,11 +1,12 @@
 import { requireApp } from "@/lib/auth";
 import { hasLevel } from "@/lib/rechte";
-import { Teilekatalog } from "./teilekatalog";
+import { Lieferungsliste } from "./lieferungsliste";
 import { seitentitel } from "@/lib/sprache-server";
 
-export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/atr"]);
+export const generateMetadata = () => seitentitel((t) => t.titel.atrLieferungen);
 
+/** ATR-10: wer ATR öffnet, landet wie im Altsystem bei den Lieferungen. */
 export default async function AtrPage() {
   const session = await requireApp("atr");
-  return <Teilekatalog darfSchreiben={hasLevel(session.apps, "atr", "editor")} />;
+  return <Lieferungsliste darfSchreiben={hasLevel(session.apps, "atr", "editor")} />;
 }

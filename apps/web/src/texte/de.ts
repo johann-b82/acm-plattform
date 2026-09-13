@@ -525,6 +525,7 @@ export const de = {
     offeneSchulungen: "Offene Schulungen",
     schulungsmatrix: "Schulungsmatrix",
     atrLieferungen: "ATR-Lieferungen",
+    atrTeilekatalog: "ATR-Teilekatalog",
     kpiBewertung: "KPI-Bewertung & Maßnahmen",
     anmelden: "Anmelden",
   },
@@ -1286,7 +1287,6 @@ export const de = {
     einleitung:
       "Der Teilekatalog ist die Grundlage: aus ihm holt ein Lieferschein Bezeichnung, Zeichnung " +
       "und Gewicht. Gefunden wird über die Teilenummer ohne Beiwerk — nur die Ziffern zählen.",
-    zuLieferungen: "Zu den Lieferungen",
     teilAnlegen: "Teil von Hand anlegen",
     teilBeispiel: "Teilenummer, z. B. VR-1234-56",
     anlegen: "Anlegen",
@@ -1303,13 +1303,18 @@ export const de = {
     zeichnung: "Zeichnung",
     gewicht: "Gewicht kg",
     kategorie: "Kategorie",
-    nurErste: "Nur die ersten 500 Treffer — bitte enger suchen.",
+    bereich: "Bereich",
+    lieferungen: "Lieferungen",
+    teilekatalog: "Teilekatalog",
+    bearbeiten: "Bearbeiten",
+    speichern: "Speichern",
+    gespeichert: "Gespeichert.",
+    gewichtUngueltig: "Gewicht bitte als Zahl in kg angeben, z. B. 0,44.",
+    nichtGespeichert: (meldung: string) => `Nicht gespeichert: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "Ein Lieferschein wird eingelesen, gegen den Teilekatalog abgeglichen und als Entwurf " +
-      "abgelegt. Nach der Durchsicht wird er freigegeben.",
-    zumKatalog: "Zum Teilekatalog",
+      "Ein Lieferschein wird eingelesen, gegen den Teilekatalog abgeglichen und als Entwurf abgelegt. Mit den Dokumenten ist er erzeugt; legt der automatische Scan sie im Ausgangsordner ab, ist er abgelegt.",
     wirdGelesen: "Wird gelesen …",
     einlesen: "Lieferschein einlesen",
     laeuft: "Läuft …",
@@ -1326,12 +1331,22 @@ export const de = {
     msn: "MSN",
     status: "Status",
     entwurf: "Entwurf",
-    freigegeben: "freigegeben",
+    erzeugt: "erzeugt",
+    abgelegt: "abgelegt",
+    atrNummer: "ATR-Nr.",
+    containernummer: "Containernummer",
+    erstellt: "Erstellt",
+    auswaehlen: (nr: string) => `Lieferung ${nr} auswählen`,
+    ausgewaehlt: (anzahl: number) => `${anzahl} ausgewählt`,
+    auswahlAufheben: "Auswahl aufheben",
+    containerbeschriftung: "Containerbeschriftung erstellen",
+    containerFrage: "Containernummer für die ausgewählten Lieferungen:",
+    containerHinweis: "Das Etikett zeigt alle Lieferungen, die diesem Container zugeordnet sind — auch solche, die schon vorher darin lagen.",
+    containerErstellt: (nr: string) => `Container ${nr} zugeordnet – Beschriftung wird heruntergeladen`,
+    erstellen: "Erstellen",
   },
   durchsicht: {
     nichtGefunden: "Lieferung nicht gefunden.",
-    freigeben: "Freigeben",
-    zuruecknehmen: "Freigabe zurücknehmen",
     wirdErzeugt: "Wird erzeugt …",
     dokumenteErzeugen: "Dokumente erzeugen",
     kopfdaten: "Kopfdaten",
@@ -1350,9 +1365,13 @@ export const de = {
     menge: "Menge",
     seriennummern: "Seriennummern",
     nichtImKatalog: "nicht im Katalog",
-    festHinweis:
-      "Die Lieferung ist freigegeben; die Positionen sind fest. Die Datenbank weist eine " +
-      "Änderung ab — die Freigabe lässt sich oben zurücknehmen.",
+    poNummer: "PO-Nummer",
+    poPos: "PO Pos",
+    speichern: "Speichern",
+    gespeichert: "Gespeichert.",
+    seriennummernAbweichung: (anzahl: number, menge: number) =>
+      `${anzahl} Seriennummer(n) bei Stückzahl ${menge}`,
+    seriennummernFeld: (pos: string) => `Seriennummern Position ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1738,9 +1757,7 @@ export const de = {
     qsUnterschrift: "QS-Unterschrift",
     eingangsordner: "Eingangsordner",
     eingangHinweis:
-      "Ein Lieferschein im Eingang wird eingelesen, wird zur Lieferung und wandert ins Archiv. " +
-      "Das Passwort des Dienstkontos steht nicht hier, sondern als ATR_SMB_PASSWORT in der " +
-      "Umgebung; welche Rechner in Frage kommen, gibt ATR_SMB_ERLAUBT vor.",
+      "Ein Lieferschein im Eingang wird eingelesen, wird zur Lieferung und wandert ins Archiv. Welche Rechner in Frage kommen, gibt ATR_SMB_ERLAUBT vor. Ein hier eingetragenes Passwort geht ATR_SMB_PASSWORT aus der Umgebung vor.",
     laeuft: "läuft",
     aus: "aus",
     zuletzt: (zeit: string, text: string) => `Zuletzt ${zeit}: ${text}`,
@@ -1766,8 +1783,15 @@ export const de = {
     wasEinLaufTut: "Was ein Lauf tut",
     entwurfAnlegen: "Entwurf zur Durchsicht anlegen",
     dokumenteErzeugen: "Dokumente erzeugen und ablegen",
-    regelmaessig: "Regelmäßig durchsehen",
-    regelmaessigHinweis: "Regelmäßig durchsehen — alle zehn Minuten, werktags 5–19 Uhr",
+    intervall: "Scan-Intervall (Sekunden, 0 = aus)",
+    intervallUngueltig: "Das Intervall ist eine ganze Zahl ab 0.",
+    passwort: "Passwort des Dienstkontos",
+    passwortHinterlegt: "hinterlegt — leer lassen zum Beibehalten",
+    passwortUmgebung: "aus der Umgebung (ATR_SMB_PASSWORT) — ein Eintrag hier geht vor",
+    passwortFehlt: "noch keines hinterlegt",
+    passwortOhneSchluessel: "GEHEIM_SCHLUESSEL fehlt in der Umgebung — ohne ihn lässt sich kein Passwort ablegen.",
+    speichern: "Speichern",
+    gespeichert: "Gespeichert.",
   },
   qualitaetEinstellungen: {
     normmatrix: "Normmatrix",
@@ -1925,6 +1949,7 @@ export const de = {
     offeneSchulungen: "Offene Schulungen",
     schulungsmatrix: "Schulungsmatrix",
     atrLieferungen: "ATR-Lieferungen",
+    atrTeilekatalog: "ATR-Teilekatalog",
   },
   kennzahlenHub: {
     titel: "KPI-Dashboard",

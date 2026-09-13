@@ -31,6 +31,7 @@ export const fa: Texte = {
     seiten: {
       "/atr": "ATR",
       "/atr/lieferungen": "محموله‌ها",
+      "/atr/teilekatalog": "کاتالوگ قطعات",
       "/einstellungen": "تنظیمات",
       "/fair": "FAIR",
       "/hilfe": "راهنما",
@@ -556,6 +557,7 @@ export const fa: Texte = {
     offeneSchulungen: "آموزش‌های باقی‌مانده",
     schulungsmatrix: "ماتریس آموزش",
     atrLieferungen: "محموله‌های ATR",
+    atrTeilekatalog: "کاتالوگ قطعات ATR",
     kpiBewertung: "ارزیابی KPI و اقدام‌ها",
     anmelden: "ورود",
   },
@@ -1310,7 +1312,6 @@ export const fa: Texte = {
     einleitung:
       "فهرست قطعه‌ها پایه است: برگهٔ تحویل شرح، نقشه و وزن را از آن می‌گیرد. جست‌وجو " +
       "بر پایهٔ شمارهٔ قطعه و بدون پیرایه انجام می‌شود — تنها رقم‌ها به شمار می‌آیند.",
-    zuLieferungen: "به محموله‌ها",
     teilAnlegen: "ساختن دستی قطعه",
     teilBeispiel: "شمارهٔ قطعه، برای نمونه VR-1234-56",
     anlegen: "بساز",
@@ -1327,13 +1328,18 @@ export const fa: Texte = {
     zeichnung: "نقشه",
     gewicht: "وزن kg",
     kategorie: "دسته",
-    nurErste: "فقط 500 مورد نخست — لطفاً جست‌وجو را محدودتر کنید.",
+    bereich: "بخش",
+    lieferungen: "محموله‌ها",
+    teilekatalog: "کاتالوگ قطعات",
+    bearbeiten: "ویرایش",
+    speichern: "ذخیره",
+    gespeichert: "ذخیره شد.",
+    gewichtUngueltig: "لطفاً وزن را به‌صورت عدد به کیلوگرم وارد کنید، مثلاً 0.44.",
+    nichtGespeichert: (meldung: string) => `ذخیره نشد: ${meldung}`,
   },
   lieferungen: {
     einleitung:
-      "برگهٔ تحویل خوانده می‌شود، با فهرست قطعه‌ها سنجیده می‌شود و به شکل پیش‌نویس " +
-      "ذخیره می‌شود. پس از بازبینی آزاد می‌شود.",
-    zumKatalog: "به فهرست قطعه‌ها",
+      "برگه تحویل خوانده، با کاتالوگ قطعات مطابقت داده و به‌صورت پیش‌نویس ذخیره می‌شود. با ساخت اسناد «تولیدشده» است و وقتی اسکن خودکار آن‌ها را در پوشه خروجی بگذارد «تحویل‌شده».",
     wirdGelesen: "در حال خواندن …",
     einlesen: "خواندن برگهٔ تحویل",
     laeuft: "در حال اجرا …",
@@ -1350,12 +1356,22 @@ export const fa: Texte = {
     msn: "MSN",
     status: "وضعیت",
     entwurf: "پیش‌نویس",
-    freigegeben: "آزادشده",
+    erzeugt: "تولیدشده",
+    abgelegt: "تحویل‌شده",
+    atrNummer: "شماره ATR",
+    containernummer: "شماره کانتینر",
+    erstellt: "ایجاد",
+    auswaehlen: (nr: string) => `انتخاب محموله ${nr}`,
+    ausgewaehlt: (anzahl: number) => `${anzahl} انتخاب‌شده`,
+    auswahlAufheben: "لغو انتخاب",
+    containerbeschriftung: "ایجاد برچسب کانتینر",
+    containerFrage: "شماره کانتینر برای محموله‌های انتخاب‌شده:",
+    containerHinweis: "برچسب همه محموله‌های این کانتینر را نشان می‌دهد، از جمله آن‌هایی که از قبل در آن بودند.",
+    containerErstellt: (nr: string) => `به کانتینر ${nr} اختصاص یافت – برچسب در حال دانلود است`,
+    erstellen: "ایجاد",
   },
   durchsicht: {
     nichtGefunden: "محموله یافت نشد.",
-    freigeben: "آزاد کن",
-    zuruecknehmen: "پس‌گرفتن آزادسازی",
     wirdErzeugt: "در حال ساخت …",
     dokumenteErzeugen: "ساخت مدارک",
     kopfdaten: "داده‌های سربرگ",
@@ -1374,9 +1390,12 @@ export const fa: Texte = {
     menge: "مقدار",
     seriennummern: "شماره‌های سریال",
     nichtImKatalog: "در فهرست قطعه‌ها نیست",
-    festHinweis:
-      "محموله آزاد شده است؛ اقلام قطعی‌اند. پایگاه داده تغییر را رد می‌کند — " +
-      "آزادسازی را می‌توان بالا پس گرفت.",
+    poNummer: "شماره PO",
+    poPos: "PO Pos",
+    speichern: "ذخیره",
+    gespeichert: "ذخیره شد.",
+    seriennummernAbweichung: (anzahl: number, menge: number) => `${anzahl} شماره سریال برای تعداد ${menge}`,
+    seriennummernFeld: (pos: string) => `شماره‌های سریال ردیف ${pos}`,
   },
   fair: {
     dateiFehlt: (meldung: string) =>
@@ -1757,9 +1776,7 @@ export const fa: Texte = {
     qsUnterschrift: "امضای QS",
     eingangsordner: "پوشهٔ ورودی",
     eingangHinweis:
-      "برگهٔ تحویلی در ورودی خوانده می‌شود، به محموله تبدیل می‌شود و به بایگانی " +
-      "می‌رود. گذرواژهٔ حساب سرویس اینجا نیست بلکه به شکل ATR_SMB_PASSWORT در محیط " +
-      "است؛ اینکه کدام رایانه‌ها مجازند را ATR_SMB_ERLAUBT تعیین می‌کند.",
+      "برگه تحویل در پوشه ورودی خوانده می‌شود، به محموله تبدیل و به بایگانی منتقل می‌شود. رایانه‌های مجاز را ATR_SMB_ERLAUBT تعیین می‌کند. رمزی که اینجا وارد شود بر ATR_SMB_PASSWORT محیط مقدم است.",
     laeuft: "روشن",
     aus: "خاموش",
     zuletzt: (zeit: string, text: string) => `آخرین بار ${zeit}: ${text}`,
@@ -1785,8 +1802,15 @@ export const fa: Texte = {
     wasEinLaufTut: "یک اجرا چه می‌کند",
     entwurfAnlegen: "ساخت پیش‌نویس برای بازبینی",
     dokumenteErzeugen: "ساخت مدارک و بایگانی آن‌ها",
-    regelmaessig: "بازبینی منظم",
-    regelmaessigHinweis: "بازبینی منظم — هر ده دقیقه، روزهای کاری 5 تا 19",
+    intervall: "فاصله اسکن (ثانیه، 0 = خاموش)",
+    intervallUngueltig: "فاصله باید عدد صحیح از 0 باشد.",
+    passwort: "رمز حساب سرویس",
+    passwortHinterlegt: "ثبت شده — برای حفظ، خالی بگذارید",
+    passwortUmgebung: "از محیط (ATR_SMB_PASSWORT) — ورود اینجا مقدم است",
+    passwortFehlt: "هنوز ثبت نشده",
+    passwortOhneSchluessel: "GEHEIM_SCHLUESSEL در محیط نیست — بدون آن رمز ذخیره نمی‌شود.",
+    speichern: "ذخیره",
+    gespeichert: "ذخیره شد.",
   },
   qualitaetEinstellungen: {
     normmatrix: "ماتریس استانداردها",
@@ -1944,6 +1968,7 @@ export const fa: Texte = {
     offeneSchulungen: "آموزش‌های باقی‌مانده",
     schulungsmatrix: "ماتریس آموزش",
     atrLieferungen: "محموله‌های ATR",
+    atrTeilekatalog: "کاتالوگ قطعات ATR",
   },
   kennzahlenHub: {
     titel: "داشبورد KPI",

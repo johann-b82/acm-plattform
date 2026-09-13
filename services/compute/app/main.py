@@ -9,6 +9,7 @@ from app.config import settings
 from app.db import engine
 from app.routers.atr import geplant as atr_geplant
 from app.routers.atr import router as atr_router
+from app.routers.atr import verwaltung as atr_verwaltung
 from app.routers.dokumente import router as dokumente_router
 from app.routers.einarbeitung import router as einarbeitung_router
 from app.routers.einstellungen import router as einstellungen_router
@@ -35,6 +36,7 @@ app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
 app.include_router(uploads_router)
 app.include_router(atr_router)
 app.include_router(atr_geplant)
+app.include_router(atr_verwaltung)
 app.include_router(hr_router)
 app.include_router(dokumente_router)
 app.include_router(einstellungen_router)

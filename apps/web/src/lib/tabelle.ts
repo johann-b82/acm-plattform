@@ -27,8 +27,10 @@ export interface Spalte<T> {
   /** Der Rohwert, nach dem sortiert wird. Datum als ISO-Text oder `Date`. */
   wert: (zeile: T) => string | number | Date | null | undefined;
   /** Was die Suche an dieser Spalte findet; ohne Angabe der Rohwert als Text.
-   *  `false` nimmt die Spalte aus der Suche. */
-  suchtext?: ((zeile: T) => string | null | undefined) | false;
+   *  `false` nimmt die Spalte aus der Suche. Der zweite Wert ist der
+   *  eingegebene Suchtext — für Spalten, die eine Eingabe erst aufbereiten
+   *  (etwa nur ihre Ziffern vergleichen). */
+  suchtext?: ((zeile: T, suchtext: string) => string | null | undefined) | false;
   /** Aktions- und Auswahlspalten tragen keinen Wert und sortieren nicht. */
   sortierbar?: boolean;
 }
@@ -84,7 +86,7 @@ export function suche<T>(zeilen: readonly T[], spalten: readonly Spalte<T>[], te
             return leer(w) ? "" : String(w);
           },
     );
-  return zeilen.filter((z) => texte.some((f) => normiert(f(z) ?? "").includes(gesucht)));
+  return zeilen.filter((z) => texte.some((f) => normiert(f(z, text.trim()) ?? "").includes(gesucht)));
 }
 
 /** TAB-03: gezählt wird die fachlich gefilterte Menge **vor** der Suche. */

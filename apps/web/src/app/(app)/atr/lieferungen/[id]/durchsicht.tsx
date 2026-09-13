@@ -1,38 +1,36 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Download, FileCog, Undo2 } from "lucide-react";
+import { ArrowLeft, Download, FileCog } from "lucide-react";
 
 import {
+  formatPoPos,
+  gewichtAusEingabe,
   lieferungApi,
   lieferungKeys,
+  seriennummernAbweichung,
+  seriennummernAusText,
   type AtrPosition,
   type Lieferung,
 } from "@/lib/atr";
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  Label,
-  Table,
-  TableWrap,
-  Td,
-  Th,
-} from "@/components/ui/primitives";
+import { Button, Card, Input, Label } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
+import { cn } from "@/lib/cn";
 import type { Texte } from "@/texte";
+import { StatusAbzeichen } from "../../status-abzeichen";
 
 /**
  * Durchsicht einer Lieferung: Kopfdaten ergänzen, Positionen prüfen,
- * freigeben.
+ * Dokumente erzeugen.
  *
- * Nach der Freigabe sind die Positionen fest — das hält ein Trigger an der
- * Tabelle, nicht diese Seite. Hier werden die Felder nur ausgegraut, damit
- * niemand gegen eine Wand tippt.
+ * Die Zustände sind die des Altsystems (ATR-09): Entwurf, erzeugt, abgelegt.
+ * Keiner sperrt die Positionen — Seriennummern und Gewichte werden auch nach
+ * der Erzeugung nachgetragen, und die Dokumente dann neu erzeugt.
  */
 const ZEIT = new Intl.DateTimeFormat("de-DE", {
   dateStyle: "short",
@@ -46,9 +44,12 @@ const AUSGABEN = [
   { feld: "etikett_pfad", name: "Etikett", dateiname: "Etikett.docx" },
 ] as const;
 
+/** Die PO-Nummer heißt wie im Altsystem (ATR-07); sie kommt aus den
+ *  Bestelldaten des Lieferscheins. */
 const KOPFFELDER: { feld: keyof Lieferung; wort: keyof Texte["durchsicht"]; typ?: string }[] = [
   { feld: "atr_nummer", wort: "atrNummer" },
   { feld: "containernummer", wort: "containernummer" },
+  { feld: "bestellnummer", wort: "poNummer" },
   { feld: "satz_titel", wort: "satzTitel" },
   { feld: "programm", wort: "programm" },
   { feld: "msn", wort: "msn" },
@@ -58,6 +59,8 @@ const KOPFFELDER: { feld: keyof Lieferung; wort: keyof Texte["durchsicht"]; typ?
   { feld: "qs_unterschrift", wort: "qsUnterschrift" },
   { feld: "max_gewicht_kg", wort: "hoechstgewicht" },
 ];
+
+const KEINE: AtrPosition[] = [];
 
 export function Durchsicht({
   id,
@@ -79,18 +82,11 @@ export function Durchsicht({
   });
 
   const l = lieferung.data;
-  const zeilen = positionen.data ?? [];
-  const offen = l?.status === "entwurf";
-  const bearbeitbar = darfSchreiben && offen;
+  const zeilen = positionen.data ?? KEINE;
 
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["atr"] });
 
-  const aendern = useMutation({
-    mutationFn: (felder: Partial<Lieferung>) => lieferungApi.aendern(id, felder),
-    onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
-  });
-
+  // Wie im Altsystem: eine Position speichert beim Verlassen ihres Feldes.
   const positionAendern = useMutation({
     mutationFn: ({ pid, felder }: { pid: string; felder: Partial<AtrPosition> }) =>
       lieferungApi.positionAendern(pid, felder),
@@ -127,15 +123,6 @@ export function Durchsicht({
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
-  const status = useMutation({
-    mutationFn: (neu: Lieferung["status"]) => lieferungApi.aendern(id, { status: neu }),
-    onSuccess: (_, neu) => {
-      toast.success(neu === "freigegeben" ? "Freigegeben." : "Freigabe zurückgenommen.");
-      return neuLaden();
-    },
-    onError: (fehler: Error) => toast.error(fehler.message),
-  });
-
   if (lieferung.isLoading) {
     return <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>;
   }
@@ -150,39 +137,167 @@ export function Durchsicht({
   const ohneGewicht = zeilen.filter((p) => !p.gewicht_kg).length;
   const ohneKatalog = zeilen.filter((p) => !p.teil_id).length;
 
+  const posName = (p: AtrPosition) => String(p.pos ?? p.reihenfolge);
+
+  const textfeld = (p: AtrPosition, feld: "bezeichnung" | "zeichnung", titel: string, breite?: string) => (
+    <Input
+      className={breite}
+      defaultValue={p[feld] ?? ""}
+      aria-label={`${titel} Position ${posName(p)}`}
+      placeholder="—"
+      disabled={!darfSchreiben}
+      onBlur={(e) => {
+        const wert = e.target.value.trim() || null;
+        if (wert !== p[feld]) positionAendern.mutate({ pid: p.id, felder: { [feld]: wert } });
+      }}
+    />
+  );
+
+  const spalten: Tabellenspalte<AtrPosition>[] = [
+    {
+      schluessel: "pos",
+      titel: worte.durchsicht.pos,
+      typ: "zahl",
+      wert: (p) => p.pos,
+      className: "w-14 tabular-nums",
+    },
+    {
+      schluessel: "teilenummer",
+      titel: worte.atr.teilenummer,
+      typ: "text",
+      wert: (p) => p.teilenummer,
+      zelle: (p) => (
+        <>
+          <span className="font-medium">{p.teilenummer ?? "—"}</span>
+          {!p.teil_id && (
+            <span className="mt-0.5 block text-xs text-[var(--fg-muted)]">
+              {worte.durchsicht.nichtImKatalog}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      schluessel: "bezeichnung",
+      titel: worte.atr.bezeichnung,
+      typ: "text",
+      wert: (p) => p.bezeichnung,
+      zelle: (p) => textfeld(p, "bezeichnung", worte.atr.bezeichnung),
+    },
+    {
+      schluessel: "zeichnung",
+      titel: worte.atr.zeichnung,
+      typ: "text",
+      wert: (p) => p.zeichnung,
+      zelle: (p) => textfeld(p, "zeichnung", worte.atr.zeichnung, "w-40"),
+    },
+    {
+      schluessel: "menge",
+      titel: worte.durchsicht.menge,
+      typ: "zahl",
+      ausrichtung: "end",
+      wert: (p) => p.menge,
+    },
+    {
+      schluessel: "gewicht_kg",
+      titel: worte.atr.gewicht,
+      typ: "zahl",
+      wert: (p) => (p.gewicht_kg == null ? null : Number(p.gewicht_kg)),
+      suchtext: (p) => p.gewicht_kg,
+      zelle: (p) => (
+        <Input
+          className="w-24"
+          defaultValue={p.gewicht_kg ?? ""}
+          aria-label={`${worte.atr.gewicht} Position ${posName(p)}`}
+          placeholder="—"
+          disabled={!darfSchreiben}
+          onBlur={(e) => {
+            const gewicht = gewichtAusEingabe(e.target.value);
+            if ("fehler" in gewicht) {
+              toast.error(worte.atr.gewichtUngueltig);
+            } else if (gewicht.wert !== p.gewicht_kg) {
+              positionAendern.mutate({ pid: p.id, felder: { gewicht_kg: gewicht.wert } });
+            }
+          }}
+        />
+      ),
+    },
+    {
+      // ATR-07: die PO-Position aus „Auftrag Nr. <BA> / <Pos>“, wie im
+      // Altsystem mit führenden Nullen gezeigt. Gespeichert bleibt, was dasteht.
+      schluessel: "bestellposition",
+      titel: worte.durchsicht.poPos,
+      typ: "text",
+      wert: (p) => formatPoPos(p.bestellposition) || null,
+      className: "tabular-nums",
+    },
+    {
+      // ATR-08: wie im Altsystem ein kommagetrenntes Feld je Position; passt
+      // die Anzahl nicht zur Menge, wird das Feld rot und sagt, warum.
+      schluessel: "seriennummern",
+      titel: worte.durchsicht.seriennummern,
+      typ: "text",
+      wert: (p) => p.seriennummern.join(", "),
+      zelle: (p) => {
+        const abweichung = seriennummernAbweichung(p.seriennummern, p.menge);
+        const hinweis = abweichung
+          ? worte.durchsicht.seriennummernAbweichung(p.seriennummern.length, p.menge)
+          : undefined;
+        return (
+          <div>
+            <Input
+              className={cn("w-56", abweichung && "border-[var(--danger)]")}
+              defaultValue={p.seriennummern.join(", ")}
+              aria-label={worte.durchsicht.seriennummernFeld(posName(p))}
+              aria-invalid={abweichung}
+              title={hinweis}
+              disabled={!darfSchreiben}
+              onBlur={(e) => {
+                const neu = seriennummernAusText(e.target.value);
+                if (neu.join("\n") !== p.seriennummern.join("\n")) {
+                  positionAendern.mutate({ pid: p.id, felder: { seriennummern: neu } });
+                }
+              }}
+            />
+            {hinweis && <span className="mt-0.5 block text-xs text-[var(--danger)]">{hinweis}</span>}
+          </div>
+        );
+      },
+    },
+  ];
+
+  if (darfSchreiben) {
+    spalten.push({
+      schluessel: "loeschen",
+      titel: "",
+      typ: "text",
+      wert: () => null,
+      suchtext: false,
+      sortierbar: false,
+      ausrichtung: "end",
+      zelle: (p) => (
+        <ConfirmDeleteButton
+          itemLabel={`Position ${posName(p)}`}
+          onConfirm={() => positionLoeschen.mutateAsync(p.id).then(() => undefined)}
+        />
+      ),
+    });
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         <Link
-          href="/atr/lieferungen"
+          href="/atr"
           className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
         >
-          <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
-          Lieferungen
+          <ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" aria-hidden />
+          {worte.atr.lieferungen}
         </Link>
         <h2 className="text-lg font-semibold">
           Lieferschein {l.lieferschein_nr ?? l.quelle_dateiname}
         </h2>
-        {offen ? (
-          <Badge variant="outline">{worte.lieferungen.entwurf}</Badge>
-        ) : (
-          <Badge>{worte.lieferungen.freigegeben}</Badge>
-        )}
-        {darfSchreiben && (
-          <div className="ms-auto">
-            {offen ? (
-              <Button onClick={() => status.mutate("freigegeben")}>
-                <CheckCircle2 className="me-2 h-4 w-4" aria-hidden />
-                {worte.durchsicht.freigeben}
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={() => status.mutate("entwurf")}>
-                <Undo2 className="me-2 h-4 w-4" aria-hidden />
-                {worte.durchsicht.zuruecknehmen}
-              </Button>
-            )}
-          </div>
-        )}
+        <StatusAbzeichen status={l.status} />
       </div>
 
       {l.programm_grund && (
@@ -243,31 +358,10 @@ export function Durchsicht({
         </Card>
       )}
 
-      <Card className="p-5">
-        <h2 className="font-medium">{worte.durchsicht.kopfdaten}</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {KOPFFELDER.map(({ feld, wort, typ }) => (
-            <div key={feld} className="flex flex-col gap-1">
-              <Label htmlFor={feld}>{worte.durchsicht[wort] as string}</Label>
-              <Input
-                id={feld}
-                type={typ}
-                defaultValue={(l[feld] as string | null) ?? ""}
-                placeholder="—"
-                disabled={!darfSchreiben}
-                onBlur={(e) => {
-                  const wert = e.target.value.trim() || null;
-                  if (wert !== ((l[feld] as string | null) ?? null)) {
-                    aendern.mutate({ [feld]: wert } as Partial<Lieferung>);
-                  }
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* Neu aufgesetzt, sobald die Lieferung gespeichert ist. */}
+      <Kopfdaten key={l.geaendert_am} lieferung={l} darfSchreiben={darfSchreiben} />
 
-      <Card className="p-5">
+      <Card className="space-y-3 p-5">
         <div className="flex flex-wrap items-baseline gap-3">
           <h2 className="font-medium">{worte.durchsicht.positionen}</h2>
           <span className="text-sm text-[var(--fg-muted)]">
@@ -277,111 +371,75 @@ export function Durchsicht({
           </span>
         </div>
 
-        <TableWrap className="mt-3">
-          <Table>
-            <thead>
-              <tr>
-                <Th className="w-14">{worte.durchsicht.pos}</Th>
-                <Th>{worte.atr.teilenummer}</Th>
-                <Th>{worte.atr.bezeichnung}</Th>
-                <Th>{worte.atr.zeichnung}</Th>
-                <Th className="w-16">{worte.durchsicht.menge}</Th>
-                <Th className="w-28">{worte.atr.gewicht}</Th>
-                <Th>{worte.durchsicht.seriennummern}</Th>
-                <Th className="w-12" />
-              </tr>
-            </thead>
-            <tbody>
-              {zeilen.map((p) => (
-                <tr key={p.id} className={p.teil_id ? undefined : "bg-[var(--muted)]"}>
-                  <Td className="tabular-nums">{p.pos ?? "—"}</Td>
-                  <Td>
-                    <span className="font-medium">{p.teilenummer ?? "—"}</span>
-                    {!p.teil_id && (
-                      <span className="mt-0.5 block text-xs text-[var(--fg-muted)]">
-                        {worte.durchsicht.nichtImKatalog}
-                      </span>
-                    )}
-                  </Td>
-                  <Td>
-                    <Input
-                      defaultValue={p.bezeichnung ?? ""}
-                      aria-label={`Bezeichnung Position ${p.pos ?? p.reihenfolge}`}
-                      placeholder="—"
-                      disabled={!bearbeitbar}
-                      onBlur={(e) => {
-                        const wert = e.target.value.trim() || null;
-                        if (wert !== p.bezeichnung) {
-                          positionAendern.mutate({
-                            pid: p.id,
-                            felder: { bezeichnung: wert },
-                          });
-                        }
-                      }}
-                    />
-                  </Td>
-                  <Td>
-                    <Input
-                      className="w-40"
-                      defaultValue={p.zeichnung ?? ""}
-                      aria-label={`Zeichnung Position ${p.pos ?? p.reihenfolge}`}
-                      placeholder="—"
-                      disabled={!bearbeitbar}
-                      onBlur={(e) => {
-                        const wert = e.target.value.trim() || null;
-                        if (wert !== p.zeichnung) {
-                          positionAendern.mutate({
-                            pid: p.id,
-                            felder: { zeichnung: wert },
-                          });
-                        }
-                      }}
-                    />
-                  </Td>
-                  <Td className="tabular-nums">{p.menge}</Td>
-                  <Td>
-                    <Input
-                      className="w-24"
-                      defaultValue={p.gewicht_kg ?? ""}
-                      aria-label={`Gewicht Position ${p.pos ?? p.reihenfolge}`}
-                      placeholder="—"
-                      disabled={!bearbeitbar}
-                      onBlur={(e) => {
-                        const wert = e.target.value.trim() || null;
-                        if (wert !== p.gewicht_kg) {
-                          positionAendern.mutate({
-                            pid: p.id,
-                            felder: { gewicht_kg: wert },
-                          });
-                        }
-                      }}
-                    />
-                  </Td>
-                  <Td className="text-xs">
-                    {p.seriennummern.length ? p.seriennummern.join(", ") : "—"}
-                  </Td>
-                  <Td className="text-end">
-                    {bearbeitbar && (
-                      <ConfirmDeleteButton
-                        itemLabel={`Position ${p.pos ?? p.reihenfolge}`}
-                        onConfirm={() =>
-                          positionLoeschen.mutateAsync(p.id).then(() => undefined)
-                        }
-                      />
-                    )}
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </TableWrap>
-
-        {!offen && (
-          <p className="mt-3 text-xs text-[var(--fg-muted)]">
-            {worte.durchsicht.festHinweis}
-          </p>
-        )}
+        <Datentabelle
+          zeilen={zeilen}
+          spalten={spalten}
+          zeilenSchluessel={(p) => p.id}
+          vorsortierung={{ spalte: "pos", richtung: "auf" }}
+          laedt={positionen.isLoading}
+          beschriftung={worte.durchsicht.positionen}
+          zeilenKlasse={(p) => (p.teil_id ? undefined : "bg-[var(--muted)]")}
+        />
       </Card>
     </div>
+  );
+}
+
+/**
+ * Die Kopfdaten. Wie im Altsystem ein Entwurf mit „Speichern“: die Felder
+ * hängen zusammen (ATR-Nummer, Container, Wiegedatum), und ein halb
+ * gespeicherter Kopf stünde sonst in der nächsten Mappe.
+ */
+function Kopfdaten({ lieferung: l, darfSchreiben }: { lieferung: Lieferung; darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const queryClient = useQueryClient();
+  const anfang = Object.fromEntries(
+    KOPFFELDER.map(({ feld }) => [feld, ((l[feld] as string | null) ?? "").trim()]),
+  );
+  const [entwurf, setEntwurf] = useState<Record<string, string>>(anfang);
+  const geaendert = KOPFFELDER.filter(({ feld }) => entwurf[feld].trim() !== anfang[feld]);
+
+  const speichern = useMutation({
+    mutationFn: () =>
+      lieferungApi.aendern(
+        l.id,
+        Object.fromEntries(geaendert.map(({ feld }) => [feld, entwurf[feld].trim() || null])),
+      ),
+    onSuccess: () => {
+      toast.success(worte.durchsicht.gespeichert);
+      return queryClient.invalidateQueries({ queryKey: ["atr"] });
+    },
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  return (
+    <Card className="p-5">
+      <h2 className="font-medium">{worte.durchsicht.kopfdaten}</h2>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {KOPFFELDER.map(({ feld, wort, typ }) => (
+          <div key={feld} className="flex flex-col gap-1">
+            <Label htmlFor={feld}>{worte.durchsicht[wort] as string}</Label>
+            <Input
+              id={feld}
+              type={typ}
+              value={entwurf[feld]}
+              placeholder="—"
+              disabled={!darfSchreiben}
+              onChange={(e) => setEntwurf((alt) => ({ ...alt, [feld]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      {darfSchreiben && (
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={() => speichern.mutate()}
+            disabled={geaendert.length === 0 || speichern.isPending}
+          >
+            {worte.durchsicht.speichern}
+          </Button>
+        </div>
+      )}
+    </Card>
   );
 }
