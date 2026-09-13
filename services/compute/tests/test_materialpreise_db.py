@@ -243,14 +243,15 @@ def _backfill_sql() -> str:
 @pytest.mark.asyncio
 async def test_erstbefuellung_aus_wareneingang(datenbank_da):
     """Ein Wareneingang ohne passenden Materialpreis wird nachgezogen; eine
-    vorhandene Preiszeile mit gleichem Schluessel bleibt unangetastet."""
+    vorhandene Preiszeile mit gleichem Schluessel bleibt unangetastet
+    (on conflict do nothing)."""
     if not datenbank_da:
         pytest.skip("Keine Test-Datenbank erreichbar")
-    async with SessionLocal() as session:
-        async with session.begin():
-            await session.execute(sa.delete(material_prices))
-            await session.execute(sa.delete(goods_receipt_records))
-            await session.execute(
+    async with SessionLocal() as s:
+        async with s.begin():
+            await s.execute(sa.delete(material_prices))
+            await s.execute(sa.delete(goods_receipt_records))
+            await s.execute(
                 goods_receipt_records.insert(),
                 [
                     dict(
@@ -269,7 +270,7 @@ async def test_erstbefuellung_aus_wareneingang(datenbank_da):
                     ),
                 ],
             )
-            await session.execute(
+            await s.execute(
                 material_prices.insert(),
                 [dict(
                     vorgang_nr="WE2", pos=1, upos=0, typ="WE",
@@ -278,22 +279,16 @@ async def test_erstbefuellung_aus_wareneingang(datenbank_da):
                     pos_wert=Decimal("7"), imported_at=JETZT,
                 )],
             )
+            # Die Befuellung sieht die eben eingefuegten Zeilen derselben
+            # Transaktion; ein Commit dazwischen ist nicht noetig.
+            await s.execute(sa.text(_backfill_sql()))
+            # Zweiter Lauf in derselben Transaktion: fuegt nichts doppelt ein.
+            await s.execute(sa.text(_backfill_sql()))
+            rows = (
+                await s.execute(sa.select(material_prices.c.artnr, material_prices.c.preis))
+            ).all()
 
-        async with session.begin():
-            await session.execute(sa.text(_backfill_sql()))
-
-        rows = (
-            await session.execute(
-                sa.select(material_prices.c.artnr, material_prices.c.preis)
-            )
-        ).all()
-        werte = {r.artnr: r.preis for r in rows}
-        assert werte["A100"] == Decimal("2.5000")
-        assert werte["A200"] == Decimal("7.0000")
-
-        async with session.begin():
-            await session.execute(sa.text(_backfill_sql()))
-        anzahl = (
-            await session.execute(sa.select(sa.func.count()).select_from(material_prices))
-        ).scalar_one()
-        assert anzahl == 2
+    werte = {r.artnr: r.preis for r in rows}
+    assert len(rows) == 2
+    assert werte["A100"] == Decimal("2.5000")  # aus dem Wareneingang nachgezogen
+    assert werte["A200"] == Decimal("7.0000")  # vorhandener Preis unveraendert
