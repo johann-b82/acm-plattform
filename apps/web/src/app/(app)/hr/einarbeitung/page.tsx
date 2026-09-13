@@ -1,11 +1,10 @@
-import { requireApp } from "@/lib/auth";
-import { hasLevel } from "@/lib/rechte";
-import { Einarbeitung } from "./einarbeitung";
-import { seitentitel } from "@/lib/sprache-server";
+import { redirect } from "next/navigation";
 
-export const generateMetadata = () => seitentitel((t) => t.pfad.seiten["/hr/einarbeitung"]);
-
-export default async function EinarbeitungPage() {
-  const session = await requireApp("hr");
-  return <Einarbeitung darfSchreiben={hasLevel(session.apps, "hr", "editor")} />;
+/**
+ * Die Einarbeitung hat keine eigene Seite mehr: sie steht unter Onboarding wie
+ * im Altsystem (NAV-01). Die alte Adresse bleibt und springt auf ihren
+ * Abschnitt — Lesezeichen und Verweise laufen so weiter.
+ */
+export default function EinarbeitungPage() {
+  redirect("/hr/onboarding#einarbeitung");
 }
