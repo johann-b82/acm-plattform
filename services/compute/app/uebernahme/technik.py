@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import os
 import re
+from decimal import Decimal
 from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -236,6 +237,17 @@ def _zwischen(kleinste: int, groesste: int):
     return lambda wert: min(max(wert or kleinste, kleinste), groesste)
 
 
+def _faktor_aus_skala(skala: Any) -> Decimal:
+    """Alte Skala (Divisor) in den neuen Faktor (Multiplikator) umrechnen.
+
+    Alt: `raw / skala`. Neu: `raw * faktor`. Also `faktor = 1 / skala`. Eine
+    fehlende oder null-Skala bleibt Faktor 1 (unverändert)."""
+    if skala is None:
+        return Decimal(1)
+    wert = Decimal(str(skala))
+    return Decimal(1) / wert if wert != 0 else Decimal(1)
+
+
 UMZUEGE: list[Umzug] = [
     # --- Wartung ------------------------------------------------------------
     # Spalte für Spalte ins Deutsche umbenannt, sonst unverändert. Der
@@ -338,9 +350,16 @@ UMZUEGE: list[Umzug] = [
             "erstellt_am": "created_at",
             "geaendert_am": "updated_at",
         },
+        # Das Altprojekt **teilt** durch die Skala (`raw / scale`), der neue
+        # Stack **multipliziert** mit dem Faktor (`raw * faktor`, messen.py).
+        # Der Wert wandert also invertiert: eine alte Skala 10 (Zehntelgrad als
+        # ganze Zahl) wird zum Faktor 0,1. Unverändert kopiert wäre der nächste
+        # Live-Read um Faktor 100 daneben.
         wandler={
             "community": _community,
             "farbe": lambda f: f if f and FARBE.match(f) else None,
+            "temperatur_faktor": _faktor_aus_skala,
+            "feuchte_faktor": _faktor_aus_skala,
         },
     ),
     # Die einzige Zieltabelle mit eigener Nummerierung (`generated always as

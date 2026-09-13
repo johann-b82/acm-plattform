@@ -196,3 +196,29 @@ class TestKeineGrenzenJeGeraet:
             temperatur_min=5, temperatur_max=9,
         )
         assert "temperatur_min" not in eingabe.model_dump()
+
+
+class TestFaktorUebernahme:
+    """Alt teilt (`raw / skala`), neu multipliziert (`raw * faktor`): der
+    Faktor muss bei der Übernahme invertiert werden."""
+
+    def test_skala_wird_zum_kehrwert(self):
+        from app.uebernahme.technik import _faktor_aus_skala
+
+        assert _faktor_aus_skala(10) == Decimal("0.1")
+        assert _faktor_aus_skala(1) == Decimal(1)
+        assert _faktor_aus_skala(Decimal("0.1")) == Decimal(10)
+
+    def test_ohne_skala_bleibt_eins(self):
+        from app.uebernahme.technik import _faktor_aus_skala
+
+        assert _faktor_aus_skala(None) == Decimal(1)
+        assert _faktor_aus_skala(0) == Decimal(1)
+
+    def test_zehntelgrad_ergibt_echten_wert(self):
+        """210 (Zehntelgrad als ganze Zahl) muss mit dem übernommenen Faktor
+        zu 21,0 °C werden, nicht zu 2100."""
+        from app.uebernahme.technik import _faktor_aus_skala
+
+        faktor = _faktor_aus_skala(10)
+        assert messen._skaliert(210, faktor) == Decimal("21.000")
