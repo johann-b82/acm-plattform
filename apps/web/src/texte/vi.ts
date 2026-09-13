@@ -75,6 +75,9 @@ export const vi: Texte = {
       "Tài khoản của bạn chưa được gán ứng dụng nào. Vui lòng liên hệ quản trị nền tảng.",
   },
   anmeldung: {
+    benutzer: "Người dùng",
+    lokalWechseln: "Đăng nhập cục bộ",
+    adWechseln: "Đăng nhập bằng tài khoản AD",
     titel: "ACM-Plattform",
     aufforderung: "Đăng nhập bằng tài khoản của bạn.",
     email: "E-mail",
@@ -1760,6 +1763,8 @@ export const vi: Texte = {
       email: "E-mail",
       emailText:
         "Nền tảng gửi nhắc nhở và báo cáo từ tài khoản Microsoft 365 nào. Không gửi gì trừ khi có hành động rõ ràng.",
+      ad: "Active Directory",
+      adText: "Đăng nhập vào AD nội bộ qua LDAPS. compute kiểm tra mật khẩu khi đăng nhập và ánh xạ các nhóm AD; quản trị viên cấp quyền ứng dụng theo từng nhóm.",
       zugaenge: "Người dùng và nhóm",
       zugaengeText:
         "Tạo người dùng, lập nhóm và cấp quyền ứng dụng cho họ. Thay đổi có hiệu lực ngay " +
@@ -2105,6 +2110,8 @@ export const vi: Texte = {
     verzeichnis: "Thư mục người dùng",
     ausVerzeichnis: "Đến từ thư mục người dùng",
     umbenennen: "Đổi tên",
+    mitRechten: "Có quyền",
+    ohneRechte: "Không có quyền",
     keinZugriff: "không có quyền",
     rechteAnGruppe: "Quyền gắn với nhóm, không gắn với từng người.",
     passwortNurJetzt:

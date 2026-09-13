@@ -53,6 +53,9 @@ services:
       NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_INTERNAL_URL: http://kong:8000
+      # Der Web-Server erreicht compute im Compose-Netz direkt — für die
+      # AD-Anmeldung, die vor dem Cookie läuft (kein Bearer-Token).
+      COMPUTE_INTERNAL_URL: http://compute:8000
       # Signage läuft als eigenes Compose-Projekt mit eigenem Netz; erreicht
       # wird es über den Host-Port. Nur der Server ruft dort an (Proxy in
       # app/api/signage) — der Browser bleibt same-origin.

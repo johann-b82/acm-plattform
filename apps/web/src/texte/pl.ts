@@ -75,6 +75,9 @@ export const pl: Texte = {
       "Do Twojego konta nie przypisano jeszcze żadnej aplikacji. Zwróć się do administracji platformy.",
   },
   anmeldung: {
+    benutzer: "Użytkownik",
+    lokalWechseln: "Zaloguj lokalnie",
+    adWechseln: "Zaloguj kontem AD",
     titel: "Platforma ACM",
     aufforderung: "Zaloguj się swoim kontem.",
     email: "E-mail",
@@ -1761,6 +1764,8 @@ export const pl: Texte = {
       email: "E-maile",
       emailText:
         "Z jakiego konta Microsoft 365 platforma wysyła przypomnienia i raporty. Nic nie jest wysyłane bez wyraźnego działania.",
+      ad: "Active Directory",
+      adText: "Logowanie do lokalnego AD przez LDAPS. compute sprawdza hasło przy logowaniu i odwzorowuje grupy AD; administrator nadaje prawa aplikacji dla każdej grupy.",
       zugaenge: "Użytkownicy i grupy",
       zugaengeText:
         "Zakładanie osób, tworzenie grup i nadawanie im praw do aplikacji. Zmiany działają, " +
@@ -2107,6 +2112,8 @@ export const pl: Texte = {
     verzeichnis: "Katalog",
     ausVerzeichnis: "Pochodzi z katalogu",
     umbenennen: "Przemianuj",
+    mitRechten: "Z uprawnieniami",
+    ohneRechte: "Bez uprawnień",
     keinZugriff: "brak dostępu",
     rechteAnGruppe: "Prawa wiszą przy grupie, a nie przy osobie.",
     passwortNurJetzt:

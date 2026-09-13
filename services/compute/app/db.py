@@ -914,6 +914,21 @@ geheimnisse = sa.Table(
     sa.Column("geaendert_von", UUID(as_uuid=False)),
 )
 
+ad_konfiguration = sa.Table(
+    "ad_konfiguration",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+    sa.Column("host", sa.Text),
+    sa.Column("port", sa.Integer, nullable=False),
+    sa.Column("upn_suffix", sa.Text),
+    sa.Column("basis_dn", sa.Text),
+    sa.Column("dienst_konto_dn", sa.Text),
+    sa.Column("gruppen_basis_dn", sa.Text),
+    sa.Column("tls_pruefen", sa.Boolean, nullable=False),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -969,4 +984,5 @@ TABLES = {
     "zeugnis_notenvorlagen": zeugnis_notenvorlagen,
     "zeugnis_bausteine": zeugnis_bausteine,
     "geheimnisse": geheimnisse,
+    "ad_konfiguration": ad_konfiguration,
 }

@@ -7,6 +7,8 @@ from sqlalchemy import text
 from app.auth import Claims, get_claims
 from app.config import settings
 from app.db import engine
+from app.routers.anmeldung import konfig_router as ad_konfig_router
+from app.routers.anmeldung import router as anmeldung_router
 from app.routers.atr import geplant as atr_geplant
 from app.routers.atr import router as atr_router
 from app.routers.atr import verwaltung as atr_verwaltung
@@ -34,6 +36,8 @@ logging.basicConfig(
 )
 
 app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
+app.include_router(anmeldung_router)
+app.include_router(ad_konfig_router)
 app.include_router(uploads_router)
 app.include_router(atr_router)
 app.include_router(atr_geplant)

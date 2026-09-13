@@ -17,6 +17,7 @@ import { Zeugnisse } from "./abschnitte/zeugnisse";
 import { Qualitaet } from "./abschnitte/qualitaet";
 import { Sensoren } from "./abschnitte/sensoren";
 import { Zugaenge } from "./abschnitte/zugaenge";
+import { ActiveDirectory } from "./abschnitte/ad";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useTexte } from "@/components/sprache/anbieter";
 
@@ -112,6 +113,8 @@ function Inhalt({ gruppe, eigeneId }: { gruppe: Gruppe; eigeneId: string }) {
       return <Anzeigen />;
     case "email":
       return <Email />;
+    case "ad":
+      return <ActiveDirectory />;
     case "zugaenge":
       return <Zugaenge eigeneId={eigeneId} />;
     default:

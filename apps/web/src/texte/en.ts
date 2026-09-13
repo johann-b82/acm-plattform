@@ -78,6 +78,9 @@ export const en: Texte = {
     keineApp: "No app has been assigned to your account yet. Please contact platform admin.",
   },
   anmeldung: {
+    benutzer: "User",
+    lokalWechseln: "Sign in locally",
+    adWechseln: "Sign in with AD account",
     titel: "ACM Platform",
     aufforderung: "Sign in with your account.",
     email: "E-mail",
@@ -1757,6 +1760,8 @@ export const en: Texte = {
       email: "E-Mails",
       emailText:
         "Which Microsoft 365 account the platform uses to send reminders and reports. Nothing is sent except on an explicit action.",
+      ad: "Active Directory",
+      adText: "Sign-in against the local AD via LDAPS. compute checks the password at login and mirrors the AD groups; an admin grants app rights per group under “Users and groups”.",
       zugaenge: "Users and groups",
       zugaengeText:
         "Create people, form groups and give them app permissions. Changes take effect the next " +
@@ -2098,6 +2103,8 @@ export const en: Texte = {
     verzeichnis: "Directory",
     ausVerzeichnis: "Comes from the directory",
     umbenennen: "Rename",
+    mitRechten: "With access",
+    ohneRechte: "Without access",
     keinZugriff: "no access",
     rechteAnGruppe: "Permissions belong to the group, not to the person.",
     passwortNurJetzt:
