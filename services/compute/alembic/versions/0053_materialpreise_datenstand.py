@@ -25,7 +25,7 @@ depends_on = None
 UPGRADE = """
 insert into public.upload_batches (filename, kind, uploaded_at, row_count, error_count, status)
 select 'Erstbefuellung aus Wareneingaengen', 'materialpreise',
-       max(g.entry_date)::timestamptz, count(*), 0, 'ok'
+       max(g.entry_date)::timestamptz, count(*), 0, 'success'
 from public.goods_receipt_records g
 where g.vorgang_nr is not null and g.article_number is not null
   and not exists (select 1 from public.upload_batches where kind = 'materialpreise')
