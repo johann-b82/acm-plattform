@@ -48,6 +48,15 @@ describe("HR-Kennzahlen, Kopf", () => {
     expect(knopf.className).toContain("border");
   });
 
+  it("lässt den langen Abgleichstand die Zeitraumwahl nicht verbreitern", () => {
+    // Sonst rückt das Auswahlfeld vom Knopf weg: der Abstand soll derselbe
+    // sein wie bei Vertrieb, wo der Datenstand kürzer ist als das Feld.
+    const { container } = zeige();
+    const halter = container.querySelector("[data-datenstand]");
+    expect(halter?.className).toContain("w-0");
+    expect(halter?.className).toContain("min-w-full");
+  });
+
   it("lässt den Satz über der Seite nicht auf Absatzbreite umbrechen", () => {
     zeige();
     expect(screen.getByText(/Aus dem Personio-Abgleich/).className).not.toContain("max-w-prose");

@@ -132,7 +132,15 @@ export function Zeitraumwahl({
         </div>
       )}
 
-      {datenstand && <div className="text-end">{datenstand}</div>}
+      {/* Der Datenstand zählt nicht zur Breite: ein langer Stand (etwa der
+          Personio-Abgleich mit Uhrzeit) stünde sonst breiter als das Feld,
+          und das Feld rückte vom Knopf daneben weg. So bleibt der Abstand auf
+          allen Seiten gleich, der Text steht rechtsbündig nach links über. */}
+      {datenstand && (
+        <div data-datenstand className="flex w-0 min-w-full justify-end whitespace-nowrap text-end">
+          {datenstand}
+        </div>
+      )}
     </div>
   );
 }
