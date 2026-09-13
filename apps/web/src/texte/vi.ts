@@ -664,6 +664,41 @@ export const vi: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} nghĩa là: không có mốc thời gian nào của người này trong lịch sử. ${bald} nghĩa là: trong vòng hai tháng tới. Tính đến ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "Chỉnh sửa đào tạo",
+    tabZuweisen: "Giao đào tạo",
+    tabStand: "Tình trạng nhân viên",
+    anforderungsmatrix: "Ma trận yêu cầu",
+    ebene: "Cấp",
+    matrixLeer: "Chưa có dữ liệu cho ma trận.",
+    einzelTitel: "Giao một khóa đào tạo",
+    einzelHinweis: "Bổ sung cho ma trận yêu cầu vốn tác động theo bộ phận — cho từng người.",
+    mitarbeiterWaehlen: "Chọn nhân viên",
+    schulungWaehlen: "Chọn đào tạo",
+    zuweisenAktion: "Giao",
+    zugewiesen: "Đã giao đào tạo.",
+    schonZugewiesen: "Đào tạo này đã được giao cho người này.",
+    sammelTitel: "Ghi nhận đã thực hiện (hàng loạt)",
+    sammelHinweis: "Một đào tạo, một ngày, nhiều người tham gia. Bản ghi đã hoàn thành giữ ngày cũ, ngày mới hơn sẽ thay thế.",
+    durchgefuehrtAm: "Thực hiện ngày",
+    teilnehmerSuche: "Tìm người tham gia",
+    standort: "Địa điểm",
+    offeneTitel: "Đào tạo còn mở",
+    abteilung: "Bộ phận",
+    frist: "Hạn",
+    mitarbeiterTitel: "Tổng quan nhân viên",
+    anzahl: "Số lượng",
+    naechste: "Hạn kế tiếp",
+    matrixTitel: "Ma trận tổng",
+    abteilungenTitel: "Bộ phận & cấp trên",
+    vorgesetzter: "Cấp trên phụ trách",
+    abteilungenHinweis: "Cấp trên được suy ra từ Personio; nếu không có, cột để trống.",
+    sammelAktion: (anzahl: number) => `Ghi nhận ${anzahl} đã thực hiện`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} đã ghi${unveraendert ? `, ${unveraendert} không đổi` : ""}.`,
+    seit: (tage: number) => `${tage} ngày trước`,
+    in: (tage: number) => `trong ${tage} ngày`,
+  },
   schulung: {
     gibtEsNicht: "Khóa đào tạo này không tồn tại",
     gibtEsNichtText: "Có lẽ nó đã bị xóa.",
@@ -736,6 +771,14 @@ export const vi: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "Khối văn bản",
+    bausteineHinweis: "Mỗi lĩnh vực đánh giá và điểm có một cách diễn đạt. Chỉ lưu phần thay đổi; [NAME] và đại từ được thay khi tạo.",
+    speichern: "Lưu",
+    gespeichert: "Đã lưu.",
+    note1: "rất tốt",
+    note2: "tốt",
+    note3: "đạt yêu cầu",
+    note4: "đủ",
     einleitung:
       "Từ điểm số và các gạch đầu dòng thành ngôn ngữ thư chứng nhận. Dữ liệu gốc được " +
       "chép lại lúc tạo — một thư đã cấp không đổi theo khi Personio thay đổi.",
@@ -785,6 +828,9 @@ export const vi: Texte = {
     abteilungFuer: (inhalt: string) => `Bộ phận cho ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "Chỉnh sửa",
+    bearbeitenFertig: "Xong",
+    ohneKategorie: "Không phân loại",
     gibtEsNicht: "Ma trận này không tồn tại",
     gibtEsNichtText: "Có lẽ nó đã bị thay thế.",
     blattStand: (blatt: string) => `Trang tính ${blatt}`,
@@ -891,6 +937,11 @@ export const vi: Texte = {
     hinweisDeutsch: "Bản thân thư chứng nhận được viết bằng tiếng Đức.",
   },
   dokumentenlauf: {
+    erstelltAm: "Đã tạo",
+    uebergebenAm: "Đã giao",
+    zurueckAm: "Đã trả lại",
+    geprueftAm: "Đã kiểm tra",
+    aktionen: "Thao tác",
     einleitung:
       "Phiếu có mã QR: tạo, phát ra, nhận lại khi đã điền, kiểm tra. Mã QR gán bản quét " +
       "về đúng chỗ — bất kể tệp tên là gì.",
@@ -936,6 +987,15 @@ export const vi: Texte = {
     schulungsnachweis: "Hồ sơ đào tạo",
   },
   onboarding: {
+    aktive: "Đang làm việc",
+    personenwahl: "Những ai",
+    eintritteTitel: "Người mới vào",
+    inhalteTitel: "Nội dung hội nhập",
+    matrixTitel: "Ma trận hội nhập",
+    matrixHinweis: "Bộ phận nào cần nội dung nào. Dấu tích có hiệu lực ngay.",
+    matrixLeer: "Chưa có nội dung hoặc bộ phận.",
+    vorgaengeTitel: "Quy trình hội nhập & đào tạo",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "Ai là người mới và ma trận yêu cầu đòi hỏi những khóa nào cho họ. Kế hoạch không " +
       "được lưu mà được tính — ma trận đổi thì kế hoạch đổi theo.",
@@ -1818,7 +1878,7 @@ export const vi: Texte = {
       "/hr/organigramm": "Ai báo cáo cho ai",
       "/hr/kompetenzen": "Ma trận năng lực theo bộ phận",
       "/hr/schulungen": "Đào tạo bắt buộc, lịch học, hồ sơ",
-      "/hr/onboarding": "Người vào mới và những việc phải làm",
+      "/hr/onboarding": "Người mới vào, hội nhập và quy trình",
       "/hr/einarbeitung": "Kế hoạch hội nhập và tiến độ",
       "/hr/dokumente": "Tạo biểu mẫu, in ra, quét trả lại",
       "/hr/zeugnisse": "Soạn và cấp thư chứng nhận công việc",

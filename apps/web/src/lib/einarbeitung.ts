@@ -32,6 +32,21 @@ function sb() {
   return supabaseBrowser();
 }
 
+/**
+ * Die Spalten der Abteilungsmatrix: die Abteilungen der aktiven Belegschaft
+ * und die, die schon eine Zuordnung tragen — wie im Altsystem. Ohne die
+ * zweite Hälfte verschwände eine Zuordnung aus der Ansicht, sobald die letzte
+ * Person der Abteilung ausgetreten ist.
+ */
+export function abteilungsachse(
+  personio: readonly (string | null)[],
+  gepflegt: readonly string[],
+): string[] {
+  return [
+    ...new Set([...personio, ...gepflegt].map((a) => (a ?? "").trim()).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "de"));
+}
+
 export const einarbeitungApi = {
   katalog: async (): Promise<Inhalt[]> => {
     const { data, error } = await sb()
@@ -63,6 +78,13 @@ export const einarbeitungApi = {
   loeschen: async (id: string): Promise<void> => {
     const { error } = await sb().from("einarbeitung_katalog").delete().eq("id", id);
     if (error) throw new Error(error.message);
+  },
+
+  /** Die Abteilungen der aktiven Belegschaft, für die Matrixspalten. */
+  personioAbteilungen: async (): Promise<(string | null)[]> => {
+    const { data, error } = await sb().from("organigramm").select("department");
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as unknown as { department: string | null }[]).map((z) => z.department);
   },
 
   pflicht: async (): Promise<Pflicht[]> => {

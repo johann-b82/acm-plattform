@@ -660,6 +660,41 @@ export const en: Texte = {
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} means: no date for this person is on record. ${bald} means: within the next two months. As of ${datum}.`,
   },
+  schulungenReg: {
+    tabBearbeiten: "Edit training",
+    tabZuweisen: "Assign training",
+    tabStand: "Employee status",
+    anforderungsmatrix: "Requirement matrix",
+    ebene: "Level",
+    matrixLeer: "No data for the matrix yet.",
+    einzelTitel: "Assign a single training",
+    einzelHinweis: "Adds to the requirement matrix, which acts per department — for individuals.",
+    mitarbeiterWaehlen: "Choose employee",
+    schulungWaehlen: "Choose training",
+    zuweisenAktion: "Assign",
+    zugewiesen: "Training assigned.",
+    schonZugewiesen: "This training is already assigned to the person.",
+    sammelTitel: "Mark as completed (batch)",
+    sammelHinweis: "One training, one date, several participants. Completed records keep their date; a newer one moves it forward.",
+    durchgefuehrtAm: "Completed on",
+    teilnehmerSuche: "Search participants",
+    standort: "Location",
+    offeneTitel: "Open training",
+    abteilung: "Department",
+    frist: "Due",
+    mitarbeiterTitel: "Employee overview",
+    anzahl: "Count",
+    naechste: "Next due",
+    matrixTitel: "Overall matrix",
+    abteilungenTitel: "Departments & supervisors",
+    vorgesetzter: "Responsible supervisor",
+    abteilungenHinweis: "The supervisor is derived from Personio; if none, the column stays empty.",
+    sammelAktion: (anzahl: number) => `Mark ${anzahl} as completed`,
+    sammelErfolg: (eingetragen: number, unveraendert: number) =>
+      `${eingetragen} recorded${unveraendert ? `, ${unveraendert} unchanged` : ""}.`,
+    seit: (tage: number) => `${tage} d ago`,
+    in: (tage: number) => `in ${tage} d`,
+  },
   schulung: {
     gibtEsNicht: "This course does not exist",
     gibtEsNichtText: "It was probably removed.",
@@ -732,6 +767,14 @@ export const en: Texte = {
     quality: "Quality",
   },
   zeugnisse: {
+    bausteineTitel: "Text blocks",
+    bausteineHinweis: "One wording per assessment area and grade. Only changes are saved; [NAME] and the pronouns are replaced on generation.",
+    speichern: "Save",
+    gespeichert: "Saved.",
+    note1: "very good",
+    note2: "good",
+    note3: "satisfactory",
+    note4: "sufficient",
     einleitung:
       "Grades and bullet points become reference language. The master data is copied when the " +
       "reference is created — an issued reference does not change because Personio changes.",
@@ -780,6 +823,9 @@ export const en: Texte = {
     abteilungFuer: (inhalt: string) => `Department for ${inhalt}`,
   },
   matrix: {
+    bearbeiten: "Edit",
+    bearbeitenFertig: "Done",
+    ohneKategorie: "No category",
     gibtEsNicht: "This matrix does not exist",
     gibtEsNichtText: "It was probably replaced.",
     blattStand: (blatt: string) => `Sheet ${blatt}`,
@@ -886,6 +932,11 @@ export const en: Texte = {
     hinweisDeutsch: "The reference itself is written in German.",
   },
   dokumentenlauf: {
+    erstelltAm: "Created",
+    uebergebenAm: "Handed over",
+    zurueckAm: "Returned",
+    geprueftAm: "Checked",
+    aktionen: "Actions",
     einleitung:
       "Sheets with a QR code: create, hand out, take back filled in, check. The QR matches the " +
       "scan back up — no matter what the file is called.",
@@ -930,6 +981,15 @@ export const en: Texte = {
     schulungsnachweis: "Training record",
   },
   onboarding: {
+    aktive: "Active",
+    personenwahl: "Which people",
+    eintritteTitel: "New starters",
+    inhalteTitel: "Induction content",
+    matrixTitel: "Induction matrix",
+    matrixHinweis: "Which content each department needs. A tick applies immediately.",
+    matrixLeer: "No content or departments yet.",
+    vorgaengeTitel: "Induction & training processes",
+    matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
     einleitung:
       "Who is new and which courses the requirements matrix asks for. The plan is not stored but " +
       "calculated — if the matrix changes, the plan changes.",
@@ -1808,7 +1868,7 @@ export const en: Texte = {
       "/hr/organigramm": "Who reports to whom",
       "/hr/kompetenzen": "Skills matrix by department",
       "/hr/schulungen": "Mandatory training, dates, records",
-      "/hr/onboarding": "Joiners and what has to happen for them",
+      "/hr/onboarding": "New starters, induction and processes",
       "/hr/einarbeitung": "Induction plans and how far they have got",
       "/hr/dokumente": "Create forms, print them, read the scans back",
       "/hr/zeugnisse": "Write and issue references",

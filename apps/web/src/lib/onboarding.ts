@@ -66,6 +66,27 @@ export function istNeu(eintritt: Eintritt, heute = new Date()): boolean {
   return tage >= -30 && tage <= NEU_TAGE;
 }
 
+/** Welche Personen die Eintrittsliste zeigt (ONB-03). */
+export type Personenwahl = "neu" | "aktive" | "alle";
+
+/**
+ * Die Auswahl auf die ganze Liste anwenden — vor Suche, Sortierung und Seiten.
+ *
+ * „Aktiv“ ist der Personio-Status `active`, wie im Altsystem; weder das
+ * Eintrittsdatum noch Anwesenheit entscheiden das. Extern gepflegte Personen
+ * führt die Sicht als aktiv. „Neu“ bleibt, wie es war, samt der Eintritte der
+ * nächsten dreißig Tage.
+ */
+export function personenwahl(
+  eintritte: readonly Eintritt[],
+  wahl: Personenwahl,
+  heute = new Date(),
+): readonly Eintritt[] {
+  if (wahl === "neu") return eintritte.filter((e) => istNeu(e, heute));
+  if (wahl === "aktive") return eintritte.filter((e) => e.status === "active");
+  return eintritte;
+}
+
 /**
  * Ein erzeugtes PDF in einem neuen Fenster öffnen.
  *
