@@ -35,7 +35,7 @@ den Zeitpunkt — gibt es keine, bleibt die Änderung leer statt null.
 from alembic import op
 
 revision = "0047_audit_wartung_sensoren"
-down_revision = "0040_bereich_hr"
+down_revision = "0045_hr_abgleich"
 branch_labels = None
 depends_on = None
 
