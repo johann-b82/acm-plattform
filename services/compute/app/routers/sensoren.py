@@ -52,10 +52,8 @@ class SensorEingabe(BaseModel):
     feuchte_oid: str | None = Field(default=None, max_length=255)
     temperatur_faktor: Decimal = Decimal(1)
     feuchte_faktor: Decimal = Decimal(1)
-    temperatur_min: Decimal | None = None
-    temperatur_max: Decimal | None = None
-    feuchte_min: Decimal | None = None
-    feuchte_max: Decimal | None = None
+    # Grenzen gibt es nur noch global (`sensor_einstellungen`, SET-11). Die
+    # Spalten am Gerät bleiben stehen, lassen sich hier aber nicht mehr setzen.
     aktiv: bool = True
     farbe: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
 
@@ -76,10 +74,8 @@ class SensorAenderung(BaseModel):
     feuchte_oid: str | None = None
     temperatur_faktor: Decimal | None = None
     feuchte_faktor: Decimal | None = None
-    temperatur_min: Decimal | None = None
-    temperatur_max: Decimal | None = None
-    feuchte_min: Decimal | None = None
-    feuchte_max: Decimal | None = None
+    # Grenzen gibt es nur noch global (`sensor_einstellungen`, SET-11). Die
+    # Spalten am Gerät bleiben stehen, lassen sich hier aber nicht mehr setzen.
     aktiv: bool | None = None
     farbe: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
 
