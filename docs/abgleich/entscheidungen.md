@@ -31,3 +31,11 @@ Entscheidungen, die bei der Umsetzung selbst getroffen wurden — innerhalb der 
 ## E-04 Zentrale Seitengröße gilt für alle Personen (TAB-01)
 
 Die Einstellungsseite gehört der Plattform-Verwaltung; persönliche Einstellungen gibt es in der Plattform nicht. Die Seitengröße steht deshalb systemweit in `plattform_einstellungen` und wirkt für alle.
+
+## E-05 Materialpreise aus den Wareneingängen vorbelegen (FIN-01, UPL-01)
+
+**Lage:** Nach dem neuen Import (UPL-01) ist `material_prices` leer, bis jemand die Datei „Materialpreise (Wareneingang)" hochlädt oder die Übernahme läuft. Bis dahin stünde die Materialkostenquote auf 0 % und jeder Artikel als „ohne Preis" — für die Abnahme sieht das nach Defekt aus.
+
+**Entscheidung:** Eine Migration (0052) belegt `material_prices` einmalig aus den bereits vorhandenen Wareneingängen vor (dieselbe Quelldatei AswKpf_WE, dieselben Schlüssel Vorgang/Pos/UPos, dasselbe Wareneingangsdatum). Kollisionssicher (`on conflict do nothing`), damit ein späterer echter Upload oder die Übernahme gewinnt. Eine zweite Migration (0053) weist den Datenstand ehrlich aus (Seed-Protokoll mit dem jüngsten Wareneingangsdatum als Stand), damit die Finanzseite nicht „Materialpreise fehlt" meldet.
+
+**Begründung:** Wareneingang und Materialpreis tragen für denselben Schlüssel denselben Wert; vorbelegte und später übernommene Zeilen sind inhaltsgleich, der `do-nothing`-Riegel lässt also keine abweichende Zahl stehen. Der lokale Materialkostenwert (117.091 € Jahr) ist damit der fachlich korrekte, aktuelle Wert. Der beim Vergleich gesehene Referenzwert 114.954 € war der **veraltete** Stand der Produktions-Preistabelle (letzter Materialpreis-Upload 03.08.), kein Formelunterschied — belegt vom Fachmodul Finanzen.
