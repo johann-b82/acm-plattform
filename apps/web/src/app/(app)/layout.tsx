@@ -11,7 +11,6 @@ import { Brotkrumen } from "@/components/brotkrumen";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { Benutzermenue } from "@/components/kopfzeile/benutzermenue";
 import { KNOPF } from "@/components/kopfzeile/knopf";
-import { Seitentitel } from "@/components/kopfzeile/seitentitel";
 import { FeedbackGlocke } from "@/components/feedback/glocke";
 import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
@@ -58,11 +57,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   Hause. */}
               <Brotkrumen />
             </div>
-            {/* Mittig auf der Seite, nicht mittig zwischen den beiden Blöcken:
-                sonst wandert der Titel, sobald der Pfad länger wird. Deshalb
-                absolut gesetzt und ohne Mausfang — was darunter liegt, bleibt
-                anklickbar. */}
-            <Seitentitel />
+            {/* Kein mittiger Seitentitel mehr: die Brotkrumen oben links
+                zeigen den Weg samt aktueller Seite schon an. */}
             {/* Zeichen statt Beschriftungen: drei Wörter nebeneinander drängten
                   die Kopfzeile zu, und gemeint ist jedes Mal dasselbe wie das
                   Zeichen. Die Beschriftung bleibt als `aria-label` und als

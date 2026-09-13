@@ -52,18 +52,22 @@ export function Kacheln({
                 </span>
                 <div className="min-w-0">
                   <div className="font-medium">{k.name}</div>
-                  {/* Zwei Zeilen sind immer reserviert — auch bei einzeiligem
-                      Text —, damit alle Kacheln gleich hoch wirken. */}
-                  {k.beschreibung !== undefined && (
-                    <div className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm text-[var(--fg-muted)]">
-                      {k.beschreibung}
-                    </div>
-                  )}
-                  {k.marke && (
-                    <div className="mt-1 text-xs uppercase tracking-wide text-[var(--fg-muted)]">
-                      {k.marke}
-                    </div>
-                  )}
+                  {/* Zwei Textzeilen sind immer reserviert — ob Beschreibung
+                      oder Rechtestufe, ob ein- oder zweizeilig —, damit alle
+                      Kacheln (App-Starter wie Übersichten) gleich hoch wirken
+                      und das Sinnbild überall dieselbe Höhe bekommt. */}
+                  <div className="mt-1 min-h-[2.5rem]">
+                    {k.beschreibung !== undefined && (
+                      <div className="line-clamp-2 text-sm text-[var(--fg-muted)]">
+                        {k.beschreibung}
+                      </div>
+                    )}
+                    {k.marke && (
+                      <div className="text-xs uppercase tracking-wide text-[var(--fg-muted)]">
+                        {k.marke}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Link>
             </li>
