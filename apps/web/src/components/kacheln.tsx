@@ -39,13 +39,13 @@ export function Kacheln({
                 href={k.pfad}
                 className="flex h-full items-stretch gap-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
               >
-                {/* Das Sinnbild nutzt die volle Inhaltshöhe: als eigener
-                    gestreckter Flex-Streifen wird es so hoch wie der Text
-                    daneben, der p-4-Rand gibt links und oben denselben Abstand.
-                    w-auto hält es quadratisch. */}
-                <span className="flex shrink-0 self-stretch">
+                {/* Das Sinnbild nimmt drei Viertel der Inhaltshöhe: der
+                    gestreckte Flex-Streifen ist so hoch wie der Text daneben,
+                    darin sitzt das Bild vertikal mittig. w-auto hält es
+                    quadratisch. */}
+                <span className="flex shrink-0 items-center self-stretch">
                   <Bild
-                    className="h-full w-auto text-[var(--fg-muted)]"
+                    className="h-3/4 w-auto text-[var(--fg-muted)]"
                     aria-hidden
                     strokeWidth={1.5}
                   />
