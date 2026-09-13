@@ -1514,6 +1514,9 @@ export const uk: Texte = {
       anzeigenText:
         "Адреси, що працюють на екранах у будівлі. Кожна несе підписаний токен, діє лише для " +
         "свого екрана і має строк.",
+      email: "Електронна пошта",
+      emailText:
+        "З якого облікового запису Microsoft 365 платформа надсилає нагадування та звіти. Нічого не надсилається без явної дії.",
       zugaenge: "Користувачі та групи",
       zugaengeText:
         "Створювати осіб, формувати групи і давати їм права на застосунки. Зміни діють, " +
@@ -1521,6 +1524,67 @@ export const uk: Texte = {
     },
   },
   einstellungenText: {
+    appName: "Назва застосунку",
+    appNameHinweis:
+      "Показується в шапці без логотипа, у заголовку сторінки та на сторінці входу.",
+    farbrollen: "Ролі кольорів",
+    farbrollenHinweis:
+      "Основний колір несе фокус, посилання, головну кнопку й основну серію діаграм; текст лежить зверху. Окремо для світлої та темної теми.",
+    hellTitel: "Світла",
+    dunkelTitel: "Темна",
+    hauptfarbe: "Основний колір",
+    textAufHauptfarbe: "Текст на основному кольорі",
+    kontrastTitel: "Недостатній контраст (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `«${bereich}» (${thema}): контраст ${verhaeltnis}:1, потрібно ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "Посилання на сторінці",
+      linkKarte: "Посилання на картках",
+      fokusFlaeche: "Фокус на сірій поверхні",
+      diagramm: "Колір діаграми",
+      knopfText: "Текст на головній кнопці",
+    },
+    farbenGespeichert: "Кольори збережено. Діють після перезавантаження.",
+    farbenAufVorgabe: "Повернуто до типових.",
+    farbenZuruecksetzen: "Повернути до типових",
+    email: {
+      titel: "Надсилання пошти (Microsoft 365)",
+      einleitung:
+        "Центральна служба для нагадувань і звітів через Microsoft Graph.",
+      ohneSchluessel:
+        "На сервері не задано GEHEIM_SCHLUESSEL. Доки його немає, жоден секрет не зберігається.",
+      gespeichert: "Збережено.",
+      speichert: "Збереження …",
+      speichern: "Зберегти",
+      speichernFehler: (meldung: string) => `Не вдалося зберегти: ${meldung}`,
+      modus: "Режим",
+      modusApp: "Дозвіл застосунку",
+      modusDelegiert: "Власний обліковий запис (делегований)",
+      modusAppHinweis: "Надсилає через обліковий запис застосунку з дозволом Mail.Send; потрібні секрет клієнта та згода адміністратора.",
+      modusDelegiertHinweis: "Надсилає від імені особи, що ввійшла, після входу за кодом пристрою; згода адміністратора не потрібна.",
+      tenantId: "Ідентифікатор Tenant",
+      clientId: "Ідентифікатор клієнта",
+      clientSecret: "Секрет клієнта",
+      secretGesetzt: "збережено — залиште порожнім, щоб зберегти",
+      absender: "Адреса відправника",
+      absenderName: "Ім’я відправника (необов’язково)",
+      aktivieren: "Надсилання ввімкнено",
+      testTitel: "Тестовий лист",
+      testHinweis: "Надсилає повідомлення на введену адресу. Лише ця дія щось надсилає.",
+      testEmpfaenger: "Одержувач",
+      testSenden: "Надіслати тестовий лист",
+      testLaeuft: "Надсилання …",
+      testOk: "Тестовий лист надіслано.",
+      testFehler: "Не вдалося надіслати.",
+      delegiertTitel: "Вхід через Microsoft",
+      delegiertAnmelden: "Увійти через Microsoft",
+      delegiertAnleitung:
+        "Відкрийте адресу, введіть код і ввійдіть власним обліковим записом Microsoft 365.",
+      delegiertWartet: "Очікування входу …",
+      verbundenMit: (konto: string) => `Увійшли як ${konto}`,
+      trennen: "Від’єднати",
+      getrennt: "Від’єднано.",
+    },
     speichernFehler: (meldung: string) => `Збереження не вдалося: ${meldung}`,
     zielwertGespeichert: "Цільове значення збережено. Дашборди покажуть його після перезавантаження.",
     zahlAbNull: "Введіть число від 0.",
@@ -1537,7 +1601,7 @@ export const uk: Texte = {
       "показуватися.",
     logoHinweis:
       "Стоїть угорі ліворуч у застосунку і в шапці кожного створеного бланка — план " +
-      "адаптації, підтвердження обслуговування, огляд навчань, характеристика. PNG або JPEG, " +
+      "адаптації, підтвердження обслуговування, огляд навчань, характеристика. PNG, JPEG або SVG, " +
       "щонайбільше 5 МБ. Якщо нічого не задано, там стоїть напис «ACM-Plattform».",
     communityHinweis: "зберігається зашифровано і більше ніколи не показується",
     verwaltenSchliesstEin: "«Керувати» на плитці платформи включає будь-яке інше право.",
@@ -1667,6 +1731,32 @@ export const uk: Texte = {
     schrittBeispiel: "напр., вступна нарада",
   },
   personioZugang: {
+    taktGespeichert: "Інтервал збережено.",
+    abgleichTitel: "Синхронізація",
+    abgleichHinweis:
+      "Як часто платформа сама отримує дані Personio, і ручна синхронізація.",
+    intervall: "Інтервал синхронізації",
+    intervallWahl: {
+      "0": "Лише вручну",
+      "1": "Щогодини",
+      "6": "Кожні 6 годин",
+      "24": "Щодня",
+      "168": "Щотижня",
+    },
+    abgleichJetzt: "Оновити дані",
+    abgleichLaeuft: "Синхронізація …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `Синхронізовано: ${mitarbeiter} працівників, ${anwesenheiten} присутностей, ${abwesenheiten} відсутностей.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `Частково синхронізовано (${mitarbeiter} працівників): ${fehler}`,
+    abgleichFehler: (fehler: string) => `Помилка синхронізації: ${fehler}`,
+    nachweisTitel: "Документи до Personio",
+    nachweisHinweis:
+      "Завантажує документ у профіль Personio після зміни навчання чи компетенції. Типово вимкнено.",
+    nachweisAktiv: "Завантажувати документи",
+    nachweisKategorie: "Категорія документа",
+    nachweisKategoriePlatzhalter: "Ідентифікатор категорії Personio",
+    nachweisGespeichert: "Збережено.",
     titel: "Дані доступу Personio",
     einleitung:
       "Дані доступу застосунку Personio API. Без них синхронізація, " +

@@ -1492,6 +1492,9 @@ export const de = {
       anzeigenText:
         "Die Adressen, die auf den Bildschirmen im Haus laufen. Jede trägt einen unterschriebenen " +
         "Token, gilt nur für ihre eine Anzeige und läuft ab.",
+      email: "E-Mails",
+      emailText:
+        "Über welches Microsoft-365-Konto die Plattform Erinnerungen und Berichte verschickt. Versendet wird nur auf ausdrückliche Aktion.",
       zugaenge: "Nutzer und Gruppen",
       zugaengeText:
         "Personen anlegen, Gruppen bilden und ihnen App-Rechte geben. Änderungen wirken, sobald " +
@@ -1499,6 +1502,67 @@ export const de = {
     },
   },
   einstellungenText: {
+    appName: "App-Name",
+    appNameHinweis:
+      "Steht in der Kopfzeile ohne Logo, im Seitentitel und auf der Anmeldeseite.",
+    farbrollen: "Farbrollen",
+    farbrollenHinweis:
+      "Die Hauptfarbe trägt Fokus, Links, den Primärknopf und die Hauptreihe der Diagramme; die Schrift steht darauf. Je einmal für hell und dunkel.",
+    hellTitel: "Hell",
+    dunkelTitel: "Dunkel",
+    hauptfarbe: "Hauptfarbe",
+    textAufHauptfarbe: "Text auf der Hauptfarbe",
+    kontrastTitel: "Zu geringer Kontrast (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `„${bereich}“ (${thema}): Kontrast ${verhaeltnis}:1, nötig ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "Links auf der Seite",
+      linkKarte: "Links auf Karten",
+      fokusFlaeche: "Fokus auf grauer Fläche",
+      diagramm: "Diagrammfarbe",
+      knopfText: "Text auf dem Primärknopf",
+    },
+    farbenGespeichert: "Farben gespeichert. Sie wirken nach dem Neuladen.",
+    farbenAufVorgabe: "Auf die Vorgabe zurückgesetzt.",
+    farbenZuruecksetzen: "Auf Vorgabe zurücksetzen",
+    email: {
+      titel: "E-Mail-Versand (Microsoft 365)",
+      einleitung:
+        "Zentraler Dienst für Erinnerungen und Berichte über Microsoft Graph.",
+      ohneSchluessel:
+        "Auf dem Server ist kein GEHEIM_SCHLUESSEL gesetzt. Solange er fehlt, lässt sich kein Geheimnis ablegen.",
+      gespeichert: "Gespeichert.",
+      speichert: "Speichert …",
+      speichern: "Speichern",
+      speichernFehler: (meldung: string) => `Speichern fehlgeschlagen: ${meldung}`,
+      modus: "Betriebsart",
+      modusApp: "App-Berechtigung",
+      modusDelegiert: "Eigener Account (delegiert)",
+      modusAppHinweis: "Sendet über ein App-Konto mit Berechtigung Mail.Send; braucht ein Client-Secret und Admin-Consent.",
+      modusDelegiertHinweis: "Sendet als angemeldete Person nach Geräte-Code-Anmeldung; kein Admin-Consent nötig.",
+      tenantId: "Tenant-ID",
+      clientId: "Client-ID",
+      clientSecret: "Client-Secret",
+      secretGesetzt: "hinterlegt — leer lassen, um es zu behalten",
+      absender: "Absenderadresse",
+      absenderName: "Absendername (optional)",
+      aktivieren: "Versand aktiviert",
+      testTitel: "Test-E-Mail",
+      testHinweis: "Schickt eine Nachricht an die eingegebene Adresse. Nur diese Aktion versendet etwas.",
+      testEmpfaenger: "Empfänger",
+      testSenden: "Test-E-Mail senden",
+      testLaeuft: "Sendet …",
+      testOk: "Test-E-Mail gesendet.",
+      testFehler: "Versand fehlgeschlagen.",
+      delegiertTitel: "Anmeldung bei Microsoft",
+      delegiertAnmelden: "Bei Microsoft anmelden",
+      delegiertAnleitung:
+        "Adresse öffnen, den Code eingeben und mit dem eigenen Microsoft-365-Konto anmelden.",
+      delegiertWartet: "Wartet auf die Anmeldung …",
+      verbundenMit: (konto: string) => `Angemeldet als ${konto}`,
+      trennen: "Verbindung trennen",
+      getrennt: "Verbindung getrennt.",
+    },
     speichernFehler: (meldung: string) => `Speichern fehlgeschlagen: ${meldung}`,
     zielwertGespeichert: "Zielwert gespeichert. Die Dashboards zeigen ihn nach dem Neuladen.",
     zahlAbNull: "Bitte eine Zahl ab 0 eingeben.",
@@ -1515,7 +1579,7 @@ export const de = {
       "selbst auf zu zeigen.",
     logoHinweis:
       "Steht oben links in der Anwendung und in der Kopfzeile jedes erzeugten Formblatts — " +
-      "Einarbeitungsplan, Wartungsnachweis, Schulungsübersicht, Zeugnis. PNG oder JPEG, " +
+      "Einarbeitungsplan, Wartungsnachweis, Schulungsübersicht, Zeugnis. PNG, JPEG oder SVG, " +
       "höchstens 5 MB. Ist keins hinterlegt, steht dort der Schriftzug „ACM-Plattform“.",
     communityHinweis: "wird verschlüsselt abgelegt und nie wieder angezeigt",
     verwaltenSchliesstEin: "„Verwalten“ auf der Plattform-Kachel schließt jedes andere Recht ein.",
@@ -1646,6 +1710,32 @@ export const de = {
     schrittBeispiel: "z. B. Eröffnungsgespräch",
   },
   personioZugang: {
+    taktGespeichert: "Intervall gespeichert.",
+    abgleichTitel: "Abgleich",
+    abgleichHinweis:
+      "Wie oft die Plattform die Personio-Daten von selbst holt, und ein Abgleich von Hand.",
+    intervall: "Syncintervall",
+    intervallWahl: {
+      "0": "Nur manuell",
+      "1": "Stündlich",
+      "6": "Alle 6 Stunden",
+      "24": "Täglich",
+      "168": "Wöchentlich",
+    },
+    abgleichJetzt: "Daten aktualisieren",
+    abgleichLaeuft: "Wird abgeglichen …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `Abgeglichen: ${mitarbeiter} Mitarbeiter, ${anwesenheiten} Anwesenheiten, ${abwesenheiten} Abwesenheiten.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `Teilweise abgeglichen (${mitarbeiter} Mitarbeiter): ${fehler}`,
+    abgleichFehler: (fehler: string) => `Abgleich fehlgeschlagen: ${fehler}`,
+    nachweisTitel: "Nachweise nach Personio",
+    nachweisHinweis:
+      "Überträgt nach einer Schulungs- oder Kompetenzänderung einen Nachweis ins Personio-Profil. Standardmäßig aus.",
+    nachweisAktiv: "Nachweise übertragen",
+    nachweisKategorie: "Dokumentenkategorie",
+    nachweisKategoriePlatzhalter: "ID der Personio-Kategorie",
+    nachweisGespeichert: "Gespeichert.",
     titel: "Personio-Zugangsdaten",
     einleitung:
       "Zugangsdaten einer Personio-API-Anwendung. Ohne sie bleiben Abgleich, " +

@@ -1522,6 +1522,9 @@ export const en: Texte = {
       anzeigenText:
         "The addresses running on the screens in the building. Each carries a signed token, is " +
         "valid for its one board only and expires.",
+      email: "E-Mails",
+      emailText:
+        "Which Microsoft 365 account the platform uses to send reminders and reports. Nothing is sent except on an explicit action.",
       zugaenge: "Users and groups",
       zugaengeText:
         "Create people, form groups and give them app permissions. Changes take effect the next " +
@@ -1529,6 +1532,67 @@ export const en: Texte = {
     },
   },
   einstellungenText: {
+    appName: "App name",
+    appNameHinweis:
+      "Shown in the header without a logo, in the page title and on the sign-in page.",
+    farbrollen: "Colour roles",
+    farbrollenHinweis:
+      "The primary colour carries focus, links, the primary button and the main chart series; text sits on top. Once for light, once for dark.",
+    hellTitel: "Light",
+    dunkelTitel: "Dark",
+    hauptfarbe: "Primary colour",
+    textAufHauptfarbe: "Text on the primary colour",
+    kontrastTitel: "Insufficient contrast (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `“${bereich}” (${thema}): contrast ${verhaeltnis}:1, needs ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "Links on the page",
+      linkKarte: "Links on cards",
+      fokusFlaeche: "Focus on a grey surface",
+      diagramm: "Chart colour",
+      knopfText: "Text on the primary button",
+    },
+    farbenGespeichert: "Colours saved. They take effect after reloading.",
+    farbenAufVorgabe: "Reset to the default.",
+    farbenZuruecksetzen: "Reset to default",
+    email: {
+      titel: "E-mail sending (Microsoft 365)",
+      einleitung:
+        "Central service for reminders and reports via Microsoft Graph.",
+      ohneSchluessel:
+        "No GEHEIM_SCHLUESSEL is set on the server. Until it is, no secret can be stored.",
+      gespeichert: "Saved.",
+      speichert: "Saving …",
+      speichern: "Save",
+      speichernFehler: (meldung: string) => `Saving failed: ${meldung}`,
+      modus: "Mode",
+      modusApp: "Application permission",
+      modusDelegiert: "Own account (delegated)",
+      modusAppHinweis: "Sends via an app account with the Mail.Send permission; needs a client secret and admin consent.",
+      modusDelegiertHinweis: "Sends as the signed-in person after a device-code sign-in; no admin consent needed.",
+      tenantId: "Tenant ID",
+      clientId: "Client ID",
+      clientSecret: "Client secret",
+      secretGesetzt: "stored — leave empty to keep it",
+      absender: "Sender address",
+      absenderName: "Sender name (optional)",
+      aktivieren: "Sending enabled",
+      testTitel: "Test e-mail",
+      testHinweis: "Sends a message to the address entered. Only this action sends anything.",
+      testEmpfaenger: "Recipient",
+      testSenden: "Send test e-mail",
+      testLaeuft: "Sending …",
+      testOk: "Test e-mail sent.",
+      testFehler: "Sending failed.",
+      delegiertTitel: "Sign in with Microsoft",
+      delegiertAnmelden: "Sign in with Microsoft",
+      delegiertAnleitung:
+        "Open the address, enter the code and sign in with your own Microsoft 365 account.",
+      delegiertWartet: "Waiting for sign-in …",
+      verbundenMit: (konto: string) => `Signed in as ${konto}`,
+      trennen: "Disconnect",
+      getrennt: "Disconnected.",
+    },
     speichernFehler: (meldung: string) => `Saving failed: ${meldung}`,
     zielwertGespeichert: "Target saved. The dashboards show it after a reload.",
     zahlAbNull: "Please enter a number from 0 upwards.",
@@ -1544,7 +1608,7 @@ export const en: Texte = {
       "board only and expires — an entry nobody maintains any more stops showing by itself.",
     logoHinweis:
       "Appears top left in the application and in the header of every generated form — induction " +
-      "plan, maintenance record, training overview, reference. PNG or JPEG, at most 5 MB. If none " +
+      "plan, maintenance record, training overview, reference. PNG, JPEG or SVG, at most 5 MB. If none " +
       "is stored, the words “ACM-Plattform” appear instead.",
     communityHinweis: "is stored encrypted and never shown again",
     verwaltenSchliesstEin: "“Manage” on the platform tile includes every other permission.",
@@ -1674,6 +1738,32 @@ export const en: Texte = {
     schrittBeispiel: "e.g. opening meeting",
   },
   personioZugang: {
+    taktGespeichert: "Interval saved.",
+    abgleichTitel: "Sync",
+    abgleichHinweis:
+      "How often the platform fetches Personio data on its own, plus a manual sync.",
+    intervall: "Sync interval",
+    intervallWahl: {
+      "0": "Manual only",
+      "1": "Hourly",
+      "6": "Every 6 hours",
+      "24": "Daily",
+      "168": "Weekly",
+    },
+    abgleichJetzt: "Refresh data",
+    abgleichLaeuft: "Syncing …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `Synced: ${mitarbeiter} employees, ${anwesenheiten} attendances, ${abwesenheiten} absences.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `Partly synced (${mitarbeiter} employees): ${fehler}`,
+    abgleichFehler: (fehler: string) => `Sync failed: ${fehler}`,
+    nachweisTitel: "Documents to Personio",
+    nachweisHinweis:
+      "Uploads a document to the Personio profile after a training or competence change. Off by default.",
+    nachweisAktiv: "Upload documents",
+    nachweisKategorie: "Document category",
+    nachweisKategoriePlatzhalter: "Personio category ID",
+    nachweisGespeichert: "Saved.",
     titel: "Personio credentials",
     einleitung:
       "Credentials of a Personio API application. Without them the sync, the " +

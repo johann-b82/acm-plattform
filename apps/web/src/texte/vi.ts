@@ -1527,6 +1527,9 @@ export const vi: Texte = {
       anzeigenText:
         "Các địa chỉ đang chạy trên những màn hình trong nhà. Mỗi địa chỉ mang một token " +
         "đã ký, chỉ dùng cho đúng một màn hình và sẽ hết hạn.",
+      email: "E-mail",
+      emailText:
+        "Nền tảng gửi nhắc nhở và báo cáo từ tài khoản Microsoft 365 nào. Không gửi gì trừ khi có hành động rõ ràng.",
       zugaenge: "Người dùng và nhóm",
       zugaengeText:
         "Tạo người dùng, lập nhóm và cấp quyền ứng dụng cho họ. Thay đổi có hiệu lực ngay " +
@@ -1534,6 +1537,67 @@ export const vi: Texte = {
     },
   },
   einstellungenText: {
+    appName: "Tên ứng dụng",
+    appNameHinweis:
+      "Hiển thị ở đầu trang khi không có logo, trong tiêu đề trang và trên trang đăng nhập.",
+    farbrollen: "Vai trò màu",
+    farbrollenHinweis:
+      "Màu chính dùng cho tiêu điểm, liên kết, nút chính và chuỗi biểu đồ chính; chữ nằm trên nó. Một lần cho sáng, một lần cho tối.",
+    hellTitel: "Sáng",
+    dunkelTitel: "Tối",
+    hauptfarbe: "Màu chính",
+    textAufHauptfarbe: "Chữ trên màu chính",
+    kontrastTitel: "Độ tương phản không đủ (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `„${bereich}” (${thema}): tương phản ${verhaeltnis}:1, cần ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "Liên kết trên trang",
+      linkKarte: "Liên kết trên thẻ",
+      fokusFlaeche: "Tiêu điểm trên nền xám",
+      diagramm: "Màu biểu đồ",
+      knopfText: "Chữ trên nút chính",
+    },
+    farbenGespeichert: "Đã lưu màu. Có hiệu lực sau khi tải lại.",
+    farbenAufVorgabe: "Đã đặt lại về mặc định.",
+    farbenZuruecksetzen: "Đặt lại về mặc định",
+    email: {
+      titel: "Gửi e-mail (Microsoft 365)",
+      einleitung:
+        "Dịch vụ trung tâm cho nhắc nhở và báo cáo qua Microsoft Graph.",
+      ohneSchluessel:
+        "Máy chủ chưa đặt GEHEIM_SCHLUESSEL. Khi còn thiếu, không thể lưu bí mật nào.",
+      gespeichert: "Đã lưu.",
+      speichert: "Đang lưu …",
+      speichern: "Lưu",
+      speichernFehler: (meldung: string) => `Lưu thất bại: ${meldung}`,
+      modus: "Chế độ",
+      modusApp: "Quyền ứng dụng",
+      modusDelegiert: "Tài khoản riêng (ủy quyền)",
+      modusAppHinweis: "Gửi qua tài khoản ứng dụng có quyền Mail.Send; cần bí mật máy khách và sự đồng ý của quản trị viên.",
+      modusDelegiertHinweis: "Gửi với danh nghĩa người đã đăng nhập sau khi đăng nhập bằng mã thiết bị; không cần quản trị viên đồng ý.",
+      tenantId: "Tenant ID",
+      clientId: "Client ID",
+      clientSecret: "Bí mật máy khách",
+      secretGesetzt: "đã lưu — để trống để giữ nguyên",
+      absender: "Địa chỉ người gửi",
+      absenderName: "Tên người gửi (tùy chọn)",
+      aktivieren: "Đã bật gửi",
+      testTitel: "E-mail thử",
+      testHinweis: "Gửi một tin nhắn đến địa chỉ đã nhập. Chỉ hành động này mới gửi.",
+      testEmpfaenger: "Người nhận",
+      testSenden: "Gửi e-mail thử",
+      testLaeuft: "Đang gửi …",
+      testOk: "Đã gửi e-mail thử.",
+      testFehler: "Gửi thất bại.",
+      delegiertTitel: "Đăng nhập bằng Microsoft",
+      delegiertAnmelden: "Đăng nhập bằng Microsoft",
+      delegiertAnleitung:
+        "Mở địa chỉ, nhập mã và đăng nhập bằng tài khoản Microsoft 365 của bạn.",
+      delegiertWartet: "Đang chờ đăng nhập …",
+      verbundenMit: (konto: string) => `Đã đăng nhập là ${konto}`,
+      trennen: "Ngắt kết nối",
+      getrennt: "Đã ngắt kết nối.",
+    },
     speichernFehler: (meldung: string) => `Lưu thất bại: ${meldung}`,
     zielwertGespeichert: "Đã lưu giá trị mục tiêu. Các bảng chỉ số hiện nó sau khi tải lại.",
     zahlAbNull: "Vui lòng nhập một số từ 0 trở lên.",
@@ -1550,7 +1614,7 @@ export const vi: Texte = {
     logoHinweis:
       "Xuất hiện ở trên bên trái trong ứng dụng và trên đầu mỗi biểu mẫu được tạo ra — kế " +
       "hoạch hội nhập, hồ sơ bảo trì, bảng tổng quan đào tạo, thư chứng nhận. PNG hoặc " +
-      "JPEG, tối đa 5 MB. Nếu chưa có logo, ở đó hiện dòng chữ “ACM-Plattform”.",
+      "JPEG hoặc SVG, tối đa 5 MB. Nếu chưa có logo, ở đó hiện dòng chữ “ACM-Plattform”.",
     communityHinweis: "được lưu mã hóa và không bao giờ hiện lại",
     verwaltenSchliesstEin: "“Quản lý” trên ô nền tảng bao gồm mọi quyền khác.",
     logoAlt: "Logo công ty đã lưu",
@@ -1680,6 +1744,32 @@ export const vi: Texte = {
     schrittBeispiel: "ví dụ: họp khai mạc",
   },
   personioZugang: {
+    taktGespeichert: "Đã lưu khoảng thời gian.",
+    abgleichTitel: "Đồng bộ",
+    abgleichHinweis:
+      "Nền tảng tự lấy dữ liệu Personio bao lâu một lần, và đồng bộ thủ công.",
+    intervall: "Khoảng đồng bộ",
+    intervallWahl: {
+      "0": "Chỉ thủ công",
+      "1": "Mỗi giờ",
+      "6": "Mỗi 6 giờ",
+      "24": "Hằng ngày",
+      "168": "Hằng tuần",
+    },
+    abgleichJetzt: "Làm mới dữ liệu",
+    abgleichLaeuft: "Đang đồng bộ …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `Đã đồng bộ: ${mitarbeiter} nhân viên, ${anwesenheiten} lượt có mặt, ${abwesenheiten} lượt vắng.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `Đồng bộ một phần (${mitarbeiter} nhân viên): ${fehler}`,
+    abgleichFehler: (fehler: string) => `Đồng bộ thất bại: ${fehler}`,
+    nachweisTitel: "Tài liệu tới Personio",
+    nachweisHinweis:
+      "Tải một tài liệu lên hồ sơ Personio sau khi thay đổi đào tạo hoặc năng lực. Mặc định tắt.",
+    nachweisAktiv: "Tải tài liệu lên",
+    nachweisKategorie: "Danh mục tài liệu",
+    nachweisKategoriePlatzhalter: "ID danh mục Personio",
+    nachweisGespeichert: "Đã lưu.",
     titel: "Thông tin đăng nhập Personio",
     einleitung:
       "Thông tin đăng nhập của một ứng dụng API Personio. Không có nó thì đợt đồng bộ, " +
