@@ -4,6 +4,21 @@ Grundlage: Übergabe vom 12. September 2026 (`Coding-Agent-Auftrag.md`, `Entsche
 
 Status je Zeile getrennt: **Umsetzung** (offen / in Arbeit / umgesetzt / bewusst nicht) und **Prüfung** (offen / bestanden / fehlgeschlagen / nicht prüfbar). „Nicht prüfbar“ ist kein „bestanden“.
 
+## Gesamtstatus (Stand 13. September 2026)
+
+Alle elf Fachzweige sind umgesetzt und im Zweig `abgleich/integration` zusammengeführt (PR #93). Die Einzeltabellen unten tragen noch den Ausgangsstand „offen“; der tatsächliche Stand je Sammelbereich:
+
+| Sammelbereich | Umsetzung | Automatische Prüfung | Browser-Stichprobe (Koordination) | Unabhängige Abnahme |
+|---|---|---|---|---|
+| Globale Regeln (NAV, TAB, EDIT, KPI, UI, VER-04B) | umgesetzt | grün | teils bestanden (`browserpruefung.md`) | offen |
+| Vertrieb, Einkauf/Produktion, Finanzen, Qualität, HR-Kennzahlen | umgesetzt | grün | teils bestanden | offen |
+| HR-Prozesse, Audit/Wartung/Sensoren, ATR, FAIR, Meldungen/Maßnahmen | umgesetzt | grün | teils bestanden | offen |
+| Einstellungen/E-Mail/Hilfe, Importe | umgesetzt | grün | teils bestanden | offen |
+| Bewusste Nichtübernahmen (KPI-01Z, SET-12/17, SIG-01) | bewusst nicht | — | — | — |
+| Handbuch mit echten Produktionsscreenshots (HIL-02) | offen | — | — | blockiert (kein abgenommener Produktivstand) |
+
+Prüfstand: Web 571 Tests, Compute 1200 Tests, CI-Riegel (Logging, service_role) grün; Migrationskette bis `0053` inkl. Rundlauf. Live-Integrationen (Microsoft 365/Graph, Personio-Schreibzugriff, SMB) nur gegen Attrappen. Die **unabhängige Nutzerabnahme** und die **Handbuchbebilderung** bleiben die beiden offenen Abschlussbedingungen.
+
 ## Prüfgrenzen dieser Umgebung
 
 | Grenze | Folge |
