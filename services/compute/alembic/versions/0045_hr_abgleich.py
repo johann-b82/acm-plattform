@@ -41,7 +41,7 @@ mit der Beschriftung „Profile Picture", irgendwo in den Rohdaten.
 from alembic import op
 
 revision = "0045_hr_abgleich"
-down_revision = "0040_bereich_hr"
+down_revision = "0043_materialpreise"
 branch_labels = None
 depends_on = None
 
