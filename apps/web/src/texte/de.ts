@@ -387,9 +387,7 @@ export const de = {
       "Aus dem Personio-Abgleich. Das Tagessoll kommt aus dem hinterlegten " +
       "Arbeitszeitmodell je Person, nicht aus einem pauschalen Achtstundentag.",
     uebersicht: "Übersicht",
-    standLaedt: "Abgleichstand wird geladen …",
     keinAbgleich: "Noch kein Abgleich gelaufen. Er läuft nachts um 02:15 von selbst.",
-    letzterAbgleich: (zeitpunkt: string, status: string) => `Letzter Abgleich ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} Personen, ${anwesenheiten} Anwesenheiten, ${abwesenheiten} Abwesenheiten`,
     abgleichLaeuft: "läuft …",
@@ -414,6 +412,13 @@ export const de = {
     verlauf: "Verlauf",
     reiheUeberstunden: "Überstunden",
     reiheKrankheit: "Krankheit",
+    umsatzJeKopf: "Umsatz / Produktions-MA",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} Aufträge ÷ ${koepfe} Köpfe`,
+    produktionFehlt: "Produktionsabteilungen nicht hinterlegt",
+    abgleichStand: (datum: string, alter: string) => `Personio-Abgleich ${datum} (${alter})`,
+    abgleichFehler: "mit Fehler",
+    reiheUmsatzJeKopf: "Umsatz je Produktionskopf",
+    ziel: (wert: string) => `Ziel ${wert}`,
   },
   melden: {
     knopf: "Melden",
@@ -460,13 +465,21 @@ export const de = {
   },
   mitarbeiter: {
     titel: "Mitarbeiter",
-    nurMitUeberstunden: "nur mit Überstunden",
-    ausgeblendet: (anzahl: number) => `(${anzahl} ausgeblendet)`,
     person: "Person",
     abteilung: "Abteilung",
     istStunden: "Ist-Std.",
     ueberstunden: "Überstunden",
     quote: "ÜS %",
+    auswahl: "Auswahl",
+    mitUeberstunden: "Mit Überstunden",
+    aktive: "Aktive",
+    alle: "Alle",
+    name: "Name",
+    position: "Position",
+    status: "Status",
+    wochenstunden: "Std./Woche",
+    leer: "Niemand in dieser Auswahl.",
+    statusWert: { active: "aktiv", inactive: "inaktiv", onboarding: "Onboarding", leave: "abwesend" },
   },
   wochenbericht: {
     titel: "Wochenbericht",
@@ -489,6 +502,15 @@ export const de = {
       "Soll ist das effektive Wochensoll: Urlaub und Krankheit sind abgezogen, wer " +
       "unentschuldigt fehlt steht im Minus. In der laufenden Woche zählt das Soll nur bis zum " +
       "letzten gestempelten Tag.",
+    diagrammUeberstunden: "Mehrarbeit je Person",
+    diagrammKrankheit: "Krankheit je Person",
+    spitzeHinweis: "die fünf höchsten Werte der Woche",
+    keineWerte: "Keine Werte in dieser Woche",
+    pdf: "Als PDF exportieren",
+    pdfLaeuft: "PDF wird erstellt …",
+    seite: (seite: number, gesamt: number) => `Seite ${seite} von ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `Erstellt am ${zeitpunkt}`,
+    einheit: "Einheit der Krankheit",
   },
   titel: {
     /** Detailseiten und Seiten, deren Tab-Titel ausführlicher heißt als die
@@ -592,6 +614,8 @@ export const de = {
     aufklappen: (name: string) => `${name} aufklappen`,
     zuklappen: (name: string) => `${name} zuklappen`,
     direkt: (anzahl: number) => `${anzahl} direkt`,
+    treffer: (anzahl: number) => ` · ${anzahl} Treffer`,
+    kontext: "Umrandet: Treffer. Blass: Vorgesetzte als Kontext.",
   },
   offeneSchulungen: {
     einleitung: "Wer was noch braucht. Nur aktive Schulungen; stillgelegte tauchen hier nicht mehr auf.",

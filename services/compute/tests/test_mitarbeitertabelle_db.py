@@ -50,13 +50,14 @@ async def db(datenbank_da):
     await leeren()
 
 
-async def person(pid: int, vorname="Anna", abteilung="Fertigung") -> None:
+async def person(pid: int, vorname="Anna", abteilung="Fertigung", *, status="active",
+                 raw=None, wochenstunden="40.00") -> None:
     async with SessionLocal() as s:
         async with s.begin():
             await s.execute(sa.insert(personio_employees).values(
                 id=pid, first_name=vorname, last_name="Berger", department=abteilung,
-                status="active", hire_date=date(2020, 1, 1), termination_date=None,
-                weekly_working_hours="40.00", raw_json=MODELL,
+                status=status, hire_date=date(2020, 1, 1), termination_date=None,
+                weekly_working_hours=wochenstunden, raw_json=MODELL if raw is None else raw,
                 synced_at=datetime.now(timezone.utc),
             ))
 
@@ -128,19 +129,51 @@ class TestRechnung:
         await stempel(2, MO, 12.0)
         assert [z["name"] for z in await tabelle()][0] == "Viel Berger"
 
-    async def test_ohne_stempelung_keine_zeile(self, db):
+    async def test_ohne_stempelung_steht_die_person_mit_null_da(self, db):
+        """Wie im Altsystem: die Liste sind alle Personen, nur die Stunden
+        hängen am Zeitraum. Sonst hätten „Aktive“ und „Alle“ nichts zu zeigen."""
         await person(1)
-        assert await tabelle() == []
+        (z,) = await tabelle()
+        assert z["ist_stunden"] == Decimal("0.00")
+        assert z["ueberstunden"] == Decimal("0.00")
+        assert z["quote"] is None
 
     async def test_zeitraum_grenzt_ein(self, db):
         await person(1)
         await stempel(1, MO, 10.0)
-        assert await tabelle(von=date(2026, 10, 1), bis=date(2026, 10, 31)) == []
+        (z,) = await tabelle(von=date(2026, 10, 1), bis=date(2026, 10, 31))
+        assert z["ist_stunden"] == Decimal("0.00")
 
     async def test_abteilung_steht_dabei(self, db):
         await person(1, abteilung="Montage")
         await stempel(1, MO, 9.0)
         assert (await tabelle())[0]["department"] == "Montage"
+
+
+class TestStammdaten:
+    async def test_position_und_status(self, db):
+        await person(1, raw={**MODELL, "attributes": {
+            **MODELL["attributes"], "position": {"value": "Schweißer"}}})
+        await person(2, vorname="Weg", status="inactive")
+        nach = {z["employee_id"]: z for z in await tabelle()}
+        assert nach[1]["position"] == "Schweißer"
+        assert nach[1]["status"] == "active"
+        assert nach[2]["position"] is None
+        assert nach[2]["status"] == "inactive"
+
+    async def test_wochenstunden_aus_dem_arbeitszeitmodell(self, db):
+        """Mo–Do 8:45 und Fr 5:00 sind 40 Stunden — nicht der Spaltenwert.
+
+        `weekly_working_hours` ist in Personio nicht verlässlich eine
+        Wochenzahl; in der lokalen Kopie steht dort bei einer Person 8 neben
+        einem Modell von 40 Stunden, bei einer anderen 2 neben 56.
+        """
+        await person(1, wochenstunden="8.00")
+        assert (await tabelle())[0]["wochenstunden"] == Decimal("40.00")
+
+    async def test_ohne_modell_die_gepflegten_wochenstunden(self, db):
+        await person(1, raw={"attributes": {}}, wochenstunden="32.00")
+        assert (await tabelle())[0]["wochenstunden"] == Decimal("32.00")
 
 
 class TestDeckungsgleich:

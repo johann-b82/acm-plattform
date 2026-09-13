@@ -422,10 +422,7 @@ export const pl: Texte = {
       "Z synchronizacji z Personio. Norma dzienna pochodzi z zapisanego modelu czasu pracy " +
       "danej osoby, a nie z ryczałtowego ośmiogodzinnego dnia.",
     uebersicht: "Przegląd",
-    standLaedt: "Wczytywanie stanu synchronizacji …",
     keinAbgleich: "Synchronizacja jeszcze nie przebiegła. Uruchamia się sama w nocy o 02:15.",
-    letzterAbgleich: (zeitpunkt: string, status: string) =>
-      `Ostatnia synchronizacja ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} osób, ${anwesenheiten} obecności, ${abwesenheiten} nieobecności`,
     abgleichLaeuft: "trwa …",
@@ -450,6 +447,13 @@ export const pl: Texte = {
     verlauf: "Przebieg",
     reiheUeberstunden: "Nadgodziny",
     reiheKrankheit: "Choroba",
+    umsatzJeKopf: "Obrót / pracownik produkcji",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} zamówień ÷ ${koepfe} osób`,
+    produktionFehlt: "nie ustawiono działów produkcji",
+    abgleichStand: (datum: string, alter: string) => `Synchronizacja Personio ${datum} (${alter})`,
+    abgleichFehler: "z błędami",
+    reiheUmsatzJeKopf: "Obrót na pracownika produkcji",
+    ziel: (wert: string) => `Cel ${wert}`,
   },
   melden: {
     knopf: "Zgłoś",
@@ -497,13 +501,21 @@ export const pl: Texte = {
   },
   mitarbeiter: {
     titel: "Pracownicy",
-    nurMitUeberstunden: "tylko z nadgodzinami",
-    ausgeblendet: (anzahl: number) => `(${anzahl} ukrytych)`,
     person: "Osoba",
     abteilung: "Dział",
     istStunden: "Godz. rzecz.",
     ueberstunden: "Nadgodziny",
     quote: "NG %",
+    auswahl: "Wybór",
+    mitUeberstunden: "Z nadgodzinami",
+    aktive: "Aktywni",
+    alle: "Wszyscy",
+    name: "Imię i nazwisko",
+    position: "Stanowisko",
+    status: "Status",
+    wochenstunden: "Godz./tydz.",
+    leer: "Nikt nie pasuje do tego wyboru.",
+    statusWert: { active: "aktywny", inactive: "nieaktywny", onboarding: "wdrażanie", leave: "nieobecny" },
   },
   wochenbericht: {
     titel: "Raport tygodniowy",
@@ -527,6 +539,15 @@ export const pl: Texte = {
       "Norma to efektywna norma tygodniowa: urlop i choroba są odliczone, kto jest nieobecny " +
       "nieusprawiedliwiony, wychodzi na minus. W bieżącym tygodniu norma liczy się tylko do " +
       "ostatniego dnia z rejestracją.",
+    diagrammUeberstunden: "Nadgodziny na osobę",
+    diagrammKrankheit: "Choroba na osobę",
+    spitzeHinweis: "pięć najwyższych wartości tygodnia",
+    keineWerte: "Brak wartości w tym tygodniu",
+    pdf: "Eksportuj jako PDF",
+    pdfLaeuft: "Tworzenie PDF …",
+    seite: (seite: number, gesamt: number) => `Strona ${seite} z ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `Utworzono ${zeitpunkt}`,
+    einheit: "Jednostka choroby",
   },
   titel: {
     /** Detailseiten und Seiten, deren Tab-Titel ausführlicher heißt als die
@@ -631,6 +652,8 @@ export const pl: Texte = {
     aufklappen: (name: string) => `Rozwiń ${name}`,
     zuklappen: (name: string) => `Zwiń ${name}`,
     direkt: (anzahl: number) => `${anzahl} bezpośrednio`,
+    treffer: (anzahl: number) => ` · ${anzahl} trafień`,
+    kontext: "W ramce: trafienia. Blade: przełożeni jako kontekst.",
   },
   offeneSchulungen: {
     einleitung:

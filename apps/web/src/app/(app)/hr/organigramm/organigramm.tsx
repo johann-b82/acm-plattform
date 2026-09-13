@@ -8,22 +8,29 @@ import {
   anzeigename,
   baueWald,
   filtere,
+  ladeFoto,
   ladeOrganigramm,
   organigrammKeys,
   standorte,
+  treffer,
   type Knoten,
 } from "@/lib/organigramm";
+import { initialen } from "@/lib/initialen";
 import { Card, EmptyState, Input, Select } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { cn } from "@/lib/cn";
 
 /**
- * Wer wem berichtet.
+ * Wer wem berichtet — als Baum mit Linien (ORG-01).
  *
- * Die Kette kommt aus Personio und wird hier zum Baum. Aufgeklappt ist
- * zunächst alles: bei rund vierzig Leuten ist ein zusammengeklapptes
- * Organigramm eine Klickstrecke ohne Nutzen. Wer eine große Abteilung
- * zuklappen will, kann es.
+ * Die Kette kommt aus Personio. Aufgeklappt ist zunächst alles; wer eine große
+ * Abteilung zuklappen will, kann es. Stehen unter jemandem nur Personen ohne
+ * eigene Mitarbeiter, stapeln sie sich in einer Spalte, damit das Haus nicht
+ * breiter wird als nötig. Was trotzdem nicht passt, scrollt waagerecht.
+ *
+ * Mit Suche oder Standort bleibt die Führungskette stehen: wer passt, ist
+ * umrandet, Vorgesetzte von anderswo stehen blass als Kontext dabei.
  */
 export function Organigramm() {
   const worte = useTexte();
@@ -39,6 +46,10 @@ export function Organigramm() {
   const orte = useMemo(() => standorte(personen.data ?? []), [personen.data]);
   const wald = useMemo(
     () => baueWald(filtere(personen.data ?? [], suche, standort || null)),
+    [personen.data, suche, standort],
+  );
+  const fokus = useMemo(
+    () => treffer(personen.data ?? [], suche, standort || null),
     [personen.data, suche, standort],
   );
 
@@ -70,7 +81,7 @@ export function Organigramm() {
             id="org-suche"
             value={suche}
             placeholder={worte.organigramm.suchePlatzhalter}
-            className="w-72"
+            className="w-72 max-w-full"
             onChange={(e) => setSuche(e.target.value)}
           />
         </div>
@@ -96,6 +107,7 @@ export function Organigramm() {
         )}
         <span className="pb-2 text-sm text-[var(--fg-muted)]">
           {worte.organigramm.personen(personen.data?.length ?? 0)}
+          {fokus && worte.organigramm.treffer(fokus.size)}
           {ohneVorgesetzten > 1 && worte.organigramm.ohneVorgesetzten(ohneVorgesetzten)}
         </span>
       </Card>
@@ -114,90 +126,149 @@ export function Organigramm() {
 
       {wald.length > 0 && (
         <Card className="overflow-x-auto p-4">
-          <ul className="min-w-max">
-            {wald.map((k) => (
-              <Ast key={k.id} knoten={k} zu={zu} umschalten={umschalten} ebene={0} />
-            ))}
-          </ul>
+          {fokus && <p className="mb-4 text-xs text-[var(--fg-muted)]">{worte.organigramm.kontext}</p>}
+          <div className="org-baum">
+            <ul>
+              {wald.map((k) => (
+                <Ast key={k.id} knoten={k} zu={zu} umschalten={umschalten} fokus={fokus} />
+              ))}
+            </ul>
+          </div>
         </Card>
       )}
     </div>
   );
 }
 
-/**
- * Ein Ast samt seinen Kindern.
- *
- * Eingerückte Liste statt gezeichneter Kästchen: ein Organigramm mit vierzig
- * Leuten wird als Grafik entweder winzig oder breiter als jeder Bildschirm.
- * Eine Liste lässt sich lesen, durchsuchen und vorlesen.
- */
 function Ast({
   knoten,
   zu,
   umschalten,
-  ebene,
+  fokus,
 }: {
   knoten: Knoten;
   zu: Set<number>;
   umschalten: (id: number) => void;
-  ebene: number;
+  fokus: Set<number> | null;
 }) {
-  const worte = useTexte();
-  const hatKinder = knoten.kinder.length > 0;
-  const zugeklappt = zu.has(knoten.id);
+  const offen = knoten.kinder.length > 0 && !zu.has(knoten.id);
+  // Mehrere Mitarbeiter ohne eigene Mitarbeiter: eine Spalte statt einer Reihe.
+  const gestapelt = knoten.kinder.length > 1 && knoten.kinder.every((k) => k.kinder.length === 0);
 
   return (
     <li>
-      <div
-        className="flex items-center gap-2 rounded py-1 hover:bg-[var(--muted)]"
-        style={{ paddingLeft: `${ebene * 1.5}rem` }}
-      >
-        {hatKinder ? (
+      <Karte knoten={knoten} fokus={fokus} zugeklappt={zu.has(knoten.id)} umschalten={umschalten} />
+      {offen && (
+        <ul className={cn(gestapelt && "org-blaetter")}>
+          {knoten.kinder.map((k) =>
+            gestapelt ? (
+              <li key={k.id}>
+                <Karte knoten={k} fokus={fokus} zugeklappt={false} umschalten={umschalten} />
+              </li>
+            ) : (
+              <Ast key={k.id} knoten={k} zu={zu} umschalten={umschalten} fokus={fokus} />
+            ),
+          )}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function Karte({
+  knoten,
+  fokus,
+  zugeklappt,
+  umschalten,
+}: {
+  knoten: Knoten;
+  fokus: Set<number> | null;
+  zugeklappt: boolean;
+  umschalten: (id: number) => void;
+}) {
+  const worte = useTexte();
+  const name = anzeigename(knoten);
+  const istTreffer = fokus?.has(knoten.id) ?? false;
+  const unterzeile = [knoten.department, knoten.standort].filter(Boolean).join(" · ");
+
+  return (
+    <div
+      data-treffer={istTreffer || undefined}
+      className={cn(
+        "flex w-56 items-start gap-2 rounded-lg border bg-[var(--surface)] p-2 text-start",
+        istTreffer ? "border-[var(--ring)] ring-2 ring-[var(--ring)]" : "border-[var(--border)]",
+        fokus && !istTreffer && "opacity-60",
+      )}
+    >
+      <Avatar knoten={knoten} />
+      <div className="min-w-0 flex-1" dir="auto">
+        <div className="truncate text-sm font-medium" title={name}>
+          {name}
+        </div>
+        {knoten.position && (
+          <div className="truncate text-xs text-[var(--fg-muted)]" title={knoten.position}>
+            {knoten.position}
+          </div>
+        )}
+        {unterzeile && (
+          <div className="truncate text-[11px] text-[var(--fg-muted)]" title={unterzeile}>
+            {unterzeile}
+          </div>
+        )}
+        {knoten.kinder.length > 0 && (
           <button
             type="button"
             onClick={() => umschalten(knoten.id)}
             aria-expanded={!zugeklappt}
-            aria-label={
-              zugeklappt
-                ? worte.organigramm.aufklappen(anzeigename(knoten))
-                : worte.organigramm.zuklappen(anzeigename(knoten))
-            }
-            className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--fg-muted)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+            aria-label={zugeklappt ? worte.organigramm.aufklappen(name) : worte.organigramm.zuklappen(name)}
+            className="mt-0.5 inline-flex items-center gap-0.5 rounded text-[11px] text-[var(--fg-muted)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
           >
             {zugeklappt ? (
-              <ChevronRight className="h-4 w-4" aria-hidden />
+              <ChevronRight className="h-3 w-3" aria-hidden />
             ) : (
-              <ChevronDown className="h-4 w-4" aria-hidden />
+              <ChevronDown className="h-3 w-3" aria-hidden />
             )}
+            {worte.organigramm.direkt(knoten.kinder.length)}
           </button>
-        ) : (
-          <span className="inline-block h-6 w-6" aria-hidden />
         )}
-        <div className="min-w-0">
-          <span className="font-medium">{anzeigename(knoten)}</span>
-          {(knoten.position || knoten.department) && (
-            <span className="ms-2 text-sm text-[var(--fg-muted)]">
-              {[knoten.position, knoten.department].filter(Boolean).join(" · ")}
-            </span>
-          )}
-          {knoten.standort && (
-            <span className="ms-2 text-xs text-[var(--fg-muted)]">{knoten.standort}</span>
-          )}
-          {hatKinder && (
-            <span className="ms-2 text-xs text-[var(--fg-muted)]">
-              {worte.organigramm.direkt(knoten.kinder.length)}
-            </span>
-          )}
-        </div>
       </div>
-      {hatKinder && !zugeklappt && (
-        <ul>
-          {knoten.kinder.map((k) => (
-            <Ast key={k.id} knoten={k} zu={zu} umschalten={umschalten} ebene={ebene + 1} />
-          ))}
-        </ul>
-      )}
-    </li>
+    </div>
+  );
+}
+
+/**
+ * Rechteckig mit dem Eckenradius der Felder. Das Bild kommt aus Personio,
+ * gefunden über die Personio-Kennung; ohne Bild oder wenn es nicht lädt,
+ * stehen die Initialen da.
+ */
+function Avatar({ knoten }: { knoten: Knoten }) {
+  const [kaputt, setKaputt] = useState(false);
+  const foto = useQuery({
+    queryKey: organigrammKeys.foto(knoten.id),
+    queryFn: () => ladeFoto(knoten.id),
+    enabled: knoten.hat_foto,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  if (foto.data && !kaputt) {
+    return (
+      // Ein Blob aus dem Speicher des Browsers — `next/image` kann damit nichts anfangen.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={foto.data}
+        alt=""
+        className="h-11 w-11 shrink-0 rounded-md object-cover"
+        onError={() => setKaputt(true)}
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[var(--muted)] text-xs font-medium text-[var(--fg-muted)]"
+    >
+      {initialen(anzeigename(knoten))}
+    </span>
   );
 }

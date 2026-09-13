@@ -8,7 +8,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
  * Dashboard neu und irgendwann falsch.
  */
 
-export type Einheit = "anzahl" | "anteil";
+export type Einheit = "anzahl" | "anteil" | "euro";
 export type Richtung = "min" | "max";
 
 export interface Zielwert {

@@ -1,100 +1,163 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { personalApi, personalKeys } from "@/lib/kpi/personal";
-import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import {
+  personalApi,
+  personalKeys,
+  waehleMitarbeiter,
+  type MitarbeiterZeile,
+  type Mitarbeiterauswahl,
+} from "@/lib/kpi/personal";
+import { Card, Select } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { cn } from "@/lib/cn";
 
 /**
- * Ist-Stunden und Überstunden je Person im gewählten Zeitraum.
+ * Alle Personen mit Ist-Stunden und Überstunden im gewählten Zeitraum.
  *
  * Rechnet mit denselben Tagessummen und demselben Arbeitszeitmodell wie die
  * Kachel darüber — die Summe der Zeilen ergibt die Kachel. Im Altprojekt
  * weichen die beiden um den Faktor zehn ab, weil die Tabelle dort je
  * Anwesenheitssegment und mit pauschalem Tagessoll rechnet.
+ *
+ * Die Auswahl darüber (HR-07) bestimmt die fachliche Menge, bevor die Tabelle
+ * sucht, sortiert und blättert. Vorgabe ist „Mit Überstunden“ wie im
+ * Altsystem. Die Spalten folgen dessen Reihenfolge (HR-08); die Wochenstunden
+ * kommen aus dem Arbeitszeitmodell, nicht aus Personios `weekly_working_hours`.
  */
 export function Mitarbeitertabelle({ von, bis }: { von: string; bis: string }) {
   const worte = useTexte();
+  const t = worte.mitarbeiter;
   const fmt = useFormate();
-  const [nurMitUeberstunden, setNurMitUeberstunden] = useState(true);
+  const auswahlId = useId();
+  const [auswahl, setAuswahl] = useState<Mitarbeiterauswahl>("ueberstunden");
 
   const zeilen = useQuery({
     queryKey: personalKeys.mitarbeiter(von, bis),
     queryFn: () => personalApi.mitarbeiter(von, bis),
   });
 
-  const alle = useMemo(() => zeilen.data ?? [], [zeilen.data]);
-  const sichtbar = nurMitUeberstunden ? alle.filter((z) => z.ueberstunden > 0) : alle;
-  const ohne = alle.length - sichtbar.length;
+  const menge = useMemo(() => waehleMitarbeiter(zeilen.data ?? [], auswahl), [zeilen.data, auswahl]);
+
+  const spalten = useMemo<Tabellenspalte<MitarbeiterZeile>[]>(() => {
+    const statusWert = t.statusWert as Record<string, string>;
+    const statusText = (z: MitarbeiterZeile) => (z.status ? (statusWert[z.status] ?? z.status) : null);
+    const stunden = (v: number) => (v > 0 ? v.toFixed(2) : "—");
+    return [
+      { schluessel: "name", titel: t.name, typ: "text", wert: (z) => z.name ?? `#${z.employee_id}` },
+      {
+        schluessel: "abteilung",
+        titel: t.abteilung,
+        typ: "text",
+        wert: (z) => z.department,
+        className: "text-[var(--fg-muted)]",
+      },
+      {
+        schluessel: "position",
+        titel: t.position,
+        typ: "text",
+        wert: (z) => z.position,
+        className: "text-[var(--fg-muted)]",
+      },
+      {
+        schluessel: "status",
+        titel: t.status,
+        typ: "text",
+        wert: statusText,
+        zelle: (z) =>
+          z.status ? (
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-xs",
+                z.status === "active" ? "status-ok" : "status-none",
+              )}
+            >
+              {statusText(z)}
+            </span>
+          ) : (
+            "—"
+          ),
+      },
+      {
+        schluessel: "wochenstunden",
+        titel: t.wochenstunden,
+        typ: "zahl",
+        ausrichtung: "end",
+        wert: (z) => z.wochenstunden,
+        zelle: (z) => fmt.zahl(z.wochenstunden),
+        className: "font-mono",
+      },
+      {
+        schluessel: "ist",
+        titel: t.istStunden,
+        typ: "zahl",
+        ausrichtung: "end",
+        wert: (z) => z.ist_stunden,
+        zelle: (z) => stunden(z.ist_stunden),
+        className: "font-mono",
+      },
+      {
+        schluessel: "ueberstunden",
+        titel: t.ueberstunden,
+        typ: "zahl",
+        ausrichtung: "end",
+        wert: (z) => z.ueberstunden,
+        zelle: (z) => stunden(z.ueberstunden),
+        className: "font-mono font-medium",
+      },
+      {
+        schluessel: "quote",
+        titel: t.quote,
+        typ: "zahl",
+        ausrichtung: "end",
+        wert: (z) => z.quote,
+        zelle: (z) => fmt.prozent(z.quote),
+        className: "font-mono text-[var(--fg-muted)]",
+      },
+    ];
+  }, [t, fmt]);
 
   if (zeilen.error) {
     return (
       <Card className="p-4 text-sm text-[var(--danger)]">
-        Mitarbeitertabelle konnte nicht geladen werden: {(zeilen.error as Error).message}
+        {worte.dashboard.ladeFehler((zeilen.error as Error).message)}
       </Card>
     );
   }
-  if (!zeilen.isLoading && alle.length === 0) return null;
 
   return (
     <section className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold">{worte.mitarbeiter.titel}</h2>
-        <label className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
-          <input
-            type="checkbox"
-            checked={nurMitUeberstunden}
-            onChange={(e) => setNurMitUeberstunden(e.target.checked)}
-            className="h-3.5 w-3.5"
-          />
-          {worte.mitarbeiter.nurMitUeberstunden}
-          {ohne > 0 && nurMitUeberstunden && <span>{worte.mitarbeiter.ausgeblendet(ohne)}</span>}
-        </label>
-      </div>
-
-      <TableWrap>
-        <Table>
-          <thead>
-            <tr>
-              <Th>{worte.mitarbeiter.person}</Th>
-              <Th>{worte.mitarbeiter.abteilung}</Th>
-              <Th className="text-end">{worte.mitarbeiter.istStunden}</Th>
-              <Th className="text-end">{worte.mitarbeiter.ueberstunden}</Th>
-              <Th className="text-end">{worte.mitarbeiter.quote}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {sichtbar.map((z) => (
-              <tr key={z.employee_id}>
-                <Td>{z.name ?? `#${z.employee_id}`}</Td>
-                <Td className="text-[var(--fg-muted)]">{z.department ?? "—"}</Td>
-                <Td className="text-end font-mono tabular-nums">
-                  {z.ist_stunden.toFixed(2)}
-                </Td>
-                <Td
-                  className={cn(
-                    "text-end font-mono tabular-nums",
-                    z.ueberstunden > 0 && "font-medium",
-                  )}
-                >
-                  {z.ueberstunden > 0 ? z.ueberstunden.toFixed(2) : "—"}
-                </Td>
-                <Td className="text-end font-mono tabular-nums text-[var(--fg-muted)]">
-                  {fmt.prozent(z.quote)}
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableWrap>
-
-      {zeilen.isLoading && (
-        <p className="text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</p>
-      )}
+      <h2 className="text-base font-semibold">{t.titel}</h2>
+      <Datentabelle
+        zeilen={menge}
+        spalten={spalten}
+        zeilenSchluessel={(z) => z.employee_id}
+        vorsortierung={{ spalte: "ueberstunden", richtung: "ab" }}
+        laedt={zeilen.isLoading}
+        leer={t.leer}
+        beschriftung={t.titel}
+        werkzeuge={
+          <div className="flex items-center gap-2">
+            <label htmlFor={auswahlId} className="text-sm text-[var(--fg-muted)]">
+              {t.auswahl}
+            </label>
+            <Select
+              id={auswahlId}
+              value={auswahl}
+              onChange={(e) => setAuswahl(e.target.value as Mitarbeiterauswahl)}
+              className="w-48"
+            >
+              <option value="ueberstunden">{t.mitUeberstunden}</option>
+              <option value="aktive">{t.aktive}</option>
+              <option value="alle">{t.alle}</option>
+            </Select>
+          </div>
+        }
+      />
     </section>
   );
 }
