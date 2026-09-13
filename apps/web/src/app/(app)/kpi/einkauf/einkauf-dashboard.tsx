@@ -4,9 +4,10 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
+  Bar,
   CartesianGrid,
-  Line,
-  LineChart,
+  ComposedChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -23,32 +24,39 @@ import {
   gebundenesKapital,
   ladenhueterApi,
   verzugText,
+  type LadenhueterZeile,
+  type OtdPosition,
 } from "@/lib/kpi/einkauf";
 import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
-import { Card, Table, TableWrap, Td, Th } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/primitives";
+import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
 import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
+import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { useTexte } from "@/components/sprache/anbieter";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
+import { ZAHL_TAG } from "@/lib/sprache";
 import { cn } from "@/lib/cn";
 
 
 
-function datum(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleDateString("de-DE") : "—";
+function datum(iso: string | null, sprachTag: string): string {
+  return iso ? new Date(iso).toLocaleDateString(sprachTag) : "—";
 }
 
 export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
   const worte = useTexte();
   const fmt = useFormate();
+  const tag = ZAHL_TAG[useSprache()];
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const t = takt(von, bis);
+  const [art, setArt] = useDiagrammart();
 
   const otd = useQuery({
     queryKey: ["kpi", "einkauf", "otd", von, bis],
@@ -67,7 +75,7 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
   const ladenhueter = useQuery({
     // Ohne Zeitraum im Schlüssel: der Bestand ist ein Stichtagswert.
     queryKey: ["kpi", "einkauf", "ladenhueter"],
-    queryFn: () => ladenhueterApi.top(),
+    queryFn: () => ladenhueterApi.alle(),
   });
   const ziel = nachSchluessel(ziele.data ?? [])["einkauf_otd"];
 
@@ -76,8 +84,8 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
     () =>
       (verlaufDaten ?? []).map((p) => ({
         label: fmt.bucket(p.bucket, t),
-        // Recharts unterbricht die Linie bei null — genau das ist gewollt:
-        // ein Bucket ohne Positionen hat keine Quote, keine gerade Linie.
+        // Recharts unterbricht Fläche und Balken bei null — genau das ist
+        // gewollt: ein Bucket ohne Positionen hat keine Quote, keine Null.
         quote: p.quote == null ? null : Number(p.quote) * 100,
         gesamt: p.gesamt,
       })),
@@ -88,6 +96,142 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
   const zeilen = useMemo(() => zeilenDaten ?? [], [zeilenDaten]);
   const lagerDaten = ladenhueter.data;
   const lager = useMemo(() => lagerDaten ?? [], [lagerDaten]);
+
+  const positionsSpalten = useMemo<Tabellenspalte<OtdPosition>[]>(() => {
+    const menge = new Intl.NumberFormat(tag, { maximumFractionDigits: 0 });
+    return [
+      {
+        schluessel: "auftrag",
+        titel: worte.einkauf.auftrag,
+        typ: "text",
+        wert: (z) => `${z.auftrag}/${z.pos}${z.upos ? `/${z.upos}` : ""}`,
+        zelle: (z) => (
+          <span className="font-mono text-xs">
+            {z.auftrag}/{z.pos}
+            {z.upos ? `/${z.upos}` : ""}
+          </span>
+        ),
+      },
+      {
+        schluessel: "lieferant",
+        titel: worte.einkauf.lieferant,
+        typ: "text",
+        wert: (z) => z.supplier_name,
+        suchtext: (z) => `${z.supplier_name ?? ""} ${z.adr_nr ?? ""}`,
+        zelle: (z) => (
+          <>
+            {z.supplier_name ?? "—"}
+            {z.adr_nr && <span className="ms-1 text-xs text-[var(--fg-muted)]">({z.adr_nr})</span>}
+          </>
+        ),
+      },
+      {
+        schluessel: "artikel",
+        titel: worte.einkauf.artikel,
+        typ: "text",
+        wert: (z) => z.article_name ?? z.article_number,
+        suchtext: (z) => `${z.article_number ?? ""} ${z.article_name ?? ""}`,
+      },
+      {
+        schluessel: "geliefert",
+        titel: worte.einkauf.geliefert,
+        typ: "datum",
+        wert: (z) => z.delivered_date,
+        zelle: (z) => datum(z.delivered_date, tag),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "zieltermin",
+        titel: worte.einkauf.zieltermin,
+        typ: "datum",
+        wert: (z) => z.target_date,
+        zelle: (z) => datum(z.target_date, tag),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "verzug",
+        titel: worte.einkauf.verzug,
+        typ: "zahl",
+        wert: (z) => z.verzug_tage,
+        zelle: (z) => (
+          <span className={cn(z.verzug_tage != null && z.verzug_tage > 0 && "text-[var(--danger)]")}>
+            {verzugText(z.verzug_tage)}
+          </span>
+        ),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "menge",
+        titel: worte.einkauf.menge,
+        typ: "zahl",
+        wert: (z) => z.quantity,
+        // Ganze Zahl wie in der Referenz; die Einheit dazu, weil Stück, Meter
+        // und Quadratmeter in derselben Spalte stehen.
+        zelle: (z) => (z.quantity == null ? "—" : `${menge.format(z.quantity)}${z.unit ? ` ${z.unit}` : ""}`),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+    ];
+  }, [worte, tag]);
+
+  const lagerSpalten = useMemo<Tabellenspalte<LadenhueterZeile>[]>(
+    () => [
+      {
+        schluessel: "artnr",
+        titel: worte.einkauf.artikel,
+        typ: "text",
+        wert: (z) => z.artnr,
+        zelle: (z) => <span className="font-mono text-xs">{z.artnr}</span>,
+      },
+      {
+        schluessel: "bezeichnung",
+        titel: worte.einkauf.bezeichnung,
+        typ: "text",
+        wert: (z) => z.article_name,
+        className: "max-w-sm truncate",
+      },
+      {
+        schluessel: "bestand",
+        titel: worte.einkauf.bestand,
+        typ: "zahl",
+        wert: (z) => z.bestand,
+        zelle: (z) => fmt.zahl(z.bestand),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "liegtSeit",
+        titel: worte.einkauf.liegtSeit,
+        typ: "zahl",
+        wert: (z) => z.tage_liegend,
+        zelle: (z) => `${fmt.zahl(z.tage_liegend)} d`,
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "stueckpreis",
+        titel: worte.einkauf.stueckpreis,
+        typ: "zahl",
+        wert: (z) => z.stueckpreis,
+        zelle: (z) => fmt.eurGenau(z.stueckpreis),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+      {
+        schluessel: "wert",
+        titel: worte.einkauf.wert,
+        typ: "zahl",
+        wert: (z) => z.wert,
+        zelle: (z) => fmt.eur(z.wert),
+        suchtext: false,
+        ausrichtung: "end",
+      },
+    ],
+    [worte, fmt],
+  );
 
   const keineDaten = !otd.isLoading && otd.data?.gesamt === 0;
   const fehler = otd.error ?? verlauf.error ?? positionen.error ?? ziele.error ?? ladenhueter.error;
@@ -137,6 +281,7 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
               vorjahr={vgl.vorjahr?.quote == null ? null : Number(vgl.vorjahr.quote)}
               vorperiodeLabel={vgl.label}
               vorjahrLabel={vgl.labelVorjahr}
+              richtung="mehr_ist_besser"
             />
           }
         />
@@ -175,14 +320,19 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
 
       {chartDaten.length > 0 && (
         <Card className="p-5">
-          <h2 className="font-medium">{worte.einkauf.verlauf}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            {worte.einkauf.verlaufHinweis}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="font-medium">{worte.einkauf.verlauf}</h2>
+              <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+                {worte.einkauf.verlaufHinweis}
+              </p>
+            </div>
+            <DiagrammartWahl art={art} onChange={setArt} />
+          </div>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
               {/* Rechter Rand traegt die Beschriftung der Ziellinie. */}
-              <LineChart data={chartDaten} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
+              <ComposedChart data={chartDaten} margin={{ top: 8, right: 56, bottom: 0, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--fg-muted)" />
                 <YAxis
@@ -197,31 +347,52 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
                     const zahl = typeof wert === "number" ? wert : null;
                     const gesamt = (eintrag?.payload as { gesamt?: number } | undefined)?.gesamt ?? 0;
                     return [
-                      zahl == null ? "—" : `${zahl.toFixed(1)} %`,
-                      `OTD (${gesamt} Positionen)`,
+                      zahl == null ? "—" : fmt.prozent(zahl / 100),
+                      worte.einkauf.verlaufTooltip(fmt.zahl(gesamt)),
                     ] as [string, string];
                   }}
                 />
+                {art === "balken" ? (
+                  <Bar dataKey="quote" fill="var(--accent, #2f6f8f)" isAnimationActive={false} />
+                ) : (
+                  <Area
+                    type="monotone"
+                    dataKey="quote"
+                    stroke="var(--accent, #2f6f8f)"
+                    strokeWidth={2}
+                    fill="var(--accent, #2f6f8f)"
+                    fillOpacity={0.2}
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
                 {ziel != null && (
                 <ReferenceLine
                   y={ziel * 100}
                   stroke="var(--fg-muted)"
                   strokeDasharray="4 4"
-                  label={{ value: "Ziel", position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
+                  label={{ value: worte.einkauf.ziellinie, position: "right", fontSize: 11, fill: "var(--fg-muted)" }}
                 />
                 )}
-                <Line
-                  type="monotone"
-                  dataKey="quote"
-                  stroke="var(--accent, #2f6f8f)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
+        </Card>
+      )}
+
+      {zeilen.length > 0 && (
+        <Card className="p-5">
+          <h2 className="font-medium">{worte.einkauf.positionen}</h2>
+          <p className="mt-0.5 mb-4 text-sm text-[var(--fg-muted)]">
+            {worte.einkauf.positionenHinweis}
+          </p>
+          <Datentabelle
+            zeilen={zeilen}
+            spalten={positionsSpalten}
+            zeilenSchluessel={(z) => `${z.auftrag}-${z.pos}-${z.upos}`}
+            beschriftung={worte.einkauf.positionen}
+          />
         </Card>
       )}
 
@@ -233,80 +404,16 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
               {worte.einkauf.kapital(fmt.eur(gebundenesKapital(lager)))}
             </span>
           </div>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
+          <p className="mt-0.5 mb-4 text-sm text-[var(--fg-muted)]">
             {worte.einkauf.ladenhueterHinweis(LIEGETAGE)}
           </p>
-          <TableWrap className="mt-4">
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.einkauf.artikel}</Th>
-                  <Th>{worte.einkauf.bezeichnung}</Th>
-                  <Th className="text-end">{worte.einkauf.bestand}</Th>
-                  <Th className="text-end">{worte.einkauf.liegtSeit}</Th>
-                  <Th className="text-end">{worte.einkauf.stueckpreis}</Th>
-                  <Th className="text-end">{worte.einkauf.wert}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {lager.map((z) => (
-                  <tr key={z.artnr}>
-                    <Td className="font-mono text-xs">{z.artnr}</Td>
-                    <Td className="max-w-sm truncate">{z.article_name ?? "—"}</Td>
-                    <Td className="text-end tabular-nums">{fmt.zahl(z.bestand)}</Td>
-                    <Td className="text-end tabular-nums">{fmt.zahl(z.tage_liegend)} d</Td>
-                    <Td className="text-end tabular-nums">{fmt.eurGenau(z.stueckpreis)}</Td>
-                    <Td className="text-end tabular-nums">{fmt.eur(z.wert)}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
-        </Card>
-      )}
-
-      {zeilen.length > 0 && (
-        <Card className="p-5">
-          <h2 className="font-medium">{worte.einkauf.positionen}</h2>
-          <p className="mt-0.5 text-sm text-[var(--fg-muted)]">
-            {worte.einkauf.positionenHinweis}
-          </p>
-          <TableWrap className="mt-4">
-            <Table>
-              <thead>
-                <tr>
-                  <Th>{worte.einkauf.auftrag}</Th>
-                  <Th>{worte.einkauf.lieferant}</Th>
-                  <Th>{worte.einkauf.artikel}</Th>
-                  <Th className="text-end">{worte.einkauf.zieltermin}</Th>
-                  <Th className="text-end">{worte.einkauf.geliefert}</Th>
-                  <Th className="text-end">{worte.einkauf.verzug}</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {zeilen.map((z) => (
-                  <tr key={`${z.auftrag}-${z.pos}-${z.upos}`}>
-                    <Td className="font-mono text-xs">
-                      {z.auftrag}/{z.pos}
-                      {z.upos ? `/${z.upos}` : ""}
-                    </Td>
-                    <Td>{z.supplier_name ?? "—"}</Td>
-                    <Td>{z.article_name ?? z.article_number ?? "—"}</Td>
-                    <Td className="text-end tabular-nums">{datum(z.target_date)}</Td>
-                    <Td className="text-end tabular-nums">{datum(z.delivered_date)}</Td>
-                    <Td
-                      className={cn(
-                        "text-end tabular-nums",
-                        z.verzug_tage != null && z.verzug_tage > 0 && "text-[var(--danger)]",
-                      )}
-                    >
-                      {verzugText(z.verzug_tage)}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
+          <Datentabelle
+            zeilen={lager}
+            spalten={lagerSpalten}
+            zeilenSchluessel={(z) => z.artnr}
+            vorsortierung={{ spalte: "wert", richtung: "ab" }}
+            beschriftung={worte.einkauf.ladenhueter}
+          />
         </Card>
       )}
     </div>

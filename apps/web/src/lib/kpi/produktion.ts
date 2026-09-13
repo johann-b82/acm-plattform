@@ -1,4 +1,4 @@
-import { rpc, takt } from "@/lib/kpi/gemeinsam";
+import { rpc, rpcAlle, takt } from "@/lib/kpi/gemeinsam";
 
 /**
  * Aufträge in Verzug. Rechenweg in Alembic 0005, Sicht `auftrag_verzug`.
@@ -13,6 +13,8 @@ export interface VerzugSumme {
   in_verzug: number;
   gesamt: number;
   verzug_schnitt: number | null;
+  /** Davon ohne Lieferschein mit verstrichenem Termin — in SQL gezählt (0042). */
+  offen: number;
 }
 
 export interface VerzugVerlaufPunkt {
@@ -25,6 +27,7 @@ export interface VerzugVerlaufPunkt {
 export interface VerzugZeile {
   vorgang_nr: string;
   customer_name: string | null;
+  adr_nr: string | null;
   ziel: string;
   ist: string | null;
   verzug_tage: number;
@@ -34,10 +37,24 @@ export interface VerzugZeile {
 export const produktionApi = {
   verzug: async (von: string | null, bis: string | null): Promise<VerzugSumme> => {
     const rows = await rpc<VerzugSumme[]>("kpi_produktion_verzug", { von, bis });
-    return rows[0] ?? { quote: null, in_verzug: 0, gesamt: 0, verzug_schnitt: null };
+    return rows[0] ?? { quote: null, in_verzug: 0, gesamt: 0, verzug_schnitt: null, offen: 0 };
   },
   verlauf: (von: string | null, bis: string | null) =>
     rpc<VerzugVerlaufPunkt[]>("kpi_produktion_verzug_verlauf", { von, bis, takt: takt(von, bis) }),
-  liste: (von: string | null, bis: string | null, grenze = 500) =>
-    rpc<VerzugZeile[]>("kpi_produktion_verzug_liste", { von, bis, grenze }),
+  /** Alle Aufträge in Verzug des Zeitraums, beide Arten — die Tabelle blättert selbst. */
+  liste: (von: string | null, bis: string | null) =>
+    rpcAlle<VerzugZeile>("kpi_produktion_verzug_liste", { von, bis }),
 };
+
+/** Die beiden Ansichten der Auftragstabelle (PRO-02). */
+export type Auftragsansicht = "verzug" | "ueberfaellig";
+
+/**
+ * Wie die beiden Tabellen der Referenz: „Aufträge in Verzug“ sind die zu spät
+ * **gelieferten**, „Überfällige offene Aufträge“ die ohne Lieferschein mit
+ * verstrichenem Termin. Zusammen ergeben sie die Kachel „Aufträge in Verzug“.
+ */
+export function nachAnsicht(zeilen: readonly VerzugZeile[], ansicht: Auftragsansicht): VerzugZeile[] {
+  const art = ansicht === "verzug" ? "verspaetet" : "offen";
+  return zeilen.filter((z) => z.art === art);
+}

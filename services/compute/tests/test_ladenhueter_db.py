@@ -158,3 +158,12 @@ class TestReihung:
             await _preis(f"L-{i}", "1")
             await _bewegung(f"L-{i}", vor(90), str(100 + i))
         assert len(await _funktion("kpi_einkauf_ladenhueter", (28, I), (20, I))) == 20
+
+    async def test_ohne_grenze_alle_ladenhueter(self, leer):
+        """Die Tabelle blättert selbst (TAB-01); ohne Angabe kommt jeder Ladenhüter."""
+        for i in range(120):
+            await _preis(f"L-{i}", "1")
+            await _bewegung(f"L-{i}", vor(90), str(100 + i))
+        zeilen = await _funktion("kpi_einkauf_ladenhueter", (28, I))
+        assert len(zeilen) == 120
+        assert zeilen[0]["artnr"] == "L-119"  # höchster Wert zuerst
