@@ -44,7 +44,6 @@ export default async function LauncherPage({
       ) : (
         <div className="mt-6">
           <Kacheln
-            spalten="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
             eintraege={visible.map((a) => ({
               pfad: a.path,
               name: a.name,

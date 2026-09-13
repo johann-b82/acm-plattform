@@ -21,16 +21,17 @@ export type Kachel = {
 export function Kacheln({
   untertitel,
   eintraege,
-  spalten = "sm:grid-cols-2 lg:grid-cols-3",
 }: {
   untertitel?: string;
   eintraege: Kachel[];
-  spalten?: string;
 }) {
   return (
     <div className="space-y-6">
       {untertitel && <Seitenkopf untertitel={untertitel} />}
-      <ul className={`grid gap-4 ${spalten}`}>
+      {/* Alle Kacheln gleich breit und nur so breit wie nötig: so viele
+          Spalten von höchstens 18rem, wie in die Zeile passen; auf schmalen
+          Bildschirmen nie breiter als der Platz. */}
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),18rem))] gap-4">
         {eintraege.map((k) => {
           const Bild = symbol(k.pfad);
           return (
@@ -39,18 +40,7 @@ export function Kacheln({
                 href={k.pfad}
                 className="flex h-full items-stretch gap-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
               >
-                {/* Das Sinnbild nimmt drei Viertel der Inhaltshöhe: der
-                    gestreckte Flex-Streifen ist so hoch wie der Text daneben,
-                    darin sitzt das Bild vertikal mittig. w-auto hält es
-                    quadratisch. */}
-                <span className="flex shrink-0 items-center self-stretch">
-                  <Bild
-                    className="h-3/4 w-auto text-[var(--fg-muted)]"
-                    aria-hidden
-                    strokeWidth={1.5}
-                  />
-                </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">{k.name}</div>
                   {/* Zwei Textzeilen sind immer reserviert — ob Beschreibung
                       oder Rechtestufe, ob ein- oder zweizeilig —, damit alle
@@ -69,6 +59,17 @@ export function Kacheln({
                     )}
                   </div>
                 </div>
+                {/* Das Sinnbild sitzt am rechten Rand und nimmt drei Viertel
+                    der Inhaltshöhe: der gestreckte Flex-Streifen ist so hoch
+                    wie der Text daneben, darin sitzt das Bild vertikal mittig.
+                    w-auto hält es quadratisch. */}
+                <span className="flex shrink-0 items-center self-stretch">
+                  <Bild
+                    className="h-3/4 w-auto text-[var(--fg-muted)]"
+                    aria-hidden
+                    strokeWidth={1.5}
+                  />
+                </span>
               </Link>
             </li>
           );
