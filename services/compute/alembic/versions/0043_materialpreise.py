@@ -34,7 +34,7 @@ kommen weiterhin nur Summen je Abteilung.
 from alembic import op
 
 revision = "0043_materialpreise"
-down_revision = "0040_bereich_hr"
+down_revision = "0050_kpi_bubbles"
 branch_labels = None
 depends_on = None
 
@@ -152,6 +152,29 @@ $$;
 grant execute on function public.kpi_finanzen_personalkosten_abteilung(date, date) to authenticated;
 """
 
+# Übergang bis zum ersten Upload „Materialpreise (Wareneingang)" bzw. zur
+# Übernahme: ohne Befüllung stünde die neue Tabelle leer und die
+# Materialkosten fielen auf null. Die schon eingelesenen Wareneingänge stammen
+# aus derselben Datei `AswKpf_WE.txt`; Datum ist wie im Parser das
+# Wareneingangsdatum (`entry_date`, Spalte „Datum"). Kein Upload-Protokoll —
+# die Zeilen kamen aus keinem Materialpreis-Upload.
+#
+# Nur fehlende Schlüssel: ein vorhandener Materialpreis bleibt, und ein
+# späterer Upload überschreibt diese Zeilen per Upsert. Referenzparität
+# entsteht erst über diesen Upload-Weg, nicht über die Befüllung — sie ergibt
+# den Preisstand der Wareneingänge. Die Übernahme läuft auf einem Stack mit
+# Bestand mit `--leeren` (docs/cutover.md) und bringt dann den alten Stand; auf
+# einem frischen Stack sind die Wareneingänge hier noch leer.
+ERSTBEFUELLUNG = """
+insert into public.material_prices
+    (vorgang_nr, pos, upos, typ, datum, artnr, article_name, menge, unit, preis, pos_wert, imported_at, raw)
+select w.vorgang_nr, w.pos, w.upos, w.typ, w.entry_date, w.article_number, w.article_name,
+       w.quantity, w.unit, w.price, w.position_value, w.imported_at, w.raw
+from public.goods_receipt_records w
+where w.article_number is not null
+on conflict (vorgang_nr, pos, upos) do nothing;
+"""
+
 DOWNGRADE = """
 drop function if exists public.kpi_finanzen_personalkosten_abteilung(date, date);
 
@@ -261,6 +284,7 @@ drop table public.material_prices;
 
 def upgrade() -> None:
     op.execute(UPGRADE)
+    op.execute(ERSTBEFUELLUNG)
 
 
 def downgrade() -> None:

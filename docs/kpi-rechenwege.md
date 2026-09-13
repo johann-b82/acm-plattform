@@ -578,6 +578,18 @@ kamen am 03.08.) 114.953,85 / 56.477,12 / 31,94 € und 492 ohne Preis — genau
 die Referenz. Die Abweichung war der Datenstand der Preistabelle, nicht die
 Preisregel.
 
+**Übergang bis zum ersten Upload bzw. zur Übernahme.** Damit die
+Materialkosten nach der Migration nicht auf null fallen, befüllt `0043` die
+Tabelle einmal aus den schon eingelesenen `goods_receipt_records` (dieselbe
+Datei; Datum = `entry_date`, Schlüssel Vorgang/Pos/UPos, Menge und
+Positionswert unverändert, ohne Upload-Protokoll) — nur für Schlüssel, die
+noch fehlen. Die lokale Kopie ergibt damit die bisherigen Werte des Nachbaus
+(117.091,33 / 57.734,46 / 32,61 €, 489 ohne Preis), **nicht** die Referenz.
+Referenzparität entsteht über den Upload-Weg: ein Upload „Materialpreise
+(Wareneingang)" überschreibt die Übergangszeilen per Upsert; die Übernahme
+läuft auf einem Stack mit Bestand ohnehin mit `--leeren` und bringt dann den
+Stand der alten Tabelle.
+
 ### Personalkostenquote
 
 - **Anzeige**: Kachel „Personalkostenquote" (Untertitel „Personalkosten / Umsatz"), Kacheln „Personalkosten", „Umsatz", „Mitarbeiter (mit Kosten im Zeitraum)"; Chart und Tabelle „Personalkosten je Abteilung". `GET /api/finance/personnel-cost-ratio`, `/history`, `/list`. Registry-Key `finance.personnel_cost_ratio`.
