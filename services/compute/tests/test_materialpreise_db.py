@@ -229,3 +229,71 @@ class TestLesen:
             finally:
                 await trans.rollback()
         assert "permission denied" in str(fehler.value).lower()
+
+
+# --- Erstbefuellung aus Wareneingaengen (Migration 0052) -------------------
+
+def _backfill_sql() -> str:
+    """Die UPGRADE-Anweisung aus 0052 direkt lesen, damit Test und Migration
+    nicht auseinanderlaufen."""
+    mig = Path(__file__).parents[1] / "alembic" / "versions" / "0052_materialpreise_erstbefuellung.py"
+    return mig.read_text().split('UPGRADE = """')[1].split('"""')[0]
+
+
+@pytest.mark.asyncio
+async def test_erstbefuellung_aus_wareneingang(datenbank_da):
+    """Ein Wareneingang ohne passenden Materialpreis wird nachgezogen; eine
+    vorhandene Preiszeile mit gleichem Schluessel bleibt unangetastet."""
+    if not datenbank_da:
+        pytest.skip("Keine Test-Datenbank erreichbar")
+    async with SessionLocal() as session:
+        async with session.begin():
+            await session.execute(sa.delete(material_prices))
+            await session.execute(sa.delete(goods_receipt_records))
+            await session.execute(
+                goods_receipt_records.insert(),
+                [
+                    dict(
+                        vorgang_nr="WE1", pos=1, upos=0, typ="WE",
+                        entry_date=dt.date(2026, 3, 1), article_number="A100",
+                        article_name="Blech", quantity=Decimal("10"), unit="KG",
+                        price=Decimal("2.5"), position_value=Decimal("25"),
+                        imported_at=JETZT,
+                    ),
+                    dict(
+                        vorgang_nr="WE2", pos=1, upos=0, typ="WE",
+                        entry_date=dt.date(2026, 3, 2), article_number="A200",
+                        article_name="Rohr", quantity=Decimal("1"), unit="ST",
+                        price=Decimal("99"), position_value=Decimal("99"),
+                        imported_at=JETZT,
+                    ),
+                ],
+            )
+            await session.execute(
+                material_prices.insert(),
+                [dict(
+                    vorgang_nr="WE2", pos=1, upos=0, typ="WE",
+                    datum=dt.date(2026, 3, 2), artnr="A200", article_name="Rohr",
+                    menge=Decimal("1"), unit="ST", preis=Decimal("7"),
+                    pos_wert=Decimal("7"), imported_at=JETZT,
+                )],
+            )
+
+        async with session.begin():
+            await session.execute(sa.text(_backfill_sql()))
+
+        rows = (
+            await session.execute(
+                sa.select(material_prices.c.artnr, material_prices.c.preis)
+            )
+        ).all()
+        werte = {r.artnr: r.preis for r in rows}
+        assert werte["A100"] == Decimal("2.5000")
+        assert werte["A200"] == Decimal("7.0000")
+
+        async with session.begin():
+            await session.execute(sa.text(_backfill_sql()))
+        anzahl = (
+            await session.execute(sa.select(sa.func.count()).select_from(material_prices))
+        ).scalar_one()
+        assert anzahl == 2
