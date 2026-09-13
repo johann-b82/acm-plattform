@@ -375,9 +375,7 @@ export const en: Texte = {
       "From the Personio sync. The daily target comes from each person's working-time model, " +
       "not from a flat eight-hour day.",
     uebersicht: "Overview",
-    standLaedt: "Loading sync status …",
     keinAbgleich: "No sync has run yet. It runs by itself at 02:15 each night.",
-    letzterAbgleich: (zeitpunkt: string, status: string) => `Last sync ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} people, ${anwesenheiten} attendances, ${abwesenheiten} absences`,
     abgleichLaeuft: "running …",
@@ -401,6 +399,13 @@ export const en: Texte = {
     verlauf: "Over time",
     reiheUeberstunden: "Overtime",
     reiheKrankheit: "Sickness",
+    umsatzJeKopf: "Revenue / prod. employee",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} orders ÷ ${koepfe} heads`,
+    produktionFehlt: "production departments not configured",
+    abgleichStand: (datum: string, alter: string) => `Personio sync ${datum} (${alter})`,
+    abgleichFehler: "with errors",
+    reiheUmsatzJeKopf: "Revenue per production employee",
+    ziel: (wert: string) => `Target ${wert}`,
   },
   melden: {
     knopf: "Report",
@@ -448,13 +453,21 @@ export const en: Texte = {
   },
   mitarbeiter: {
     titel: "Employees",
-    nurMitUeberstunden: "only with overtime",
-    ausgeblendet: (anzahl: number) => `(${anzahl} hidden)`,
     person: "Person",
     abteilung: "Department",
     istStunden: "Hours worked",
     ueberstunden: "Overtime",
     quote: "OT %",
+    auswahl: "Selection",
+    mitUeberstunden: "With overtime",
+    aktive: "Active",
+    alle: "All",
+    name: "Name",
+    position: "Position",
+    status: "Status",
+    wochenstunden: "Hrs/week",
+    leer: "Nobody in this selection.",
+    statusWert: { active: "active", inactive: "inactive", onboarding: "onboarding", leave: "on leave" },
   },
   wochenbericht: {
     titel: "Weekly report",
@@ -477,6 +490,15 @@ export const en: Texte = {
       "Target is the effective weekly target: holiday and sickness are deducted, anyone absent " +
       "without notice is in the minus. In the current week the target only counts up to the " +
       "last day clocked.",
+    diagrammUeberstunden: "Overtime per person",
+    diagrammKrankheit: "Sickness per person",
+    spitzeHinweis: "the five highest values of the week",
+    keineWerte: "No values this week",
+    pdf: "Export as PDF",
+    pdfLaeuft: "Creating PDF …",
+    seite: (seite: number, gesamt: number) => `Page ${seite} of ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `Created ${zeitpunkt}`,
+    einheit: "Unit for sickness",
   },
   titel: {
     schulung: "Training",
@@ -575,6 +597,8 @@ export const en: Texte = {
     aufklappen: (name: string) => `Expand ${name}`,
     zuklappen: (name: string) => `Collapse ${name}`,
     direkt: (anzahl: number) => `${anzahl} direct`,
+    treffer: (anzahl: number) => ` · ${anzahl} matches`,
+    kontext: "Outlined: matches. Faded: supervisors shown for context.",
   },
   offeneSchulungen: {
     einleitung:

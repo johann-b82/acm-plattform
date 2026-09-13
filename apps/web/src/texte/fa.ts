@@ -374,9 +374,7 @@ export const fa: Texte = {
       "از همگام‌سازی Personio. موظفی روزانه از مدل کاری ثبت‌شدهٔ هر نفر می‌آید، نه از " +
       "یک روز هشت‌ساعتهٔ یکسان.",
     uebersicht: "نمای کلی",
-    standLaedt: "وضعیت همگام‌سازی بارگذاری می‌شود …",
     keinAbgleich: "هنوز همگام‌سازی‌ای انجام نشده است. هر شب ساعت 02:15 خودبه‌خود اجرا می‌شود.",
-    letzterAbgleich: (zeitpunkt: string, status: string) => `آخرین همگام‌سازی ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} نفر، ${anwesenheiten} حضور، ${abwesenheiten} غیبت`,
     abgleichLaeuft: "در حال اجرا …",
@@ -400,6 +398,13 @@ export const fa: Texte = {
     verlauf: "روند",
     reiheUeberstunden: "اضافه‌کاری",
     reiheKrankheit: "بیماری",
+    umsatzJeKopf: "درآمد / کارمند تولید",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} سفارش ÷ ${koepfe} نفر`,
+    produktionFehlt: "بخش‌های تولید تعیین نشده‌اند",
+    abgleichStand: (datum: string, alter: string) => `همگام‌سازی Personio ${datum} (${alter})`,
+    abgleichFehler: "با خطا",
+    reiheUmsatzJeKopf: "درآمد برای هر کارمند تولید",
+    ziel: (wert: string) => `هدف ${wert}`,
   },
   melden: {
     knopf: "گزارش",
@@ -447,13 +452,21 @@ export const fa: Texte = {
   },
   mitarbeiter: {
     titel: "کارمندان",
-    nurMitUeberstunden: "فقط دارای اضافه‌کاری",
-    ausgeblendet: (anzahl: number) => `(${anzahl} پنهان)`,
     person: "نفر",
     abteilung: "بخش",
     istStunden: "ساعت کارکرد",
     ueberstunden: "اضافه‌کاری",
     quote: "٪ اضافه‌کاری",
+    auswahl: "انتخاب",
+    mitUeberstunden: "دارای اضافه‌کاری",
+    aktive: "فعال‌ها",
+    alle: "همه",
+    name: "نام",
+    position: "سمت",
+    status: "وضعیت",
+    wochenstunden: "ساعت/هفته",
+    leer: "هیچ‌کس در این انتخاب نیست.",
+    statusWert: { active: "فعال", inactive: "غیرفعال", onboarding: "در حال ورود", leave: "در مرخصی" },
   },
   wochenbericht: {
     titel: "گزارش هفتگی",
@@ -475,6 +488,15 @@ export const fa: Texte = {
     fussnote:
       "موظفی، موظفی مؤثر هفته است: مرخصی و بیماری کسر شده‌اند و هرکس بدون اطلاع غایب " +
       "باشد منفی می‌شود. در هفتهٔ جاری موظفی تنها تا آخرین روز ثبت‌شده شمرده می‌شود.",
+    diagrammUeberstunden: "اضافه‌کاری هر نفر",
+    diagrammKrankheit: "بیماری هر نفر",
+    spitzeHinweis: "پنج مقدار بالای هفته",
+    keineWerte: "در این هفته مقداری نیست",
+    pdf: "خروجی PDF",
+    pdfLaeuft: "PDF در حال ساخت است …",
+    seite: (seite: number, gesamt: number) => `صفحه ${seite} از ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `ساخته‌شده در ${zeitpunkt}`,
+    einheit: "واحد بیماری",
   },
   titel: {
     schulung: "آموزش",
@@ -573,6 +595,8 @@ export const fa: Texte = {
     aufklappen: (name: string) => `${name} باز شود`,
     zuklappen: (name: string) => `${name} بسته شود`,
     direkt: (anzahl: number) => `${anzahl} مستقیم`,
+    treffer: (anzahl: number) => ` · ${anzahl} نتیجه`,
+    kontext: "با قاب: نتایج. کم‌رنگ: سرپرستان برای زمینه.",
   },
   offeneSchulungen: {
     einleitung:

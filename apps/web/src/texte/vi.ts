@@ -377,9 +377,7 @@ export const vi: Texte = {
       "Từ đợt đồng bộ Personio. Số giờ định mức mỗi ngày lấy từ mô hình thời gian làm " +
       "việc của từng người, không phải từ ngày tám tiếng cào bằng.",
     uebersicht: "Tổng quan",
-    standLaedt: "Đang tải trạng thái đồng bộ …",
     keinAbgleich: "Chưa có đợt đồng bộ nào. Nó tự chạy lúc 02:15 mỗi đêm.",
-    letzterAbgleich: (zeitpunkt: string, status: string) => `Đồng bộ lần cuối ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} người, ${anwesenheiten} lượt có mặt, ${abwesenheiten} lượt vắng`,
     abgleichLaeuft: "đang chạy …",
@@ -404,6 +402,13 @@ export const vi: Texte = {
     verlauf: "Diễn biến",
     reiheUeberstunden: "Giờ làm thêm",
     reiheKrankheit: "Nghỉ ốm",
+    umsatzJeKopf: "Doanh thu / NV sản xuất",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} đơn hàng ÷ ${koepfe} người`,
+    produktionFehlt: "chưa đặt bộ phận sản xuất",
+    abgleichStand: (datum: string, alter: string) => `Đồng bộ Personio ${datum} (${alter})`,
+    abgleichFehler: "có lỗi",
+    reiheUmsatzJeKopf: "Doanh thu trên mỗi NV sản xuất",
+    ziel: (wert: string) => `Mục tiêu ${wert}`,
   },
   melden: {
     knopf: "Phản hồi",
@@ -451,13 +456,21 @@ export const vi: Texte = {
   },
   mitarbeiter: {
     titel: "Nhân viên",
-    nurMitUeberstunden: "chỉ người có giờ làm thêm",
-    ausgeblendet: (anzahl: number) => `(đã ẩn ${anzahl})`,
     person: "Người",
     abteilung: "Bộ phận",
     istStunden: "Giờ thực tế",
     ueberstunden: "Giờ làm thêm",
     quote: "LT %",
+    auswahl: "Lựa chọn",
+    mitUeberstunden: "Có giờ làm thêm",
+    aktive: "Đang làm việc",
+    alle: "Tất cả",
+    name: "Tên",
+    position: "Chức vụ",
+    status: "Trạng thái",
+    wochenstunden: "Giờ/tuần",
+    leer: "Không có ai trong lựa chọn này.",
+    statusWert: { active: "đang làm", inactive: "đã nghỉ", onboarding: "đang nhận việc", leave: "đang nghỉ phép" },
   },
   wochenbericht: {
     titel: "Báo cáo tuần",
@@ -481,6 +494,15 @@ export const vi: Texte = {
       "Định mức là định mức tuần hiệu lực: nghỉ phép và nghỉ ốm đã được trừ, ai vắng " +
       "không phép thì bị âm. Trong tuần đang chạy, định mức chỉ tính đến ngày chấm công " +
       "cuối cùng.",
+    diagrammUeberstunden: "Giờ làm thêm theo người",
+    diagrammKrankheit: "Nghỉ ốm theo người",
+    spitzeHinweis: "năm giá trị cao nhất trong tuần",
+    keineWerte: "Không có giá trị trong tuần này",
+    pdf: "Xuất PDF",
+    pdfLaeuft: "Đang tạo PDF …",
+    seite: (seite: number, gesamt: number) => `Trang ${seite}/${gesamt}`,
+    erstellt: (zeitpunkt: string) => `Tạo lúc ${zeitpunkt}`,
+    einheit: "Đơn vị nghỉ ốm",
   },
   titel: {
     schulung: "Khóa đào tạo",
@@ -579,6 +601,8 @@ export const vi: Texte = {
     aufklappen: (name: string) => `Mở ${name}`,
     zuklappen: (name: string) => `Thu gọn ${name}`,
     direkt: (anzahl: number) => `${anzahl} trực tiếp`,
+    treffer: (anzahl: number) => ` · ${anzahl} kết quả`,
+    kontext: "Có viền: kết quả. Mờ: cấp trên để tham chiếu.",
   },
   offeneSchulungen: {
     einleitung:

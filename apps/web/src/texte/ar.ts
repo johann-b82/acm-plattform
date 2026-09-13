@@ -371,9 +371,7 @@ export const ar: Texte = {
       "من مزامنة Personio. الهدف اليومي مأخوذ من نموذج وقت العمل المسجَّل لكل شخص، " +
       "لا من يوم عمل ثابت من ثماني ساعات.",
     uebersicht: "نظرة عامة",
-    standLaedt: "جارٍ تحميل حالة المزامنة …",
     keinAbgleich: "لم تُجرَ أي مزامنة بعد. تعمل تلقائياً كل ليلة في 02:15.",
-    letzterAbgleich: (zeitpunkt: string, status: string) => `آخر مزامنة ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} أشخاص، ${anwesenheiten} حضور، ${abwesenheiten} غياب`,
     abgleichLaeuft: "جارية …",
@@ -397,6 +395,13 @@ export const ar: Texte = {
     verlauf: "التطوّر",
     reiheUeberstunden: "العمل الإضافي",
     reiheKrankheit: "المرض",
+    umsatzJeKopf: "الإيراد / موظف إنتاج",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} طلبات ÷ ${koepfe} موظفين`,
+    produktionFehlt: "أقسام الإنتاج غير محددة",
+    abgleichStand: (datum: string, alter: string) => `مزامنة Personio ${datum} (${alter})`,
+    abgleichFehler: "مع أخطاء",
+    reiheUmsatzJeKopf: "الإيراد لكل موظف إنتاج",
+    ziel: (wert: string) => `الهدف ${wert}`,
   },
   melden: {
     knopf: "أبلِغ",
@@ -443,13 +448,21 @@ export const ar: Texte = {
   },
   mitarbeiter: {
     titel: "الموظفون",
-    nurMitUeberstunden: "من لديهم عمل إضافي فقط",
-    ausgeblendet: (anzahl: number) => `(${anzahl} مخفي)`,
     person: "الشخص",
     abteilung: "القسم",
     istStunden: "الساعات الفعلية",
     ueberstunden: "العمل الإضافي",
     quote: "٪ إضافي",
+    auswahl: "الاختيار",
+    mitUeberstunden: "مع عمل إضافي",
+    aktive: "النشطون",
+    alle: "الكل",
+    name: "الاسم",
+    position: "المنصب",
+    status: "الحالة",
+    wochenstunden: "ساعات/أسبوع",
+    leer: "لا أحد ضمن هذا الاختيار.",
+    statusWert: { active: "نشط", inactive: "غير نشط", onboarding: "قيد الإعداد", leave: "في إجازة" },
   },
   wochenbericht: {
     titel: "التقرير الأسبوعي",
@@ -471,6 +484,15 @@ export const ar: Texte = {
     fussnote:
       "الهدف هو الهدف الأسبوعي الفعلي: الإجازة والمرض مخصومان، ومن يغيب بلا عذر يكون " +
       "في السالب. في الأسبوع الجاري يُحتسب الهدف حتى آخر يوم مسجَّل فقط.",
+    diagrammUeberstunden: "العمل الإضافي لكل شخص",
+    diagrammKrankheit: "المرض لكل شخص",
+    spitzeHinweis: "أعلى خمس قيم في الأسبوع",
+    keineWerte: "لا قيم في هذا الأسبوع",
+    pdf: "تصدير كملف PDF",
+    pdfLaeuft: "جارٍ إنشاء PDF …",
+    seite: (seite: number, gesamt: number) => `صفحة ${seite} من ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `أُنشئ في ${zeitpunkt}`,
+    einheit: "وحدة المرض",
   },
   titel: {
     schulung: "تدريب",
@@ -569,6 +591,8 @@ export const ar: Texte = {
     aufklappen: (name: string) => `توسيع ${name}`,
     zuklappen: (name: string) => `طيّ ${name}`,
     direkt: (anzahl: number) => `${anzahl} مباشرون`,
+    treffer: (anzahl: number) => ` · ${anzahl} نتائج`,
+    kontext: "بإطار: النتائج. باهت: المسؤولون للسياق.",
   },
   offeneSchulungen: {
     einleitung: "من يحتاج إلى ماذا. التدريبات النشطة فقط؛ الموقوفة لم تعد تظهر هنا.",

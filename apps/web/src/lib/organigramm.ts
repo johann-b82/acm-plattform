@@ -1,3 +1,4 @@
+import { computeFetch } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
@@ -17,6 +18,8 @@ export interface Person {
   department: string | null;
   standort: string | null;
   vorgesetzter_id: number | null;
+  /** Führt Personio ein Profilbild? Sonst gar nicht erst fragen. */
+  hat_foto: boolean;
 }
 
 export interface Knoten extends Person {
@@ -25,15 +28,29 @@ export interface Knoten extends Person {
 
 export const organigrammKeys = {
   alle: () => ["organigramm"] as const,
+  foto: (id: number) => ["organigramm", "foto", id] as const,
 };
 
 export async function ladeOrganigramm(): Promise<Person[]> {
   const { data, error } = await supabaseBrowser()
     .from("organigramm")
-    .select("id,name,position,department,standort,vorgesetzter_id")
+    .select("id,name,position,department,standort,vorgesetzter_id,hat_foto")
     .order("name");
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as Person[];
+}
+
+/**
+ * Das Personio-Bild als Adresse für `<img>`, oder `null`.
+ *
+ * Über `computeFetch`, weil die Route ein Token verlangt und ein `<img src>`
+ * keins mitschicken kann. Zugeordnet über die Personio-Kennung — dieselbe
+ * Zahl wie `id` — und nie über den Namen.
+ */
+export async function ladeFoto(id: number): Promise<string | null> {
+  const antwort = await computeFetch(`/api/hr/foto/${id}`);
+  if (!antwort.ok) return null;
+  return URL.createObjectURL(await antwort.blob());
 }
 
 export function anzeigename(p: Person): string {
@@ -100,11 +117,34 @@ export function standorte(personen: Person[]): string[] {
   return [...new Set(personen.map((p) => p.standort).filter((s): s is string => !!s))].sort();
 }
 
+/** Passt eine Person zu Suche und Standort? */
+function passt(p: Person, gesucht: string, standort: string | null): boolean {
+  const passtText =
+    !gesucht ||
+    `${p.name ?? ""} ${p.position ?? ""} ${p.department ?? ""}`.toLowerCase().includes(gesucht);
+  return passtText && (!standort || p.standort === standort);
+}
+
+/**
+ * Wer selbst zu Suche und Standort passt — diese Personen werden umrandet.
+ * `null`, solange kein Filter gesetzt ist: dann gibt es nichts hervorzuheben.
+ */
+export function treffer(
+  personen: Person[],
+  begriff: string,
+  standort: string | null,
+): Set<number> | null {
+  const gesucht = begriff.trim().toLowerCase();
+  if (!gesucht && !standort) return null;
+  return new Set(personen.filter((p) => passt(p, gesucht, standort)).map((p) => p.id));
+}
+
 /**
  * Den Wald auf die Treffer zusammenstreichen — samt ihrer Vorgesetztenkette.
  *
  * Ein Suchergebnis ohne seine Kette wäre wertlos: „Meier" allein sagt nicht,
- * wo Meier im Haus sitzt.
+ * wo Meier im Haus sitzt. Beim Standort genauso: die Leitung in Memmingen
+ * bleibt über Hamburg stehen, als Kontext (ORG-01).
  */
 export function filtere(
   personen: Person[],
@@ -118,13 +158,7 @@ export function filtere(
   const behalten = new Set<number>();
 
   for (const p of personen) {
-    const passtText =
-      !gesucht ||
-      `${p.name ?? ""} ${p.position ?? ""} ${p.department ?? ""}`
-        .toLowerCase()
-        .includes(gesucht);
-    const passtOrt = !standort || p.standort === standort;
-    if (!passtText || !passtOrt) continue;
+    if (!passt(p, gesucht, standort)) continue;
 
     // Den Treffer und alle darüber behalten.
     let lauf: Person | undefined = p;

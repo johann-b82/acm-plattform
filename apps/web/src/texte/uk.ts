@@ -375,10 +375,7 @@ export const uk: Texte = {
       "З синхронізації Personio. Денна норма береться з робочого графіка кожної особи, а не " +
       "з умовного восьмигодинного дня.",
     uebersicht: "Огляд",
-    standLaedt: "Стан синхронізації завантажується …",
     keinAbgleich: "Синхронізація ще не виконувалася. Вона запускається щоночі о 02:15.",
-    letzterAbgleich: (zeitpunkt: string, status: string) =>
-      `Остання синхронізація ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} осіб, ${anwesenheiten} присутностей, ${abwesenheiten} відсутностей`,
     abgleichLaeuft: "виконується …",
@@ -402,6 +399,13 @@ export const uk: Texte = {
     verlauf: "Динаміка",
     reiheUeberstunden: "Понаднормові",
     reiheKrankheit: "Хвороба",
+    umsatzJeKopf: "Виручка / працівник виробництва",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} замовлень ÷ ${koepfe} осіб`,
+    produktionFehlt: "виробничі відділи не задано",
+    abgleichStand: (datum: string, alter: string) => `Синхронізація Personio ${datum} (${alter})`,
+    abgleichFehler: "з помилками",
+    reiheUmsatzJeKopf: "Виручка на працівника виробництва",
+    ziel: (wert: string) => `Ціль ${wert}`,
   },
   melden: {
     knopf: "Повідомити",
@@ -449,13 +453,21 @@ export const uk: Texte = {
   },
   mitarbeiter: {
     titel: "Працівники",
-    nurMitUeberstunden: "лише з понаднормовими",
-    ausgeblendet: (anzahl: number) => `(приховано: ${anzahl})`,
     person: "Особа",
     abteilung: "Відділ",
     istStunden: "Факт. год",
     ueberstunden: "Понаднормові",
     quote: "ПН %",
+    auswahl: "Вибір",
+    mitUeberstunden: "З понаднормовими",
+    aktive: "Активні",
+    alle: "Усі",
+    name: "Ім’я",
+    position: "Посада",
+    status: "Статус",
+    wochenstunden: "Год./тиждень",
+    leer: "У цьому виборі нікого немає.",
+    statusWert: { active: "активний", inactive: "неактивний", onboarding: "онбординг", leave: "у відпустці" },
   },
   wochenbericht: {
     titel: "Тижневий звіт",
@@ -478,6 +490,15 @@ export const uk: Texte = {
       "Норма — це ефективна тижнева норма: відпустка і хвороба відняті, хто відсутній без " +
       "пояснення, іде в мінус. У поточному тижні норма рахується лише до останнього " +
       "відміченого дня.",
+    diagrammUeberstunden: "Понаднормові за особою",
+    diagrammKrankheit: "Хвороба за особою",
+    spitzeHinweis: "п’ять найвищих значень тижня",
+    keineWerte: "Цього тижня значень немає",
+    pdf: "Експортувати як PDF",
+    pdfLaeuft: "PDF створюється …",
+    seite: (seite: number, gesamt: number) => `Сторінка ${seite} з ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `Створено ${zeitpunkt}`,
+    einheit: "Одиниця хвороби",
   },
   titel: {
     schulung: "Навчання",
@@ -579,6 +600,8 @@ export const uk: Texte = {
     aufklappen: (name: string) => `Розгорнути ${name}`,
     zuklappen: (name: string) => `Згорнути ${name}`,
     direkt: (anzahl: number) => `${anzahl} напряму`,
+    treffer: (anzahl: number) => ` · збігів: ${anzahl}`,
+    kontext: "У рамці: збіги. Бліді: керівники для контексту.",
   },
   offeneSchulungen: {
     einleitung:

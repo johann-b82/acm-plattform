@@ -374,10 +374,7 @@ export const bg: Texte = {
       "От синхронизацията с Personio. Дневната норма идва от заложения " +
       "работен режим на всеки човек, а не от общ осемчасов ден.",
     uebersicht: "Преглед",
-    standLaedt: "Състоянието на синхронизацията се зарежда …",
     keinAbgleich: "Още няма синхронизация. Тя тръгва сама всяка нощ в 02:15.",
-    letzterAbgleich: (zeitpunkt: string, status: string) =>
-      `Последна синхронизация ${zeitpunkt} · ${status}`,
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
       `${personen} души, ${anwesenheiten} присъствия, ${abwesenheiten} отсъствия`,
     abgleichLaeuft: "тече …",
@@ -402,6 +399,13 @@ export const bg: Texte = {
     verlauf: "Развитие",
     reiheUeberstunden: "Извънреден труд",
     reiheKrankheit: "Болнични",
+    umsatzJeKopf: "Оборот / служител в производството",
+    umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} поръчки ÷ ${koepfe} души`,
+    produktionFehlt: "производствените отдели не са зададени",
+    abgleichStand: (datum: string, alter: string) => `Синхронизация с Personio ${datum} (${alter})`,
+    abgleichFehler: "с грешки",
+    reiheUmsatzJeKopf: "Оборот на служител в производството",
+    ziel: (wert: string) => `Цел ${wert}`,
   },
   melden: {
     knopf: "Сигнал",
@@ -449,13 +453,21 @@ export const bg: Texte = {
   },
   mitarbeiter: {
     titel: "Служители",
-    nurMitUeberstunden: "само с извънреден труд",
-    ausgeblendet: (anzahl: number) => `(${anzahl} скрити)`,
     person: "Човек",
     abteilung: "Отдел",
     istStunden: "Отраб. часове",
     ueberstunden: "Извънреден труд",
     quote: "Изв. %",
+    auswahl: "Избор",
+    mitUeberstunden: "С извънреден труд",
+    aktive: "Активни",
+    alle: "Всички",
+    name: "Име",
+    position: "Длъжност",
+    status: "Статус",
+    wochenstunden: "Ч./седмица",
+    leer: "Няма никого в този избор.",
+    statusWert: { active: "активен", inactive: "неактивен", onboarding: "въвеждане", leave: "в отпуск" },
   },
   wochenbericht: {
     titel: "Седмичен отчет",
@@ -479,6 +491,15 @@ export const bg: Texte = {
       "Нормата е ефективната седмична норма: отпуск и болнични са приспаднати, който " +
       "отсъства без причина, е на минус. В текущата седмица нормата се брои само до " +
       "последния отчетен ден.",
+    diagrammUeberstunden: "Извънреден труд по човек",
+    diagrammKrankheit: "Болест по човек",
+    spitzeHinweis: "петте най-високи стойности за седмицата",
+    keineWerte: "Няма стойности тази седмица",
+    pdf: "Експорт като PDF",
+    pdfLaeuft: "PDF се създава …",
+    seite: (seite: number, gesamt: number) => `Страница ${seite} от ${gesamt}`,
+    erstellt: (zeitpunkt: string) => `Създаден на ${zeitpunkt}`,
+    einheit: "Единица за болест",
   },
   titel: {
     schulung: "Обучение",
@@ -579,6 +600,8 @@ export const bg: Texte = {
     aufklappen: (name: string) => `Разгъни ${name}`,
     zuklappen: (name: string) => `Сгъни ${name}`,
     direkt: (anzahl: number) => `${anzahl} пряко`,
+    treffer: (anzahl: number) => ` · ${anzahl} съвпадения`,
+    kontext: "С рамка: съвпадения. Бледи: ръководители за контекст.",
   },
   offeneSchulungen: {
     einleitung:

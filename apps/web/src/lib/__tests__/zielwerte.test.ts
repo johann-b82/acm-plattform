@@ -21,6 +21,12 @@ describe("Umrechnung", () => {
     expect(ausAnzeige(98, "anteil")).toBe(0.98);
     expect(ausAnzeige(5, "anzahl")).toBe(5);
   });
+
+  it("lässt Euro-Beträge unverändert", () => {
+    // Umsatz je Produktionskopf: 300 € stehen als 300 in der Datenbank.
+    expect(alsAnzeige(300, "euro")).toBe(300);
+    expect(ausAnzeige(300, "euro")).toBe(300);
+  });
 });
 
 describe("verfehlt", () => {
