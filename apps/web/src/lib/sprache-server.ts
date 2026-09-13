@@ -19,11 +19,15 @@ export async function texte() {
 }
 
 /**
- * Der Titel im Browser-Tab, in der Sprache der Anfrage.
+ * Der Titel im Browser-Tab, in der Sprache der Anfrage und mit dem
+ * konfigurierten App-Namen (SET-06).
  *
- * `generateMetadata` statt `metadata`, weil der Titel jetzt von einem Cookie
- * abhängt — eine Konstante wäre beim Bauen festgeschrieben und bliebe deutsch.
+ * `generateMetadata` statt `metadata`, weil der Titel von einem Cookie abhängt
+ * (Sprache) und vom App-Namen — beides eine Konstante wäre beim Bauen
+ * festgeschrieben.
  */
 export async function seitentitel(waehle: (t: Texte) => string): Promise<Metadata> {
-  return { title: `${waehle(await texte())} · ACM-Plattform` };
+  const { ladeErscheinung } = await import("@/lib/erscheinung-server");
+  const { appName } = await ladeErscheinung();
+  return { title: `${waehle(await texte())} · ${appName}` };
 }

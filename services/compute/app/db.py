@@ -789,6 +789,50 @@ plattform_logo = sa.Table(
     sa.Column("dateiname", sa.Text),
     sa.Column("mime", sa.String(64)),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    # Das PNG für die Formblätter, wenn das Logo ein SVG ist; sonst dieselbe
+    # Datei wie `pfad`.
+    sa.Column("raster_pfad", sa.Text),
+)
+
+plattform_einstellungen = sa.Table(
+    "plattform_einstellungen",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("tabellen_seitengroesse", sa.Integer, nullable=False),
+    sa.Column("app_name", sa.String(60), nullable=False),
+    sa.Column("farben", JSONB),
+    sa.Column("personio_sync_intervall_h", sa.Integer, nullable=False),
+    sa.Column("personio_nachweis_aktiv", sa.Boolean, nullable=False),
+    sa.Column("personio_nachweis_kategorie", sa.String(64)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+personio_nachweise = sa.Table(
+    "personio_nachweise",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("art", sa.String(16), nullable=False),
+    sa.Column("angelegt_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("erledigt_am", sa.DateTime(timezone=True)),
+    sa.Column("versuche", sa.Integer, nullable=False),
+    sa.Column("fehler", sa.Text),
+    sa.Column("inhalt_hash", sa.String(64)),
+)
+
+email_einstellungen = sa.Table(
+    "email_einstellungen",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+    sa.Column("modus", sa.String(16), nullable=False),
+    sa.Column("tenant_id", sa.String(64)),
+    sa.Column("client_id", sa.String(64)),
+    sa.Column("absender", sa.String(254)),
+    sa.Column("absender_name", sa.String(120)),
+    sa.Column("delegiert_konto", sa.String(254)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("geaendert_von", UUID(as_uuid=False)),
 )
 
 zeugnis_aussteller = sa.Table(

@@ -30,7 +30,7 @@ from pydantic import BaseModel
 
 from app.auth import require_app
 from app.config import settings
-from app.personio import zugang
+from app.personio import nachweise, zugang
 from app.personio.client import PersonioFehler
 from app.personio.listen import sammeln
 from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
@@ -38,6 +38,9 @@ from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/hr", tags=["hr"])
+#: Die Nachweise nach Personio (SET-09) — derselbe pg_cron-Schlüssel wie der
+#: Abgleich, weil beides mit denselben Zugangsdaten zu Personio spricht.
+nachweise_router = APIRouter(prefix="/api/personio", tags=["hr"])
 
 
 class ArtRead(BaseModel):
@@ -115,6 +118,29 @@ async def sync_von_hand() -> AbgleichErgebnis:
 async def sync_geplant() -> AbgleichErgebnis:
     """Wird von pg_cron über pg_net gerufen. Nicht in der OpenAPI-Liste."""
     return await _laufen_lassen()
+
+
+class NachweisLauf(BaseModel):
+    hochgeladen: int
+    unveraendert: int
+    fehlgeschlagen: int
+
+
+@nachweise_router.post(
+    "/nachweise/geplant",
+    response_model=NachweisLauf,
+    dependencies=[Depends(_geheimnis_pruefen)],
+    include_in_schema=False,
+)
+async def nachweise_geplant() -> NachweisLauf:
+    """Wird von pg_cron gerufen, wenn ein Nachweis offen ist (SET-09). Denselben
+    Schlüssel wie der Abgleich, weil beides mit Personio spricht."""
+    lauf = await nachweise.abarbeiten()
+    return NachweisLauf(
+        hochgeladen=lauf.hochgeladen,
+        unveraendert=lauf.unveraendert,
+        fehlgeschlagen=lauf.fehlgeschlagen,
+    )
 
 
 @router.get(

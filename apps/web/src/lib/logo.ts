@@ -1,12 +1,14 @@
 import { LOGO_EIMER, LOGO_MAX_BYTES, LOGO_TYPEN } from "@/lib/logo-gemeinsam";
+import { computeFetch } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
- * Das Firmenlogo für die erzeugten Formblätter.
+ * Das Firmenlogo — oben links in der Anwendung und auf jedem Formblatt.
  *
- * Nur PNG oder JPEG: openpyxl kann kein SVG einbetten, und ein SVG müsste
- * gereinigt werden, weil es Skripte tragen kann. Der Fall entfällt damit,
- * statt behandelt zu werden.
+ * PNG, JPEG oder SVG bis 5 MB (SET-07). Hochgeladen wird über `compute`, nicht
+ * direkt in den Eimer: nur dort lässt sich der Typ am Inhalt prüfen, ein SVG
+ * reinigen (Skripte, Handler, externe Verweise entfernen) und ein Raster für
+ * die openpyxl-Formblätter erzeugen. Angezeigt wird weiter über Storage.
  */
 
 export { LOGO_EIMER, LOGO_MAX_BYTES, LOGO_TYPEN } from "@/lib/logo-gemeinsam";
@@ -36,39 +38,22 @@ export const logoApi = {
 
   hochladen: async (datei: File): Promise<void> => {
     if (!LOGO_TYPEN.includes(datei.type)) {
-      throw new Error("Das Logo muss eine PNG- oder JPEG-Datei sein.");
+      throw new Error("Das Logo muss eine PNG-, JPEG- oder SVG-Datei sein.");
     }
     if (datei.size > LOGO_MAX_BYTES) throw new Error("Das Logo ist größer als 5 MB.");
 
-    const client = sb();
-    const { data: sitzung } = await client.auth.getUser();
-    const kennung = sitzung.user?.id;
-    if (!kennung) throw new Error("Keine Sitzung.");
-
-    const alt = await logoApi.stand();
-    const endung = datei.type === "image/png" ? "png" : "jpg";
-    const pfad = `${kennung}/${crypto.randomUUID()}.${endung}`;
-    const { error: speicherFehler } = await client.storage
-      .from(LOGO_EIMER)
-      .upload(pfad, datei, { contentType: datei.type });
-    if (speicherFehler) throw new Error(speicherFehler.message);
-
-    const { data, error } = await client
-      .from("plattform_logo")
-      .update({
-        pfad,
-        dateiname: datei.name,
-        mime: datei.type,
-        geaendert_am: new Date().toISOString(),
-      })
-      .eq("id", true)
-      .select("pfad");
-    if (error || !data?.length) {
-      await client.storage.from(LOGO_EIMER).remove([pfad]);
-      throw new Error(error?.message ?? "Nicht gespeichert — fehlt das Recht?");
+    // Über compute: dort wird geprüft, ein SVG gereinigt und gerastert.
+    const form = new FormData();
+    form.append("datei", datei);
+    const antwort = await computeFetch("/api/einstellungen/logo", { method: "POST", body: form });
+    if (!antwort.ok) {
+      const koerper = await antwort.json().catch(() => null);
+      const detail =
+        koerper && typeof koerper === "object" && "detail" in koerper
+          ? String((koerper as { detail: unknown }).detail)
+          : `HTTP ${antwort.status}`;
+      throw new Error(detail);
     }
-    // Erst jetzt die alte Datei weg: vorher hätte ein Fehler beides genommen.
-    if (alt?.pfad) await client.storage.from(LOGO_EIMER).remove([alt.pfad]);
   },
 
   url: async (stand: LogoStand): Promise<string | null> => {

@@ -1227,6 +1227,7 @@ export const ar: Texte = {
     nichtsGefunden:
       "لم يُعثر على شيء. إن كان شيء ناقصاً في المساعدة، أبلِغ عنه بزر الإبلاغ أسفل اليسار.",
     alleThemen: "→ كل المواضيع",
+    navigation: "مواضيع المساعدة",
   },
   meldungen: {
     stand: (offen: number) => `ما أُبلغ عنه من الشاشات. ${offen} مفتوح`,
@@ -1735,6 +1736,9 @@ export const ar: Texte = {
       anzeigenText:
         "العناوين التي تعمل على الشاشات في المبنى. كل عنوان يحمل رمزاً موقَّعاً، " +
         "ويصلح لشاشته وحدها، وينتهي أجله.",
+      email: "البريد الإلكتروني",
+      emailText:
+        "حساب Microsoft 365 الذي ترسل منه المنصة التذكيرات والتقارير. لا يُرسَل شيء إلا بإجراء صريح.",
       zugaenge: "المستخدمون والمجموعات",
       zugaengeText:
         "أنشئ أشخاصاً وكوّن مجموعات وامنحها صلاحيات التطبيقات. تسري التعديلات ما إن " +
@@ -1742,6 +1746,67 @@ export const ar: Texte = {
     },
   },
   einstellungenText: {
+    appName: "اسم التطبيق",
+    appNameHinweis:
+      "يظهر في الترويسة بدون شعار وفي عنوان الصفحة وفي صفحة تسجيل الدخول.",
+    farbrollen: "أدوار الألوان",
+    farbrollenHinweis:
+      "اللون الرئيسي للتركيز والروابط والزر الأساسي وسلسلة الرسم الرئيسية، والنص فوقه. مرة للفاتح ومرة للداكن.",
+    hellTitel: "فاتح",
+    dunkelTitel: "داكن",
+    hauptfarbe: "اللون الرئيسي",
+    textAufHauptfarbe: "النص فوق اللون الرئيسي",
+    kontrastTitel: "تباين غير كافٍ (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `«${bereich}» (${thema}): التباين ${verhaeltnis}:1، المطلوب ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "روابط على الصفحة",
+      linkKarte: "روابط على البطاقات",
+      fokusFlaeche: "التركيز على سطح رمادي",
+      diagramm: "لون الرسم",
+      knopfText: "النص على الزر الأساسي",
+    },
+    farbenGespeichert: "حُفظت الألوان. تسري بعد إعادة التحميل.",
+    farbenAufVorgabe: "أُعيد إلى الوضع الافتراضي.",
+    farbenZuruecksetzen: "إعادة إلى الافتراضي",
+    email: {
+      titel: "إرسال البريد (Microsoft 365)",
+      einleitung:
+        "خدمة مركزية للتذكيرات والتقارير عبر Microsoft Graph.",
+      ohneSchluessel:
+        "لم يُضبط GEHEIM_SCHLUESSEL على الخادم. ما دام غائبًا لا يمكن تخزين أي سر.",
+      gespeichert: "حُفظ.",
+      speichert: "يحفظ …",
+      speichern: "حفظ",
+      speichernFehler: (meldung: string) => `فشل الحفظ: ${meldung}`,
+      modus: "النمط",
+      modusApp: "إذن التطبيق",
+      modusDelegiert: "حساب خاص (مفوَّض)",
+      modusAppHinweis: "يرسل عبر حساب تطبيق بإذن Mail.Send؛ يحتاج سرّ عميل وموافقة مسؤول.",
+      modusDelegiertHinweis: "يرسل باسم الشخص المسجَّل بعد تسجيل دخول برمز الجهاز؛ دون موافقة مسؤول.",
+      tenantId: "معرّف المستأجر",
+      clientId: "معرّف العميل",
+      clientSecret: "سرّ العميل",
+      secretGesetzt: "مُخزَّن — اتركه فارغًا للإبقاء عليه",
+      absender: "عنوان المرسِل",
+      absenderName: "اسم المرسِل (اختياري)",
+      aktivieren: "الإرسال مُفعَّل",
+      testTitel: "بريد اختباري",
+      testHinweis: "يرسل رسالة إلى العنوان المُدخَل. هذا الإجراء وحده يرسل شيئًا.",
+      testEmpfaenger: "المستلِم",
+      testSenden: "إرسال بريد اختباري",
+      testLaeuft: "يرسل …",
+      testOk: "أُرسل البريد الاختباري.",
+      testFehler: "فشل الإرسال.",
+      delegiertTitel: "تسجيل الدخول عبر Microsoft",
+      delegiertAnmelden: "تسجيل الدخول عبر Microsoft",
+      delegiertAnleitung:
+        "افتح العنوان وأدخل الرمز وسجّل الدخول بحساب Microsoft 365 الخاص بك.",
+      delegiertWartet: "بانتظار تسجيل الدخول …",
+      verbundenMit: (konto: string) => `مسجَّل الدخول باسم ${konto}`,
+      trennen: "قطع الاتصال",
+      getrennt: "قُطع الاتصال.",
+    },
     speichernFehler: (meldung: string) => `فشل الحفظ: ${meldung}`,
     zielwertGespeichert: "حُفظت القيمة المستهدفة. تعرضها اللوحات بعد إعادة التحميل.",
     zahlAbNull: "أدخل رقماً من 0 فأعلى.",
@@ -1757,7 +1822,7 @@ export const ar: Texte = {
       "وينتهي أجله — فالمدخل الذي لا يعتني به أحد يتوقف عن العرض من تلقاء نفسه.",
     logoHinweis:
       "يقف أعلى اليمين في التطبيق وفي ترويسة كل استمارة تُنشأ — خطة التأهيل، " +
-      "إثبات الصيانة، النظرة العامة للتدريبات، شهادة العمل. PNG أو JPEG، " +
+      "إثبات الصيانة، النظرة العامة للتدريبات، شهادة العمل. PNG أو JPEG أو SVG، " +
       "5 ميغابايت كحدٍّ أقصى. وإن لم يكن مسجَّلاً، ظهرت هناك عبارة «ACM-Plattform».",
     communityHinweis: "تُحفظ مشفَّرة ولا تُعرض مرة أخرى",
     verwaltenSchliesstEin: "«الإدارة» في بطاقة المنصة تشمل كل صلاحية أخرى.",
@@ -1890,6 +1955,32 @@ export const ar: Texte = {
     schrittBeispiel: "مثلاً: اجتماع الافتتاح",
   },
   personioZugang: {
+    taktGespeichert: "حُفظ الفاصل الزمني.",
+    abgleichTitel: "المزامنة",
+    abgleichHinweis:
+      "عدد مرات جلب بيانات Personio تلقائيًا، ومزامنة يدوية.",
+    intervall: "فاصل المزامنة",
+    intervallWahl: {
+      "0": "يدوي فقط",
+      "1": "كل ساعة",
+      "6": "كل 6 ساعات",
+      "24": "يوميًا",
+      "168": "أسبوعيًا",
+    },
+    abgleichJetzt: "تحديث البيانات",
+    abgleichLaeuft: "تجري المزامنة …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `تمت المزامنة: ${mitarbeiter} موظفًا، ${anwesenheiten} حضورًا، ${abwesenheiten} غيابًا.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `مزامنة جزئية (${mitarbeiter} موظفًا): ${fehler}`,
+    abgleichFehler: (fehler: string) => `فشلت المزامنة: ${fehler}`,
+    nachweisTitel: "المستندات إلى Personio",
+    nachweisHinweis:
+      "يرفع مستندًا إلى ملف Personio بعد تغيير تدريب أو كفاءة. مُعطَّل افتراضيًا.",
+    nachweisAktiv: "رفع المستندات",
+    nachweisKategorie: "فئة المستند",
+    nachweisKategoriePlatzhalter: "معرّف فئة Personio",
+    nachweisGespeichert: "حُفظ.",
     titel: "بيانات الدخول إلى Personio",
     einleitung:
       "بيانات دخول تطبيق من تطبيقات Personio API. بدونها تبقى المزامنة " +

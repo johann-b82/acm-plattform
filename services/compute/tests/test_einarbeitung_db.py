@@ -99,25 +99,35 @@ class TestLogo:
         assert len(await als(FREMD, "select pfad from public.plattform_logo")) == 1
 
     @pytest.mark.asyncio
-    async def test_nur_die_verwaltung_darf_es_setzen(self, db):
-        assert await als(
-            PFLEGER,
-            "update public.plattform_logo set pfad = 'x' where id returning pfad",
-        ) == []
-        assert await als(
-            VERWALTUNG,
-            "update public.plattform_logo set pfad = 'x' where id returning pfad",
-        ) == [{"pfad": "x"}]
+    async def test_pflege_nur_ueber_compute(self, db):
+        """Seit SET-07 (Migration 0051) lädt nur compute das Logo hoch: es prüft
+        den Inhalt und reinigt SVG. `authenticated` hat kein Update-Recht mehr —
+        auch die Verwaltung nicht; der Versuch wird abgewiesen."""
+        for wer in (PFLEGER, VERWALTUNG):
+            with pytest.raises(Exception, match="permission|denied|privilege"):
+                await als(
+                    wer,
+                    "update public.plattform_logo set pfad = 'x' where id returning pfad",
+                )
 
     @pytest.mark.asyncio
-    async def test_nur_raster_als_typ(self, db):
-        """Ein SVG müsste gereinigt werden; openpyxl könnte es ohnehin nicht
-        einbetten. Der Fall entfällt, statt behandelt zu werden."""
+    async def test_svg_erlaubt_kein_fremdformat(self, db):
+        """SET-07: SVG ist zugelassen (compute reinigt und rastert es); ein
+        Fremdformat weist die Prüfbedingung weiter ab. Direkt, weil die
+        PostgREST-Pflege entfällt."""
+        async with SessionLocal() as s:
+            async with s.begin():
+                await s.execute(
+                    sa.text("update public.plattform_logo set mime = 'image/svg+xml'")
+                )
         async with SessionLocal() as s:
             with pytest.raises(Exception, match="check|mime"):
                 async with s.begin():
                     await s.execute(
-                        sa.text(
-                            "update public.plattform_logo set mime = 'image/svg+xml'"
-                        )
+                        sa.text("update public.plattform_logo set mime = 'text/html'")
                     )
+        async with SessionLocal() as s:
+            async with s.begin():
+                await s.execute(
+                    sa.text("update public.plattform_logo set mime = null, pfad = null")
+                )

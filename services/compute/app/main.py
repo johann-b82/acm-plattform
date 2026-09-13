@@ -14,6 +14,7 @@ from app.routers.dokumente import router as dokumente_router
 from app.routers.einarbeitung import router as einarbeitung_router
 from app.routers.einstellungen import router as einstellungen_router
 from app.routers.embed import router as embed_router
+from app.routers.hr import nachweise_router
 from app.routers.hr import router as hr_router
 from app.routers.kompetenzen import router as kompetenzen_router
 from app.routers.onboarding import router as onboarding_router
@@ -38,6 +39,7 @@ app.include_router(atr_router)
 app.include_router(atr_geplant)
 app.include_router(atr_verwaltung)
 app.include_router(hr_router)
+app.include_router(nachweise_router)
 app.include_router(dokumente_router)
 app.include_router(einstellungen_router)
 app.include_router(einarbeitung_router)

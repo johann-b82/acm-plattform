@@ -21,6 +21,10 @@ pysnmp==7.1.23
 cryptography==46.0.7
 # Formblätter: das Logo einbetten. openpyxl braucht Pillow für Bilder.
 pillow==11.3.0
+# Firmenlogo als SVG: sicher lesen (keine DTD, keine Entitäten) und für die
+# Formblätter als PNG rastern. cairosvg braucht libcairo2 (Dockerfile).
+defusedxml==0.7.1
+cairosvg==2.8.2
 # Zeugnisse: die KI-Textbildung. Ohne API-Schluessel bleibt sie inaktiv.
 anthropic==1.0.0
 # Dokumentenlauf: QR-Code aufs Formblatt und aus dem Scan wieder heraus.

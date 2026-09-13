@@ -21,11 +21,9 @@ import {
   Label,
   Select,
   Switch,
-  Table,
   TableWrap,
-  Td,
-  Th,
 } from "@/components/ui/primitives";
+import { Datentabelle } from "@/components/ui/datentabelle";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
@@ -289,60 +287,87 @@ export function SchedulesAdmin() {
 
   return (
     <div className="space-y-4">
-      <TableWrap>
-        <Table>
-          <thead>
-            <tr>
-              <Th>{worte.signage.playlist}</Th>
-              <Th>{worte.signage.tage}</Th>
-              <Th>{worte.signage.zeitfenster}</Th>
-              <Th className="text-end">{worte.signage.prioritaet}</Th>
-              <Th>{worte.signage.aktiv}</Th>
-              <Th className="text-end">{worte.signage.aktionen}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((s) => (
-              <tr key={s.id}>
-                <Td className="font-medium">
-                  {playlistName.get(s.playlist_id) ?? `${s.playlist_id.slice(0, 8)}…`}
-                </Td>
-                <Td>{weekdaysLabel2(s.weekday_mask)}</Td>
-                <Td className="font-mono tabular-nums">
-                  {hhmmToString(s.start_hhmm)} – {hhmmToString(s.end_hhmm)}
-                </Td>
-                <Td className="text-end font-mono tabular-nums">{s.priority}</Td>
-                <Td>
-                  <Switch
-                    checked={s.enabled}
-                    label={worte.signage.zeitplanAktiv}
-                    onCheckedChange={(enabled) => toggleMutation.mutate({ id: s.id, enabled })}
-                  />
-                </Td>
-                <Td>
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDialog(s)}
-                      aria-label={worte.signage.zeitplanBearbeiten}
-                      title={worte.signage.bearbeiten}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <ConfirmDeleteButton
-                      itemLabel={`Zeitplan ${hhmmToString(s.start_hhmm)}–${hhmmToString(s.end_hhmm)}`}
-                      onConfirm={async () => {
-                        await deleteMutation.mutateAsync(s.id);
-                      }}
-                    />
-                  </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableWrap>
+      {/* Vorsortiert nach Priorität und letzter Änderung; die Tabelle sortiert
+          stabil, ohne gewählte Spalte bleibt diese Reihenfolge. */}
+      <Datentabelle
+        zeilen={sorted}
+        zeilenSchluessel={(s) => s.id}
+        beschriftung={worte.signage.zeitplaene}
+        spalten={[
+          {
+            schluessel: "playlist",
+            titel: worte.signage.playlist,
+            typ: "text",
+            wert: (s) => playlistName.get(s.playlist_id) ?? `${s.playlist_id.slice(0, 8)}…`,
+            className: "font-medium",
+          },
+          {
+            schluessel: "tage",
+            titel: worte.signage.tage,
+            typ: "text",
+            wert: (s) => weekdaysLabel2(s.weekday_mask),
+          },
+          {
+            schluessel: "zeitfenster",
+            titel: worte.signage.zeitfenster,
+            typ: "zahl",
+            wert: (s) => s.start_hhmm,
+            zelle: (s) => `${hhmmToString(s.start_hhmm)} – ${hhmmToString(s.end_hhmm)}`,
+            suchtext: (s) => `${hhmmToString(s.start_hhmm)} – ${hhmmToString(s.end_hhmm)}`,
+            className: "font-mono tabular-nums",
+          },
+          {
+            schluessel: "prioritaet",
+            titel: worte.signage.prioritaet,
+            typ: "zahl",
+            wert: (s) => s.priority,
+            ausrichtung: "end",
+            className: "font-mono",
+          },
+          {
+            schluessel: "aktiv",
+            titel: worte.signage.aktiv,
+            typ: "zahl",
+            wert: (s) => (s.enabled ? 1 : 0),
+            suchtext: false,
+            zelle: (s) => (
+              <Switch
+                checked={s.enabled}
+                label={worte.signage.zeitplanAktiv}
+                onCheckedChange={(enabled) => toggleMutation.mutate({ id: s.id, enabled })}
+              />
+            ),
+          },
+          {
+            schluessel: "aktionen",
+            titel: worte.signage.aktionen,
+            typ: "text",
+            wert: () => null,
+            sortierbar: false,
+            suchtext: false,
+            ausrichtung: "end",
+            zelle: (s) => (
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => openDialog(s)}
+                  aria-label={worte.signage.zeitplanBearbeiten}
+                  title={worte.signage.bearbeiten}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <ConfirmDeleteButton
+                  itemLabel={`Zeitplan ${hhmmToString(s.start_hhmm)}–${hhmmToString(s.end_hhmm)}`}
+                  onConfirm={async () => {
+                    await deleteMutation.mutateAsync(s.id);
+                  }}
+                />
+              </div>
+            ),
+          },
+        ]}
+      />
       <div className="flex justify-end">
         <Button onClick={() => openDialog(null)}>{worte.signage.neuerZeitplan}</Button>
       </div>

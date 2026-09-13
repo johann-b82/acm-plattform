@@ -1232,6 +1232,7 @@ export const fa: Texte = {
     nichtsGefunden:
       "چیزی یافت نشد. اگر چیزی در راهنما نیست، آن را با دکمهٔ گزارش در پایین سمت چپ بگویید.",
     alleThemen: "→ همهٔ موضوع‌ها",
+    navigation: "موضوع‌های راهنما",
   },
   meldungen: {
     stand: (offen: number) => `آنچه از نماها گزارش شده است. ${offen} باز`,
@@ -1743,6 +1744,9 @@ export const fa: Texte = {
       anzeigenText:
         "نشانی‌هایی که روی نمایشگرهای ساختمان اجرا می‌شوند. هر کدام توکنی امضاشده " +
         "دارد، تنها برای همان یک نمایشگر معتبر است و منقضی می‌شود.",
+      email: "ایمیل‌ها",
+      emailText:
+        "پلتفرم یادآوری‌ها و گزارش‌ها را از کدام حساب Microsoft 365 می‌فرستد. چیزی جز با اقدام صریح ارسال نمی‌شود.",
       zugaenge: "کاربران و گروه‌ها",
       zugaengeText:
         "ساختن افراد، تشکیل گروه‌ها و دادن دسترسی برنامه‌ها به آن‌ها. تغییرها از ورود " +
@@ -1750,6 +1754,67 @@ export const fa: Texte = {
     },
   },
   einstellungenText: {
+    appName: "نام برنامه",
+    appNameHinweis:
+      "در سربرگ بدون لوگو، در عنوان صفحه و در صفحهٔ ورود نمایش داده می‌شود.",
+    farbrollen: "نقش‌های رنگ",
+    farbrollenHinweis:
+      "رنگ اصلی برای فوکوس، پیوندها، دکمهٔ اصلی و سری اصلی نمودار است و متن روی آن قرار می‌گیرد. یک‌بار روشن و یک‌بار تیره.",
+    hellTitel: "روشن",
+    dunkelTitel: "تیره",
+    hauptfarbe: "رنگ اصلی",
+    textAufHauptfarbe: "متن روی رنگ اصلی",
+    kontrastTitel: "کنتراست ناکافی (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `«${bereich}» (${thema}): کنتراست ${verhaeltnis}:1، لازم ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "پیوندها روی صفحه",
+      linkKarte: "پیوندها روی کارت‌ها",
+      fokusFlaeche: "فوکوس روی سطح خاکستری",
+      diagramm: "رنگ نمودار",
+      knopfText: "متن روی دکمهٔ اصلی",
+    },
+    farbenGespeichert: "رنگ‌ها ذخیره شد. پس از بارگذاری مجدد اعمال می‌شوند.",
+    farbenAufVorgabe: "به حالت پیش‌فرض بازگردانده شد.",
+    farbenZuruecksetzen: "بازگردانی به پیش‌فرض",
+    email: {
+      titel: "ارسال ایمیل (Microsoft 365)",
+      einleitung:
+        "سرویس مرکزی برای یادآوری‌ها و گزارش‌ها از طریق Microsoft Graph.",
+      ohneSchluessel:
+        "روی سرور GEHEIM_SCHLUESSEL تنظیم نشده است. تا زمانی که نباشد هیچ رازی ذخیره نمی‌شود.",
+      gespeichert: "ذخیره شد.",
+      speichert: "در حال ذخیره …",
+      speichern: "ذخیره",
+      speichernFehler: (meldung: string) => `ذخیره ناموفق بود: ${meldung}`,
+      modus: "حالت",
+      modusApp: "مجوز برنامه",
+      modusDelegiert: "حساب شخصی (تفویض‌شده)",
+      modusAppHinweis: "از طریق یک حساب برنامه با مجوز Mail.Send ارسال می‌کند؛ به یک راز کلاینت و رضایت مدیر نیاز دارد.",
+      modusDelegiertHinweis: "پس از ورود با کد دستگاه، به نام فرد واردشده ارسال می‌کند؛ بدون رضایت مدیر.",
+      tenantId: "شناسهٔ Tenant",
+      clientId: "شناسهٔ کلاینت",
+      clientSecret: "راز کلاینت",
+      secretGesetzt: "ذخیره‌شده — برای حفظ آن خالی بگذارید",
+      absender: "نشانی فرستنده",
+      absenderName: "نام فرستنده (اختیاری)",
+      aktivieren: "ارسال فعال است",
+      testTitel: "ایمیل آزمایشی",
+      testHinweis: "پیامی به نشانی واردشده می‌فرستد. فقط همین اقدام چیزی ارسال می‌کند.",
+      testEmpfaenger: "گیرنده",
+      testSenden: "ارسال ایمیل آزمایشی",
+      testLaeuft: "در حال ارسال …",
+      testOk: "ایمیل آزمایشی ارسال شد.",
+      testFehler: "ارسال ناموفق بود.",
+      delegiertTitel: "ورود با Microsoft",
+      delegiertAnmelden: "ورود با Microsoft",
+      delegiertAnleitung:
+        "نشانی را باز کنید، کد را وارد کنید و با حساب Microsoft 365 خود وارد شوید.",
+      delegiertWartet: "در انتظار ورود …",
+      verbundenMit: (konto: string) => `واردشده به نام ${konto}`,
+      trennen: "قطع اتصال",
+      getrennt: "اتصال قطع شد.",
+    },
     speichernFehler: (meldung: string) => `ذخیره ناموفق بود: ${meldung}`,
     zielwertGespeichert: "مقدار هدف ذخیره شد. داشبوردها آن را پس از بارگذاری دوباره نشان می‌دهند.",
     zahlAbNull: "لطفاً عددی از 0 به بالا وارد کنید.",
@@ -1766,7 +1831,7 @@ export const fa: Texte = {
       "از نمایش می‌ایستد.",
     logoHinweis:
       "بالا سمت راست در برنامه و در سربرگ هر فرم ساخته‌شده دیده می‌شود — برنامهٔ " +
-      "آشناسازی، مستند نگهداری، فهرست آموزش‌ها، گواهی کار. PNG یا JPEG، حداکثر 5 MB. " +
+      "آشناسازی، مستند نگهداری، فهرست آموزش‌ها، گواهی کار. PNG، JPEG یا SVG، حداکثر 5 MB. " +
       "اگر چیزی ثبت نشده باشد، به جای آن نوشتهٔ «ACM-Plattform» می‌آید.",
     communityHinweis: "رمزگذاری‌شده ذخیره می‌شود و دیگر هرگز نشان داده نمی‌شود",
     verwaltenSchliesstEin: "«مدیریت» روی کارت پلتفرم هر دسترسی دیگری را در بر می‌گیرد.",
@@ -1900,6 +1965,32 @@ export const fa: Texte = {
     schrittBeispiel: "برای نمونه جلسهٔ گشایش",
   },
   personioZugang: {
+    taktGespeichert: "بازه ذخیره شد.",
+    abgleichTitel: "همگام‌سازی",
+    abgleichHinweis:
+      "پلتفرم هر چند وقت داده‌های Personio را خودکار می‌گیرد، و یک همگام‌سازی دستی.",
+    intervall: "بازهٔ همگام‌سازی",
+    intervallWahl: {
+      "0": "فقط دستی",
+      "1": "هر ساعت",
+      "6": "هر ۶ ساعت",
+      "24": "روزانه",
+      "168": "هفتگی",
+    },
+    abgleichJetzt: "به‌روزرسانی داده‌ها",
+    abgleichLaeuft: "در حال همگام‌سازی …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `همگام شد: ${mitarbeiter} کارمند، ${anwesenheiten} حضور، ${abwesenheiten} غیبت.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `همگام‌سازی جزئی (${mitarbeiter} کارمند): ${fehler}`,
+    abgleichFehler: (fehler: string) => `همگام‌سازی ناموفق بود: ${fehler}`,
+    nachweisTitel: "مدارک به Personio",
+    nachweisHinweis:
+      "پس از تغییر آموزش یا شایستگی، مدرکی را در پروفایل Personio بارگذاری می‌کند. به‌طور پیش‌فرض خاموش.",
+    nachweisAktiv: "بارگذاری مدارک",
+    nachweisKategorie: "دستهٔ سند",
+    nachweisKategoriePlatzhalter: "شناسهٔ دستهٔ Personio",
+    nachweisGespeichert: "ذخیره شد.",
     titel: "اطلاعات دسترسی Personio",
     einleitung:
       "اطلاعات دسترسی یک برنامهٔ API در Personio. بدون آن‌ها همگام‌سازی، " +

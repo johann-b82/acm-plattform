@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { sprache, texte } from "@/lib/sprache-server";
 import { hasLevel } from "@/lib/rechte";
 import { logoAdresse } from "@/lib/logo-server";
+import { ladeErscheinung } from "@/lib/erscheinung-server";
 import { Providers } from "@/components/providers";
 import { Brotkrumen } from "@/components/brotkrumen";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
@@ -24,6 +25,7 @@ import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umscha
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
   const logo = await logoAdresse();
+  const { appName } = await ladeErscheinung();
   const t = await texte();
   const gewaehlt = await sprache();
   const darfMeldungen = session.apps.platform === "admin";
@@ -45,11 +47,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={logo}
-                    alt="ACM"
+                    alt={appName}
                     className="h-8 w-auto max-w-44 object-contain"
                   />
                 ) : (
-                  <span className="font-semibold tracking-tight">ACM-Plattform</span>
+                  <span className="font-semibold tracking-tight">{appName}</span>
                 )}
               </Link>
               {/* Der Pfad steht neben dem Logo, nicht über dem Inhalt: oben links

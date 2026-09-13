@@ -1245,6 +1245,7 @@ export const pl: Texte = {
       "Nic nie znaleziono. Jeśli czegoś w pomocy brakuje, powiedz to przyciskiem Zgłoś na " +
       "dole po prawej.",
     alleThemen: "← Wszystkie tematy",
+    navigation: "Tematy pomocy",
   },
   meldungen: {
     stand: (offen: number) => `Co zgłoszono z widoków. Otwartych: ${offen}`,
@@ -1757,6 +1758,9 @@ export const pl: Texte = {
       anzeigenText:
         "Adresy, które działają na ekranach w firmie. Każdy niesie podpisany token, " +
         "obowiązuje tylko dla swojego jednego ekranu i wygasa.",
+      email: "E-maile",
+      emailText:
+        "Z jakiego konta Microsoft 365 platforma wysyła przypomnienia i raporty. Nic nie jest wysyłane bez wyraźnego działania.",
       zugaenge: "Użytkownicy i grupy",
       zugaengeText:
         "Zakładanie osób, tworzenie grup i nadawanie im praw do aplikacji. Zmiany działają, " +
@@ -1764,6 +1768,67 @@ export const pl: Texte = {
     },
   },
   einstellungenText: {
+    appName: "Nazwa aplikacji",
+    appNameHinweis:
+      "Pokazywana w nagłówku bez logo, w tytule strony i na stronie logowania.",
+    farbrollen: "Role kolorów",
+    farbrollenHinweis:
+      "Kolor główny niesie fokus, linki, przycisk główny i główną serię wykresu; tekst leży na nim. Osobno dla trybu jasnego i ciemnego.",
+    hellTitel: "Jasny",
+    dunkelTitel: "Ciemny",
+    hauptfarbe: "Kolor główny",
+    textAufHauptfarbe: "Tekst na kolorze głównym",
+    kontrastTitel: "Za mały kontrast (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `„${bereich}” (${thema}): kontrast ${verhaeltnis}:1, wymagane ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "Linki na stronie",
+      linkKarte: "Linki na kartach",
+      fokusFlaeche: "Fokus na szarej powierzchni",
+      diagramm: "Kolor wykresu",
+      knopfText: "Tekst na przycisku głównym",
+    },
+    farbenGespeichert: "Kolory zapisane. Działają po ponownym załadowaniu.",
+    farbenAufVorgabe: "Przywrócono domyślne.",
+    farbenZuruecksetzen: "Przywróć domyślne",
+    email: {
+      titel: "Wysyłka e-maili (Microsoft 365)",
+      einleitung:
+        "Centralna usługa przypomnień i raportów przez Microsoft Graph.",
+      ohneSchluessel:
+        "Na serwerze nie ustawiono GEHEIM_SCHLUESSEL. Dopóki go nie ma, nie da się zapisać sekretu.",
+      gespeichert: "Zapisano.",
+      speichert: "Zapisywanie …",
+      speichern: "Zapisz",
+      speichernFehler: (meldung: string) => `Zapis nie powiódł się: ${meldung}`,
+      modus: "Tryb",
+      modusApp: "Uprawnienie aplikacji",
+      modusDelegiert: "Własne konto (delegowane)",
+      modusAppHinweis: "Wysyła przez konto aplikacji z uprawnieniem Mail.Send; wymaga sekretu klienta i zgody administratora.",
+      modusDelegiertHinweis: "Wysyła jako zalogowana osoba po logowaniu kodem urządzenia; bez zgody administratora.",
+      tenantId: "Identyfikator Tenant",
+      clientId: "Identyfikator klienta",
+      clientSecret: "Sekret klienta",
+      secretGesetzt: "zapisany — zostaw puste, aby zachować",
+      absender: "Adres nadawcy",
+      absenderName: "Nazwa nadawcy (opcjonalnie)",
+      aktivieren: "Wysyłka włączona",
+      testTitel: "E-mail testowy",
+      testHinweis: "Wysyła wiadomość na podany adres. Tylko to działanie coś wysyła.",
+      testEmpfaenger: "Odbiorca",
+      testSenden: "Wyślij e-mail testowy",
+      testLaeuft: "Wysyłanie …",
+      testOk: "E-mail testowy wysłany.",
+      testFehler: "Wysyłka nie powiodła się.",
+      delegiertTitel: "Logowanie przez Microsoft",
+      delegiertAnmelden: "Zaloguj przez Microsoft",
+      delegiertAnleitung:
+        "Otwórz adres, wpisz kod i zaloguj się własnym kontem Microsoft 365.",
+      delegiertWartet: "Oczekiwanie na logowanie …",
+      verbundenMit: (konto: string) => `Zalogowano jako ${konto}`,
+      trennen: "Rozłącz",
+      getrennt: "Rozłączono.",
+    },
     speichernFehler: (meldung: string) => `Zapis nie powiódł się: ${meldung}`,
     zielwertGespeichert: "Wartość docelowa zapisana. Pulpity pokażą ją po przeładowaniu.",
     zahlAbNull: "Podaj liczbę od 0.",
@@ -1780,7 +1845,7 @@ export const pl: Texte = {
       "pokazywać.",
     logoHinweis:
       "Stoi u góry po lewej w aplikacji i w nagłówku każdego tworzonego formularza — " +
-      "planu wdrożenia, dowodu konserwacji, zestawienia szkoleń, świadectwa. PNG albo JPEG, " +
+      "planu wdrożenia, dowodu konserwacji, zestawienia szkoleń, świadectwa. PNG, JPEG albo SVG, " +
       "najwyżej 5 MB. Jeśli nic nie wskazano, stoi tam napis „ACM-Plattform”.",
     communityHinweis: "jest odkładane zaszyfrowane i nigdy więcej nie pokazywane",
     verwaltenSchliesstEin: "„Zarządzanie” na kafelku platformy zawiera każde inne prawo.",
@@ -1916,6 +1981,32 @@ export const pl: Texte = {
     schrittBeispiel: "np. spotkanie otwierające",
   },
   personioZugang: {
+    taktGespeichert: "Interwał zapisany.",
+    abgleichTitel: "Synchronizacja",
+    abgleichHinweis:
+      "Jak często platforma sama pobiera dane z Personio, oraz synchronizacja ręczna.",
+    intervall: "Interwał synchronizacji",
+    intervallWahl: {
+      "0": "Tylko ręcznie",
+      "1": "Co godzinę",
+      "6": "Co 6 godzin",
+      "24": "Codziennie",
+      "168": "Co tydzień",
+    },
+    abgleichJetzt: "Odśwież dane",
+    abgleichLaeuft: "Synchronizacja …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `Zsynchronizowano: ${mitarbeiter} pracowników, ${anwesenheiten} obecności, ${abwesenheiten} nieobecności.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `Częściowo zsynchronizowano (${mitarbeiter} pracowników): ${fehler}`,
+    abgleichFehler: (fehler: string) => `Synchronizacja nie powiodła się: ${fehler}`,
+    nachweisTitel: "Dokumenty do Personio",
+    nachweisHinweis:
+      "Przesyła dokument do profilu Personio po zmianie szkolenia lub kompetencji. Domyślnie wyłączone.",
+    nachweisAktiv: "Przesyłaj dokumenty",
+    nachweisKategorie: "Kategoria dokumentu",
+    nachweisKategoriePlatzhalter: "ID kategorii Personio",
+    nachweisGespeichert: "Zapisano.",
     titel: "Dane dostępowe Personio",
     einleitung:
       "Dane dostępowe aplikacji API Personio. Bez nich synchronizacja, " +

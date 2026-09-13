@@ -1247,6 +1247,7 @@ export const bg: Texte = {
       "Нищо не е намерено. Ако нещо липсва в помощта, кажете го с бутона за сигнал долу " +
       "вдясно.",
     alleThemen: "← Всички теми",
+    navigation: "Теми в помощта",
   },
   meldungen: {
     stand: (offen: number) => `Какво е подадено от изгледите. ${offen} открити`,
@@ -1762,6 +1763,9 @@ export const bg: Texte = {
       anzeigenText:
         "Адресите, които вървят по екраните в предприятието. Всеки носи подписан " +
         "токен, важи само за своето табло и изтича.",
+      email: "Имейли",
+      emailText:
+        "От кой акаунт в Microsoft 365 платформата изпраща напомняния и отчети. Нищо не се изпраща освен при изрично действие.",
       zugaenge: "Потребители и групи",
       zugaengeText:
         "Създаване на хора, изграждане на групи и даване на права за приложения. Промените важат, щом " +
@@ -1769,6 +1773,67 @@ export const bg: Texte = {
     },
   },
   einstellungenText: {
+    appName: "Име на приложението",
+    appNameHinweis:
+      "Показва се в заглавната лента без лого, в заглавието на страницата и на страницата за вход.",
+    farbrollen: "Роли на цветовете",
+    farbrollenHinweis:
+      "Основният цвят носи фокуса, връзките, основния бутон и главната серия на диаграмите; текстът е върху него. Веднъж за светла и веднъж за тъмна тема.",
+    hellTitel: "Светла",
+    dunkelTitel: "Тъмна",
+    hauptfarbe: "Основен цвят",
+    textAufHauptfarbe: "Текст върху основния цвят",
+    kontrastTitel: "Недостатъчен контраст (WCAG 2.2)",
+    kontrastZeile: (thema: string, bereich: string, verhaeltnis: string, mindestens: string) =>
+      `„${bereich}“ (${thema}): контраст ${verhaeltnis}:1, нужно ${mindestens}:1`,
+    kontrastBereiche: {
+      linkSeite: "Връзки на страницата",
+      linkKarte: "Връзки в картите",
+      fokusFlaeche: "Фокус върху сива повърхност",
+      diagramm: "Цвят на диаграмата",
+      knopfText: "Текст върху основния бутон",
+    },
+    farbenGespeichert: "Цветовете са запазени. Влизат в сила след презареждане.",
+    farbenAufVorgabe: "Върнато към стойността по подразбиране.",
+    farbenZuruecksetzen: "Върни по подразбиране",
+    email: {
+      titel: "Изпращане на имейли (Microsoft 365)",
+      einleitung:
+        "Централна услуга за напомняния и отчети чрез Microsoft Graph.",
+      ohneSchluessel:
+        "На сървъра не е зададен GEHEIM_SCHLUESSEL. Докато липсва, не може да се съхрани тайна.",
+      gespeichert: "Запазено.",
+      speichert: "Запазва …",
+      speichern: "Запази",
+      speichernFehler: (meldung: string) => `Запазването е неуспешно: ${meldung}`,
+      modus: "Режим",
+      modusApp: "Разрешение за приложение",
+      modusDelegiert: "Собствен акаунт (делегиран)",
+      modusAppHinweis: "Изпраща чрез акаунт на приложение с разрешение Mail.Send; изисква клиентска тайна и съгласие на администратор.",
+      modusDelegiertHinweis: "Изпраща от името на влезлия човек след вход с код на устройство; без съгласие на администратор.",
+      tenantId: "Tenant ID",
+      clientId: "Client ID",
+      clientSecret: "Клиентска тайна",
+      secretGesetzt: "съхранена — оставете празно, за да я запазите",
+      absender: "Адрес на подателя",
+      absenderName: "Име на подателя (по избор)",
+      aktivieren: "Изпращането е включено",
+      testTitel: "Тестов имейл",
+      testHinweis: "Изпраща съобщение до въведения адрес. Само това действие изпраща нещо.",
+      testEmpfaenger: "Получател",
+      testSenden: "Изпрати тестов имейл",
+      testLaeuft: "Изпраща …",
+      testOk: "Тестовият имейл е изпратен.",
+      testFehler: "Изпращането е неуспешно.",
+      delegiertTitel: "Вход с Microsoft",
+      delegiertAnmelden: "Вход с Microsoft",
+      delegiertAnleitung:
+        "Отворете адреса, въведете кода и влезте със собствения си акаунт в Microsoft 365.",
+      delegiertWartet: "Изчаква вход …",
+      verbundenMit: (konto: string) => `Влязъл като ${konto}`,
+      trennen: "Прекъсни връзката",
+      getrennt: "Връзката е прекъсната.",
+    },
     speichernFehler: (meldung: string) => `Запазването се провали: ${meldung}`,
     zielwertGespeichert: "Целевата стойност е запазена. Таблата я показват след презареждане.",
     zahlAbNull: "Моля, въведете число от 0 нагоре.",
@@ -1785,7 +1850,7 @@ export const bg: Texte = {
       "да се показва.",
     logoHinweis:
       "Стои горе вляво в приложението и в заглавната част на всеки създаден формуляр — " +
-      "план за въвеждане, доказателство за поддръжка, преглед на обученията, препоръка. PNG или JPEG, " +
+      "план за въвеждане, доказателство за поддръжка, преглед на обученията, препоръка. PNG, JPEG или SVG, " +
       "най-много 5 MB. Ако няма заложено, там стои надписът „ACM-Plattform“.",
     communityHinweis: "записва се шифровано и повече не се показва",
     verwaltenSchliesstEin: "„Управление“ на картата на платформата включва всяко друго право.",
@@ -1921,6 +1986,32 @@ export const bg: Texte = {
     schrittBeispiel: "напр. откриващ разговор",
   },
   personioZugang: {
+    taktGespeichert: "Интервалът е запазен.",
+    abgleichTitel: "Синхронизация",
+    abgleichHinweis:
+      "Колко често платформата сама изтегля данните от Personio, и ръчна синхронизация.",
+    intervall: "Интервал на синхронизация",
+    intervallWahl: {
+      "0": "Само ръчно",
+      "1": "На всеки час",
+      "6": "На всеки 6 часа",
+      "24": "Ежедневно",
+      "168": "Седмично",
+    },
+    abgleichJetzt: "Обнови данните",
+    abgleichLaeuft: "Синхронизира …",
+    abgleichFertig: (mitarbeiter: number, anwesenheiten: number, abwesenheiten: number) =>
+      `Синхронизирано: ${mitarbeiter} служители, ${anwesenheiten} присъствия, ${abwesenheiten} отсъствия.`,
+    abgleichTeilweise: (mitarbeiter: number, fehler: string) =>
+      `Частично синхронизирано (${mitarbeiter} служители): ${fehler}`,
+    abgleichFehler: (fehler: string) => `Синхронизацията е неуспешна: ${fehler}`,
+    nachweisTitel: "Документи към Personio",
+    nachweisHinweis:
+      "Качва документ в профила в Personio след промяна на обучение или компетентност. По подразбиране изключено.",
+    nachweisAktiv: "Качване на документи",
+    nachweisKategorie: "Категория на документа",
+    nachweisKategoriePlatzhalter: "ID на категория в Personio",
+    nachweisGespeichert: "Запазено.",
     titel: "Данни за достъп до Personio",
     einleitung:
       "Данни за достъп на приложение към Personio API. Без тях синхронизацията, " +

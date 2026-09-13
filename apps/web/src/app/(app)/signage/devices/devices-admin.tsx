@@ -17,11 +17,8 @@ import {
   Label,
   Select,
   Switch,
-  Table,
-  TableWrap,
-  Td,
-  Th,
 } from "@/components/ui/primitives";
+import { Datentabelle } from "@/components/ui/datentabelle";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { DeviceStatusBadge, UptimeBadge } from "@/components/signage/status";
@@ -159,63 +156,106 @@ export function DevicesAdmin() {
 
   return (
     <div className="space-y-4">
-      <TableWrap>
-        <Table>
-          <thead>
-            <tr>
-              <Th>{worte.signage.geraet}</Th>
-              <Th>{worte.signage.status}</Th>
-              <Th>{worte.signage.verfuegbarkeit}</Th>
-              <Th>{worte.signage.ausfaelle}</Th>
-              <Th>{worte.signage.tags}</Th>
-              <Th>{worte.signage.playlist}</Th>
-              <Th>{worte.signage.zuletztGesehen}</Th>
-              <Th className="text-end">Aktionen</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {devices.map((d) => (
-              <tr key={d.id}>
-                <Td>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{d.name}</span>
-                    {(d.hostname || d.ip_address) && (
-                      <span className="font-mono text-xs text-[var(--fg-muted)]">
-                        {[d.hostname, d.ip_address].filter(Boolean).join(" · ")}
-                      </span>
-                    )}
-                    {d.mac_address && (
-                      <span className="font-mono text-[10px] text-[var(--fg-muted)]">
-                        {d.mac_address}
-                      </span>
-                    )}
-                  </div>
-                </Td>
-                <Td>
-                  {d.revoked_at ? (
-                    <Badge className="status-bad">{worte.signage.entzogen}</Badge>
-                  ) : (
-                    <DeviceStatusBadge lastSeenAt={d.last_seen_at} />
-                  )}
-                </Td>
-                <Td>
-                  <UptimeBadge variant="uptime" data={analyticsById.get(d.id)} />
-                </Td>
-                <Td>
-                  <UptimeBadge variant="missed" data={analyticsById.get(d.id)} />
-                </Td>
-                <Td>
-                  <div className="flex flex-wrap gap-1">
-                    {(d.tag_ids ?? []).map((id) => (
-                      <Badge key={id} variant="secondary">
-                        {tagName.get(id) ?? id}
-                      </Badge>
-                    ))}
-                  </div>
-                </Td>
-                <Td className="text-[var(--fg-muted)]">{d.current_playlist_name ?? "—"}</Td>
-                <Td className="text-[var(--fg-muted)]">{relativeTime(d.last_seen_at)}</Td>
-                <Td>
+      <Datentabelle
+        zeilen={devices}
+        laedt={isLoading}
+        zeilenSchluessel={(d) => d.id}
+        beschriftung={worte.signage.geraete}
+        spalten={[
+          {
+            schluessel: "geraet",
+            titel: worte.signage.geraet,
+            typ: "text",
+            wert: (d) => d.name,
+            suchtext: (d) => [d.name, d.hostname, d.ip_address, d.mac_address].filter(Boolean).join(" "),
+            zelle: (d) => (
+              <div className="flex flex-col">
+                <span className="font-medium">{d.name}</span>
+                {(d.hostname || d.ip_address) && (
+                  <span className="font-mono text-xs text-[var(--fg-muted)]">
+                    {[d.hostname, d.ip_address].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+                {d.mac_address && (
+                  <span className="font-mono text-[10px] text-[var(--fg-muted)]">{d.mac_address}</span>
+                )}
+              </div>
+            ),
+          },
+          {
+            // Sortiert nach dem letzten Lebenszeichen — daraus leitet sich der
+            // Status ab; entzogene Geräte stehen ohne Wert am Ende.
+            schluessel: "status",
+            titel: worte.signage.status,
+            typ: "datum",
+            wert: (d) => (d.revoked_at ? null : d.last_seen_at),
+            suchtext: false,
+            zelle: (d) =>
+              d.revoked_at ? (
+                <Badge className="status-bad">{worte.signage.entzogen}</Badge>
+              ) : (
+                <DeviceStatusBadge lastSeenAt={d.last_seen_at} />
+              ),
+          },
+          {
+            schluessel: "verfuegbarkeit",
+            titel: worte.signage.verfuegbarkeit,
+            typ: "zahl",
+            wert: (d) => analyticsById.get(d.id)?.uptime_24h_pct,
+            suchtext: false,
+            zelle: (d) => <UptimeBadge variant="uptime" data={analyticsById.get(d.id)} />,
+          },
+          {
+            schluessel: "ausfaelle",
+            titel: worte.signage.ausfaelle,
+            typ: "zahl",
+            wert: (d) =>
+              analyticsById.get(d.id)?.uptime_24h_pct == null
+                ? null
+                : analyticsById.get(d.id)?.missed_windows_24h,
+            suchtext: false,
+            zelle: (d) => <UptimeBadge variant="missed" data={analyticsById.get(d.id)} />,
+          },
+          {
+            schluessel: "tags",
+            titel: worte.signage.tags,
+            typ: "text",
+            wert: (d) => (d.tag_ids ?? []).map((id) => tagName.get(id) ?? String(id)).join(", "),
+            zelle: (d) => (
+              <div className="flex flex-wrap gap-1">
+                {(d.tag_ids ?? []).map((id) => (
+                  <Badge key={id} variant="secondary">
+                    {tagName.get(id) ?? id}
+                  </Badge>
+                ))}
+              </div>
+            ),
+          },
+          {
+            schluessel: "playlist",
+            titel: worte.signage.playlist,
+            typ: "text",
+            wert: (d) => d.current_playlist_name,
+            className: "text-[var(--fg-muted)]",
+          },
+          {
+            schluessel: "zuletzt",
+            titel: worte.signage.zuletztGesehen,
+            typ: "datum",
+            wert: (d) => d.last_seen_at,
+            zelle: (d) => relativeTime(d.last_seen_at),
+            suchtext: false,
+            className: "text-[var(--fg-muted)]",
+          },
+          {
+            schluessel: "aktionen",
+            titel: worte.signage.aktionen,
+            typ: "text",
+            wert: () => null,
+            sortierbar: false,
+            suchtext: false,
+            ausrichtung: "end",
+            zelle: (d) => (
                   <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
@@ -261,12 +301,10 @@ export function DevicesAdmin() {
                       }}
                     />
                   </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableWrap>
+            ),
+          },
+        ]}
+      />
 
       <div className="flex justify-end">
         <Button onClick={() => router.push("/signage/pair")}>{worte.signage.geraetKoppeln}</Button>
