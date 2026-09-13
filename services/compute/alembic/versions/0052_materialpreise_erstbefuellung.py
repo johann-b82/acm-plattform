@@ -31,7 +31,7 @@ Preistabelle beim letzten Vergleich älter war).
 from alembic import op
 
 revision = "0052_materialpreise_erstbefuellung"
-down_revision = "0043_materialpreise"
+down_revision = "0051_einstellungen_hilfe"
 branch_labels = None
 depends_on = None
 
