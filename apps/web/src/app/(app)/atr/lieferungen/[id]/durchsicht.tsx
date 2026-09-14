@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Download, FileCog } from "lucide-react";
@@ -16,7 +15,7 @@ import {
   type AtrPosition,
   type Lieferung,
 } from "@/lib/atr";
-import { Button, Card, Input, Label } from "@/components/ui/primitives";
+import { Button, ButtonLink, Card, Input, Label } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
@@ -290,13 +289,10 @@ export function Durchsicht({
       {/* Rückweg, Erzeugen und Herunterladen gelten für die ganze Lieferung:
           in der Schale stehen sie in der rechten Leiste. */}
       <Seitenwerkzeuge kategorie="navigation">
-        <Link
-          href="/atr"
-          className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" aria-hidden />
+        <ButtonLink href="/atr" variant="outline">
+          <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
           {worte.atr.lieferungen}
-        </Link>
+        </ButtonLink>
       </Seitenwerkzeuge>
       <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
@@ -316,8 +312,7 @@ export function Durchsicht({
             return (
               <Button
                 key={feld}
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 disabled={!pfad}
                 onClick={() =>
                   pfad &&
@@ -327,7 +322,7 @@ export function Durchsicht({
                   })
                 }
               >
-                <Download className="me-1.5 h-3.5 w-3.5" aria-hidden />
+                <Download className="me-2 h-4 w-4" aria-hidden />
                 {name}
               </Button>
             );

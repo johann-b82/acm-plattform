@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileDown, FileText, PenLine, Sparkles, Wrench } from "lucide-react";
+import { ArrowLeft, FileDown, FileText, PenLine, Sparkles, Wrench } from "lucide-react";
 
 import {
   ABSCHNITTE,
@@ -20,6 +19,7 @@ import {
 } from "@/lib/zeugnisse";
 import {
   Button,
+  ButtonLink,
   Card,
   EmptyState,
   Input,
@@ -152,9 +152,10 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
       </div>
       {/* Weg zurück und Löschen gelten dem ganzen Zeugnis: in der rechten Leiste. */}
       <Seitenwerkzeuge kategorie="navigation">
-        <Link href="/hr/zeugnisse" className="text-sm underline-offset-4 hover:underline">
+        <ButtonLink href="/hr/zeugnisse" variant="outline">
+          <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
           {worte.zeugnis.zurUebersicht}
-        </Link>
+        </ButtonLink>
       </Seitenwerkzeuge>
       <Seitenwerkzeuge kategorie="aktionen">
         <ConfirmDeleteButton
