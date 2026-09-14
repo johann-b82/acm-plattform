@@ -38,7 +38,9 @@ export function useInSchale(): boolean {
 export function Seitenwerkzeuge({ kategorie, children }: { kategorie: Kategorie; children: ReactNode }) {
   const platz = useContext(Werkzeugplatz);
   if (platz === undefined) return <>{children}</>;
-  const ziel = platz instanceof HTMLElement ? platz : platz?.[kategorie];
+  // Kein `instanceof HTMLElement`: auf dem Server gibt es die Klasse nicht,
+  // dort liefe die Prüfung auf einen Fehler. Ein DOM-Knoten hat `nodeType`.
+  const ziel = platz && "nodeType" in platz ? platz : platz?.[kategorie as Kategorie];
   if (!ziel) return null;
   return createPortal(children, ziel);
 }

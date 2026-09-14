@@ -3,8 +3,9 @@
  * und Stelle — damit eine Seite außerhalb der Schale (etwa im
  * Komponententest) ihre Bedienung behält.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 
 import { Seitenwerkzeuge, Werkzeug, Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 
@@ -71,6 +72,25 @@ describe("Seitenwerkzeuge", () => {
       </Seitenwerkzeuge>,
     );
     expect(container).not.toHaveTextContent("Status");
+  });
+
+  it("rendert auf dem Server, wo es kein HTMLElement gibt", () => {
+    // Die Schale reicht beim ersten Durchlauf noch leere Plätze; auf dem Server
+    // ist `HTMLElement` nicht definiert — ein `instanceof` darauf brach dort ab.
+    vi.stubGlobal("HTMLElement", undefined);
+    try {
+      expect(() =>
+        renderToString(
+          <Werkzeugplatz.Provider value={{}}>
+            <Seitenwerkzeuge kategorie="aktionen">
+              <button type="button">Neues Audit</button>
+            </Seitenwerkzeuge>
+          </Werkzeugplatz.Provider>,
+        ),
+      ).not.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("zeichnet in der Schale nichts, solange der Platz noch nicht eingehängt ist", () => {
