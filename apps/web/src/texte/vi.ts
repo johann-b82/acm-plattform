@@ -24,6 +24,13 @@ export const vi: Texte = {
       ueberfaellig > 0
         ? `Biện pháp — ${offen} đang mở, trong đó ${ueberfaellig} quá hạn`
         : `Biện pháp — ${offen} đang mở`,
+    navigation: "Điều hướng",
+    einklappen: "Thu gọn thanh bên",
+    ausklappen: "Mở rộng thanh bên",
+    navigationOeffnen: "Mở điều hướng",
+    navigationSchliessen: "Đóng điều hướng",
+    unterseitenZeigen: (name: string) => `${name}: hiện trang con`,
+    unterseitenVerbergen: (name: string) => `${name}: ẩn trang con`,
   },
   pfad: {
     aria: "Đường dẫn",

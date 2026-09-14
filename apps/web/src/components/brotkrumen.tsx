@@ -8,12 +8,12 @@ import { useTexte } from "@/components/sprache/anbieter";
 import { krumen } from "@/lib/brotkrumen";
 
 /**
- * Der Pfad in der Kopfzeile, rechts neben dem Logo. Zeigt nichts auf der
- * Übersicht und auf Adressen ohne Titel — eine Kette aus einem Glied ist keine
- * Hilfe, und neben dem Logo stünde sie doppelt.
+ * Der Pfad links in der Kopfzeile, neben der Seitenleiste. Zeigt nichts auf
+ * der Übersicht und auf Adressen ohne Titel — eine Kette aus einem Glied ist
+ * keine Hilfe, und „Start“ steht schon in der Leiste.
  *
- * Auf schmalen Fenstern fällt er weg: dort ist die Kopfzeile für Logo und
- * Zeichen gerade breit genug, und der Pfad drängte beides zusammen.
+ * Auf schmalen Fenstern fällt er weg: dort teilt sich die Kopfzeile den Platz
+ * mit dem Menü-Knopf und den Zählern, und der Pfad drängte alles zusammen.
  */
 export function Brotkrumen() {
   const t = useTexte();

@@ -24,6 +24,13 @@ export const fa: Texte = {
       ueberfaellig > 0
         ? `اقدام‌ها — ${offen} باز، ${ueberfaellig} مورد با تأخیر`
         : `اقدام‌ها — ${offen} باز`,
+    navigation: "پیمایش",
+    einklappen: "جمع کردن نوار کناری",
+    ausklappen: "گسترش نوار کناری",
+    navigationOeffnen: "باز کردن پیمایش",
+    navigationSchliessen: "بستن پیمایش",
+    unterseitenZeigen: (name: string) => `${name}: نمایش زیرصفحه‌ها`,
+    unterseitenVerbergen: (name: string) => `${name}: پنهان کردن زیرصفحه‌ها`,
   },
   pfad: {
     aria: "مسیر",

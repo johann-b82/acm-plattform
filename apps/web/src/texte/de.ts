@@ -29,6 +29,13 @@ export const de = {
       ueberfaellig > 0
         ? `Maßnahmen — ${offen} offen, davon ${ueberfaellig} überfällig`
         : `Maßnahmen — ${offen} offen`,
+    navigation: "Navigation",
+    einklappen: "Seitenleiste einklappen",
+    ausklappen: "Seitenleiste ausklappen",
+    navigationOeffnen: "Navigation öffnen",
+    navigationSchliessen: "Navigation schließen",
+    unterseitenZeigen: (name: string) => `${name}: Unterseiten zeigen`,
+    unterseitenVerbergen: (name: string) => `${name}: Unterseiten verbergen`,
   },
   pfad: {
     aria: "Pfad",

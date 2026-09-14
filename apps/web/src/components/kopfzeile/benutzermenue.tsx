@@ -30,9 +30,13 @@ const EINTRAG =
 export function Benutzermenue({
   email,
   darfEinstellungen,
+  oeffnetNachOben = false,
 }: {
   email: string | null;
   darfEinstellungen: boolean;
+  /** Unten in der Seitenleiste klappt das Menü nach oben auf, sonst ragte es
+   *  aus dem Fenster. */
+  oeffnetNachOben?: boolean;
 }) {
   const t = useTexte();
   const sprache = useSprache();
@@ -90,7 +94,10 @@ export function Benutzermenue({
               schliessen();
             }
           }}
-          className="absolute end-0 top-11 z-50 w-64 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 shadow-lg"
+          className={
+            (oeffnetNachOben ? "absolute bottom-11 start-0 " : "absolute end-0 top-11 ") +
+            "z-50 w-64 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 shadow-lg"
+          }
         >
           {email && (
             <div className="border-b border-[var(--border)] px-2 pb-2 text-xs text-[var(--fg-muted)]">
