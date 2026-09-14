@@ -29,6 +29,7 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useZeugnisart, useZeugnisworte } from "@/lib/tafeln";
 
@@ -148,7 +149,10 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
             {zufriedenheit(schnitt) && ` — „${zufriedenheit(schnitt)}“`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+      </div>
+      {/* Weg zurück und Löschen gelten dem ganzen Zeugnis: in der rechten Leiste. */}
+      <Seitenwerkzeuge>
+        <div className="flex flex-wrap items-center gap-3">
           <Link href="/hr/zeugnisse" className="text-sm underline-offset-4 hover:underline">
             {worte.zeugnis.zurUebersicht}
           </Link>
@@ -157,7 +161,7 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
             onConfirm={() => loeschen.mutateAsync().then(() => undefined)}
           />
         </div>
-      </div>
+      </Seitenwerkzeuge>
 
       <Card className="space-y-4 p-5">
         <h2 className="font-medium">{worte.zeugnis.stammdaten}</h2>

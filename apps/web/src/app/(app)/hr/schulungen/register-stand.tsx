@@ -26,6 +26,7 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useDringlichkeit } from "@/lib/tafeln";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { Klappbar } from "../klappbar";
 import { Standortfilter, umschalten } from "../standortfilter";
 import { Blaettern, Matrixsuche, useMatrixseiten } from "../matrixseiten";
@@ -33,8 +34,8 @@ import { Blaettern, Matrixsuche, useMatrixseiten } from "../matrixseiten";
 /**
  * Register „Stand der Mitarbeiter“.
  *
- * Ein Standortfilter oben wirkt auf alle vier Sichten (SCH-02): die offenen
- * Schulungen, die Mitarbeiterübersicht samt Zählern, die Gesamtmatrix und die
+ * Ein Standortfilter in der rechten Leiste wirkt auf alle vier Sichten
+ * (SCH-02): die offenen Schulungen, die Mitarbeiterübersicht samt Zählern, die Gesamtmatrix und die
  * Abteilungen. Leere Auswahl heißt alle Standorte. Die Fälligkeit rechnet
  * `lib/schulungen` wie das Altsystem (überfällig plus drei Monate) — so ergeben
  * sich die 65 offenen Einträge, nicht die 274 der früheren, gröberen Zählung.
@@ -60,12 +61,14 @@ export function RegisterStand() {
 
   return (
     <div className="space-y-6">
-      <Standortfilter
-        standorte={orte}
-        gewaehlt={gewaehlteOrte}
-        beschriftung={worte.schulungenReg.standort}
-        onToggle={(o) => setGewaehlteOrte((v) => umschalten(v, o))}
-      />
+      <Seitenwerkzeuge>
+        <Standortfilter
+          standorte={orte}
+          gewaehlt={gewaehlteOrte}
+          beschriftung={worte.schulungenReg.standort}
+          onToggle={(o) => setGewaehlteOrte((v) => umschalten(v, o))}
+        />
+      </Seitenwerkzeuge>
 
       <Offene stand={standDaten} personen={personen} katalog={katalogDaten} heute={heute} laedt={laedt} />
       <MitarbeiterUebersicht stand={standDaten} personen={personen} katalog={katalogDaten} heute={heute} />

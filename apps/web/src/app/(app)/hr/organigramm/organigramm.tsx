@@ -19,6 +19,7 @@ import { initialen } from "@/lib/initialen";
 import { Card, EmptyState, Input, Select } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 
 /**
@@ -30,7 +31,8 @@ import { cn } from "@/lib/cn";
  * breiter wird als nötig. Was trotzdem nicht passt, scrollt waagerecht.
  *
  * Mit Suche oder Standort bleibt die Führungskette stehen: wer passt, ist
- * umrandet, Vorgesetzte von anderswo stehen blass als Kontext dabei.
+ * umrandet, Vorgesetzte von anderswo stehen blass als Kontext dabei. Suche,
+ * Standort und die Zählzeile stehen in der rechten Leiste.
  */
 export function Organigramm() {
   const worte = useTexte();
@@ -72,45 +74,47 @@ export function Organigramm() {
         untertitel={worte.organigramm.einleitung}
       />
 
-      <Card className="flex flex-wrap items-end gap-4 p-4">
-        <div className="space-y-1">
-          <label htmlFor="org-suche" className="text-sm font-medium">
-            {worte.organigramm.suchfeld}
-          </label>
-          <Input
-            id="org-suche"
-            value={suche}
-            placeholder={worte.organigramm.suchePlatzhalter}
-            className="w-72 max-w-full"
-            onChange={(e) => setSuche(e.target.value)}
-          />
-        </div>
-        {orte.length > 0 && (
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-3">
           <div className="space-y-1">
-            <label htmlFor="org-ort" className="text-sm font-medium">
-              {worte.organigramm.standort}
+            <label htmlFor="org-suche" className="text-sm font-medium">
+              {worte.organigramm.suchfeld}
             </label>
-            <Select
-              id="org-ort"
-              value={standort}
-              className="w-48"
-              onChange={(e) => setStandort(e.target.value)}
-            >
-              <option value="">{worte.organigramm.alleStandorte}</option>
-              {orte.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </Select>
+            <Input
+              id="org-suche"
+              value={suche}
+              placeholder={worte.organigramm.suchePlatzhalter}
+              className="w-full"
+              onChange={(e) => setSuche(e.target.value)}
+            />
           </div>
-        )}
-        <span className="pb-2 text-sm text-[var(--fg-muted)]">
-          {worte.organigramm.personen(personen.data?.length ?? 0)}
-          {fokus && worte.organigramm.treffer(fokus.size)}
-          {ohneVorgesetzten > 1 && worte.organigramm.ohneVorgesetzten(ohneVorgesetzten)}
-        </span>
-      </Card>
+          {orte.length > 0 && (
+            <div className="space-y-1">
+              <label htmlFor="org-ort" className="text-sm font-medium">
+                {worte.organigramm.standort}
+              </label>
+              <Select
+                id="org-ort"
+                value={standort}
+                className="w-full"
+                onChange={(e) => setStandort(e.target.value)}
+              >
+                <option value="">{worte.organigramm.alleStandorte}</option>
+                {orte.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+          <span className="text-sm text-[var(--fg-muted)]">
+            {worte.organigramm.personen(personen.data?.length ?? 0)}
+            {fokus && worte.organigramm.treffer(fokus.size)}
+            {ohneVorgesetzten > 1 && worte.organigramm.ohneVorgesetzten(ohneVorgesetzten)}
+          </span>
+        </div>
+      </Seitenwerkzeuge>
 
       {personen.error && (
         <p className="text-sm text-[var(--danger)]">{(personen.error as Error).message}</p>

@@ -20,6 +20,11 @@ vi.mock("@/lib/kpi/qualitaet", async (importOriginal) => {
       verlauf: vi.fn(async () => []),
       buchungen: vi.fn(async () => []),
     },
+    reklamationApi: {
+      quote: vi.fn(async () => null),
+      verlauf: vi.fn(async () => []),
+      liste: vi.fn(async () => []),
+    },
   };
 });
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
@@ -31,6 +36,7 @@ vi.mock("@/lib/zielwerte", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { QualitaetDashboard } from "../qualitaet-dashboard";
 
 function zeige() {
@@ -58,6 +64,26 @@ describe("Qualität", () => {
     fireEvent.click(within(umschalter).getByRole("radio", { name: "Qualitätsprüfung" }));
     const artikelart = screen.getByRole("radio", { name: "Fertigartikel" }).closest('[role="radiogroup"]');
     expect(artikelart?.parentElement).toBe(umschalter.parentElement);
+  });
+
+  it("stellt die Reklamationsart in der Schale in die rechte Leiste, die Mengenart bleibt an der Kachel", () => {
+    const platz = document.createElement("div");
+    document.body.appendChild(platz);
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <QualitaetDashboard darfUploads={false} />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(within(platz).getByRole("radio", { name: "Reklamationen" }));
+    fireEvent.click(within(platz).getByRole("button", { name: "intern" }));
+    expect(within(platz).getByRole("button", { name: "intern" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(platz).queryByRole("button", { name: "gemeldete Menge" })).toBeNull();
+    expect(screen.getByRole("button", { name: "gemeldete Menge" })).toBeInTheDocument();
+    platz.remove();
   });
 
   it("zeigt die Auditart nur bei Audits", () => {

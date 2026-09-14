@@ -47,6 +47,7 @@ import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
 import { DiagrammartWahl, useDiagrammart, type Diagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -485,7 +486,10 @@ function Reklamationen({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
+            {/* Die Art gilt für Kachel und Liste der ganzen Ansicht: in der Schale
+                in der rechten Leiste. Die Mengenart betrifft nur diese Kachel. */}
+            <Seitenwerkzeuge>
+            <div className="flex flex-wrap gap-1 rounded-lg border border-[var(--border)] p-1">
               {(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => (
                 <button
                   key={a}
@@ -503,6 +507,7 @@ function Reklamationen({
                 </button>
               ))}
             </div>
+            </Seitenwerkzeuge>
             <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
               {(Object.keys(mengeLabel) as Mengenart[]).map((m) => (
                 <button

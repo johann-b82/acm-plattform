@@ -20,6 +20,7 @@ import {
 import { Button, Select, Textarea } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 
 export const AMPEL_FARBE: Record<Ampel, string> = {
@@ -97,6 +98,7 @@ function Ebene({
 }) {
   const worte = useTexte();
   const t = worte.bewertung;
+  const inSchale = useInSchale();
   const qc = useQueryClient();
   const flaeche = useRef<HTMLDivElement>(null);
 
@@ -306,17 +308,23 @@ function Ebene({
       )}
 
       {darfSchreiben && (
-        // Über dem Melde-Knopf, an derselben Kante — wie im Altsystem.
-        <Button
-          variant={modus ? "default" : "outline"}
-          aria-pressed={modus}
-          aria-label={t.bubbleModus}
-          onClick={() => setModus((v) => !v)}
-          className="fixed bottom-16 end-4 z-40 shadow-sm"
-        >
-          <MessageSquareDashed className="h-4 w-4" aria-hidden />
-          <span className="hidden sm:inline">{modus ? t.bubbleModusAn : t.bubbleModus}</span>
-        </Button>
+        // Der Modus gilt für die ganze Seite: in der Schale steht der Knopf in
+        // der rechten Leiste. Ohne Schale schwebt er über dem Melde-Knopf, an
+        // derselben Kante — wie im Altsystem.
+        <Seitenwerkzeuge>
+          <Button
+            variant={modus ? "default" : "outline"}
+            aria-pressed={modus}
+            aria-label={t.bubbleModus}
+            onClick={() => setModus((v) => !v)}
+            className={inSchale ? undefined : "fixed bottom-16 end-4 z-40 shadow-sm"}
+          >
+            <MessageSquareDashed className="h-4 w-4" aria-hidden />
+            <span className={inSchale ? undefined : "hidden sm:inline"}>
+              {modus ? t.bubbleModusAn : t.bubbleModus}
+            </span>
+          </Button>
+        </Seitenwerkzeuge>
       )}
     </div>
   );

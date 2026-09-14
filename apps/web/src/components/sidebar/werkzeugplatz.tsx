@@ -21,9 +21,11 @@ export function useInSchale(): boolean {
 /**
  * Stellt die Kinder in die rechte Leiste. Die Kinder bleiben Teil der Seite —
  * Zustand und Kontext kommen von dort, nur gezeichnet wird in der Leiste.
+ * Ohne Schale stehen sie an Ort und Stelle.
  */
 export function Seitenwerkzeuge({ children }: { children: ReactNode }) {
   const platz = useContext(Werkzeugplatz);
+  if (platz === undefined) return <>{children}</>;
   if (!platz) return null;
   return createPortal(children, platz);
 }

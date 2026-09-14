@@ -4,7 +4,7 @@
  * Bereich und Position gespeichert.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import type { Bubble } from "@/lib/kpi/bewertung";
@@ -25,6 +25,7 @@ vi.mock("@/lib/kpi/bewertung", async (original) => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { BubbleEbene } from "../bubble-ebene";
 
 function bubble(id: string, bereich: string, felder: Partial<Bubble> = {}): Bubble {
@@ -78,6 +79,27 @@ describe("Bubble-Ebene", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Bubble 1: Text hier" }));
     expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
     expect(api.bubbleGesehen).not.toHaveBeenCalled();
+  });
+
+  it("stellt den Bubble-Knopf in der Schale in die rechte Leiste, ohne zu schweben", async () => {
+    const platz = document.createElement("div");
+    document.body.appendChild(platz);
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <BubbleEbene darfLesen darfSchreiben>
+              <p>Dashboard</p>
+            </BubbleEbene>
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const knopf = within(platz).getByRole("button", { name: "Bubble" });
+    expect(knopf.className).not.toContain("fixed");
+    fireEvent.click(knopf);
+    expect(knopf).toHaveAttribute("aria-pressed", "true");
+    platz.remove();
   });
 
   it("speichert ein aufgezogenes Rechteck mit Bereich, Text und Ampel", async () => {

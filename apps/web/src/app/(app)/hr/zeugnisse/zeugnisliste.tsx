@@ -9,7 +9,8 @@ import { Plus } from "lucide-react";
 
 import { ARTEN, zeugnisApi, zeugnisKeys, type Zeugnis } from "@/lib/zeugnisse";
 import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
-import { Badge, Button, Card, Label, Select } from "@/components/ui/primitives";
+import { Badge, Button, Label, Select } from "@/components/ui/primitives";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -25,7 +26,8 @@ import { Textbausteine } from "./textbausteine";
  *
  * Beim Anlegen werden die Stammdaten der Person abgeschrieben, nicht
  * verknüpft: ein im Mai ausgestelltes Zeugnis darf im September nicht anders
- * aussehen, weil sich in Personio eine Abteilung geändert hat.
+ * aussehen, weil sich in Personio eine Abteilung geändert hat. Person, Art
+ * und „Anlegen“ stehen in der rechten Leiste.
  */
 export function Zeugnisliste() {
   const worte = useTexte();
@@ -134,37 +136,39 @@ export function Zeugnisliste() {
         <Textbausteine />
       </Klappbar>
 
-      <Card className="flex flex-wrap items-end gap-3 p-4">
-        <div className="flex min-w-56 flex-col gap-1">
-          <Label htmlFor="person">{worte.zeugnisse.person}</Label>
-          <Select id="person" value={person} onChange={(e) => setPerson(e.target.value)}>
-            <option value="">{worte.zeugnisse.waehlen}</option>
-            {(eintritte.data ?? []).map((e) => (
-              <option
-                key={e.employee_id ?? e.extern_id}
-                value={String(e.employee_id ?? e.extern_id)}
-              >
-                {e.name}
-                {e.abteilung ? ` · ${e.abteilung}` : ""}
-              </option>
-            ))}
-          </Select>
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-2">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="person">{worte.zeugnisse.person}</Label>
+            <Select id="person" value={person} onChange={(e) => setPerson(e.target.value)}>
+              <option value="">{worte.zeugnisse.waehlen}</option>
+              {(eintritte.data ?? []).map((e) => (
+                <option
+                  key={e.employee_id ?? e.extern_id}
+                  value={String(e.employee_id ?? e.extern_id)}
+                >
+                  {e.name}
+                  {e.abteilung ? ` · ${e.abteilung}` : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="art">{worte.zeugnisse.art}</Label>
+            <Select id="art" value={art} onChange={(e) => setArt(e.target.value)}>
+              {ARTEN.map((a) => (
+                <option key={a.wert} value={a.wert}>
+                  {artLabel[a.wert]}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
+            <Plus className="me-1.5 h-4 w-4" aria-hidden />
+            {worte.zeugnisse.anlegen}
+          </Button>
         </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="art">{worte.zeugnisse.art}</Label>
-          <Select id="art" value={art} onChange={(e) => setArt(e.target.value)}>
-            {ARTEN.map((a) => (
-              <option key={a.wert} value={a.wert}>
-                {artLabel[a.wert]}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
-          <Plus className="me-1.5 h-4 w-4" aria-hidden />
-          {worte.zeugnisse.anlegen}
-        </Button>
-      </Card>
+      </Seitenwerkzeuge>
 
       <Datentabelle
         zeilen={liste}

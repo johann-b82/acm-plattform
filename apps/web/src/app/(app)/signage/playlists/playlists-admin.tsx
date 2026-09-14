@@ -23,6 +23,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { TagPicker } from "@/components/signage/tag-picker";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 
 export function PlaylistsAdmin() {
   const worte = useTexte();
@@ -291,9 +292,11 @@ export function PlaylistsAdmin() {
         ]}
       />
 
-      <div className="flex justify-end">
-        <Button onClick={() => setNewOpen(true)}>{worte.signage.neuePlaylist}</Button>
-      </div>
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-2">
+          <Button onClick={() => setNewOpen(true)}>{worte.signage.neuePlaylist}</Button>
+        </div>
+      </Seitenwerkzeuge>
       {newDialog}
     </div>
   );

@@ -26,6 +26,7 @@ import {
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { useKapitelart } from "@/lib/tafeln";
 
 /**
@@ -162,12 +163,15 @@ export function Redaktion({
         }
       />
 
-      <Card className="flex flex-wrap items-end gap-3 p-4">
+      {/* Anlegen und die Wahl der bearbeiteten Ausgabe gelten für die ganze
+          Seite: in der Schale stehen sie in der rechten Leiste. Das Formular
+          der gewählten Ausgabe bleibt auf der Seite. */}
+      <Seitenwerkzeuge>
+      <div className="flex flex-col items-stretch gap-2">
         <div className="flex flex-col gap-1">
           <Label htmlFor="jahr">{worte.newsletter.jahr}</Label>
           <Input
             id="jahr"
-            className="w-24"
             value={neuJahr}
             onChange={(e) => setNeuJahr(e.target.value)}
           />
@@ -176,7 +180,6 @@ export function Redaktion({
           <Label htmlFor="quartal">{worte.newsletter.quartal}</Label>
           <Select
             id="quartal"
-            className="w-20"
             value={neuQuartal}
             onChange={(e) => setNeuQuartal(e.target.value)}
           >
@@ -194,7 +197,6 @@ export function Redaktion({
         {liste.length > 0 && (
           <Select
             aria-label={worte.newsletter.ausgabeBearbeiten}
-            className="ms-auto w-56"
             value={aktiv?.id ?? ""}
             onChange={(e) => setGewaehlt(e.target.value)}
           >
@@ -206,7 +208,8 @@ export function Redaktion({
             ))}
           </Select>
         )}
-      </Card>
+      </div>
+      </Seitenwerkzeuge>
 
       {!aktiv ? (
         <EmptyState

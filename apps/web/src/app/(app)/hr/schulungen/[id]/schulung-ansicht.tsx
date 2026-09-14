@@ -29,6 +29,7 @@ import {
   Th,
 } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useDringlichkeit } from "@/lib/tafeln";
@@ -132,10 +133,13 @@ export function SchulungAnsicht({
               worte.schulung.keineFaelligkeit}
           </p>
         </div>
+      </div>
+      {/* Der Weg zurück gilt der ganzen Seite: in der rechten Leiste. */}
+      <Seitenwerkzeuge>
         <Link href="/hr/schulungen" className="text-sm underline-offset-4 hover:underline">
           {worte.schulung.zumKatalog}
         </Link>
-      </div>
+      </Seitenwerkzeuge>
 
       <Card className="space-y-4 p-5">
         <h2 className="font-medium">{worte.schulung.stammdaten}</h2>

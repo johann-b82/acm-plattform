@@ -20,6 +20,7 @@ import { Zugaenge } from "./abschnitte/zugaenge";
 import { ActiveDirectory } from "./abschnitte/ad";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Alle Einstellungen an einer Stelle, nach Bereich gruppiert.
@@ -32,10 +33,54 @@ import { useTexte } from "@/components/sprache/anbieter";
  * Die Seite gehört der Plattform-Verwaltung; das Tor sitzt in `page.tsx`.
  * Deshalb steht hier keine Rechteprüfung mehr je Abschnitt: was hier steht,
  * gilt ohnehin für alle.
+ *
+ * Die Sprungliste zu den Gruppen steht in der Schale senkrecht in der rechten
+ * Leiste; ohne Schale links neben den Gruppen.
  */
 export function Einstellungen({ eigeneId }: { eigeneId: string }) {
   const worte = useTexte();
   const gruppen = worte.einstellungen.gruppen as Record<string, string>;
+  const inSchale = useInSchale();
+
+  const inhalt = (
+    <div className="space-y-10">
+      {GRUPPEN.map((g) => (
+        <section key={g.id} id={g.id} className="scroll-mt-6 space-y-3">
+          <h2 className="flex items-center gap-1.5 text-lg font-medium tracking-tight">
+            {gruppen[g.id]}
+            <Hinweis text={gruppen[`${g.id}Text`]} />
+          </h2>
+          <Inhalt gruppe={g} eigeneId={eigeneId} />
+        </section>
+      ))}
+    </div>
+  );
+
+  if (inSchale) {
+    return (
+      <div className="space-y-6">
+        <Seitenkopf untertitel={worte.einstellungen.einleitung} />
+        <Seitenwerkzeuge>
+          <nav aria-label={worte.einstellungen.bereiche} className="border-s border-[var(--border)]">
+            <ul className="flex flex-col text-sm">
+              {GRUPPEN.map((g) => (
+                <li key={g.id}>
+                  <a
+                    href={`#${g.id}`}
+                    className="-ms-px block border-s border-transparent py-1 ps-3 text-[var(--fg-muted)] underline-offset-4 hover:border-[var(--fg-muted)] hover:text-[var(--fg)] hover:underline"
+                  >
+                    {gruppen[g.id]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </Seitenwerkzeuge>
+        {inhalt}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Seitenkopf
@@ -61,17 +106,7 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
           </ul>
         </nav>
 
-        <div className="space-y-10">
-          {GRUPPEN.map((g) => (
-            <section key={g.id} id={g.id} className="scroll-mt-6 space-y-3">
-              <h2 className="flex items-center gap-1.5 text-lg font-medium tracking-tight">
-                {gruppen[g.id]}
-                <Hinweis text={gruppen[`${g.id}Text`]} />
-              </h2>
-              <Inhalt gruppe={g} eigeneId={eigeneId} />
-            </section>
-          ))}
-        </div>
+        {inhalt}
       </div>
     </div>
   );

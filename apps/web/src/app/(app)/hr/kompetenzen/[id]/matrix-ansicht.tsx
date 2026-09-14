@@ -19,6 +19,7 @@ import {
 } from "@/lib/kompetenzen";
 import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -33,7 +34,8 @@ import { Klappbar } from "../../klappbar";
  * Felder und das Ergänzen frei; gespeichert wird dann je Zelle sofort, wie im
  * Altsystem — einen gesonderten Speichern-/Verwerfen-Schritt gibt es dort
  * nicht. Die Berechtigung ist davon unabhängig: wer nicht schreiben darf,
- * sieht den Knopf gar nicht erst.
+ * sieht den Knopf gar nicht erst. Der Knopf und der Weg zur Übersicht stehen
+ * in der rechten Leiste.
  *
  * Die Qualifikationen sind nach Gruppe klappbar (KOM-04); Überschrift und
  * Anzahl bleiben sichtbar, die Personenspalten und die Zellzuordnung ändern
@@ -142,7 +144,9 @@ export function MatrixAnsicht({ id, darfSchreiben }: { id: string; darfSchreiben
             {worte.matrix.umfang((qualifikationen.data ?? []).length, spalten.length)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+      </div>
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-2">
           {darfSchreiben && (
             <Button
               variant={bearbeiten ? "default" : "outline"}
@@ -157,7 +161,7 @@ export function MatrixAnsicht({ id, darfSchreiben }: { id: string; darfSchreiben
             {worte.matrix.zurUebersicht}
           </Link>
         </div>
-      </div>
+      </Seitenwerkzeuge>
 
       {(qualifikationen.data ?? []).length === 0 ? (
         <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.matrix.keineZeilen}</Card>

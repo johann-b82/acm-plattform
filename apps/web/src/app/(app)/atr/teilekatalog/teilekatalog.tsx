@@ -18,6 +18,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { Bereichswahl } from "../bereichswahl";
 
 /** Eine feste leere Menge: eine neue je Render hielte die Tabelle auf Seite 1. */
@@ -207,10 +208,12 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
     <div className="space-y-6">
       <Seitenkopf untertitel={worte.atr.einleitung} links={<Bereichswahl aktiv="teilekatalog" />} />
 
+      {/* Anlegen und Einlesen gelten für den ganzen Katalog: in der Schale
+          stehen sie in der rechten Leiste, der Bericht bleibt auf der Seite. */}
       {darfSchreiben && (
-        <Card className="space-y-3 p-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-1 flex-col gap-1">
+        <Seitenwerkzeuge>
+          <div className="flex flex-col items-stretch gap-2">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="neu">{worte.atr.teilAnlegen}</Label>
               <Input
                 id="neu"
@@ -228,7 +231,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
             </Button>
             <label
               className={
-                "inline-flex h-9 cursor-pointer items-center rounded-md border " +
+                "inline-flex h-9 cursor-pointer items-center justify-center rounded-md border " +
                 "border-[var(--border)] px-4 text-sm font-medium " +
                 "hover:bg-[var(--muted)] focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
@@ -249,8 +252,11 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
               />
             </label>
           </div>
+        </Seitenwerkzeuge>
+      )}
 
-          {bericht && (
+      {darfSchreiben && bericht && (
+        <Card className="p-4">
             <div className="rounded-md bg-[var(--muted)] p-3 text-sm">
               <p>
                 <span className="font-medium">{bericht.dateiname}</span>:{" "}
@@ -266,7 +272,6 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
                 </ul>
               )}
             </div>
-          )}
         </Card>
       )}
 

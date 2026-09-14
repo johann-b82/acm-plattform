@@ -36,6 +36,7 @@ import {
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useIntervall } from "@/lib/tafeln";
 
@@ -62,6 +63,7 @@ export function MaschineAnsicht({
   darfSchreiben: boolean;
 }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const intervall = useIntervall();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -238,17 +240,20 @@ export function MaschineAnsicht({
             {[m.hersteller, m.modell].filter(Boolean).join(" · ") || "Ohne Herstellerangabe"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/produktion" className="text-sm underline-offset-4 hover:underline">
-            {worte.maschine.zurUebersicht}
-          </Link>
-          {darfSchreiben && (
-            <ConfirmDeleteButton
-              itemLabel={m.name}
-              onConfirm={() => maschineWeg.mutateAsync().then(() => undefined)}
-            />
-          )}
-        </div>
+        {/* Zurück und das Löschen der ganzen Maschine: in der Schale in der rechten Leiste. */}
+        <Seitenwerkzeuge>
+          <div className={inSchale ? "flex flex-col items-start gap-2" : "flex items-center gap-3"}>
+            <Link href="/produktion" className="text-sm underline-offset-4 hover:underline">
+              {worte.maschine.zurUebersicht}
+            </Link>
+            {darfSchreiben && (
+              <ConfirmDeleteButton
+                itemLabel={m.name}
+                onConfirm={() => maschineWeg.mutateAsync().then(() => undefined)}
+              />
+            )}
+          </div>
+        </Seitenwerkzeuge>
       </div>
 
       <Card className="space-y-4 p-5">

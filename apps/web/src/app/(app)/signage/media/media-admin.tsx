@@ -13,6 +13,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { ConversionBadge } from "@/components/signage/status";
 import { cn } from "@/lib/cn";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 
 const ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.pdf,.pptx";
 
@@ -33,6 +34,7 @@ export function MediaAdmin() {
   const [urlKind, setUrlKind] = useState<"url" | "html">("url");
   const [urlTitle, setUrlTitle] = useState("");
   const [urlContent, setUrlContent] = useState("");
+  const inSchale = useInSchale();
 
   // Solange eine PPTX-Datei konvertiert, kurz nachfragen; sonst ruhig bleiben.
   const mediaQuery = useQuery({
@@ -105,9 +107,12 @@ export function MediaAdmin() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-5">
+      {/* Hinzufügen gilt für die ganze Seite: in der Schale steht es in der
+          rechten Leiste, dort untereinander statt nebeneinander. */}
+      <Seitenwerkzeuge>
+      <Card className={inSchale ? "p-4" : "p-5"}>
         <h2 className="text-base font-semibold">{worte.signage.medienHinzu}</h2>
-        <div className="mt-4 grid gap-6 md:grid-cols-2">
+        <div className={cn("mt-4 grid", inSchale ? "gap-4" : "gap-6 md:grid-cols-2")}>
           {/* Datei-Ablage */}
           <div
             onDragOver={(e) => {
@@ -207,6 +212,7 @@ export function MediaAdmin() {
           </form>
         </div>
       </Card>
+      </Seitenwerkzeuge>
 
       {mediaQuery.isLoading && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

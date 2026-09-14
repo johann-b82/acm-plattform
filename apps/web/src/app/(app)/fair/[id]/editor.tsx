@@ -36,6 +36,7 @@ import { Ballonliste } from "./ballonliste";
 import { Projektkopf, type Kopffeld } from "./projektkopf";
 import { feldAlsLeinwand, seitenAlsBilder } from "./raster";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Der Editor: Zeichnung anzeigen, Bereiche markieren, Ballons setzen.
@@ -318,21 +319,21 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href="/fair"
-          className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
-          Zeichnungen
-        </Link>
-        <h2 className="text-lg font-semibold">{z.name}</h2>
+      {/* Rückweg und Zeichenwerkzeuge gelten für die ganze Zeichnung: in der
+          Schale stehen sie in der rechten Leiste, die Fläche behält die Breite. */}
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-2">
+          <Link
+            href="/fair"
+            className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
+          >
+            <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
+            Zeichnungen
+          </Link>
 
-        <div className="ms-auto flex flex-wrap items-center gap-1">
           {seiten > 1 && (
             <Select
               aria-label={worte.fair.seite}
-              className="w-28"
               value={seite}
               onChange={(e) => setSeite(Number(e.target.value))}
             >
@@ -343,6 +344,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
               ))}
             </Select>
           )}
+          <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -371,9 +373,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           <Button variant="ghost" size="icon" aria-label={worte.fair.einpassen} onClick={einpassenJetzt}>
             <Maximize className="h-4 w-4" />
           </Button>
+          </div>
 
           {/* Bubblegröße (FAI-04): eigenes Paar, unabhängig vom Zoom. */}
-          <span className="mx-1 h-6 w-px bg-[var(--border)]" aria-hidden />
+          <div className="flex items-center gap-1">
           <CircleDot className="h-4 w-4 text-[var(--fg-muted)]" aria-hidden />
           <Button
             variant="ghost"
@@ -395,8 +398,11 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           >
             <Plus className="h-4 w-4" />
           </Button>
+          </div>
         </div>
-      </div>
+      </Seitenwerkzeuge>
+
+      <h2 className="text-lg font-semibold">{z.name}</h2>
 
       <Projektkopf
         werte={z}

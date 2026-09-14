@@ -21,6 +21,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
 import { cn } from "@/lib/cn";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import type { Texte } from "@/texte";
 import { StatusAbzeichen } from "../../status-abzeichen";
 
@@ -286,14 +287,62 @@ export function Durchsicht({
 
   return (
     <div className="space-y-5">
+      {/* Rückweg, Erzeugen und Herunterladen gelten für die ganze Lieferung:
+          in der Schale stehen sie in der rechten Leiste. */}
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-2">
+          <Link
+            href="/atr"
+            className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
+          >
+            <ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" aria-hidden />
+            {worte.atr.lieferungen}
+          </Link>
+
+          {darfSchreiben && (
+            <Button
+              variant="outline"
+              onClick={() => erzeugen.mutate()}
+              disabled={erzeugen.isPending || zeilen.length === 0}
+            >
+              <FileCog className="me-2 h-4 w-4" aria-hidden />
+              {erzeugen.isPending ? worte.durchsicht.wirdErzeugt : worte.durchsicht.dokumenteErzeugen}
+            </Button>
+          )}
+
+          {AUSGABEN.map(({ feld, name, dateiname }) => {
+            const pfad = l[feld] as string | null;
+            return (
+              <Button
+                key={feld}
+                variant="ghost"
+                size="sm"
+                disabled={!pfad}
+                onClick={() =>
+                  pfad &&
+                  herunterladen.mutate({
+                    pfad,
+                    name: `${l.lieferschein_nr ?? "ATR"}_${dateiname}`,
+                  })
+                }
+              >
+                <Download className="me-1.5 h-3.5 w-3.5" aria-hidden />
+                {name}
+              </Button>
+            );
+          })}
+
+          <span className="text-xs text-[var(--fg-muted)]">
+            {!l.erzeugt_am
+              ? "Noch nichts erzeugt."
+              : new Date(l.erzeugt_am) < new Date(l.geaendert_am)
+                ? `Erzeugt am ${ZEIT.format(new Date(l.erzeugt_am))} — die Lieferung wurde danach geändert.`
+                : `Erzeugt am ${ZEIT.format(new Date(l.erzeugt_am))}.`}
+          </span>
+        </div>
+      </Seitenwerkzeuge>
+
       <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href="/atr"
-          className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" aria-hidden />
-          {worte.atr.lieferungen}
-        </Link>
         <h2 className="text-lg font-semibold">
           Lieferschein {l.lieferschein_nr ?? l.quelle_dateiname}
         </h2>
@@ -303,49 +352,6 @@ export function Durchsicht({
       {l.programm_grund && (
         <p className="text-sm text-[var(--fg-muted)]">{l.programm_grund}</p>
       )}
-
-      <Card className="flex flex-wrap items-center gap-2 p-4">
-        {darfSchreiben && (
-          <Button
-            variant="outline"
-            onClick={() => erzeugen.mutate()}
-            disabled={erzeugen.isPending || zeilen.length === 0}
-          >
-            <FileCog className="me-2 h-4 w-4" aria-hidden />
-            {erzeugen.isPending ? worte.durchsicht.wirdErzeugt : worte.durchsicht.dokumenteErzeugen}
-          </Button>
-        )}
-
-        {AUSGABEN.map(({ feld, name, dateiname }) => {
-          const pfad = l[feld] as string | null;
-          return (
-            <Button
-              key={feld}
-              variant="ghost"
-              size="sm"
-              disabled={!pfad}
-              onClick={() =>
-                pfad &&
-                herunterladen.mutate({
-                  pfad,
-                  name: `${l.lieferschein_nr ?? "ATR"}_${dateiname}`,
-                })
-              }
-            >
-              <Download className="me-1.5 h-3.5 w-3.5" aria-hidden />
-              {name}
-            </Button>
-          );
-        })}
-
-        <span className="ms-auto text-xs text-[var(--fg-muted)]">
-          {!l.erzeugt_am
-            ? "Noch nichts erzeugt."
-            : new Date(l.erzeugt_am) < new Date(l.geaendert_am)
-              ? `Erzeugt am ${ZEIT.format(new Date(l.erzeugt_am))} — die Lieferung wurde danach geändert.`
-              : `Erzeugt am ${ZEIT.format(new Date(l.erzeugt_am))}.`}
-        </span>
-      </Card>
 
       {l.hinweise.length > 0 && (
         <Card className="p-4">

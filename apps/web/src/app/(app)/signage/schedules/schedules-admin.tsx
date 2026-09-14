@@ -27,6 +27,7 @@ import { Datentabelle } from "@/components/ui/datentabelle";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 
 interface DraftState {
   playlist_id: string;
@@ -368,9 +369,11 @@ export function SchedulesAdmin() {
           },
         ]}
       />
-      <div className="flex justify-end">
-        <Button onClick={() => openDialog(null)}>{worte.signage.neuerZeitplan}</Button>
-      </div>
+      <Seitenwerkzeuge>
+        <div className="flex flex-col items-stretch gap-2">
+          <Button onClick={() => openDialog(null)}>{worte.signage.neuerZeitplan}</Button>
+        </div>
+      </Seitenwerkzeuge>
       {dialog}
     </div>
   );

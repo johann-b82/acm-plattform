@@ -7,12 +7,17 @@ import { Search } from "lucide-react";
 import { suche } from "@/hilfe/registry";
 import { Card, Input } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Volltextsuche über die Hilfe.
  *
  * Sie läuft im Browser über die Seiten, die ohnehin im Bündel stecken — die
  * Hilfe ist rund 1.200 Zeilen, dafür braucht es keinen Index und keine Abfrage.
+ *
+ * Das Suchfeld steht in der Schale in der rechten Leiste, die Treffer im
+ * Inhalt. Beides bleibt eine Komponente mit einem Zustand; nur gezeichnet wird
+ * das Feld in der Leiste.
  */
 export function Suche() {
   const t = useTexte();
@@ -21,20 +26,22 @@ export function Suche() {
   const gesucht = begriff.trim().length >= 2;
 
   return (
-    <div className="space-y-3">
-      <div className="relative max-w-md">
-        <Search
-          className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
-          aria-hidden
-        />
-        <Input
-          value={begriff}
-          placeholder={t.hilfe.suchen}
-          aria-label={t.hilfe.suchen}
-          className="ps-9"
-          onChange={(e) => setBegriff(e.target.value)}
-        />
-      </div>
+    <>
+      <Seitenwerkzeuge>
+        <div className="relative max-w-md">
+          <Search
+            className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
+            aria-hidden
+          />
+          <Input
+            value={begriff}
+            placeholder={t.hilfe.suchen}
+            aria-label={t.hilfe.suchen}
+            className="ps-9"
+            onChange={(e) => setBegriff(e.target.value)}
+          />
+        </div>
+      </Seitenwerkzeuge>
 
       {gesucht && (
         <Card className="p-4">
@@ -60,6 +67,6 @@ export function Suche() {
           )}
         </Card>
       )}
-    </div>
+    </>
   );
 }

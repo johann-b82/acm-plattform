@@ -24,6 +24,7 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { useAuditworte } from "@/lib/tafeln";
 
 /** Ein Audit gilt als laufend, solange es nicht abgeschlossen oder abgesagt ist. */
@@ -45,13 +46,15 @@ const LEER: NeuesAudit = {
 /**
  * Die Auditübersicht.
  *
- * Aufbau wie im Altsystem (AUD-04): über der Liste die Filter Status und Art,
- * rechts daneben „Neues Audit", darunter bei Bedarf das Anlageformular. Die
- * Filter wirken auf den ganzen Bestand, bevor die Tabelle sucht, sortiert und
- * blättert.
+ * Aufbau wie im Altsystem (AUD-04): die Filter Status und Art und „Neues
+ * Audit", darunter bei Bedarf das Anlageformular. Die Filter wirken auf den
+ * ganzen Bestand, bevor die Tabelle sucht, sortiert und blättert. In der
+ * Schale stehen Filter und Knopf deshalb untereinander in der rechten Leiste;
+ * ohne Schale in einer Zeile über der Liste.
  */
 export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const auditworte = useAuditworte();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -196,7 +199,8 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
         }
       />
 
-      <div className="flex flex-wrap items-end gap-3">
+      <Seitenwerkzeuge>
+      <div className={inSchale ? "flex flex-col items-stretch gap-2" : "flex flex-wrap items-end gap-3"}>
         <div className="flex flex-col gap-1">
           <Label htmlFor="filter-status">{worte.audit.status}</Label>
           <Select
@@ -227,7 +231,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
         {darfSchreiben && (
           <Button
             variant="outline"
-            className="ms-auto"
+            className={inSchale ? undefined : "ms-auto"}
             aria-expanded={formular}
             onClick={() => {
               if (formular) setNeu(LEER);
@@ -238,6 +242,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           </Button>
         )}
       </div>
+      </Seitenwerkzeuge>
 
       {darfSchreiben && formular && (
         <Card className="space-y-3 p-4">

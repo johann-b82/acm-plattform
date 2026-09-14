@@ -4,12 +4,13 @@
  * Nummer steht nicht mehr da, sucht aber weiter mit.
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const { teile, teilAendern } = vi.hoisted(() => ({
+const { teile, teilAendern, teilAnlegen } = vi.hoisted(() => ({
   teile: vi.fn(),
   teilAendern: vi.fn(),
+  teilAnlegen: vi.fn(),
 }));
 
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
@@ -17,10 +18,11 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({ supabaseBrowser: () => ({}) }));
 vi.mock("@/lib/atr", async (original) => {
   const echt = await original<typeof import("@/lib/atr")>();
-  return { ...echt, atrApi: { ...echt.atrApi, teile, teilAendern } };
+  return { ...echt, atrApi: { ...echt.atrApi, teile, teilAendern, teilAnlegen } };
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import type { Teil } from "@/lib/atr";
 import { Teilekatalog } from "./teilekatalog";
 
@@ -142,5 +144,31 @@ describe("Teilekatalog", () => {
     zeige(false);
     await screen.findByText("Carpet FWD");
     expect(screen.queryByRole("button", { name: "Bearbeiten" })).not.toBeInTheDocument();
+  });
+
+  it("stellt Anlegen und Mappe einlesen in der Schale in die rechte Leiste", async () => {
+    teilAnlegen.mockResolvedValue(undefined);
+    const platz = document.createElement("div");
+    document.body.appendChild(platz);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={client}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Teilekatalog darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Carpet FWD");
+    const leiste = within(platz);
+    const nummer = leiste.getByLabelText("Teil von Hand anlegen");
+    expect(leiste.getByLabelText("Referenzmappe einlesen")).toBeInTheDocument();
+    expect(container).not.toContainElement(nummer);
+
+    fireEvent.change(nummer, { target: { value: "VR-9" } });
+    fireEvent.click(leiste.getByRole("button", { name: "Anlegen" }));
+    await waitFor(() => expect(teilAnlegen).toHaveBeenCalledWith("VR-9"));
+    platz.remove();
   });
 });

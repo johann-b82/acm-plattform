@@ -15,6 +15,7 @@ import {
 } from "@/lib/schulungen";
 import { Badge, Button, Card, Input, Label, Switch } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -26,6 +27,9 @@ import { useDringlichkeit } from "@/lib/tafeln";
  * Fälligkeiten werden aus letztem Termin und Turnus gerechnet, nicht
  * gespeichert. Frist, Verantwortlicher und der Aktiv-Schalter werden wie im
  * Altsystem direkt in der Zeile gepflegt.
+ *
+ * Anlegen und Einlesen stehen in der rechten Leiste; die Vorschau des Imports
+ * mit Übernehmen und Abbrechen bleibt über der Tabelle, weil sie Inhalt ist.
  */
 export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
@@ -208,13 +212,12 @@ export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }
   return (
     <div className="space-y-4">
       {darfSchreiben && (
-        <Card className="space-y-3 p-4">
-          <div className="flex flex-wrap items-end gap-3">
+        <Seitenwerkzeuge>
+          <div className="flex flex-col items-stretch gap-2">
             <div className="flex flex-col gap-1">
               <Label htmlFor="neu-bereich">{worte.schulungen.bereich}</Label>
               <Input
                 id="neu-bereich"
-                className="w-40"
                 value={neu.bereich}
                 list="bereiche"
                 onChange={(e) => setNeu({ ...neu, bereich: e.target.value })}
@@ -225,7 +228,7 @@ export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }
                 ))}
               </datalist>
             </div>
-            <div className="flex min-w-48 flex-1 flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="neu-name">{worte.schulungen.neueSchulung}</Label>
               <Input
                 id="neu-name"
@@ -255,42 +258,44 @@ export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }
               />
             </label>
           </div>
+        </Seitenwerkzeuge>
+      )}
 
-          {vorschau && (
-            <div className="space-y-2 rounded-md bg-[var(--muted)] p-4 text-sm">
-              <p className="font-medium">{vorschau.ergebnis.dateiname}</p>
-              <p>
-                {worte.schulungen.vorschau(
-                  vorschau.ergebnis.schulungen,
-                  vorschau.ergebnis.schulungen_neu,
-                  vorschau.ergebnis.teilnahmen,
-                  vorschau.ergebnis.teilnahmen_zugeordnet,
-                )}
-              </p>
-              {vorschau.ergebnis.nicht_zugeordnet.length > 0 && (
-                <p className="text-[var(--fg-muted)]">
-                  {worte.schulungen.ohneTreffer}
-                  {vorschau.ergebnis.nicht_zugeordnet
-                    .map((o) => `${o.mitarbeiter_name ?? o.personalnummer} (${o.teilnahmen})`)
-                    .join(", ")}
-                  {worte.schulungen.ohneTrefferNach}
-                </p>
+      {darfSchreiben && vorschau && (
+        <Card className="p-4">
+          <div className="space-y-2 rounded-md bg-[var(--muted)] p-4 text-sm">
+            <p className="font-medium">{vorschau.ergebnis.dateiname}</p>
+            <p>
+              {worte.schulungen.vorschau(
+                vorschau.ergebnis.schulungen,
+                vorschau.ergebnis.schulungen_neu,
+                vorschau.ergebnis.teilnahmen,
+                vorschau.ergebnis.teilnahmen_zugeordnet,
               )}
-              {vorschau.ergebnis.hinweise.slice(0, 5).map((h) => (
-                <p key={h} className="text-[var(--fg-muted)]">
-                  {h}
-                </p>
-              ))}
-              <div className="flex gap-2 pt-1">
-                <Button disabled={uebernehmen.isPending} onClick={() => uebernehmen.mutate()}>
-                  {uebernehmen.isPending ? worte.schulungen.wirdUebernommen : worte.schulungen.uebernehmen}
-                </Button>
-                <Button variant="outline" onClick={() => setVorschau(null)}>
-                  {worte.schulungen.abbrechen}
-                </Button>
-              </div>
+            </p>
+            {vorschau.ergebnis.nicht_zugeordnet.length > 0 && (
+              <p className="text-[var(--fg-muted)]">
+                {worte.schulungen.ohneTreffer}
+                {vorschau.ergebnis.nicht_zugeordnet
+                  .map((o) => `${o.mitarbeiter_name ?? o.personalnummer} (${o.teilnahmen})`)
+                  .join(", ")}
+                {worte.schulungen.ohneTrefferNach}
+              </p>
+            )}
+            {vorschau.ergebnis.hinweise.slice(0, 5).map((h) => (
+              <p key={h} className="text-[var(--fg-muted)]">
+                {h}
+              </p>
+            ))}
+            <div className="flex gap-2 pt-1">
+              <Button disabled={uebernehmen.isPending} onClick={() => uebernehmen.mutate()}>
+                {uebernehmen.isPending ? worte.schulungen.wirdUebernommen : worte.schulungen.uebernehmen}
+              </Button>
+              <Button variant="outline" onClick={() => setVorschau(null)}>
+                {worte.schulungen.abbrechen}
+              </Button>
             </div>
-          )}
+          </div>
         </Card>
       )}
 
