@@ -20,6 +20,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { Bereichswahl } from "./bereichswahl";
 import { StatusAbzeichen, useStatusText } from "./status-abzeichen";
 
@@ -216,12 +217,14 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     <div className="space-y-6">
       <Seitenkopf untertitel={worte.lieferungen.einleitung} links={<Bereichswahl aktiv="lieferungen" />} />
 
+      {/* Einlesen und Durchsehen gelten für die ganze Liste: in der Schale
+          stehen sie in der rechten Leiste, der Bericht bleibt auf der Seite. */}
       {darfSchreiben && (
-        <Card className="space-y-3 p-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <Seitenwerkzeuge kategorie="aktionen">
+          <div className="flex flex-col items-stretch gap-2">
             <label
               className={
-                "inline-flex h-9 cursor-pointer items-center rounded-md bg-[var(--fg)] " +
+                "inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[var(--fg)] " +
                 "px-4 text-sm font-medium text-[var(--bg)] hover:opacity-90 " +
                 "focus-within:outline-2 focus-within:outline-[var(--ring)]"
               }
@@ -251,8 +254,11 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               {durchsehen.isPending ? worte.lieferungen.laeuft : worte.lieferungen.eingangDurchsehen}
             </Button>
           </div>
+        </Seitenwerkzeuge>
+      )}
 
-          {bericht && (
+      {darfSchreiben && bericht && (
+        <Card className="p-4">
             <div className="rounded-md bg-[var(--muted)] p-3 text-sm">
               <p>
                 <span className="font-medium">{bericht.dateiname}</span>
@@ -268,7 +274,6 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 </ul>
               )}
             </div>
-          )}
         </Card>
       )}
 

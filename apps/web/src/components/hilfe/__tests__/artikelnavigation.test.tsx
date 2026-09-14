@@ -8,6 +8,7 @@ import { render, screen, within } from "@testing-library/react";
 
 import { GRUPPEN } from "@/hilfe/registry";
 import { Artikelnavigation } from "@/components/hilfe/artikelnavigation";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 
 const BESCHRIFTUNG = { navigation: "Hilfethemen", alleThemen: "← Alle Themen" };
 
@@ -43,6 +44,28 @@ describe("Artikelnavigation", () => {
     expect(klappe).not.toBeNull();
     expect(klappe!.hasAttribute("open")).toBe(false);
     expect(klappe!.querySelector("summary")!.textContent).toContain(aktuell.titel);
+  });
+
+  it("steht in der Schale als schlichte Liste in der rechten Leiste", () => {
+    const plaetze = Object.fromEntries(
+      ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
+        k,
+        document.body.appendChild(document.createElement("div")),
+      ]),
+    );
+    const platz = plaetze.navigation;
+    render(
+      <Werkzeugplatz.Provider value={plaetze}>
+        <Artikelnavigation aktuell={aktuell.slug} beschriftung={BESCHRIFTUNG} />
+      </Werkzeugplatz.Provider>,
+    );
+    const leiste = screen.getByRole("navigation", { name: "Hilfethemen" });
+    expect(platz).toContainElement(leiste);
+    // Keine Klappe, keine Breitenweiche — die Leiste ist immer schmal.
+    expect(platz.querySelector("details")).toBeNull();
+    expect(leiste.className).not.toContain("hidden");
+    expect(within(leiste).getByRole("link", { name: aktuell.titel }).getAttribute("aria-current")).toBe("page");
+    Object.values(plaetze).forEach((div) => div.remove());
   });
 
   it("führt zurück zur Themenübersicht", () => {

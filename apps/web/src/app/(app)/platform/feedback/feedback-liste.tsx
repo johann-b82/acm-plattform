@@ -33,6 +33,8 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import { cn } from "@/lib/cn";
 
 type Ansicht = "tabelle" | "kanban";
@@ -342,6 +344,7 @@ export function FeedbackListe() {
         }
         links={
           <>
+            {/* Kein eigener Titel: er stünde gleich unter der Kategorie „Ansicht“. */}
             <Umschalter
               beschriftung={w.ansicht}
               wert={ansicht}
@@ -349,12 +352,14 @@ export function FeedbackListe() {
               optionen={ANSICHTEN.map((a) => [a, a === "tabelle" ? w.tabelle : w.kanban])}
             />
             {ansicht === "kanban" && (
-              <Umschalter
-                beschriftung={w.gruppieren}
-                wert={gruppierung}
-                onChange={setGruppierung}
-                optionen={GRUPPIERUNGEN.map((g) => [g, g === "status" ? w.nachStatus : w.nachPerson])}
-              />
+              <Werkzeug titel={w.gruppieren}>
+                <Umschalter
+                  beschriftung={w.gruppieren}
+                  wert={gruppierung}
+                  onChange={setGruppierung}
+                  optionen={GRUPPIERUNGEN.map((g) => [g, g === "status" ? w.nachStatus : w.nachPerson])}
+                />
+              </Werkzeug>
             )}
           </>
         }
@@ -430,6 +435,11 @@ function Umschalter<T extends string>({
   onChange: (w: T) => void;
   optionen: [T, string][];
 }) {
+  // In der schmalen Leiste eine Auswahlliste; die Knöpfe brächen dort um.
+  const inSchale = useInSchale();
+  if (inSchale) {
+    return <Leistenwahl beschriftung={beschriftung} wert={wert} onChange={onChange} optionen={optionen} />;
+  }
   return (
     <div role="radiogroup" aria-label={beschriftung} className="inline-flex rounded-md border border-[var(--border)] p-0.5">
       {optionen.map(([schluessel, name]) => (

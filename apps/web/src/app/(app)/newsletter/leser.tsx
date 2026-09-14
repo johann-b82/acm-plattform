@@ -12,6 +12,7 @@ import { Button, EmptyState, Select } from "@/components/ui/primitives";
 import { AusgabeAnsicht } from "./ausgabe-ansicht";
 import { useBildUrls } from "./bild-urls";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Newsletter lesen. Die Ausgabe wird als Folge von A4-Seiten gezeigt, und
@@ -79,19 +80,21 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/newsletter"]}</h2>
-          <p className="mt-1 text-sm text-[var(--fg-muted)]">
-            {aktiv.titel || worte.newsletter.quartalJahr(aktiv.quartal, aktiv.jahr)}
-            {aktiv.status === "entwurf" && worte.newsletter.entwurfSuffix}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {liste.length > 1 && (
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">{worte.pfad.seiten["/newsletter"]}</h2>
+        <p className="mt-1 text-sm text-[var(--fg-muted)]">
+          {aktiv.titel || worte.newsletter.quartalJahr(aktiv.quartal, aktiv.jahr)}
+          {aktiv.status === "entwurf" && worte.newsletter.entwurfSuffix}
+        </p>
+      </div>
+
+      {/* Ausgabewahl, Export und Redaktion gelten für die ganze Seite: in der
+          Schale stehen sie in der rechten Leiste. */}
+      {liste.length > 1 && (
+        <Seitenwerkzeuge kategorie="ansicht">
+          <Werkzeug titel={worte.newsletter.ausgabe}>
             <Select
               aria-label={worte.newsletter.ausgabe}
-              className="w-48"
               value={aktiv.id}
               onChange={(e) => setGewaehlt(e.target.value)}
             >
@@ -102,7 +105,11 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
                 </option>
               ))}
             </Select>
-          )}
+          </Werkzeug>
+        </Seitenwerkzeuge>
+      )}
+      <Seitenwerkzeuge kategorie="aktionen">
+        <div className="flex flex-col items-stretch gap-2">
           <Button variant="outline" onClick={exportieren} disabled={pdfSeite !== null}>
             <FileDown className="me-2 h-4 w-4" aria-hidden />
             {pdfSeite === null
@@ -113,14 +120,14 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
           </Button>
           {darfSchreiben && (
             <Link href="/newsletter/redaktion">
-              <Button variant="outline">
+              <Button variant="outline" className="w-full">
                 <PencilLine className="me-2 h-4 w-4" aria-hidden />
                 {worte.newsletter.redaktion}
               </Button>
             </Link>
           )}
         </div>
-      </div>
+      </Seitenwerkzeuge>
 
       <div ref={seiten}>
         <AusgabeAnsicht ausgabe={aktiv} kapitel={kapitel.data ?? []} urls={urls} />

@@ -1,19 +1,25 @@
+"use client";
+
 import Link from "next/link";
 
 import { GRUPPEN, finde } from "@/hilfe/registry";
 import { cn } from "@/lib/cn";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 
 /**
- * Die seitliche Artikelnavigation einer Hilfeseite (HIL-01).
+ * Die Artikelnavigation einer Hilfeseite (HIL-01).
  *
  * Alle Themen, in der Gruppierung der Übersicht — vorher stand hier nur die
  * eigene Gruppe, und wer vom Einkauf zu den Einstellungen wollte, musste zurück
  * zur Übersicht. Der aktuelle Artikel ist markiert.
  *
- * Breit steht sie als Leiste links; schmal oben als zugeklappte Liste, deren
- * Zusammenfassung sagt, wo man gerade ist. Zweimal dasselbe Markup statt eines
- * Schalters, damit es ohne Browser-Skript auskommt — die jeweils andere Hälfte
- * ist per `display: none` auch für Screenreader ausgeblendet.
+ * In der Schale steht sie als schlichte Liste in der rechten Leiste — die ist
+ * immer schmal, eine Klappe braucht es dort nicht.
+ *
+ * Ohne Schale steht sie breit als Leiste links; schmal oben als zugeklappte
+ * Liste, deren Zusammenfassung sagt, wo man gerade ist. Zweimal dasselbe Markup
+ * statt eines Schalters — die jeweils andere Hälfte ist per `display: none`
+ * auch für Screenreader ausgeblendet.
  */
 export function Artikelnavigation({
   aktuell,
@@ -22,12 +28,14 @@ export function Artikelnavigation({
   aktuell: string;
   beschriftung: { navigation: string; alleThemen: string };
 }) {
+  const inSchale = useInSchale();
+
   const liste = (
     <>
       <ul className="space-y-4">
         {GRUPPEN.map((gruppe) => (
           <li key={gruppe.id}>
-            <p className="mb-1 font-medium lg:ps-3">{gruppe.titel}</p>
+            <p className={cn("mb-1 font-medium", inSchale ? "ps-3" : "lg:ps-3")}>{gruppe.titel}</p>
             <ul>
               {gruppe.seiten.map((s) => {
                 const hier = s.slug === aktuell;
@@ -37,7 +45,8 @@ export function Artikelnavigation({
                       href={`/hilfe/${s.slug}`}
                       aria-current={hier ? "page" : undefined}
                       className={cn(
-                        "block border-s py-1 ps-3 underline-offset-4 hover:underline lg:-ms-px",
+                        "block border-s py-1 ps-3 underline-offset-4 hover:underline",
+                        inSchale ? "-ms-px" : "lg:-ms-px",
                         hier
                           ? "border-[var(--ring)] font-medium text-[var(--fg)]"
                           : "border-transparent text-[var(--fg-muted)]",
@@ -54,12 +63,25 @@ export function Artikelnavigation({
       </ul>
       <Link
         href="/hilfe"
-        className="mt-4 block py-1 text-[var(--fg-muted)] underline-offset-4 hover:underline lg:ps-3"
+        className={cn(
+          "mt-4 block py-1 text-[var(--fg-muted)] underline-offset-4 hover:underline",
+          inSchale ? "ps-3" : "lg:ps-3",
+        )}
       >
         {beschriftung.alleThemen}
       </Link>
     </>
   );
+
+  if (inSchale) {
+    return (
+      <Seitenwerkzeuge kategorie="navigation">
+        <nav aria-label={beschriftung.navigation} className="border-s border-[var(--border)] text-sm">
+          {liste}
+        </nav>
+      </Seitenwerkzeuge>
+    );
+  }
 
   return (
     <>

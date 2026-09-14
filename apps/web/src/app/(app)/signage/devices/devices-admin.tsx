@@ -24,6 +24,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { DeviceStatusBadge, UptimeBadge } from "@/components/signage/status";
 import { TagPicker } from "@/components/signage/tag-picker";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 
 const ROTATIONS = [0, 90, 180, 270] as const;
 
@@ -306,9 +307,11 @@ export function DevicesAdmin() {
         ]}
       />
 
-      <div className="flex justify-end">
-        <Button onClick={() => router.push("/signage/pair")}>{worte.signage.geraetKoppeln}</Button>
-      </div>
+      <Seitenwerkzeuge kategorie="aktionen">
+        <div className="flex flex-col items-stretch gap-2">
+          <Button onClick={() => router.push("/signage/pair")}>{worte.signage.geraetKoppeln}</Button>
+        </div>
+      </Seitenwerkzeuge>
 
       <Dialog
         open={editing !== null}

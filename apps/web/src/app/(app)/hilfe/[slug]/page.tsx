@@ -38,7 +38,9 @@ export default async function HilfeSeite({ params }: { params: Promise<{ slug: s
   const nachher = stelle < geschwister.length - 1 ? geschwister[stelle + 1] : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+    // Die Artikelnavigation zeichnet sich in der Schale in die rechte Leiste;
+    // der Inhalt hat die Breite deshalb allein.
+    <div className="space-y-6">
       <Artikelnavigation
         aktuell={seite.slug}
         beschriftung={{ navigation: t.hilfe.navigation, alleThemen: t.hilfe.alleThemen }}

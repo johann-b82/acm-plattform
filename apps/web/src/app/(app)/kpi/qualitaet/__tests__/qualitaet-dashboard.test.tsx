@@ -2,7 +2,7 @@
  * Die Qualitätsseite im DOM: der Filter Auditart steht in derselben Zeile wie
  * der Umschalter Audits/Reklamationen/Qualitätsprüfung und nur bei Audits.
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -20,6 +20,11 @@ vi.mock("@/lib/kpi/qualitaet", async (importOriginal) => {
       verlauf: vi.fn(async () => []),
       buchungen: vi.fn(async () => []),
     },
+    reklamationApi: {
+      quote: vi.fn(async () => null),
+      verlauf: vi.fn(async () => []),
+      liste: vi.fn(async () => []),
+    },
   };
 });
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
@@ -31,13 +36,14 @@ vi.mock("@/lib/zielwerte", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { QualitaetDashboard } from "../qualitaet-dashboard";
 
 function zeige() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SprachAnbieter sprache="de">
-        <QualitaetDashboard darfUploads={false} />
+        <QualitaetDashboard />
       </SprachAnbieter>
     </QueryClientProvider>,
   );
@@ -58,6 +64,84 @@ describe("Qualität", () => {
     fireEvent.click(within(umschalter).getByRole("radio", { name: "Qualitätsprüfung" }));
     const artikelart = screen.getByRole("radio", { name: "Fertigartikel" }).closest('[role="radiogroup"]');
     expect(artikelart?.parentElement).toBe(umschalter.parentElement);
+  });
+
+  it("stellt die Reklamationsart in der Schale in die rechte Leiste, die Mengenart bleibt an der Kachel", () => {
+    const platz = document.createElement("div");
+    document.body.appendChild(platz);
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <QualitaetDashboard />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    fireEvent.change(within(platz).getByRole("combobox", { name: "Ansicht" }), { target: { value: "reklamationen" } });
+    const art = within(platz).getByRole("combobox", { name: "Reklamationsart" });
+    fireEvent.change(art, { target: { value: "intern" } });
+    expect(art).toHaveValue("intern");
+    expect(within(platz).queryByRole("button", { name: "gemeldete Menge" })).toBeNull();
+    expect(screen.getByRole("button", { name: "gemeldete Menge" })).toBeInTheDocument();
+    platz.remove();
+  });
+
+  describe("in der Schale mit Kategorien", () => {
+    function zeigeInSchale() {
+      const plaetze = {
+        navigation: document.createElement("div"),
+        ansicht: document.createElement("div"),
+        filter: document.createElement("div"),
+        zeitraum: document.createElement("div"),
+        aktionen: document.createElement("div"),
+      };
+      Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <SprachAnbieter sprache="de">
+            <Werkzeugplatz.Provider value={plaetze}>
+              <QualitaetDashboard />
+            </Werkzeugplatz.Provider>
+          </SprachAnbieter>
+        </QueryClientProvider>,
+      );
+      return plaetze;
+    }
+
+    afterEach(() => {
+      document.body.innerHTML = "";
+    });
+
+    it("stellt den Umschalter mit Titel in die Ansicht, die Auditart mit Titel in die Filter", () => {
+      const { ansicht, filter } = zeigeInSchale();
+      // In der Leiste eine Auswahlliste; der Titel entfällt, er stünde gleich
+      // unter der Kategorie „Ansicht“.
+      expect(within(ansicht).getByRole("combobox", { name: "Ansicht" })).toBeInTheDocument();
+      expect(within(ansicht).queryByText("Ansicht")).toBeNull();
+      expect(within(filter).getByRole("button", { name: "Behörde" })).toBeInTheDocument();
+      // Titel ohne Doppelpunkt, keine zweite Beschriftung.
+      expect(within(filter).getByText("Auditart")).toBeInTheDocument();
+      expect(within(filter).queryByText("Auditart:")).toBeNull();
+      expect(within(ansicht).queryByRole("button", { name: "Behörde" })).toBeNull();
+    });
+
+    it("stellt die Artikelart mit Titel in die Filter", () => {
+      const { ansicht, filter } = zeigeInSchale();
+      fireEvent.change(within(ansicht).getByRole("combobox", { name: "Ansicht" }), { target: { value: "pruefung" } });
+      const artikelart = within(filter).getByRole("combobox", { name: "Artikelart" });
+      expect(artikelart).toHaveValue("fertig");
+      expect(within(filter).getByText("Artikelart")).toBeInTheDocument();
+      expect(within(ansicht).queryByRole("combobox", { name: "Artikelart" })).toBeNull();
+    });
+
+    it("stellt die Reklamationsart mit Titel in die Filter", () => {
+      const { ansicht, filter } = zeigeInSchale();
+      fireEvent.change(within(ansicht).getByRole("combobox", { name: "Ansicht" }), { target: { value: "reklamationen" } });
+      expect(within(filter).getByRole("combobox", { name: "Reklamationsart" })).toHaveValue("kunde");
+      expect(within(filter).getByText("Reklamationsart")).toBeInTheDocument();
+      expect(within(ansicht).queryByRole("combobox", { name: "Reklamationsart" })).toBeNull();
+    });
   });
 
   it("zeigt die Auditart nur bei Audits", () => {

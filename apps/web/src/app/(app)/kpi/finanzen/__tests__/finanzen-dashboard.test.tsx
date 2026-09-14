@@ -33,13 +33,14 @@ vi.mock("@/lib/zielwerte", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { FinanzenDashboard } from "../finanzen-dashboard";
 
 function zeige() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SprachAnbieter sprache="de">
-        <FinanzenDashboard darfUploads={false} />
+        <FinanzenDashboard />
       </SprachAnbieter>
     </QueryClientProvider>,
   );
@@ -100,6 +101,34 @@ describe("Finanzen", () => {
     expect(await screen.findAllByText("braucht einen Zeitraum")).toHaveLength(4);
     expect(api.personalkosten).not.toHaveBeenCalled();
     expect(screen.queryByText("Personalkosten je Abteilung")).not.toBeInTheDocument();
+  });
+
+  it("stellt Material/Personal in der Schale mit Titel in die Ansicht", () => {
+    const plaetze = {
+      navigation: document.createElement("div"),
+      ansicht: document.createElement("div"),
+      filter: document.createElement("div"),
+      zeitraum: document.createElement("div"),
+      aktionen: document.createElement("div"),
+    };
+    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <FinanzenDashboard />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const { ansicht } = plaetze;
+    // In der Leiste eine Auswahlliste, ohne zweiten Titel „Ansicht“.
+    const auswahl = within(ansicht).getByRole("combobox", { name: "Ansicht" });
+    expect(auswahl).toHaveValue("material");
+    expect(within(ansicht).queryByText("Ansicht")).toBeNull();
+    fireEvent.change(auswahl, { target: { value: "personal" } });
+    expect(auswahl).toHaveValue("personal");
+    Object.values(plaetze).forEach((p) => p.remove());
   });
 
   it("rechnet Material bei „Alles“ über den ganzen Bestand", async () => {

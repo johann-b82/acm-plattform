@@ -19,6 +19,7 @@ import { initialen } from "@/lib/initialen";
 import { Card, EmptyState, Input, Select } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 
 /**
@@ -30,10 +31,12 @@ import { cn } from "@/lib/cn";
  * breiter wird als nötig. Was trotzdem nicht passt, scrollt waagerecht.
  *
  * Mit Suche oder Standort bleibt die Führungskette stehen: wer passt, ist
- * umrandet, Vorgesetzte von anderswo stehen blass als Kontext dabei.
+ * umrandet, Vorgesetzte von anderswo stehen blass als Kontext dabei. Suche,
+ * Standort und die Zählzeile stehen in der rechten Leiste.
  */
 export function Organigramm() {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const [suche, setSuche] = useState("");
   const [standort, setStandort] = useState<string>("");
   const [zu, setZu] = useState<Set<number>>(new Set());
@@ -72,45 +75,60 @@ export function Organigramm() {
         untertitel={worte.organigramm.einleitung}
       />
 
-      <Card className="flex flex-wrap items-end gap-4 p-4">
-        <div className="space-y-1">
-          <label htmlFor="org-suche" className="text-sm font-medium">
-            {worte.organigramm.suchfeld}
-          </label>
-          <Input
-            id="org-suche"
-            value={suche}
-            placeholder={worte.organigramm.suchePlatzhalter}
-            className="w-72 max-w-full"
-            onChange={(e) => setSuche(e.target.value)}
-          />
+      {/* In der Leiste trägt der Werkzeug-Titel die Beschriftung, sonst das Label. */}
+      <Seitenwerkzeuge kategorie="filter">
+        <div className="flex flex-col items-stretch gap-3">
+          <Werkzeug titel={worte.organigramm.suchfeld}>
+            <div className="space-y-1">
+              {!inSchale && (
+                <label htmlFor="org-suche" className="text-sm font-medium">
+                  {worte.organigramm.suchfeld}
+                </label>
+              )}
+              <Input
+                id="org-suche"
+                aria-label={worte.organigramm.suchfeld}
+                value={suche}
+                placeholder={worte.organigramm.suchePlatzhalter}
+                className="w-full"
+                onChange={(e) => setSuche(e.target.value)}
+              />
+            </div>
+          </Werkzeug>
+          {orte.length > 0 && (
+            <Werkzeug titel={worte.organigramm.standort}>
+              <div className="space-y-1">
+                {!inSchale && (
+                  <label htmlFor="org-ort" className="text-sm font-medium">
+                    {worte.organigramm.standort}
+                  </label>
+                )}
+                <Select
+                  id="org-ort"
+                  aria-label={worte.organigramm.standort}
+                  value={standort}
+                  className="w-full"
+                  onChange={(e) => setStandort(e.target.value)}
+                >
+                  <option value="">{worte.organigramm.alleStandorte}</option>
+                  {orte.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </Werkzeug>
+          )}
         </div>
-        {orte.length > 0 && (
-          <div className="space-y-1">
-            <label htmlFor="org-ort" className="text-sm font-medium">
-              {worte.organigramm.standort}
-            </label>
-            <Select
-              id="org-ort"
-              value={standort}
-              className="w-48"
-              onChange={(e) => setStandort(e.target.value)}
-            >
-              <option value="">{worte.organigramm.alleStandorte}</option>
-              {orte.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-        <span className="pb-2 text-sm text-[var(--fg-muted)]">
+      </Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
+        <span className="text-sm text-[var(--fg-muted)]">
           {worte.organigramm.personen(personen.data?.length ?? 0)}
           {fokus && worte.organigramm.treffer(fokus.size)}
           {ohneVorgesetzten > 1 && worte.organigramm.ohneVorgesetzten(ohneVorgesetzten)}
         </span>
-      </Card>
+      </Seitenwerkzeuge>
 
       {personen.error && (
         <p className="text-sm text-[var(--danger)]">{(personen.error as Error).message}</p>

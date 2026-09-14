@@ -3,7 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import {
   CartesianGrid,
   Legend,
@@ -35,6 +35,8 @@ import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import type { Texte } from "@/texte";
 
 /** Solange die Einstellung nicht geladen ist, gilt die Vorgabe der Migration. */
@@ -59,8 +61,7 @@ function fensterText(stunden: number, worte: Texte): string {
  * weg" — ohne den zweiten Teil sieht ein stiller Ausfall aus wie Ruhe.
  *
  * Ein Zeitraum für alles (SEN-03/SEN-04): Min/Max der Kacheln und beide
- * Verläufe hängen an derselben Auswahl. Die Änderung zu vor 1 h und 24 h ist
- * davon unabhängig — sie heißt, was sie ist.
+ * Verläufe hängen an derselben Auswahl.
  */
 export function SensorDashboard() {
   const worte = useTexte();
@@ -127,7 +128,10 @@ export function SensorDashboard() {
         untertitel={worte.sensoren.einleitung}
         bedienung={
           <>
-            <Fensterwahl stunden={stunden} onChange={setStunden} />
+            {/* Das Fenster ist der Zeitraum dieser Seite: in der Schale unter „Zeitraum“. */}
+            <Seitenwerkzeuge kategorie="zeitraum">
+              <Fensterwahl stunden={stunden} onChange={setStunden} />
+            </Seitenwerkzeuge>
             <Button variant="outline" onClick={() => messen.mutate()} disabled={messen.isPending}>
               <RefreshCw
                 className={cn("me-2 h-4 w-4", messen.isPending && "animate-spin")}
@@ -199,6 +203,19 @@ export function SensorDashboard() {
 function Fensterwahl({ stunden, onChange }: { stunden: number; onChange: (s: number) => void }) {
   const worte = useTexte();
   const id = useId();
+  // In der Leiste so breit wie die Leiste, der Pfeil im Feld — wie die übrigen
+  // Auswahllisten dort. Die feste Breite passte nur neben den Knöpfen im Kopf.
+  const inSchale = useInSchale();
+  if (inSchale) {
+    return (
+      <Leistenwahl
+        beschriftung={worte.zeitraum.aria}
+        wert={String(stunden)}
+        onChange={(w) => onChange(Number(w))}
+        optionen={FENSTER.map((f) => [String(f), fensterText(f, worte)] as const)}
+      />
+    );
+  }
   return (
     <div className="relative">
       <label htmlFor={id} className="sr-only">
@@ -287,8 +304,6 @@ function Kachel({
             warnt={ausserhalb(temperatur, grenzen?.temperatur_min ?? null, grenzen?.temperatur_max ?? null)}
             min={zahl(kennzahl?.temperatur_min)}
             max={zahl(kennzahl?.temperatur_max)}
-            aenderung1h={zahl(kennzahl?.temperatur_aenderung_1h)}
-            aenderung24h={zahl(kennzahl?.temperatur_aenderung_24h)}
             fenster={fenster}
           />
         )}
@@ -301,8 +316,6 @@ function Kachel({
             warnt={ausserhalb(feuchte, grenzen?.feuchte_min ?? null, grenzen?.feuchte_max ?? null)}
             min={zahl(kennzahl?.feuchte_min)}
             max={zahl(kennzahl?.feuchte_max)}
-            aenderung1h={zahl(kennzahl?.feuchte_aenderung_1h)}
-            aenderung24h={zahl(kennzahl?.feuchte_aenderung_24h)}
             fenster={fenster}
           />
         )}
@@ -326,8 +339,6 @@ function Wert({
   warnt,
   min,
   max,
-  aenderung1h,
-  aenderung24h,
   fenster,
 }: {
   label: string;
@@ -337,8 +348,6 @@ function Wert({
   warnt: boolean;
   min: number | null;
   max: number | null;
-  aenderung1h: number | null;
-  aenderung24h: number | null;
   fenster: string;
 }) {
   const worte = useTexte();
@@ -367,47 +376,6 @@ function Wert({
       <div className="mt-1 truncate text-xs text-[var(--fg-muted)] tabular-nums" title={minMax}>
         {minMax}
       </div>
-      <div className="mt-1 flex flex-col gap-0.5 text-xs">
-        <Aenderung wert={aenderung1h} einheit={einheit} label={worte.sensoren.vorStunde} />
-        <Aenderung wert={aenderung24h} einheit={einheit} label={worte.sensoren.vorTag} />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Die Änderung in der Einheit des Werts, nicht in Prozent. Grau: ob wärmer
- * gut oder schlecht ist, hängt am Raum, nicht an der Zahl (KPI-06 neutral) —
- * ob der Wert selbst stört, sagt die Warnfarbe am Wert. Fehlt die
- * Vergleichsmessung, steht ein Strich, keine Null.
- */
-function Aenderung({ wert, einheit, label }: { wert: number | null; einheit: string; label: string }) {
-  const worte = useTexte();
-  const tag = ZAHL_TAG[useSprache()];
-  if (wert === null) {
-    return (
-      <div className="flex items-baseline gap-1.5 whitespace-nowrap" title={worte.sensoren.keinVergleich}>
-        <span className="w-3.5 text-center text-[var(--fg-muted)]" aria-hidden>
-          —
-        </span>
-        <span className="sr-only">{worte.sensoren.keinVergleich}</span>
-        <span className="truncate text-[var(--fg-muted)]">{label}</span>
-      </div>
-    );
-  }
-  const Pfeil = wert > 0 ? ArrowUpRight : wert < 0 ? ArrowDownRight : ArrowRight;
-  const text = new Intl.NumberFormat(tag, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-    signDisplay: "exceptZero",
-  }).format(wert);
-  return (
-    <div className="flex items-baseline gap-1.5 whitespace-nowrap text-[var(--fg-muted)]">
-      <span className="inline-flex items-baseline gap-0.5 font-medium tabular-nums">
-        <Pfeil className="h-3.5 w-3.5 self-center" aria-hidden />
-        {`${text} ${einheit}`}
-      </span>
-      <span className="truncate">{label}</span>
     </div>
   );
 }

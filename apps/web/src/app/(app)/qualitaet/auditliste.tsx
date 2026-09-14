@@ -24,6 +24,7 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { useAuditworte } from "@/lib/tafeln";
 
 /** Ein Audit gilt als laufend, solange es nicht abgeschlossen oder abgesagt ist. */
@@ -45,13 +46,15 @@ const LEER: NeuesAudit = {
 /**
  * Die Auditübersicht.
  *
- * Aufbau wie im Altsystem (AUD-04): über der Liste die Filter Status und Art,
- * rechts daneben „Neues Audit", darunter bei Bedarf das Anlageformular. Die
- * Filter wirken auf den ganzen Bestand, bevor die Tabelle sucht, sortiert und
- * blättert.
+ * Aufbau wie im Altsystem (AUD-04): die Filter Status und Art und „Neues
+ * Audit", darunter bei Bedarf das Anlageformular. Die Filter wirken auf den
+ * ganzen Bestand, bevor die Tabelle sucht, sortiert und blättert. In der
+ * Schale stehen Filter und Knopf deshalb untereinander in der rechten Leiste;
+ * ohne Schale in einer Zeile über der Liste.
  */
 export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const auditworte = useAuditworte();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -183,6 +186,41 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     },
   ];
 
+  const statusWahl = (
+    <Select
+      id="filter-status"
+      value={filter.status}
+      onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+    >
+      <option value="">{worte.audit.alle}</option>
+      {AUDIT_STATUS.map((s) => (
+        <option key={s.wert} value={s.wert}>
+          {auditworte[s.wert]}
+        </option>
+      ))}
+    </Select>
+  );
+  const artWahl = (
+    <Select id="filter-art" value={filter.art} onChange={(e) => setFilter({ ...filter, art: e.target.value })}>
+      <option value="">{worte.audit.alle}</option>
+      <option value="intern">{worte.audit.intern}</option>
+      <option value="extern">{worte.audit.extern}</option>
+    </Select>
+  );
+  const neuKnopf = darfSchreiben && (
+    <Button
+      variant="outline"
+      className={inSchale ? undefined : "ms-auto"}
+      aria-expanded={formular}
+      onClick={() => {
+        if (formular) setNeu(LEER);
+        setFormular(!formular);
+      }}
+    >
+      {formular ? worte.allgemein.abbrechen : worte.audit.neuesAudit}
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
       <Seitenkopf
@@ -196,48 +234,31 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
         }
       />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="filter-status">{worte.audit.status}</Label>
-          <Select
-            id="filter-status"
-            value={filter.status}
-            onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-          >
-            <option value="">{worte.audit.alle}</option>
-            {AUDIT_STATUS.map((s) => (
-              <option key={s.wert} value={s.wert}>
-                {auditworte[s.wert]}
-              </option>
-            ))}
-          </Select>
+      {/* In der Schale: die Filter mit Titel unter „Filter“, „Neues Audit“ unter „Aktionen“.
+          Der Titel ist das Label des Filters, damit keine zweite Beschriftung daneben steht. */}
+      {inSchale ? (
+        <>
+          <Seitenwerkzeuge kategorie="filter">
+            <Werkzeug titel={<label htmlFor="filter-status">{worte.audit.status}</label>}>
+              {statusWahl}
+            </Werkzeug>
+            <Werkzeug titel={<label htmlFor="filter-art">{worte.audit.art}</label>}>{artWahl}</Werkzeug>
+          </Seitenwerkzeuge>
+          {neuKnopf && <Seitenwerkzeuge kategorie="aktionen">{neuKnopf}</Seitenwerkzeuge>}
+        </>
+      ) : (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="filter-status">{worte.audit.status}</Label>
+            {statusWahl}
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="filter-art">{worte.audit.art}</Label>
+            {artWahl}
+          </div>
+          {neuKnopf}
         </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="filter-art">{worte.audit.art}</Label>
-          <Select
-            id="filter-art"
-            value={filter.art}
-            onChange={(e) => setFilter({ ...filter, art: e.target.value })}
-          >
-            <option value="">{worte.audit.alle}</option>
-            <option value="intern">{worte.audit.intern}</option>
-            <option value="extern">{worte.audit.extern}</option>
-          </Select>
-        </div>
-        {darfSchreiben && (
-          <Button
-            variant="outline"
-            className="ms-auto"
-            aria-expanded={formular}
-            onClick={() => {
-              if (formular) setNeu(LEER);
-              setFormular(!formular);
-            }}
-          >
-            {formular ? worte.allgemein.abbrechen : worte.audit.neuesAudit}
-          </Button>
-        )}
-      </div>
+      )}
 
       {darfSchreiben && formular && (
         <Card className="space-y-3 p-4">

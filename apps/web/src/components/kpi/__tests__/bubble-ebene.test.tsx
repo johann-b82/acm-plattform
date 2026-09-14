@@ -1,7 +1,7 @@
 /**
  * Die Bubble-Ebene auf den Dashboard-Seiten (MAS-01): nur auf den Seiten der
- * Bereiche, Knopf nur für Schreibende, ein aufgezogenes Rechteck wird mit
- * Bereich und Position gespeichert.
+ * Bereiche, zeigt die Bubbles dieser Seite mit Position. Neue Bubbles werden
+ * hier nicht mehr gesetzt — einen Bubble-Knopf gibt es nicht.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -15,7 +15,6 @@ vi.mock("next/navigation", () => ({ usePathname: () => pfad.jetzt }));
 const api = vi.hoisted(() => ({
   bubbles: vi.fn(),
   massnahmen: vi.fn(async () => []),
-  bubbleAnlegen: vi.fn(async () => undefined),
   bubbleGesehen: vi.fn(async () => undefined),
   bubbleLoeschen: vi.fn(async () => undefined),
 }));
@@ -62,7 +61,6 @@ describe("Bubble-Ebene", () => {
     pfad.jetzt = "/kpi/bewertung";
     zeige(true);
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
     expect(api.bubbles).not.toHaveBeenCalled();
   });
 
@@ -73,39 +71,24 @@ describe("Bubble-Ebene", () => {
     expect(screen.queryByText("Text ohne-position")).toBeNull();
   });
 
-  it("gibt Lesenden keinen Bubble-Knopf und hakt beim Ansehen nichts ab", async () => {
+  it("hakt beim Ansehen durch Lesende nichts ab", async () => {
     zeige(false);
     fireEvent.click(await screen.findByRole("button", { name: "Bubble 1: Text hier" }));
-    expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
     expect(api.bubbleGesehen).not.toHaveBeenCalled();
   });
 
-  it("speichert ein aufgezogenes Rechteck mit Bereich, Text und Ampel", async () => {
-    const { container } = zeige(true);
+  it("gibt auch Schreibenden keinen Bubble-Knopf — neue Bubbles werden hier nicht gesetzt", async () => {
+    zeige(true);
     await screen.findByRole("button", { name: "Bubble 1: Text hier" });
-    fireEvent.click(screen.getByRole("button", { name: "Bubble" }));
+    expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
 
-    const flaeche = container.querySelector(".relative.min-w-0") as HTMLElement;
-    flaeche.getBoundingClientRect = () =>
-      ({ left: 0, top: 0, width: 1000, height: 500, right: 1000, bottom: 500, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
-    const zeichnung = flaeche.lastElementChild as HTMLElement;
-    fireEvent.mouseDown(zeichnung, { clientX: 100, clientY: 50 });
-    fireEvent.mouseMove(zeichnung, { clientX: 400, clientY: 150 });
-    fireEvent.mouseUp(zeichnung, { clientX: 400, clientY: 150 });
-
-    fireEvent.change(screen.getByRole("textbox", { name: "Was stimmt hier nicht?" }), {
-      target: { value: "Knick" },
-    });
-    fireEvent.change(screen.getByRole("combobox", { name: "keine Ampel" }), { target: { value: "rot" } });
-    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
-
-    await waitFor(() =>
-      expect(api.bubbleAnlegen).toHaveBeenCalledWith({
-        bereich: "einkauf",
-        text: "Knick",
-        ampel: "rot",
-        rechteck: { x: 0.1, y: 0.1, w: expect.closeTo(0.3), h: expect.closeTo(0.2) },
-      }),
-    );
+  it("hakt eine ungesehene Bubble ab, wenn Schreibende sie öffnen", async () => {
+    zeige(true);
+    fireEvent.click(await screen.findByRole("button", { name: "Bubble 1: Text hier" }));
+    // Die Mutation läuft nach dem Klick an; TanStack reicht neben der Kennung
+    // noch einen Kontext mit.
+    await waitFor(() => expect(api.bubbleGesehen).toHaveBeenCalledWith("hier", expect.anything()));
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Code, FileText, Link as LinkIcon, Loader2, Presentation, RotateCcw } from "lucide-react";
@@ -13,6 +13,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { ConversionBadge } from "@/components/signage/status";
 import { cn } from "@/lib/cn";
 import { useTexte } from "@/components/sprache/anbieter";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 
 const ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.pdf,.pptx";
 
@@ -24,6 +25,20 @@ function KindIcon({ kind }: { kind: SignageMedia["kind"] }) {
   return <FileText className={cls} aria-hidden />;
 }
 
+/**
+ * Ein Formularfeld mit Beschriftung. In der Schale trägt der Titel des
+ * Werkzeugs die Beschriftung; ohne Schale steht das Label darüber.
+ */
+function Feld({ titel, htmlFor, children }: { titel: string; htmlFor: string; children: ReactNode }) {
+  if (useInSchale()) return <Werkzeug titel={titel}>{children}</Werkzeug>;
+  return (
+    <div className="flex flex-col gap-1">
+      <Label htmlFor={htmlFor}>{titel}</Label>
+      {children}
+    </div>
+  );
+}
+
 export function MediaAdmin() {
   const worte = useTexte();
   const queryClient = useQueryClient();
@@ -33,6 +48,7 @@ export function MediaAdmin() {
   const [urlKind, setUrlKind] = useState<"url" | "html">("url");
   const [urlTitle, setUrlTitle] = useState("");
   const [urlContent, setUrlContent] = useState("");
+  const inSchale = useInSchale();
 
   // Solange eine PPTX-Datei konvertiert, kurz nachfragen; sonst ruhig bleiben.
   const mediaQuery = useQuery({
@@ -102,12 +118,16 @@ export function MediaAdmin() {
   });
 
   const media = mediaQuery.data ?? [];
+  const inhaltTitel = urlKind === "url" ? "URL" : "HTML";
 
   return (
     <div className="space-y-6">
-      <Card className="p-5">
+      {/* Hinzufügen gilt für die ganze Seite: in der Schale steht es in der
+          rechten Leiste, dort untereinander statt nebeneinander. */}
+      <Seitenwerkzeuge kategorie="aktionen">
+      <Card className={inSchale ? "p-4" : "p-5"}>
         <h2 className="text-base font-semibold">{worte.signage.medienHinzu}</h2>
-        <div className="mt-4 grid gap-6 md:grid-cols-2">
+        <div className={cn("mt-4 grid", inSchale ? "gap-4" : "gap-6 md:grid-cols-2")}>
           {/* Datei-Ablage */}
           <div
             onDragOver={(e) => {
@@ -163,38 +183,40 @@ export function MediaAdmin() {
               createUrlMutation.mutate();
             }}
           >
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="media-kind">{worte.signage.art}</Label>
+            <Feld titel={worte.signage.art} htmlFor="media-kind">
               <Select
                 id="media-kind"
+                aria-label={inSchale ? worte.signage.art : undefined}
                 value={urlKind}
                 onChange={(e) => setUrlKind(e.target.value as "url" | "html")}
               >
                 <option value="url">{worte.signage.webseite}</option>
                 <option value="html">{worte.signage.htmlSchnipsel}</option>
               </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="media-title">{worte.signage.titel}</Label>
+            </Feld>
+            <Feld titel={worte.signage.titel} htmlFor="media-title">
               <Input
                 id="media-title"
+                aria-label={inSchale ? worte.signage.titel : undefined}
                 value={urlTitle}
                 onChange={(e) => setUrlTitle(e.target.value)}
                 placeholder={worte.signage.titelBeispiel}
                 required
               />
-            </div>
+            </Feld>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="media-content">{urlKind === "url" ? "URL" : "HTML"}</Label>
-              <Input
-                id="media-content"
-                value={urlContent}
-                onChange={(e) => setUrlContent(e.target.value)}
-                placeholder={
-                  urlKind === "url" ? "https://acm.local/embed/birthdays" : "<h1>Hallo</h1>"
-                }
-                required
-              />
+              <Feld titel={inhaltTitel} htmlFor="media-content">
+                <Input
+                  id="media-content"
+                  aria-label={inSchale ? inhaltTitel : undefined}
+                  value={urlContent}
+                  onChange={(e) => setUrlContent(e.target.value)}
+                  placeholder={
+                    urlKind === "url" ? "https://acm.local/embed/birthdays" : "<h1>Hallo</h1>"
+                  }
+                  required
+                />
+              </Feld>
               {urlKind === "url" && (
                 <p className="text-xs text-[var(--fg-muted)]">
                   {worte.signage.urlHinweis}
@@ -207,6 +229,7 @@ export function MediaAdmin() {
           </form>
         </div>
       </Card>
+      </Seitenwerkzeuge>
 
       {mediaQuery.isLoading && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

@@ -4,7 +4,7 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { useTexte } from "@/components/sprache/anbieter";
-import { useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { fenster, type Zeitraum } from "@/lib/kpi/gemeinsam";
 import { cn } from "@/lib/cn";
 
@@ -86,7 +86,7 @@ export function Zeitraumwahl({
   const t = useTexte();
   const id = useId();
   const inLeiste = useInSchale();
-  return (
+  const inhalt = (
     <div className={cn("flex flex-col gap-1", inLeiste ? "w-full items-stretch" : "items-end")}>
       <label htmlFor={id} className="sr-only">
         {t.zeitraum.aria}
@@ -159,4 +159,7 @@ export function Zeitraumwahl({
       )}
     </div>
   );
+  // In der Leiste steht sie unter „Zeitraum“, wo auch immer die Seite sie
+  // hinstellt — meist in die Bedienung des Seitenkopfs.
+  return inLeiste ? <Seitenwerkzeuge kategorie="zeitraum">{inhalt}</Seitenwerkzeuge> : inhalt;
 }

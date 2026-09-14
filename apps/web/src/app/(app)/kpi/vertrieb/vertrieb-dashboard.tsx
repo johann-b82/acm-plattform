@@ -33,7 +33,6 @@ import { vergleichsfenster } from "@/lib/kpi/vergleich";
 import { Card } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
-import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -52,7 +51,7 @@ const KEINE: never[] = [];
 /** Die Kundenanteilsdiagramme zeigen höchstens so viele Kunden einzeln. */
 const HOECHSTENS_KUNDEN = 14;
 
-export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
+export function VertriebDashboard() {
   const wahl = useZeitraumwahl();
   const { zeitraum, von, bis } = wahl;
   const worte = useTexte();
@@ -243,7 +242,6 @@ export function VertriebDashboard({ darfUploads }: { darfUploads: boolean }) {
       <Seitenkopf
         bedienung={
           <>
-            {darfUploads && <UploadVerweis />}
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="vertrieb" />} />
           </>
         }

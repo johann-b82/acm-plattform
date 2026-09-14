@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { useInSchale } from "@/components/sidebar/werkzeugplatz";
 
 /** Ein Element in einem Set umschalten — als neue Menge, für `setState`. */
 export function umschalten<T>(menge: ReadonlySet<T>, wert: T): Set<T> {
@@ -15,6 +16,9 @@ export function umschalten<T>(menge: ReadonlySet<T>, wert: T): Set<T> {
  * „alle Standorte“. Die verfügbaren Standorte kommen aus den Daten, nicht aus
  * einer festen Liste — steht ein Standort in keiner Zeile, gibt es ihn hier
  * nicht.
+ *
+ * In der rechten Leiste steht die Beschriftung schon als Titel darüber; dort
+ * entfällt sie hier, der Gruppenname für Screenreader bleibt.
  */
 export function Standortfilter({
   standorte,
@@ -27,10 +31,11 @@ export function Standortfilter({
   onToggle: (standort: string) => void;
   beschriftung: string;
 }) {
+  const inSchale = useInSchale();
   if (standorte.length === 0) return null;
   return (
     <div role="group" aria-label={beschriftung} className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-[var(--fg-muted)]">{beschriftung}</span>
+      {!inSchale && <span className="text-sm text-[var(--fg-muted)]">{beschriftung}</span>}
       {standorte.map((s) => {
         const an = gewaehlt.has(s);
         return (

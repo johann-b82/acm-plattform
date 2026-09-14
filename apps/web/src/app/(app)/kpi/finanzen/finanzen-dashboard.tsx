@@ -25,12 +25,13 @@ import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
-import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl, type Zeitraumwahl as Wahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
 import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
@@ -45,7 +46,7 @@ type Ansicht = "material" | "personal";
  * gehört der Seite, nicht der Ansicht — ein Wechsel behält den Zeitraum. Jede
  * Ansicht ist eine eigene Komponente, damit nur ihre Abfragen laufen.
  */
-export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
+export function FinanzenDashboard() {
   const worte = useTexte();
   const wahl = useZeitraumwahl();
   const [ansicht, setAnsicht] = useState<Ansicht>("material");
@@ -57,10 +58,12 @@ export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.finanzen.einleitung}
-        links={<AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />}
+        links={
+          // Kein eigener Titel: er stünde gleich unter der Kategorie „Ansicht“.
+          <AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />
+        }
         bedienung={
           <>
-            {darfUploads && <UploadVerweis />}
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="finanzen" />} />
           </>
         }
@@ -85,10 +88,15 @@ export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
 
 function AnsichtWahl({ ansicht, onChange }: { ansicht: Ansicht; onChange: (a: Ansicht) => void }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const stufen: [Ansicht, string][] = [
     ["material", worte.finanzen.ansichtMaterial],
     ["personal", worte.finanzen.ansichtPersonal],
   ];
+  // In der schmalen Leiste eine Auswahlliste; die Knöpfe brächen dort um.
+  if (inSchale) {
+    return <Leistenwahl beschriftung={worte.finanzen.ansicht} wert={ansicht} onChange={onChange} optionen={stufen} />;
+  }
   return (
     <div
       role="radiogroup"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,7 +19,7 @@ import {
 import { useTexte } from "@/components/sprache/anbieter";
 import { Brotkrumen } from "@/components/brotkrumen";
 import { Benutzerbereich } from "@/components/sidebar/benutzerbereich";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { KATEGORIEN, Werkzeugplatz, type Kategorie, type Plaetze } from "@/components/sidebar/werkzeugplatz";
 import { MeldeKnopf } from "@/components/feedback/melde-knopf";
 import { KNOPF } from "@/components/kopfzeile/knopf";
 import { setzeSeitenleiste } from "@/app/seitenleiste-aktion";
@@ -83,7 +83,19 @@ export function Schale({
   const [offen, setOffen] = useState(false);
   const [werkzeugeEingeklappt, setWerkzeugeEingeklappt] = useState(anfangsWerkzeugeEingeklappt);
   const [werkzeugeOffen, setWerkzeugeOffen] = useState(false);
-  const [platz, setPlatz] = useState<HTMLElement | null>(null);
+  const [plaetze, setPlaetze] = useState<Plaetze>({});
+  // Feste Ref-Rückrufe je Kategorie: ein neuer Rückruf bei jedem Zeichnen
+  // hängte den Platz jedes Mal aus und wieder ein.
+  const platzRefs = useMemo(
+    () =>
+      Object.fromEntries(
+        KATEGORIEN.map((k) => [
+          k,
+          (el: HTMLElement | null) => setPlaetze((alt) => (alt[k] === el ? alt : { ...alt, [k]: el })),
+        ]),
+      ) as Record<Kategorie, (el: HTMLElement | null) => void>,
+    [],
+  );
   const [aufgeklappt, setAufgeklappt] = useState<Set<string>>(
     () =>
       new Set(
@@ -144,7 +156,7 @@ export function Schale({
   );
 
   return (
-    <Werkzeugplatz.Provider value={platz}>
+    <Werkzeugplatz.Provider value={plaetze}>
       <div className="flex min-h-screen">
         {(offen || werkzeugeOffen) && (
           <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={allesSchliessen} aria-hidden />
@@ -327,9 +339,24 @@ export function Schale({
             </button>
           </div>
 
-          {/* Der Platz bleibt eingehängt, auch eingeklappt: die Filter gehören
-              der Seite, und ihr Zustand soll beim Einklappen nicht verloren gehen. */}
-          <div ref={setPlatz} className={cn("min-h-0 flex-1 overflow-y-auto p-3", !werkzeugeMitText && "md:hidden")} />
+          {/* Die Plätze bleiben eingehängt, auch eingeklappt: die Filter gehören
+              der Seite, und ihr Zustand soll beim Einklappen nicht verloren gehen.
+              Je Kategorie ein Abschnitt mit Überschrift und Trennlinie; ein
+              Abschnitt, in den keine Seite etwas stellt, ist unsichtbar. */}
+          <div className={cn("min-h-0 flex-1 overflow-y-auto", !werkzeugeMitText && "md:hidden")}>
+            {KATEGORIEN.map((k) => (
+              <section
+                key={k}
+                aria-label={t.kopf.kategorien[k]}
+                className="border-b border-[var(--border)] p-3 has-[>[data-platz]:empty]:hidden"
+              >
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
+                  {t.kopf.kategorien[k]}
+                </h3>
+                <div data-platz={k} ref={platzRefs[k]} className="flex flex-col items-stretch gap-3" />
+              </section>
+            ))}
+          </div>
           {!werkzeugeMitText && <div className="hidden flex-1 md:block" />}
 
           <div className={cn("border-t border-[var(--border)] p-3", !werkzeugeMitText && "md:flex md:justify-center md:px-0")}>

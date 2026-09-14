@@ -101,9 +101,8 @@ function Abgleichstand() {
 }
 
 /**
- * Wer HR verwalten darf, stößt den Personio-Abgleich an — als Knopf links
- * neben der Zeitraumwahl, im Stil des Upload-Verweises der Kennzahlenseiten.
- * Ein Fehler erscheint als Meldung; unter dem Knopf wäre in der Zeile kein Platz.
+ * Wer HR verwalten darf, stößt den Personio-Abgleich an — als Knopf in der
+ * rechten Leiste bei den Aktionen. Ein Fehler erscheint als Meldung.
  */
 function AbgleichKnopf() {
   const worte = useTexte();

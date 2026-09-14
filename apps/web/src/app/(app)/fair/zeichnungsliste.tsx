@@ -13,12 +13,13 @@ import {
   type Zeichnung,
 } from "@/lib/fair";
 import { kundenAuswahl, nachKunde, OHNE_KUNDE } from "@/lib/fair/kunden";
-import { Card, EmptyState, Input, Label, Select } from "@/components/ui/primitives";
+import { EmptyState, Input, Label, Select } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 
 
@@ -27,6 +28,7 @@ import { Seitenkopf } from "@/components/seitenkopf";
  */
 export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -106,20 +108,27 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     <div className="space-y-6">
       <Seitenkopf untertitel={worte.fair.einleitung} />
 
+      {/* Hochladen und Kundenfilter gelten für die ganze Liste: in der Schale
+          stehen sie in der rechten Leiste. */}
       {darfSchreiben && (
-        <Card className="flex flex-wrap items-end gap-3 p-4">
-          <div className="flex flex-1 flex-col gap-1">
-            <Label htmlFor="name">{worte.fair.bezeichnungFrei}</Label>
-            <Input
-              id="name"
-              value={name}
-              placeholder={worte.fair.beispiel}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        <Seitenwerkzeuge kategorie="aktionen">
+        <div className="flex flex-col items-stretch gap-2">
+          {/* In der Leiste trägt der Werkzeugtitel die Beschriftung. */}
+          <Werkzeug titel={worte.fair.bezeichnungFrei}>
+            <div className="flex flex-col gap-1">
+              {!inSchale && <Label htmlFor="name">{worte.fair.bezeichnungFrei}</Label>}
+              <Input
+                id="name"
+                aria-label={worte.fair.bezeichnungFrei}
+                value={name}
+                placeholder={worte.fair.beispiel}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </Werkzeug>
           <label
             className={
-              "inline-flex h-9 cursor-pointer items-center rounded-md bg-[var(--fg)] px-4 " +
+              "inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[var(--fg)] px-4 " +
               "text-sm font-medium text-[var(--bg)] hover:opacity-90 " +
               "focus-within:outline-2 focus-within:outline-[var(--ring)]"
             }
@@ -139,7 +148,28 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               }}
             />
           </label>
-        </Card>
+        </div>
+        </Seitenwerkzeuge>
+      )}
+
+      {liste.length > 0 && (
+        <Seitenwerkzeuge kategorie="filter">
+          <Werkzeug titel={worte.fair.kunde}>
+            <Select
+              aria-label={worte.fair.kundenfilter}
+              value={kunde}
+              onChange={(e) => setKunde(e.target.value)}
+            >
+              <option value="">{worte.fair.alleKunden}</option>
+              {auswahl.kunden.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+              {auswahl.ohneKunde && <option value={OHNE_KUNDE}>{worte.fair.ohneKunde}</option>}
+            </Select>
+          </Werkzeug>
+        </Seitenwerkzeuge>
       )}
 
       {zeichnungen.isLoading && (
@@ -161,22 +191,6 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
           spalten={spalten}
           zeilenSchluessel={(z) => z.id}
           beschriftung={worte.pfad.seiten["/fair"]}
-          werkzeuge={
-            <Select
-              aria-label={worte.fair.kundenfilter}
-              className="w-56"
-              value={kunde}
-              onChange={(e) => setKunde(e.target.value)}
-            >
-              <option value="">{worte.fair.alleKunden}</option>
-              {auswahl.kunden.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-              {auswahl.ohneKunde && <option value={OHNE_KUNDE}>{worte.fair.ohneKunde}</option>}
-            </Select>
-          }
         />
       )}
     </div>

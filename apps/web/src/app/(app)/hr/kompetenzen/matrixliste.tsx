@@ -28,6 +28,7 @@ import {
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { useKompetenzbereich } from "@/lib/tafeln";
 
 
@@ -37,10 +38,12 @@ import { useKompetenzbereich } from "@/lib/tafeln";
  *
  * Der Import zeigt erst, was er täte. Das ist hier keine Höflichkeit: er
  * ersetzt ein Blatt vollständig, und wer danach in der Oberfläche gepflegt
- * hat, verlöre das.
+ * hat, verlöre das. Bereichswahl und Einlesen stehen in der rechten Leiste,
+ * die Vorschau bleibt auf der Seite.
  */
 export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const bereichLabel = useKompetenzbereich();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -82,12 +85,16 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       />
 
       {darfSchreiben && (
-        <Card className="space-y-3 p-4">
-          <div className="flex flex-wrap items-end gap-3">
+        <Seitenwerkzeuge kategorie="aktionen">
+          <div className="flex flex-col items-stretch gap-2">
+            {/* Der Bereich gehört zum Einlesen, nicht zur Liste: er filtert nichts.
+                In der Leiste trägt der Werkzeug-Titel die Beschriftung. */}
+            <Werkzeug titel={worte.kompetenzen.bereich}>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="bereich">{worte.kompetenzen.bereich}</Label>
+              {!inSchale && <Label htmlFor="bereich">{worte.kompetenzen.bereich}</Label>}
               <Select
                 id="bereich"
+                aria-label={worte.kompetenzen.bereich}
                 value={bereich}
                 onChange={(e) => {
                   setBereich(e.target.value as Bereich);
@@ -101,6 +108,7 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 ))}
               </Select>
             </div>
+            </Werkzeug>
             <label
               className={
                 "inline-flex h-9 cursor-pointer items-center rounded-md border " +
@@ -124,48 +132,50 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
               />
             </label>
           </div>
+        </Seitenwerkzeuge>
+      )}
 
-          {vorschau && (
-            <div className="space-y-3 rounded-md bg-[var(--muted)] p-4 text-sm">
-              <p className="font-medium">
-                {worte.kompetenzen.vorschauKopf(vorschau.ergebnis.dateiname, bereichLabel[bereich])}
-              </p>
-              <ul className="space-y-2">
-                {vorschau.ergebnis.matrizen.map((m) => (
-                  <li key={m.blatt}>
-                    <span className="font-medium">{m.blatt}</span>:{" "}
-                    {worte.kompetenzen.blattZeile(m.qualifikationen, m.personen, m.bewertungen)}{" "}
-                    {worte.kompetenzen.gefunden(m.zugeordnet, m.personen)}
-                    {m.platzhalter > 0 && worte.kompetenzen.platzhalter(m.platzhalter)}.
-                    {m.nicht_zugeordnet.length > 0 && (
-                      <span className="text-[var(--fg-muted)]">
-                        {worte.kompetenzen.ohneZuordnung(m.nicht_zugeordnet.join(", "))}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {vorschau.ergebnis.hinweise.map((h) => (
-                <p key={h} className="text-[var(--fg-muted)]">
-                  {h}
-                </p>
+      {darfSchreiben && vorschau && (
+        <Card className="p-4">
+          <div className="space-y-3 rounded-md bg-[var(--muted)] p-4 text-sm">
+            <p className="font-medium">
+              {worte.kompetenzen.vorschauKopf(vorschau.ergebnis.dateiname, bereichLabel[bereich])}
+            </p>
+            <ul className="space-y-2">
+              {vorschau.ergebnis.matrizen.map((m) => (
+                <li key={m.blatt}>
+                  <span className="font-medium">{m.blatt}</span>:{" "}
+                  {worte.kompetenzen.blattZeile(m.qualifikationen, m.personen, m.bewertungen)}{" "}
+                  {worte.kompetenzen.gefunden(m.zugeordnet, m.personen)}
+                  {m.platzhalter > 0 && worte.kompetenzen.platzhalter(m.platzhalter)}.
+                  {m.nicht_zugeordnet.length > 0 && (
+                    <span className="text-[var(--fg-muted)]">
+                      {worte.kompetenzen.ohneZuordnung(m.nicht_zugeordnet.join(", "))}
+                    </span>
+                  )}
+                </li>
               ))}
-              <p className="text-[var(--fg-muted)]">
-                {worte.kompetenzen.ersetztWarnung}
+            </ul>
+            {vorschau.ergebnis.hinweise.map((h) => (
+              <p key={h} className="text-[var(--fg-muted)]">
+                {h}
               </p>
-              <div className="flex gap-2">
-                <Button
-                  disabled={uebernehmen.isPending}
-                  onClick={() => uebernehmen.mutate()}
-                >
-                  {uebernehmen.isPending ? worte.kompetenzen.wirdUebernommen : worte.kompetenzen.uebernehmen}
-                </Button>
-                <Button variant="outline" onClick={() => setVorschau(null)}>
-                  {worte.kompetenzen.abbrechen}
-                </Button>
-              </div>
+            ))}
+            <p className="text-[var(--fg-muted)]">
+              {worte.kompetenzen.ersetztWarnung}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                disabled={uebernehmen.isPending}
+                onClick={() => uebernehmen.mutate()}
+              >
+                {uebernehmen.isPending ? worte.kompetenzen.wirdUebernommen : worte.kompetenzen.uebernehmen}
+              </Button>
+              <Button variant="outline" onClick={() => setVorschau(null)}>
+                {worte.kompetenzen.abbrechen}
+              </Button>
             </div>
-          )}
+          </div>
         </Card>
       )}
 
