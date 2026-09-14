@@ -30,7 +30,8 @@ import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
 import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Werkzeug } from "@/components/sidebar/werkzeugplatz";
+import { useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
@@ -58,9 +59,8 @@ export function FinanzenDashboard() {
       <Seitenkopf
         untertitel={worte.finanzen.einleitung}
         links={
-          <Werkzeug titel={worte.finanzen.ansicht}>
-            <AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />
-          </Werkzeug>
+          // Kein eigener Titel: er stünde gleich unter der Kategorie „Ansicht“.
+          <AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />
         }
         bedienung={
           <>
@@ -88,10 +88,15 @@ export function FinanzenDashboard() {
 
 function AnsichtWahl({ ansicht, onChange }: { ansicht: Ansicht; onChange: (a: Ansicht) => void }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const stufen: [Ansicht, string][] = [
     ["material", worte.finanzen.ansichtMaterial],
     ["personal", worte.finanzen.ansichtPersonal],
   ];
+  // In der schmalen Leiste eine Auswahlliste; die Knöpfe brächen dort um.
+  if (inSchale) {
+    return <Leistenwahl beschriftung={worte.finanzen.ansicht} wert={ansicht} onChange={onChange} optionen={stufen} />;
+  }
   return (
     <div
       role="radiogroup"

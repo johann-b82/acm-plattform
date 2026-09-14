@@ -122,8 +122,12 @@ describe("Finanzen", () => {
       </QueryClientProvider>,
     );
     const { ansicht } = plaetze;
-    expect(within(ansicht).getByRole("radiogroup", { name: "Ansicht" })).toBeInTheDocument();
-    expect(within(ansicht).getByText("Ansicht")).toBeInTheDocument();
+    // In der Leiste eine Auswahlliste, ohne zweiten Titel „Ansicht“.
+    const auswahl = within(ansicht).getByRole("combobox", { name: "Ansicht" });
+    expect(auswahl).toHaveValue("material");
+    expect(within(ansicht).queryByText("Ansicht")).toBeNull();
+    fireEvent.change(auswahl, { target: { value: "personal" } });
+    expect(auswahl).toHaveValue("personal");
     Object.values(plaetze).forEach((p) => p.remove());
   });
 

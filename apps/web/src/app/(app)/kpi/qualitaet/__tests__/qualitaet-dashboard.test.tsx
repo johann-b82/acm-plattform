@@ -78,9 +78,10 @@ describe("Qualität", () => {
         </SprachAnbieter>
       </QueryClientProvider>,
     );
-    fireEvent.click(within(platz).getByRole("radio", { name: "Reklamationen" }));
-    fireEvent.click(within(platz).getByRole("button", { name: "intern" }));
-    expect(within(platz).getByRole("button", { name: "intern" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.change(within(platz).getByRole("combobox", { name: "Ansicht" }), { target: { value: "reklamationen" } });
+    const art = within(platz).getByRole("combobox", { name: "Reklamationsart" });
+    fireEvent.change(art, { target: { value: "intern" } });
+    expect(art).toHaveValue("intern");
     expect(within(platz).queryByRole("button", { name: "gemeldete Menge" })).toBeNull();
     expect(screen.getByRole("button", { name: "gemeldete Menge" })).toBeInTheDocument();
     platz.remove();
@@ -114,8 +115,10 @@ describe("Qualität", () => {
 
     it("stellt den Umschalter mit Titel in die Ansicht, die Auditart mit Titel in die Filter", () => {
       const { ansicht, filter } = zeigeInSchale();
-      expect(within(ansicht).getByRole("radiogroup", { name: "Ansicht" })).toBeInTheDocument();
-      expect(within(ansicht).getByText("Ansicht")).toBeInTheDocument();
+      // In der Leiste eine Auswahlliste; der Titel entfällt, er stünde gleich
+      // unter der Kategorie „Ansicht“.
+      expect(within(ansicht).getByRole("combobox", { name: "Ansicht" })).toBeInTheDocument();
+      expect(within(ansicht).queryByText("Ansicht")).toBeNull();
       expect(within(filter).getByRole("button", { name: "Behörde" })).toBeInTheDocument();
       // Titel ohne Doppelpunkt, keine zweite Beschriftung.
       expect(within(filter).getByText("Auditart")).toBeInTheDocument();
@@ -125,18 +128,19 @@ describe("Qualität", () => {
 
     it("stellt die Artikelart mit Titel in die Filter", () => {
       const { ansicht, filter } = zeigeInSchale();
-      fireEvent.click(within(ansicht).getByRole("radio", { name: "Qualitätsprüfung" }));
-      expect(within(filter).getByRole("radiogroup", { name: "Artikelart" })).toBeInTheDocument();
+      fireEvent.change(within(ansicht).getByRole("combobox", { name: "Ansicht" }), { target: { value: "pruefung" } });
+      const artikelart = within(filter).getByRole("combobox", { name: "Artikelart" });
+      expect(artikelart).toHaveValue("fertig");
       expect(within(filter).getByText("Artikelart")).toBeInTheDocument();
-      expect(within(ansicht).queryByRole("radiogroup", { name: "Artikelart" })).toBeNull();
+      expect(within(ansicht).queryByRole("combobox", { name: "Artikelart" })).toBeNull();
     });
 
     it("stellt die Reklamationsart mit Titel in die Filter", () => {
       const { ansicht, filter } = zeigeInSchale();
-      fireEvent.click(within(ansicht).getByRole("radio", { name: "Reklamationen" }));
-      expect(within(filter).getByRole("button", { name: "intern" })).toBeInTheDocument();
+      fireEvent.change(within(ansicht).getByRole("combobox", { name: "Ansicht" }), { target: { value: "reklamationen" } });
+      expect(within(filter).getByRole("combobox", { name: "Reklamationsart" })).toHaveValue("kunde");
       expect(within(filter).getByText("Reklamationsart")).toBeInTheDocument();
-      expect(within(ansicht).queryByRole("button", { name: "intern" })).toBeNull();
+      expect(within(ansicht).queryByRole("combobox", { name: "Reklamationsart" })).toBeNull();
     });
   });
 

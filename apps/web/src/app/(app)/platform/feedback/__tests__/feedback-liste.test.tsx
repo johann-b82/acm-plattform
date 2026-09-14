@@ -162,14 +162,15 @@ describe("App Feedback in der Schale", () => {
       </QueryClientProvider>,
     );
     await screen.findByText("Beschreibung a");
-    const ansicht = screen.getByRole("radiogroup", { name: "Ansicht" });
+    // In der Leiste Auswahllisten; „Ansicht“ steht nur als Kategorie darüber.
+    const ansicht = screen.getByRole("combobox", { name: "Ansicht" });
     expect(plaetze.ansicht).toContainElement(ansicht);
-    expect(ansicht.parentElement!.firstElementChild!.textContent).toBe("Ansicht");
+    expect(plaetze.ansicht).not.toHaveTextContent(/^Ansicht/);
 
-    fireEvent.click(screen.getByRole("radio", { name: "Kanban" }));
-    const gruppieren = screen.getByRole("radiogroup", { name: "Gruppieren nach" });
+    fireEvent.change(ansicht, { target: { value: "kanban" } });
+    const gruppieren = screen.getByRole("combobox", { name: "Gruppieren nach" });
     expect(plaetze.ansicht).toContainElement(gruppieren);
-    expect(gruppieren.parentElement!.firstElementChild!.textContent).toBe("Gruppieren nach");
+    expect(gruppieren.parentElement!.parentElement!.firstElementChild!.textContent).toBe("Gruppieren nach");
     Object.values(plaetze).forEach((div) => div.remove());
   });
 });

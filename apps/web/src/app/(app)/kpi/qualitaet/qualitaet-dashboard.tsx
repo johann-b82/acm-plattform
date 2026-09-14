@@ -47,6 +47,7 @@ import { Datenstand } from "@/components/kpi/datenstand";
 import { DiagrammartWahl, useDiagrammart, type Diagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -83,18 +84,17 @@ export function QualitaetDashboard() {
         untertitel={worte.qualitaet.einleitung}
         links={
           <>
-            <Werkzeug titel={worte.qualitaet.ansicht}>
-              <Segmentwahl
-                beschriftung={worte.qualitaet.ansicht}
-                wert={ansicht}
-                onChange={setAnsicht}
-                optionen={[
-                  ["audits", worte.qualitaet.ansichtAudits],
-                  ["reklamationen", worte.qualitaet.ansichtReklamationen],
-                  ["pruefung", worte.qualitaet.ansichtPruefung],
-                ]}
-              />
-            </Werkzeug>
+            {/* Kein eigener Titel: er stünde gleich unter der Kategorie „Ansicht“. */}
+            <Segmentwahl
+              beschriftung={worte.qualitaet.ansicht}
+              wert={ansicht}
+              onChange={setAnsicht}
+              optionen={[
+                ["audits", worte.qualitaet.ansichtAudits],
+                ["reklamationen", worte.qualitaet.ansichtReklamationen],
+                ["pruefung", worte.qualitaet.ansichtPruefung],
+              ]}
+            />
             {/* Der Filter einer Ansicht steht in derselben Zeile wie der
                 Umschalter — nur, solange die Ansicht zu sehen ist. In der
                 Schale steht er unter „Filter“. */}
@@ -422,6 +422,7 @@ function Reklamationen({
   zielNach: Record<string, number>;
 }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const fmt = useFormate();
   const tag = ZAHL_TAG[useSprache()];
   const { zeitraum, von, bis } = wahl;
@@ -511,24 +512,33 @@ function Reklamationen({
                 in der rechten Leiste. Die Mengenart betrifft nur diese Kachel. */}
             <Seitenwerkzeuge kategorie="filter">
               <Werkzeug titel={worte.qualitaet.reklamationsart}>
-                <div className="flex flex-wrap gap-1 rounded-lg border border-[var(--border)] p-1">
-                  {(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      onClick={() => setReklArt(a)}
-                      aria-pressed={reklArt === a}
-                      className={cn(
-                        "rounded px-3 py-1 text-sm transition-colors",
-                        reklArt === a
-                          ? "bg-[var(--fg)] text-[var(--bg)]"
-                          : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-                      )}
-                    >
-                      {reklLabel[a]}
-                    </button>
-                  ))}
-                </div>
+                {inSchale ? (
+                  <Leistenwahl
+                    beschriftung={worte.qualitaet.reklamationsart}
+                    wert={reklArt}
+                    onChange={setReklArt}
+                    optionen={(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => [a, reklLabel[a]] as const)}
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-1 rounded-lg border border-[var(--border)] p-1">
+                    {(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => setReklArt(a)}
+                        aria-pressed={reklArt === a}
+                        className={cn(
+                          "rounded px-3 py-1 text-sm transition-colors",
+                          reklArt === a
+                            ? "bg-[var(--fg)] text-[var(--bg)]"
+                            : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+                        )}
+                      >
+                        {reklLabel[a]}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </Werkzeug>
             </Seitenwerkzeuge>
             <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
@@ -928,6 +938,11 @@ function Segmentwahl<T extends string>({
   onChange: (wert: T) => void;
   optionen: readonly (readonly [T, string])[];
 }) {
+  // In der schmalen Leiste eine Auswahlliste; die Knöpfe brächen dort um.
+  const inSchale = useInSchale();
+  if (inSchale) {
+    return <Leistenwahl beschriftung={beschriftung} wert={wert} onChange={onChange} optionen={optionen} />;
+  }
   return (
     <div
       role="radiogroup"
