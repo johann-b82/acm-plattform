@@ -24,6 +24,13 @@ export const pl: Texte = {
       ueberfaellig > 0
         ? `Działania — ${offen} otwartych, w tym ${ueberfaellig} po terminie`
         : `Działania — ${offen} otwartych`,
+    navigation: "Nawigacja",
+    einklappen: "Zwiń pasek boczny",
+    ausklappen: "Rozwiń pasek boczny",
+    navigationOeffnen: "Otwórz nawigację",
+    navigationSchliessen: "Zamknij nawigację",
+    unterseitenZeigen: (name: string) => `${name}: pokaż podstrony`,
+    unterseitenVerbergen: (name: string) => `${name}: ukryj podstrony`,
   },
   pfad: {
     aria: "Ścieżka",

@@ -24,6 +24,13 @@ export const ar: Texte = {
       ueberfaellig > 0
         ? `الإجراءات — ${offen} مفتوحة، منها ${ueberfaellig} متأخرة`
         : `الإجراءات — ${offen} مفتوحة`,
+    navigation: "التنقل",
+    einklappen: "طيّ الشريط الجانبي",
+    ausklappen: "توسيع الشريط الجانبي",
+    navigationOeffnen: "فتح التنقل",
+    navigationSchliessen: "إغلاق التنقل",
+    unterseitenZeigen: (name: string) => `${name}: إظهار الصفحات الفرعية`,
+    unterseitenVerbergen: (name: string) => `${name}: إخفاء الصفحات الفرعية`,
   },
   pfad: {
     aria: "المسار",

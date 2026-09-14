@@ -24,6 +24,13 @@ export const bg: Texte = {
       ueberfaellig > 0
         ? `Мерки — ${offen} открити, от тях ${ueberfaellig} просрочени`
         : `Мерки — ${offen} открити`,
+    navigation: "Навигация",
+    einklappen: "Свий страничната лента",
+    ausklappen: "Разгъни страничната лента",
+    navigationOeffnen: "Отвори навигацията",
+    navigationSchliessen: "Затвори навигацията",
+    unterseitenZeigen: (name: string) => `${name}: покажи подстраниците`,
+    unterseitenVerbergen: (name: string) => `${name}: скрий подстраниците`,
   },
   pfad: {
     aria: "Път",

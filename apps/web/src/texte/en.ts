@@ -28,6 +28,13 @@ export const en: Texte = {
       ueberfaellig > 0
         ? `Actions — ${offen} open, ${ueberfaellig} of them overdue`
         : `Actions — ${offen} open`,
+    navigation: "Navigation",
+    einklappen: "Collapse sidebar",
+    ausklappen: "Expand sidebar",
+    navigationOeffnen: "Open navigation",
+    navigationSchliessen: "Close navigation",
+    unterseitenZeigen: (name: string) => `${name}: show subpages`,
+    unterseitenVerbergen: (name: string) => `${name}: hide subpages`,
   },
   pfad: {
     aria: "Path",

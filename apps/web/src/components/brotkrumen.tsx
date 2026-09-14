@@ -12,8 +12,8 @@ import { krumen } from "@/lib/brotkrumen";
  * Übersicht und auf Adressen ohne Titel — eine Kette aus einem Glied ist keine
  * Hilfe, und neben dem Logo stünde sie doppelt.
  *
- * Auf schmalen Fenstern fällt er weg: dort ist die Kopfzeile für Logo und
- * Zeichen gerade breit genug, und der Pfad drängte beides zusammen.
+ * Auf schmalen Fenstern fällt er weg: dort teilt sich die Kopfzeile den Platz
+ * mit Menü-Knopf, Logo und Zählern, und der Pfad drängte alles zusammen.
  */
 export function Brotkrumen() {
   const t = useTexte();

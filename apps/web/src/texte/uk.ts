@@ -24,6 +24,13 @@ export const uk: Texte = {
       ueberfaellig > 0
         ? `Заходи — ${offen} відкритих, з них ${ueberfaellig} прострочених`
         : `Заходи — ${offen} відкритих`,
+    navigation: "Навігація",
+    einklappen: "Згорнути бічну панель",
+    ausklappen: "Розгорнути бічну панель",
+    navigationOeffnen: "Відкрити навігацію",
+    navigationSchliessen: "Закрити навігацію",
+    unterseitenZeigen: (name: string) => `${name}: показати підсторінки`,
+    unterseitenVerbergen: (name: string) => `${name}: приховати підсторінки`,
   },
   pfad: {
     aria: "Шлях",
