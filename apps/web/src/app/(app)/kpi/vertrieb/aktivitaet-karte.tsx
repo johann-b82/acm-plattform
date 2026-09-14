@@ -312,7 +312,7 @@ function Diagramm({
                 ifOverflow="extendDomain"
               />
             )}
-            {reihen.map((feld, i) =>
+            {reihen.map((feld) =>
               art === "balken" ? (
                 <Bar
                   key={feld}
@@ -320,8 +320,6 @@ function Diagramm({
                   name={reihenname(feld)}
                   stackId={gestapelt ? "summe" : undefined}
                   fill={FARBE[feld]}
-                  // Runde Ecken nur oben auf dem Stapel.
-                  radius={i === reihen.length - 1 ? [3, 3, 0, 0] : 0}
                   isAnimationActive={false}
                   maxBarSize={28}
                 />

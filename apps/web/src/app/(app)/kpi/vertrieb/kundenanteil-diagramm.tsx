@@ -110,7 +110,7 @@ export function KundenanteilDiagramm({
                       return [`${fmt.eur(Number(wert))} · ${fmt.prozent(s.anteil)}`, titel] as [string, string];
                     }}
                   />
-                  <Bar dataKey="wert" radius={[4, 4, 0, 0]} maxBarSize={48} isAnimationActive={false}>
+                  <Bar dataKey="wert" maxBarSize={48} isAnimationActive={false}>
                     {daten.map((s) => (
                       <Cell key={s.achse} fill={farbe(s)} />
                     ))}

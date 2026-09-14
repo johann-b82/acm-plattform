@@ -166,9 +166,9 @@ function KpiSeite({ titel, stand }: { titel: string; stand: KpiStand }) {
                   <span className="w-40 shrink-0 truncate">
                     {KATEGORIE_LABEL[z.kategorie] ?? z.kategorie}
                   </span>
-                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-200">
+                  <span className="h-2 flex-1 overflow-hidden bg-neutral-200">
                     <span
-                      className="block h-full rounded-full bg-neutral-700"
+                      className="block h-full bg-neutral-700"
                       style={{ width: `${(z.anzahl / summe) * 100}%` }}
                     />
                   </span>
