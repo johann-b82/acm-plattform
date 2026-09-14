@@ -22,6 +22,7 @@ import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { Schale } from "../schale";
 import type { NavEintrag } from "@/lib/navigation";
 
@@ -74,11 +75,14 @@ beforeEach(() => {
 });
 
 describe("Seitenleiste", () => {
-  it("führt Start, die Apps und die Hilfe, dazu Kopf und Inhalt", () => {
+  it("führt Start und die Apps, dazu Kopf und Inhalt; die Hilfe steht nur oben rechts", () => {
     zeige();
-    for (const name of ["Start", "KPI-Dashboard", "Uploads", "Hilfe"]) {
+    for (const name of ["Start", "KPI-Dashboard", "Uploads"]) {
       expect(within(navi()).getByRole("link", { name })).toBeInTheDocument();
     }
+    // Die Hilfe steht nur noch oben rechts in der Kopfzeile.
+    expect(within(navi()).queryByRole("link", { name: "Hilfe" })).toBeNull();
+    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Hilfe" })).toBeInTheDocument();
     expect(within(navi()).getAllByRole("link", { name: "HR" }).map((l) => l.getAttribute("href"))).toContain("/hr");
     expect(screen.getByText("Zähler")).toBeInTheDocument();
     expect(screen.getByText("Inhalt")).toBeInTheDocument();
@@ -240,5 +244,38 @@ describe("Rechte Leiste", () => {
     const aktionen = within(werkzeuge()).getByRole("region", { name: "Aktionen" });
     expect(await within(ansicht).findByRole("button", { name: "Umschalter" })).toBeInTheDocument();
     expect(within(aktionen).getByRole("button", { name: "Uploads" })).toBeInTheDocument();
+  });
+
+  it("lässt den Aktionen-Platz leer, wenn die Bedienung selbst in eine andere Kategorie wandert", async () => {
+    // Wie die Zeitraumwahl: sie steht in der Bedienung des Seitenkopfs, stellt
+    // sich aber unter „Zeitraum“. Unter „Aktionen“ darf keine leere Hülle
+    // zurückbleiben, sonst hält die Leiste die Kategorie für belegt.
+    zeige(false, {
+      inhalt: (
+        <Seitenkopf
+          bedienung={
+            <Seitenwerkzeuge kategorie="zeitraum">
+              <select aria-label="Zeitraum" />
+            </Seitenwerkzeuge>
+          }
+        />
+      ),
+    });
+    const zeitraum = within(werkzeuge()).getByRole("region", { name: "Zeitraum" });
+    expect(await within(zeitraum).findByRole("combobox", { name: "Zeitraum" })).toBeInTheDocument();
+    expect(document.querySelector('[data-platz="aktionen"]')).toBeEmptyDOMElement();
+  });
+
+  it("stellt Umschalter ohne eigene Hülle in den Platz, damit sie die volle Breite bekommen", async () => {
+    zeige(false, { inhalt: <Seitenkopf links={<button type="button">Umschalter</button>} /> });
+    const knopf = await within(werkzeuge()).findByRole("button", { name: "Umschalter" });
+    expect(document.querySelector('[data-platz="ansicht"]')!.firstElementChild).toBe(knopf);
+  });
+});
+
+describe("Inhalt", () => {
+  it("begrenzt den Inhalt zwischen den Leisten auf 1600 Pixel", () => {
+    zeige();
+    expect(screen.getByRole("main").className).toContain("max-w-[100rem]");
   });
 });
