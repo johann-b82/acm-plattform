@@ -110,7 +110,7 @@ function Personendiagramm({
                 }}
                 formatter={(wert) => [`${Number(wert).toFixed(2)} ${einheit}`, titel] as [string, string]}
               />
-              <Bar dataKey="wert" fill="var(--ring)" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              <Bar dataKey="wert" fill="var(--ring)" isAnimationActive={false}>
                 <LabelList dataKey="beschriftung" position="right" fontSize={11} fill="var(--fg-muted)" />
               </Bar>
             </BarChart>

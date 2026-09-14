@@ -396,7 +396,6 @@ export function VertriebDashboard() {
                     dataKey="umsatz"
                     name={nameAktuell}
                     fill="var(--ring)"
-                    radius={[3, 3, 0, 0]}
                     isAnimationActive={false}
                     maxBarSize={mitVergleich ? 40 : 64}
                   />
@@ -420,7 +419,6 @@ export function VertriebDashboard() {
                       name={nameVorher}
                       fill="var(--fg-muted)"
                       fillOpacity={0.55}
-                      radius={[3, 3, 0, 0]}
                       isAnimationActive={false}
                       maxBarSize={40}
                     />

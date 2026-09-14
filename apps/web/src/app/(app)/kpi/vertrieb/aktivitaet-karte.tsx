@@ -312,7 +312,7 @@ function Diagramm({
                 ifOverflow="extendDomain"
               />
             )}
-            {reihen.map((feld, i) =>
+            {reihen.map((feld) =>
               art === "balken" ? (
                 <Bar
                   key={feld}
@@ -320,8 +320,6 @@ function Diagramm({
                   name={reihenname(feld)}
                   stackId={gestapelt ? "summe" : undefined}
                   fill={FARBE[feld]}
-                  // Runde Ecken nur oben auf dem Stapel.
-                  radius={i === reihen.length - 1 ? [3, 3, 0, 0] : 0}
                   isAnimationActive={false}
                   maxBarSize={28}
                 />
@@ -393,7 +391,7 @@ export function AktivitaetKarte({ von, bis }: { von: string | null; bis: string 
       )}
 
       {!fehler && daten.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2">
           {DIAGRAMME.map((d) => (
             <Diagramm
               key={d.schluessel}

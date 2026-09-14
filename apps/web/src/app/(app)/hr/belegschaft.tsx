@@ -64,9 +64,9 @@ function Balken({
                 {`${fmt.zahl(z.anzahl)} (${z.prozent} %)`}
               </span>
             </div>
-            <div className="mt-1 h-1.5 rounded bg-[var(--muted)]">
+            <div className="mt-1 h-1.5 bg-[var(--muted)]">
               <div
-                className="h-1.5 rounded bg-[var(--ring)]"
+                className="h-1.5 bg-[var(--ring)]"
                 style={{ width: `${(z.anzahl / groesste) * 100}%` }}
               />
             </div>
