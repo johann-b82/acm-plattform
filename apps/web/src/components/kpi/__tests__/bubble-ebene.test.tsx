@@ -1,10 +1,10 @@
 /**
  * Die Bubble-Ebene auf den Dashboard-Seiten (MAS-01): nur auf den Seiten der
- * Bereiche, Knopf nur für Schreibende, ein aufgezogenes Rechteck wird mit
- * Bereich und Position gespeichert.
+ * Bereiche, zeigt die Bubbles dieser Seite mit Position. Neue Bubbles werden
+ * hier nicht mehr gesetzt — einen Bubble-Knopf gibt es nicht.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import type { Bubble } from "@/lib/kpi/bewertung";
@@ -15,7 +15,6 @@ vi.mock("next/navigation", () => ({ usePathname: () => pfad.jetzt }));
 const api = vi.hoisted(() => ({
   bubbles: vi.fn(),
   massnahmen: vi.fn(async () => []),
-  bubbleAnlegen: vi.fn(async () => undefined),
   bubbleGesehen: vi.fn(async () => undefined),
   bubbleLoeschen: vi.fn(async () => undefined),
 }));
@@ -25,7 +24,6 @@ vi.mock("@/lib/kpi/bewertung", async (original) => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { BubbleEbene } from "../bubble-ebene";
 
 function bubble(id: string, bereich: string, felder: Partial<Bubble> = {}): Bubble {
@@ -63,7 +61,6 @@ describe("Bubble-Ebene", () => {
     pfad.jetzt = "/kpi/bewertung";
     zeige(true);
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
     expect(api.bubbles).not.toHaveBeenCalled();
   });
 
@@ -74,85 +71,22 @@ describe("Bubble-Ebene", () => {
     expect(screen.queryByText("Text ohne-position")).toBeNull();
   });
 
-  it("gibt Lesenden keinen Bubble-Knopf und hakt beim Ansehen nichts ab", async () => {
+  it("hakt beim Ansehen durch Lesende nichts ab", async () => {
     zeige(false);
     fireEvent.click(await screen.findByRole("button", { name: "Bubble 1: Text hier" }));
-    expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
     expect(api.bubbleGesehen).not.toHaveBeenCalled();
   });
 
-  it("stellt den Bubble-Knopf in der Schale in die rechte Leiste, ohne zu schweben", async () => {
-    const platz = document.createElement("div");
-    document.body.appendChild(platz);
-    render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <SprachAnbieter sprache="de">
-          <Werkzeugplatz.Provider value={platz}>
-            <BubbleEbene darfLesen darfSchreiben>
-              <p>Dashboard</p>
-            </BubbleEbene>
-          </Werkzeugplatz.Provider>
-        </SprachAnbieter>
-      </QueryClientProvider>,
-    );
-    const knopf = within(platz).getByRole("button", { name: "Bubble" });
-    expect(knopf.className).not.toContain("fixed");
-    fireEvent.click(knopf);
-    expect(knopf).toHaveAttribute("aria-pressed", "true");
-    platz.remove();
-  });
-
-  it("ordnet den Bubble-Knopf in der Schale der Ansicht zu", () => {
-    const plaetze = {
-      navigation: document.createElement("div"),
-      ansicht: document.createElement("div"),
-      filter: document.createElement("div"),
-      zeitraum: document.createElement("div"),
-      aktionen: document.createElement("div"),
-    };
-    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
-    render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <SprachAnbieter sprache="de">
-          <Werkzeugplatz.Provider value={plaetze}>
-            <BubbleEbene darfLesen darfSchreiben>
-              <p>Dashboard</p>
-            </BubbleEbene>
-          </Werkzeugplatz.Provider>
-        </SprachAnbieter>
-      </QueryClientProvider>,
-    );
-    expect(within(plaetze.ansicht).getByRole("button", { name: "Bubble" })).toBeInTheDocument();
-    expect(within(plaetze.aktionen).queryByRole("button", { name: "Bubble" })).toBeNull();
-    Object.values(plaetze).forEach((p) => p.remove());
-  });
-
-  it("speichert ein aufgezogenes Rechteck mit Bereich, Text und Ampel", async () => {
-    const { container } = zeige(true);
+  it("gibt auch Schreibenden keinen Bubble-Knopf — neue Bubbles werden hier nicht gesetzt", async () => {
+    zeige(true);
     await screen.findByRole("button", { name: "Bubble 1: Text hier" });
-    fireEvent.click(screen.getByRole("button", { name: "Bubble" }));
+    expect(screen.queryByRole("button", { name: "Bubble" })).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
 
-    const flaeche = container.querySelector(".relative.min-w-0") as HTMLElement;
-    flaeche.getBoundingClientRect = () =>
-      ({ left: 0, top: 0, width: 1000, height: 500, right: 1000, bottom: 500, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
-    const zeichnung = flaeche.lastElementChild as HTMLElement;
-    fireEvent.mouseDown(zeichnung, { clientX: 100, clientY: 50 });
-    fireEvent.mouseMove(zeichnung, { clientX: 400, clientY: 150 });
-    fireEvent.mouseUp(zeichnung, { clientX: 400, clientY: 150 });
-
-    fireEvent.change(screen.getByRole("textbox", { name: "Was stimmt hier nicht?" }), {
-      target: { value: "Knick" },
-    });
-    fireEvent.change(screen.getByRole("combobox", { name: "keine Ampel" }), { target: { value: "rot" } });
-    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
-
-    await waitFor(() =>
-      expect(api.bubbleAnlegen).toHaveBeenCalledWith({
-        bereich: "einkauf",
-        text: "Knick",
-        ampel: "rot",
-        rechteck: { x: 0.1, y: 0.1, w: expect.closeTo(0.3), h: expect.closeTo(0.2) },
-      }),
-    );
+  it("hakt eine ungesehene Bubble ab, wenn Schreibende sie öffnen", async () => {
+    zeige(true);
+    fireEvent.click(await screen.findByRole("button", { name: "Bubble 1: Text hier" }));
+    expect(api.bubbleGesehen).toHaveBeenCalledWith("hier");
   });
 });

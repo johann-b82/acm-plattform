@@ -63,7 +63,7 @@ function zeige() {
   return render(
     <QueryClientProvider client={client}>
       <SprachAnbieter sprache="de">
-        <EinkaufDashboard darfUploads={false} />
+        <EinkaufDashboard />
       </SprachAnbieter>
     </QueryClientProvider>,
   );

@@ -43,7 +43,7 @@ function zeige() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SprachAnbieter sprache="de">
-        <QualitaetDashboard darfUploads={false} />
+        <QualitaetDashboard />
       </SprachAnbieter>
     </QueryClientProvider>,
   );
@@ -73,7 +73,7 @@ describe("Qualität", () => {
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <SprachAnbieter sprache="de">
           <Werkzeugplatz.Provider value={platz}>
-            <QualitaetDashboard darfUploads={false} />
+            <QualitaetDashboard />
           </Werkzeugplatz.Provider>
         </SprachAnbieter>
       </QueryClientProvider>,
@@ -100,7 +100,7 @@ describe("Qualität", () => {
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
           <SprachAnbieter sprache="de">
             <Werkzeugplatz.Provider value={plaetze}>
-              <QualitaetDashboard darfUploads={false} />
+              <QualitaetDashboard />
             </Werkzeugplatz.Provider>
           </SprachAnbieter>
         </QueryClientProvider>,

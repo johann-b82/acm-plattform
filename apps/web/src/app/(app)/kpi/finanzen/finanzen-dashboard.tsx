@@ -25,7 +25,6 @@ import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
-import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl, type Zeitraumwahl as Wahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -46,7 +45,7 @@ type Ansicht = "material" | "personal";
  * gehört der Seite, nicht der Ansicht — ein Wechsel behält den Zeitraum. Jede
  * Ansicht ist eine eigene Komponente, damit nur ihre Abfragen laufen.
  */
-export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
+export function FinanzenDashboard() {
   const worte = useTexte();
   const wahl = useZeitraumwahl();
   const [ansicht, setAnsicht] = useState<Ansicht>("material");
@@ -65,7 +64,6 @@ export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
         }
         bedienung={
           <>
-            {darfUploads && <UploadVerweis />}
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="finanzen" />} />
           </>
         }

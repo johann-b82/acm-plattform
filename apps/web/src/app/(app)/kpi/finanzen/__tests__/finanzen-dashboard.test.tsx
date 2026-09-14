@@ -40,7 +40,7 @@ function zeige() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SprachAnbieter sprache="de">
-        <FinanzenDashboard darfUploads={false} />
+        <FinanzenDashboard />
       </SprachAnbieter>
     </QueryClientProvider>,
   );
@@ -116,7 +116,7 @@ describe("Finanzen", () => {
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <SprachAnbieter sprache="de">
           <Werkzeugplatz.Provider value={plaetze}>
-            <FinanzenDashboard darfUploads={false} />
+            <FinanzenDashboard />
           </Werkzeugplatz.Provider>
         </SprachAnbieter>
       </QueryClientProvider>,

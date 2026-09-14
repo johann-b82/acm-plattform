@@ -31,7 +31,6 @@ import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
-import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -49,7 +48,7 @@ function datum(iso: string | null, sprachTag: string): string {
   return iso ? new Date(iso).toLocaleDateString(sprachTag) : "—";
 }
 
-export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
+export function EinkaufDashboard() {
   const worte = useTexte();
   const fmt = useFormate();
   const tag = ZAHL_TAG[useSprache()];
@@ -242,7 +241,6 @@ export function EinkaufDashboard({ darfUploads }: { darfUploads: boolean }) {
         untertitel={worte.einkauf.einleitung}
         bedienung={
           <>
-            {darfUploads && <UploadVerweis />}
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="einkauf" />} />
           </>
         }

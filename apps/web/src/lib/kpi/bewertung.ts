@@ -96,27 +96,11 @@ export function bubblesDesBereichs(bubbles: readonly Bubble[], bereich: string |
   return bubbles.filter((b) => b.bereich === bereich).sort((a, b) => a.nummer - b.nummer);
 }
 
-export interface Punkt {
-  x: number;
-  y: number;
-}
 export interface Rechteck {
   x: number;
   y: number;
   w: number;
   h: number;
-}
-
-/** Das aufgezogene Rechteck, gleich in welche Richtung gezogen wurde. Unter
- *  einem Hundertstel in einer Richtung war es ein Klick, kein Bereich. */
-export function aufgezogen(start: Punkt, ende: Punkt): Rechteck | null {
-  const r = {
-    x: Math.min(start.x, ende.x),
-    y: Math.min(start.y, ende.y),
-    w: Math.abs(ende.x - start.x),
-    h: Math.abs(ende.y - start.y),
-  };
-  return r.w < 0.01 || r.h < 0.01 ? null : r;
 }
 
 function zahl(v: unknown): number {
@@ -176,29 +160,6 @@ export const bewertungApi = {
       breite: zahlOderNull(b.breite),
       hoehe: zahlOderNull(b.hoehe),
     }));
-  },
-
-  /** Nummer und Verfasser setzt die Datenbank. */
-  bubbleAnlegen: async (felder: {
-    bereich: string;
-    text: string;
-    ampel: Ampel | null;
-    rechteck: Rechteck;
-  }): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("kpi_kommentare")
-      .insert({
-        bereich: felder.bereich,
-        text: felder.text,
-        ampel: felder.ampel,
-        pos_x: felder.rechteck.x,
-        pos_y: felder.rechteck.y,
-        breite: felder.rechteck.w,
-        hoehe: felder.rechteck.h,
-      })
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
   },
 
   bubbleGesehen: async (id: string): Promise<void> => {

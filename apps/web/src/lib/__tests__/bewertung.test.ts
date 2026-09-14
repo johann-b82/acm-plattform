@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   BEREICH_PFAD,
-  aufgezogen,
   bereichFuerPfad,
   bubblesDesBereichs,
   filtereMassnahmen,
@@ -85,17 +84,3 @@ describe("Bereiche und Seiten", () => {
   });
 });
 
-describe("Aufgezogenes Rechteck", () => {
-  it("normiert die Richtung", () => {
-    expect(aufgezogen({ x: 0.5, y: 0.6 }, { x: 0.2, y: 0.1 })).toEqual({
-      x: 0.2,
-      y: 0.1,
-      w: 0.3,
-      h: 0.5,
-    });
-  });
-
-  it("verwirft einen bloßen Klick", () => {
-    expect(aufgezogen({ x: 0.5, y: 0.5 }, { x: 0.505, y: 0.6 })).toBeNull();
-  });
-});

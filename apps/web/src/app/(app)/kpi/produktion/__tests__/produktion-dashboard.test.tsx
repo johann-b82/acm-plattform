@@ -50,7 +50,7 @@ function zeige() {
   return render(
     <QueryClientProvider client={client}>
       <SprachAnbieter sprache="de">
-        <ProduktionDashboard darfUploads={false} />
+        <ProduktionDashboard />
       </SprachAnbieter>
     </QueryClientProvider>,
   );

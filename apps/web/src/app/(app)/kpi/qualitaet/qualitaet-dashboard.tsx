@@ -41,7 +41,6 @@ import { ladeZielwerte, nachSchluessel, zielwerteKeys } from "@/lib/zielwerte";
 import { Card } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Kennzahl } from "@/components/kpi/kennzahl";
-import { UploadVerweis } from "@/components/kpi/upload-verweis";
 import { Zeitraumwahl, useZeitraumwahl } from "@/components/kpi/zeitraumwahl";
 import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
@@ -66,7 +65,7 @@ const KEINE: never[] = [];
  * bleiben beim Umschalten stehen, wirken aber nur in ihrer Ansicht. Jede
  * Ansicht lädt erst, wenn sie gezeigt wird.
  */
-export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
+export function QualitaetDashboard() {
   const worte = useTexte();
   const wahl = useZeitraumwahl();
   const [ansicht, setAnsicht] = useState<Ansicht>("audits");
@@ -124,7 +123,6 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
         }
         bedienung={
           <>
-            {darfUploads && <UploadVerweis />}
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="qualitaet" />} />
           </>
         }
