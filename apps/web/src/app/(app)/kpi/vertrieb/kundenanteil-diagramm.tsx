@@ -28,10 +28,11 @@ const FARBEN = `
  * Kundenanteil als senkrechte Säulen (VER-03B).
  *
  * Absteigend von links, gemeinsame Nulllinie, Prozent über jeder Säule.
- * Namen und Beträge stehen in der Legende rechts — lange Kundennamen passen
- * nicht unter eine Säule —, bei wenig Platz darunter. Säule und Legende
- * tragen dieselbe Nummer; die Farbe kommt dazu und ist je Kunde in beiden
- * Diagrammen gleich (`kundenfarben`).
+ * Die Namen stehen in der Legende rechts — lange Kundennamen passen nicht
+ * unter eine Säule —, bei wenig Platz darunter. Die Legende trägt nur Farbe
+ * und Namen, in derselben Reihenfolge wie die Säulen; der Betrag steht im
+ * Tooltip. Die Farbe ist je Kunde in beiden Diagrammen gleich
+ * (`kundenfarben`).
  *
  * Der Wasserfall der Referenz ist bewusst ersetzt; Rechnung, Top 3/14 und
  * Rest sind dieselben.
@@ -130,11 +131,7 @@ export function KundenanteilDiagramm({
               {saeulen.map((s) => (
                 <li key={s.platz ?? "rest"} className="flex items-baseline gap-2">
                   <span aria-hidden className="h-2.5 w-2.5 shrink-0 self-center rounded-sm" style={{ background: farbe(s) }} />
-                  <span className="w-7 shrink-0 tabular-nums text-[var(--fg-muted)]">
-                    {s.platz === null ? worte.vertrieb.rest : `${s.platz}.`}
-                  </span>
                   <span className="min-w-0 flex-1 break-words">{name(s)}</span>
-                  <span className="shrink-0 font-mono tabular-nums">{fmt.eur(s.wert)}</span>
                 </li>
               ))}
             </ol>

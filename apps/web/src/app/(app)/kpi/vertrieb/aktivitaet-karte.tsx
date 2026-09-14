@@ -391,7 +391,7 @@ export function AktivitaetKarte({ von, bis }: { von: string | null; bis: string 
       )}
 
       {!fehler && daten.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2">
           {DIAGRAMME.map((d) => (
             <Diagramm
               key={d.schluessel}
