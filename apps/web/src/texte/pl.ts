@@ -244,7 +244,6 @@ export const pl: Texte = {
     auftragseingangHinweis: "storna odliczone",
   },
   einkauf: {
-    einleitung: "Terminowość dostaw dostawców. Liczy się to, co wpłynęło w danym okresie.",
     keineDaten: "Brak pozycji dostaw za ten okres",
     ladeVor: "Wczytaj eksport terminowości dostaw w ",
     ladeNach: ".",
@@ -281,8 +280,6 @@ export const pl: Texte = {
     menge: "Ilość",
   },
   produktion: {
-    einleitung:
-      "Zlecenia opóźnione. Zlecenie liczy się dopiero wtedy, gdy jego wynik jest przesądzony.",
     keineDaten: "Brak zlecenia z przesądzonym wynikiem w tym okresie",
     ladeVor: "Wczytaj pozycje zamówień i dowody dostawy w ",
     ladeNach:
@@ -314,7 +311,6 @@ export const pl: Texte = {
     tageUeberfaellig: "Dni po terminie",
   },
   finanzen: {
-    einleitung: "Koszty materiałów i personelu w stosunku do obrotu z faktur.",
     keineDatenVor:
       "Potrzebne są trzy pliki: ruchy magazynowe dla zużycia, ceny materiałów (przyjęcie towaru) dla cen i " +
       "obrót jako wielkość odniesienia. Wszystkie trzy znajdziesz w ",
@@ -354,7 +350,6 @@ export const pl: Texte = {
     quoteBeiKosten: (kosten: string) => `Wskaźnik przy kosztach ${kosten}`,
   },
   qualitaet: {
-    einleitung: "Ustalenia z auditów, wskaźnik reklamacji i ilości kontrolowane.",
     auditart: "Rodzaj auditu:",
     reklamationsart: "Rodzaj reklamacji",
     keineArt: "Nie wybrano rodzaju auditu. Wybierz co najmniej jeden, inaczej nie ma czego liczyć.",
@@ -442,9 +437,6 @@ export const pl: Texte = {
     artikel: "Artykuł",
   },
   personal: {
-    einleitung:
-      "Z synchronizacji z Personio. Norma dzienna pochodzi z zapisanego modelu czasu pracy " +
-      "danej osoby, a nie z ryczałtowego ośmiogodzinnego dnia.",
     uebersicht: "Przegląd",
     keinAbgleich: "Synchronizacja jeszcze nie przebiegła. Uruchamia się sama w nocy o 02:15.",
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
@@ -497,11 +489,6 @@ export const pl: Texte = {
   },
   belegschaft: {
     titel: "Załoga",
-    hinweis:
-      "Stan na dziś. Rozkłady pokazują aktualne dane podstawowe, a nie te sprzed lat — " +
-      "Personio nie dostarcza historii. To, że „Zatrudnieni” i wskaźnik kompetencji mają różne " +
-      "mianowniki, jest zamierzone: jedna liczba idzie za statusem w Personio, druga za datą " +
-      "przyjęcia i odejścia. Obie drogi pochodzą ze starego projektu.",
     ladeFehler: (meldung: string) => `Nie udało się wczytać załogi: ${meldung}`,
     beschaeftigte: "Zatrudnieni",
     beschaeftigteHinweis: "wg statusu „aktywny” w Personio",
@@ -591,9 +578,6 @@ export const pl: Texte = {
     anmelden: "Logowanie",
   },
   uploads: {
-    einleitung:
-      "Wczytywanie eksportów ERP. Ponowne wczytanie tego samego pliku jest bezpieczne: " +
-      "istniejące wiersze są aktualizowane, a nie zakładane po raz drugi.",
     dateiWaehlen: "Wybierz plik",
     verarbeitet: "przetwarzanie …",
     uebersprungen: (datei: string) => `Pominięte wiersze z „${datei}”`,
@@ -662,9 +646,6 @@ export const pl: Texte = {
     },
   },
   organigramm: {
-    einleitung:
-      "Z Personio. Kto nie ma tam wpisanego przełożonego, stoi na górze — u zarządu jest to " +
-      "słuszne, w innym razie wskazuje na lukę w danych podstawowych.",
     suchfeld: "Osoba, stanowisko lub dział",
     suchePlatzhalter: "Nazwisko, stanowisko, dział",
     standort: "Lokalizacja",
@@ -730,9 +711,6 @@ export const pl: Texte = {
     ohneTreffer: "bez dopasowania w Personio",
   },
   schulungen: {
-    einleitung:
-      "Katalog, jego cykl i kto go spełnia. Terminy są liczone z ostatniej daty i cyklu, " +
-      "a nie zapisywane.",
     dokumentenlauf: "Obieg dokumentów",
     bereich: "Obszar",
     neueSchulung: "Nowe szkolenie",
@@ -839,9 +817,6 @@ export const pl: Texte = {
     nameForm: "Nazwisko, imię",
   },
   kompetenzen: {
-    einleitung:
-      "Czego wymaga stanowisko i na ile jest to spełnione — dla każdego obszaru jedna macierz. " +
-      "Wczytane z pliku obszaru, potem prowadzone tutaj.",
     zumDashboard: "Do pulpitu kadrowego",
     bereich: "Obszar",
     wirdGelesen: "Wczytywanie …",
@@ -880,9 +855,6 @@ export const pl: Texte = {
     note2: "dobry",
     note3: "dostateczny",
     note4: "wystarczający",
-    einleitung:
-      "Z ocen i punktów powstaje język świadectw. Dane podstawowe są przepisywane przy " +
-      "zakładaniu — wystawione świadectwo nie zmienia się już dlatego, że zmienia się Personio.",
     person: "Osoba",
     waehlen: "— wybierz —",
     art: "Rodzaj",
@@ -1096,9 +1068,6 @@ export const pl: Texte = {
     matrixLeer: "Brak treści lub działów.",
     vorgaengeTitel: "Procesy wdrożenia i szkoleń",
     matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
-    einleitung:
-      "Kto jest nowy i jakich szkoleń wymaga dla niego macierz wymagań. Plan nie jest " +
-      "zapisywany, tylko liczony — zmienia się macierz, zmienia się plan.",
     nichtsGefehlt: "Nic nie brakowało.",
     angelegt: (anzahl: number) =>
       `Założono ${anzahl} ${anzahl === 1 ? "szkolenie" : "szkoleń"}.`,
@@ -1153,9 +1122,6 @@ export const pl: Texte = {
     fehlt: "brak",
   },
   audit: {
-    einleitung:
-      "Audity od planowania do zamknięcia. Każda zmiana statusu stoi w historii — " +
-      "zapisana przez bazę danych, nie przez maskę, i potem niezmienialna.",
     zuKennzahlen: "Do wskaźników",
     nummer: "Numer",
     nummerBeispiel: "A-2026-01",
@@ -1208,9 +1174,6 @@ export const pl: Texte = {
     lieferant: "Dostawca",
   },
   wartung: {
-    einleitung:
-      "Maszyny i ich powtarzające się zadania konserwacyjne. Dowód powstaje jako arkusz do " +
-      "wywieszenia — na każde półrocze, z kolumną na każdy tydzień kalendarzowy.",
     zuKennzahlen: "Do wskaźników",
     neueMaschine: "Nowa maszyna",
     beispiel: "np. frezarka 3",
@@ -1227,9 +1190,6 @@ export const pl: Texte = {
     angelegt: "Maszyna utworzona.",
   },
   sensoren: {
-    einleitung:
-      "Temperatura i wilgotność w ustawionym interwale odpytywania. Wartość poza globalnymi " +
-      "granicami jest wyróżniona kolorem ostrzegawczym.",
     misst: "Mierzy …",
     jetztMessen: "Zmierz teraz",
     keinGeraet: "Nie skonfigurowano urządzenia",
@@ -1257,8 +1217,6 @@ export const pl: Texte = {
     ladeFehler: "Nie udało się wczytać pomiarów.",
   },
   hilfe: {
-    einleitung:
-      "Co potrafi platforma, jak powstają liczby i co robić, gdy coś się nie zgadza.",
     nurDeutsch: "Same strony pomocy są napisane po niemiecku.",
     suchen: "Szukaj w pomocy",
     nichtsGefunden:
@@ -1268,7 +1226,7 @@ export const pl: Texte = {
     navigation: "Tematy pomocy",
   },
   meldungen: {
-    stand: (offen: number) => `Co zgłoszono z widoków jako App Feedback. Otwartych: ${offen}`,
+    stand: (offen: number) => `${offen} otwarte`,
     neuSeit: (anzahl: number) => ` · ${anzahl} jeszcze nieobejrzanych`,
     nichtsGemeldet: "Brak App Feedback",
     nichtsGemeldetText:
@@ -1410,9 +1368,6 @@ export const pl: Texte = {
     nameFehlt: "Nazwa jest wymagana.",
   },
   atr: {
-    einleitung:
-      "Katalog części jest podstawą: z niego dowód dostawy bierze nazwę, rysunek i wagę. " +
-      "Wyszukiwanie idzie po numerze części bez dodatków — liczą się tylko cyfry.",
     teilAnlegen: "Załóż część ręcznie",
     teilBeispiel: "Numer części, np. VR-1234-56",
     anlegen: "Załóż",
@@ -1439,8 +1394,6 @@ export const pl: Texte = {
     nichtGespeichert: (meldung: string) => `Nie zapisano: ${meldung}`,
   },
   lieferungen: {
-    einleitung:
-      "Dowód dostawy zostaje wczytany, porównany z katalogiem części i zapisany jako szkic. Z dokumentami ma status „wygenerowano”; gdy automatyczne skanowanie zapisze je w folderze wyjściowym — „przekazano”.",
     wirdGelesen: "Wczytywanie …",
     einlesen: "Wczytaj dowód dostawy",
     laeuft: "Trwa …",
@@ -1501,9 +1454,6 @@ export const pl: Texte = {
   fair: {
     dateiFehlt: (meldung: string) =>
       `Samego rysunku nie da się wczytać (${meldung}). Wymiary mimo to są poniżej.`,
-    einleitung:
-      "Badanie pierwszej sztuki: wczytać rysunek i przy każdym wymiarze do sprawdzenia " +
-      "postawić numerowany balonik. Numery nadaje baza danych i trzyma je bez luk.",
     bezeichnungFrei: "Nazwa (puste = nazwa pliku)",
     beispiel: "np. wałek 12×40, rysunek 4711",
     wirdGeladen: "Wczytywanie …",
@@ -1576,9 +1526,6 @@ export const pl: Texte = {
     beitraege: "Artykuły",
     belegschaftInZahlen: "Załoga w liczbach",
     neuBeiUns: "Nowi u nas",
-    redaktionEinleitung:
-      "Jedno wydanie na kwartał. Rozdziały wyznaczają kolejność w numerze; publikuje się je " +
-      "dopiero, gdy są gotowe.",
     zurLeseransicht: "Do widoku czytelnika",
     jahr: "Rok",
     quartal: "Kwartał",
@@ -1623,7 +1570,6 @@ export const pl: Texte = {
     standEingefroren: "Stan zamrożony.",
   },
   signage: {
-    einleitung: "Media, playlisty, harmonogramy i urządzenia ekranów.",
     bereiche: "Obszary Signage",
     medien: "Media",
     medienHinzu: "Dodaj media",
@@ -1752,7 +1698,6 @@ export const pl: Texte = {
   },
   einstellungen: {
     titel: "Ustawienia",
-    einleitung: "Co platforma liczy, pobiera i pokazuje — dla wszystkich tak samo.",
     bereiche: "Obszary",
     gruppen: {
       kennzahlen: "Wskaźniki",
@@ -2171,8 +2116,6 @@ export const pl: Texte = {
   },
   kennzahlenHub: {
     titel: "Pulpit KPI",
-    einleitung:
-      "Wskaźniki wg działów. Dane pochodzą z eksportów ERP w sekcji Wczytywanie.",
     bereiche: {
       "/kpi/vertrieb": "Obrót, wartość zamówienia, udział klientów",
       "/hr/kennzahlen": "Załoga, fluktuacja, chorobowe — osobne uprawnienie",
@@ -2184,8 +2127,6 @@ export const pl: Texte = {
     },
   },
   personalHub: {
-    einleitung:
-      "Praca kadrowa, wg obszarów. Liczby są jednym z nich.",
     bereiche: {
       "/hr/kennzahlen": "Załoga, fluktuacja, chorobowe, nadgodziny",
       "/hr/organigramm": "Kto komu podlega",
@@ -2199,7 +2140,6 @@ export const pl: Texte = {
   },
   bewertung: {
     titel: "Ocena KPI i działania",
-    einleitung: "Oceniaj wskaźniki, wyprowadzaj działania, przydzielaj je i śledź.",
     uebersichtFehler: (meldung: string) => `Nie udało się wczytać: ${meldung}`,
     nurLesen:
       "Możesz czytać oceny, ale nie możesz ich pisać. Do tego potrzebne jest prawo " +

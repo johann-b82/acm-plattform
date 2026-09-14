@@ -244,8 +244,6 @@ export const vi: Texte = {
     auftragseingangHinweis: "đã trừ các đơn hủy",
   },
   einkauf: {
-    einleitung:
-      "Độ đúng hẹn giao hàng của nhà cung cấp. Tính theo những gì đã về trong kỳ.",
     keineDaten: "Không có hạng mục giao hàng nào trong kỳ này",
     ladeVor: "Hãy tải tệp xuất độ đúng hẹn giao hàng lên tại ",
     ladeNach: ".",
@@ -280,7 +278,6 @@ export const vi: Texte = {
     menge: "Số lượng",
   },
   produktion: {
-    einleitung: "Đơn hàng bị chậm. Một đơn chỉ được tính khi đã rõ kết cục của nó.",
     keineDaten: "Không có đơn hàng nào đã rõ kết cục trong kỳ này",
     ladeVor: "Hãy tải hạng mục đơn hàng và phiếu giao hàng lên tại ",
     ladeNach:
@@ -312,7 +309,6 @@ export const vi: Texte = {
     tageUeberfaellig: "Số ngày quá hạn",
   },
   finanzen: {
-    einleitung: "Chi phí vật tư và nhân sự so với doanh thu xuất hóa đơn.",
     keineDatenVor:
       "Cần ba tệp: biến động kho cho lượng tiêu hao, giá vật tư (nhập kho) cho giá và " +
       "doanh thu làm cơ sở quy chiếu. Cả ba đều nằm ở ",
@@ -353,7 +349,6 @@ export const vi: Texte = {
     quoteBeiKosten: (kosten: string) => `Tỷ lệ với chi phí ${kosten}`,
   },
   qualitaet: {
-    einleitung: "Phát hiện audit, tỷ lệ khiếu nại và sản lượng kiểm tra.",
     auditart: "Loại audit:",
     reklamationsart: "Loại khiếu nại",
     keineArt:
@@ -444,9 +439,6 @@ export const vi: Texte = {
     artikel: "Mặt hàng",
   },
   personal: {
-    einleitung:
-      "Từ đợt đồng bộ Personio. Số giờ định mức mỗi ngày lấy từ mô hình thời gian làm " +
-      "việc của từng người, không phải từ ngày tám tiếng cào bằng.",
     uebersicht: "Tổng quan",
     keinAbgleich: "Chưa có đợt đồng bộ nào. Nó tự chạy lúc 02:15 mỗi đêm.",
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
@@ -499,11 +491,6 @@ export const vi: Texte = {
   },
   belegschaft: {
     titel: "Lực lượng lao động",
-    hinweis:
-      "Tính đến hôm nay. Các phân bố hiển thị dữ liệu gốc hiện tại chứ không phải dữ liệu " +
-      "lúc đó — Personio không lưu lịch sử. Việc “Nhân viên” và tỷ lệ năng lực có mẫu số " +
-      "khác nhau là cố ý: một con số theo trạng thái Personio, con số kia theo ngày vào và " +
-      "ngày nghỉ. Cả hai cách đều lấy từ hệ thống cũ.",
     ladeFehler: (meldung: string) => `Không tải được dữ liệu lực lượng lao động: ${meldung}`,
     beschaeftigte: "Nhân viên",
     beschaeftigteHinweis: "theo trạng thái Personio “hoạt động”",
@@ -591,9 +578,6 @@ export const vi: Texte = {
     anmelden: "Đăng nhập",
   },
   uploads: {
-    einleitung:
-      "Đọc vào các tệp xuất ERP. Tải lại cùng một tệp là vô hại: dòng đã có sẽ được cập " +
-      "nhật chứ không tạo thêm lần nữa.",
     dateiWaehlen: "Chọn tệp",
     verarbeitet: "đang xử lý …",
     uebersprungen: (datei: string) => `Các dòng bị bỏ qua từ “${datei}”`,
@@ -662,9 +646,6 @@ export const vi: Texte = {
     },
   },
   organigramm: {
-    einleitung:
-      "Từ Personio. Ai ở đó không có cấp trên thì đứng trên cùng — điều đó đúng với ban " +
-      "giám đốc, còn lại là dấu hiệu của một lỗ hổng trong dữ liệu gốc.",
     suchfeld: "Người, vị trí hoặc bộ phận",
     suchePlatzhalter: "Tên, vị trí, bộ phận",
     standort: "Địa điểm",
@@ -728,9 +709,6 @@ export const vi: Texte = {
     ohneTreffer: "không khớp với Personio",
   },
   schulungen: {
-    einleitung:
-      "Danh mục, chu kỳ của nó và ai đáp ứng. Hạn được tính từ lần học cuối và chu kỳ, " +
-      "chứ không lưu sẵn.",
     dokumentenlauf: "Luồng tài liệu",
     bereich: "Lĩnh vực",
     neueSchulung: "Khóa đào tạo mới",
@@ -837,9 +815,6 @@ export const vi: Texte = {
     nameForm: "Họ, tên",
   },
   kompetenzen: {
-    einleitung:
-      "Một vị trí đòi hỏi gì và đã đáp ứng tới đâu — mỗi lĩnh vực một ma trận. Đọc vào từ " +
-      "tệp lĩnh vực, sau đó quản lý tại đây.",
     zumDashboard: "Đến bảng chỉ số nhân sự",
     bereich: "Lĩnh vực",
     wirdGelesen: "Đang đọc …",
@@ -878,9 +853,6 @@ export const vi: Texte = {
     note2: "tốt",
     note3: "đạt yêu cầu",
     note4: "đủ",
-    einleitung:
-      "Từ điểm số và các gạch đầu dòng thành ngôn ngữ thư chứng nhận. Dữ liệu gốc được " +
-      "chép lại lúc tạo — một thư đã cấp không đổi theo khi Personio thay đổi.",
     person: "Người",
     waehlen: "— chọn —",
     art: "Loại",
@@ -1095,9 +1067,6 @@ export const vi: Texte = {
     matrixLeer: "Chưa có nội dung hoặc bộ phận.",
     vorgaengeTitel: "Quy trình hội nhập & đào tạo",
     matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
-    einleitung:
-      "Ai là người mới và ma trận yêu cầu đòi hỏi những khóa nào cho họ. Kế hoạch không " +
-      "được lưu mà được tính — ma trận đổi thì kế hoạch đổi theo.",
     nichtsGefehlt: "Không thiếu gì.",
     angelegt: (anzahl: number) => `Đã tạo ${anzahl} khóa đào tạo.`,
     neu90: "Mới (90 ngày qua)",
@@ -1151,9 +1120,6 @@ export const vi: Texte = {
     fehlt: "còn thiếu",
   },
   audit: {
-    einleitung:
-      "Audit từ lúc lập kế hoạch đến lúc kết thúc. Mọi thay đổi trạng thái đều nằm trong " +
-      "lịch sử — do cơ sở dữ liệu ghi chứ không phải màn hình nhập, và sau đó không sửa được.",
     zuKennzahlen: "Đến các chỉ số",
     nummer: "Số",
     nummerBeispiel: "A-2026-01",
@@ -1205,9 +1171,6 @@ export const vi: Texte = {
     lieferant: "Nhà cung cấp",
   },
   wartung: {
-    einleitung:
-      "Máy móc và các công việc bảo trì định kỳ. Hồ sơ được tạo thành phiếu để dán lên — " +
-      "mỗi nửa năm một phiếu, mỗi tuần lịch một cột.",
     zuKennzahlen: "Đến các chỉ số",
     neueMaschine: "Máy mới",
     beispiel: "ví dụ: máy phay 3",
@@ -1224,9 +1187,6 @@ export const vi: Texte = {
     angelegt: "Đã tạo máy.",
   },
   sensoren: {
-    einleitung:
-      "Nhiệt độ và độ ẩm theo chu kỳ truy vấn đã thiết lập. Giá trị nằm ngoài giới hạn chung " +
-      "được hiển thị bằng màu cảnh báo.",
     misst: "Đang đo …",
     jetztMessen: "Đo ngay",
     keinGeraet: "Chưa thiết lập thiết bị nào",
@@ -1254,9 +1214,6 @@ export const vi: Texte = {
     ladeFehler: "Không tải được số đo.",
   },
   hilfe: {
-    einleitung:
-      "Nền tảng làm được gì, các con số hình thành ra sao và phải làm gì khi có điều gì " +
-      "không đúng.",
     nurDeutsch: "Bản thân các trang trợ giúp được viết bằng tiếng Đức.",
     suchen: "Tìm trong trợ giúp",
     nichtsGefunden:
@@ -1265,7 +1222,7 @@ export const vi: Texte = {
     navigation: "Chủ đề trợ giúp",
   },
   meldungen: {
-    stand: (offen: number) => `Những gì đã được phản ánh từ các màn hình qua App Feedback. ${offen} đang mở`,
+    stand: (offen: number) => `${offen} đang mở`,
     neuSeit: (anzahl: number) => ` · ${anzahl} chưa xem`,
     nichtsGemeldet: "Chưa có App Feedback nào",
     nichtsGemeldetText:
@@ -1407,9 +1364,6 @@ export const vi: Texte = {
     nameFehlt: "Cần có tên.",
   },
   atr: {
-    einleitung:
-      "Danh mục linh kiện là nền tảng: một phiếu giao hàng lấy từ đó mô tả, bản vẽ và khối " +
-      "lượng. Việc khớp dựa trên mã linh kiện không kèm phụ tố — chỉ các chữ số mới tính.",
     teilAnlegen: "Thêm linh kiện bằng tay",
     teilBeispiel: "Mã linh kiện, ví dụ VR-1234-56",
     anlegen: "Tạo",
@@ -1436,8 +1390,6 @@ export const vi: Texte = {
     nichtGespeichert: (meldung: string) => `Chưa lưu: ${meldung}`,
   },
   lieferungen: {
-    einleitung:
-      "Phiếu giao hàng được đọc, đối chiếu với danh mục chi tiết và lưu thành bản nháp. Khi có tài liệu, trạng thái là «đã tạo»; khi lần quét tự động ghi chúng vào thư mục đầu ra, là «đã chuyển».",
     wirdGelesen: "Đang đọc …",
     einlesen: "Đọc vào phiếu giao hàng",
     laeuft: "Đang chạy …",
@@ -1498,9 +1450,6 @@ export const vi: Texte = {
   fair: {
     dateiFehlt: (meldung: string) =>
       `Không tải được bản vẽ (${meldung}). Các kích thước vẫn được liệt kê bên dưới.`,
-    einleitung:
-      "Kiểm tra mẫu đầu: tải lên một bản vẽ và đặt một bong bóng đánh số lên mỗi kích " +
-      "thước cần kiểm. Số do cơ sở dữ liệu cấp và giữ liền mạch.",
     bezeichnungFrei: "Mô tả (để trống = tên tệp)",
     beispiel: "ví dụ: trục 12×40, bản vẽ 4711",
     wirdGeladen: "Đang tải lên …",
@@ -1573,9 +1522,6 @@ export const vi: Texte = {
     beitraege: "Bài viết",
     belegschaftInZahlen: "Lực lượng lao động qua các con số",
     neuBeiUns: "Người mới của chúng ta",
-    redaktionEinleitung:
-      "Mỗi quý một số. Các chương quyết định thứ tự trong tập; số chỉ được phát hành khi " +
-      "đã xong.",
     zurLeseransicht: "Đến trang đọc",
     jahr: "Năm",
     quartal: "Quý",
@@ -1620,7 +1566,6 @@ export const vi: Texte = {
     standEingefroren: "Đã đóng băng hiện trạng.",
   },
   signage: {
-    einleitung: "Phương tiện, playlist, lịch phát và thiết bị của các màn hình.",
     bereiche: "Các mục Signage",
     medien: "Phương tiện",
     medienHinzu: "Thêm phương tiện",
@@ -1750,7 +1695,6 @@ export const vi: Texte = {
   },
   einstellungen: {
     titel: "Cài đặt",
-    einleitung: "Những gì nền tảng tính, lấy về và hiển thị — giống nhau cho tất cả.",
     bereiche: "Các mục",
     gruppen: {
       kennzahlen: "Chỉ số",
@@ -2169,7 +2113,6 @@ export const vi: Texte = {
   },
   kennzahlenHub: {
     titel: "Bảng chỉ số KPI",
-    einleitung: "Chỉ số theo từng bộ phận chuyên môn. Dữ liệu đến từ các tệp xuất ERP ở mục Tải lên.",
     bereiche: {
       "/kpi/vertrieb": "Doanh thu, giá trị đơn hàng, tỷ trọng khách hàng",
       "/hr/kennzahlen": "Lực lượng lao động, biến động nhân sự, nghỉ ốm — quyền riêng",
@@ -2181,8 +2124,6 @@ export const vi: Texte = {
     },
   },
   personalHub: {
-    einleitung:
-      "Công tác nhân sự, theo từng mảng. Các con số chỉ là một trong số đó.",
     bereiche: {
       "/hr/kennzahlen": "Lực lượng lao động, biến động nhân sự, nghỉ ốm, giờ làm thêm",
       "/hr/organigramm": "Ai báo cáo cho ai",
@@ -2196,7 +2137,6 @@ export const vi: Texte = {
   },
   bewertung: {
     titel: "Đánh giá KPI & biện pháp",
-    einleitung: "Đánh giá chỉ số, đề ra biện pháp, giao việc và theo dõi.",
     uebersichtFehler: (meldung: string) => `Không tải được: ${meldung}`,
     nurLesen:
       "Bạn đọc được các đánh giá nhưng không ghi được. Việc đó cần quyền “Sửa” trên phần " +

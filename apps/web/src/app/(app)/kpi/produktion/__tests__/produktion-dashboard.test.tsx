@@ -60,6 +60,11 @@ const koepfe = (tabelle: HTMLElement) =>
   within(tabelle).getAllByRole("columnheader").map((k) => k.textContent);
 
 describe("Produktion-Seite", () => {
+  it("zeigt keinen erklärenden Satz über der Seite", () => {
+    zeige();
+    expect(screen.queryByText("Aufträge in Verzug. Gezählt wird ein Auftrag erst, wenn sein Ausgang feststeht.")).toBeNull();
+  });
+
   it("nennt die offenen Aufträge aus der SQL-Zählung", async () => {
     zeige();
     expect(await screen.findByText("davon 7 offen und überfällig")).toBeInTheDocument();

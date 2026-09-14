@@ -29,7 +29,6 @@ export function Onboarding({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.onboarding.einleitung}
         unter={
           <div className="mt-2 flex justify-start gap-4 text-sm">
             <Link href="/hr/schulungen" className="underline-offset-4 hover:underline">

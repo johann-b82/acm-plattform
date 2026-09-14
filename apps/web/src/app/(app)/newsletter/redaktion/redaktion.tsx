@@ -154,7 +154,6 @@ export function Redaktion({
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.newsletter.redaktionEinleitung}
         unter={
           <div className="mt-2 flex justify-start text-sm">
             <Link href="/newsletter" className="underline-offset-4 hover:underline">

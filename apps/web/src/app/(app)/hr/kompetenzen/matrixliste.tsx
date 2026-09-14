@@ -81,7 +81,6 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.kompetenzen.einleitung}
       />
 
       {darfSchreiben && (

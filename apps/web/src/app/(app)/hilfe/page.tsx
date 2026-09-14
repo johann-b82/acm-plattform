@@ -23,17 +23,9 @@ export default async function HilfePage() {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={
-          <>
-            {t.hilfe.einleitung}
-            {/* Nur in Sprachen, in denen die Hilfe nicht geschrieben ist:
-                besser man weiß es vorher als nach dem ersten Klick. */}
-            {t.hilfe.nurDeutsch && (
-              <>
-                {" "}
-                <span className="text-[var(--warn)]">{t.hilfe.nurDeutsch}</span>
-              </>
-            )}
-          </>
+          // Nur in Sprachen, in denen die Hilfe nicht geschrieben ist: besser
+          // man weiß es vorher als nach dem ersten Klick.
+          t.hilfe.nurDeutsch ? <span className="text-[var(--warn)]">{t.hilfe.nurDeutsch}</span> : undefined
         }
       />
 

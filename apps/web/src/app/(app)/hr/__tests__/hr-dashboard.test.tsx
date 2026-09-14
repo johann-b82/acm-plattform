@@ -58,9 +58,9 @@ describe("HR-Kennzahlen, Kopf", () => {
     expect(halter?.className).toContain("min-w-full");
   });
 
-  it("lässt den Satz über der Seite nicht auf Absatzbreite umbrechen", () => {
+  it("zeigt keinen erklärenden Satz über der Seite", () => {
     zeige();
-    expect(screen.getByText(/Aus dem Personio-Abgleich/).className).not.toContain("max-w-prose");
+    expect(screen.queryByText(/Aus dem Personio-Abgleich/)).toBeNull();
   });
 
   it("stellt in der Schale den Abgleich zu den Aktionen und die Zeitraumwahl in den Zeitraum", () => {

@@ -24,7 +24,6 @@ export default async function PersonalPage() {
   const t = await texte();
   return (
     <Kacheln
-      untertitel={t.personalHub.einleitung}
       eintraege={BEREICHE.map((pfad) => ({
         pfad,
         name: t.pfad.seiten[pfad],

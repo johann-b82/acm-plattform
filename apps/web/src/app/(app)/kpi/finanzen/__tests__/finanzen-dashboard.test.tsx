@@ -49,6 +49,11 @@ function zeige() {
 const umschalter = () => screen.getByRole("radiogroup", { name: "Ansicht" });
 
 describe("Finanzen", () => {
+  it("zeigt keinen erklärenden Satz über der Seite", () => {
+    zeige();
+    expect(screen.queryByText("Material- und Personalkosten im Verhältnis zum Rechnungsumsatz.")).toBeNull();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

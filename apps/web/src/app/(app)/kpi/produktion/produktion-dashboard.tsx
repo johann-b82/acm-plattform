@@ -198,7 +198,6 @@ export function ProduktionDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.produktion.einleitung}
         bedienung={
           <>
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="produktion" />} />

@@ -211,7 +211,6 @@ export const de = {
     auftragseingangHinweis: "Stornos gegengerechnet",
   },
   einkauf: {
-    einleitung: "Liefertermintreue der Lieferanten. Gezählt wird, was im Zeitraum angekommen ist.",
     keineDaten: "Für diesen Zeitraum liegen keine Lieferpositionen vor",
     ladeVor: "Lade den Liefertreue-Export unter ",
     ladeNach: " hoch.",
@@ -246,7 +245,6 @@ export const de = {
     menge: "Menge",
   },
   produktion: {
-    einleitung: "Aufträge in Verzug. Gezählt wird ein Auftrag erst, wenn sein Ausgang feststeht.",
     keineDaten: "Für diesen Zeitraum liegt kein Auftrag mit feststehendem Ausgang vor",
     ladeVor: "Lade die Auftragspositionen und die Lieferscheine unter ",
     ladeNach:
@@ -278,7 +276,6 @@ export const de = {
     tageUeberfaellig: "Tage überfällig",
   },
   finanzen: {
-    einleitung: "Material- und Personalkosten im Verhältnis zum Rechnungsumsatz.",
     keineDatenVor:
       "Es braucht drei Dateien: die Lagerbewegungen für den Verbrauch, die Materialpreise " +
       "(Wareneingang) für die Preise und den Umsatz als Bezugsgröße. Alle drei liegen unter ",
@@ -318,7 +315,6 @@ export const de = {
     quoteBeiKosten: (kosten: string) => `Quote bei ${kosten} Kosten`,
   },
   qualitaet: {
-    einleitung: "Audit-Findings, Reklamationsquote und Prüfmengen.",
     auditart: "Auditart:",
     reklamationsart: "Reklamationsart",
     keineArt: "Keine Auditart ausgewählt. Wähle mindestens eine, sonst gibt es nichts zu zählen.",
@@ -406,9 +402,6 @@ export const de = {
     artikel: "Artikel",
   },
   personal: {
-    einleitung:
-      "Aus dem Personio-Abgleich. Das Tagessoll kommt aus dem hinterlegten " +
-      "Arbeitszeitmodell je Person, nicht aus einem pauschalen Achtstundentag.",
     uebersicht: "Übersicht",
     keinAbgleich: "Noch kein Abgleich gelaufen. Er läuft nachts um 02:15 von selbst.",
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
@@ -461,11 +454,6 @@ export const de = {
   },
   belegschaft: {
     titel: "Belegschaft",
-    hinweis:
-      "Stand heute. Die Verteilungen zeigen die aktuellen Stammdaten, nicht die von damals — " +
-      "Personio liefert keine Historie. Dass „Beschäftigte“ und die Kompetenzquote verschiedene " +
-      "Nenner haben, ist Absicht: die eine Zahl folgt dem Personio-Status, die andere Ein- und " +
-      "Austrittsdatum. Beide Wege stammen aus dem Altprojekt.",
     ladeFehler: (meldung: string) => `Belegschaft konnte nicht geladen werden: ${meldung}`,
     beschaeftigte: "Beschäftigte",
     beschaeftigteHinweis: "nach Personio-Status „aktiv“",
@@ -553,9 +541,6 @@ export const de = {
     anmelden: "Anmelden",
   },
   uploads: {
-    einleitung:
-      "ERP-Exporte einlesen. Dieselbe Datei erneut hochzuladen ist gefahrlos: bestehende " +
-      "Zeilen werden aktualisiert, nicht doppelt angelegt.",
     dateiWaehlen: "Datei auswählen",
     verarbeitet: "wird verarbeitet …",
     uebersprungen: (datei: string) => `Übersprungene Zeilen aus „${datei}“`,
@@ -624,9 +609,6 @@ export const de = {
     },
   },
   organigramm: {
-    einleitung:
-      "Aus Personio. Wer dort keinen Vorgesetzten hinterlegt hat, steht oben — das ist bei der " +
-      "Geschäftsführung richtig und sonst ein Hinweis auf eine Lücke in den Stammdaten.",
     suchfeld: "Person, Position oder Abteilung",
     suchePlatzhalter: "Name, Position, Abteilung",
     standort: "Standort",
@@ -690,9 +672,6 @@ export const de = {
     ohneTreffer: "ohne Personio-Treffer",
   },
   schulungen: {
-    einleitung:
-      "Der Katalog, sein Turnus und wer ihn erfüllt. Fälligkeiten werden aus letztem Termin und " +
-      "Turnus gerechnet, nicht gespeichert.",
     dokumentenlauf: "Dokumentenlauf",
     bereich: "Bereich",
     neueSchulung: "Neue Schulung",
@@ -799,9 +778,6 @@ export const de = {
     nameForm: "Nachname, Vorname",
   },
   kompetenzen: {
-    einleitung:
-      "Was eine Stelle verlangt und wie weit es erfüllt ist — je Bereich eine Matrix. " +
-      "Eingelesen aus der Bereichsdatei, danach hier gepflegt.",
     zumDashboard: "Zum HR-Dashboard",
     bereich: "Bereich",
     wirdGelesen: "Wird gelesen …",
@@ -840,9 +816,6 @@ export const de = {
     note2: "gut",
     note3: "befriedigend",
     note4: "ausreichend",
-    einleitung:
-      "Aus Noten und Stichpunkten wird Zeugnissprache. Die Stammdaten werden beim Anlegen " +
-      "abgeschrieben — ein ausgestelltes Zeugnis ändert sich nicht mehr, weil sich Personio ändert.",
     person: "Person",
     waehlen: "— wählen —",
     art: "Art",
@@ -1057,9 +1030,6 @@ export const de = {
     matrixLeer: "Noch keine Inhalte oder Abteilungen.",
     vorgaengeTitel: "Einarbeitungs- & Schulungsvorgänge",
     matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
-    einleitung:
-      "Wer neu ist und welche Schulungen die Anforderungsmatrix für ihn verlangt. Der Plan wird " +
-      "nicht gespeichert, sondern gerechnet — ändert sich die Matrix, ändert sich der Plan.",
     nichtsGefehlt: "Es fehlte nichts.",
     angelegt: (anzahl: number) => `${anzahl} ${anzahl === 1 ? "Schulung" : "Schulungen"} angelegt.`,
     neu90: "Neu (letzte 90 Tage)",
@@ -1114,9 +1084,6 @@ export const de = {
     fehlt: "fehlt",
   },
   audit: {
-    einleitung:
-      "Audits von der Planung bis zum Abschluss. Jede Statusänderung steht im Verlauf — " +
-      "geschrieben von der Datenbank, nicht von der Maske, und danach unveränderlich.",
     zuKennzahlen: "Zu den Kennzahlen",
     nummer: "Nummer",
     nummerBeispiel: "A-2026-01",
@@ -1169,9 +1136,6 @@ export const de = {
     lieferant: "Lieferant",
   },
   wartung: {
-    einleitung:
-      "Maschinen und ihre wiederkehrenden Wartungsaufgaben. Der Nachweis entsteht als Bogen zum " +
-      "Aushängen — je Halbjahr, mit einer Spalte pro Kalenderwoche.",
     zuKennzahlen: "Zu den Kennzahlen",
     neueMaschine: "Neue Maschine",
     beispiel: "z. B. Fräse 3",
@@ -1188,9 +1152,6 @@ export const de = {
     angelegt: "Maschine angelegt.",
   },
   sensoren: {
-    einleitung:
-      "Temperatur und Luftfeuchte im eingestellten Abfragetakt. Ein Wert außerhalb der " +
-      "globalen Grenzen steht in Warnfarbe.",
     misst: "Misst …",
     jetztMessen: "Jetzt messen",
     keinGeraet: "Kein Gerät eingerichtet",
@@ -1218,9 +1179,6 @@ export const de = {
     ladeFehler: "Messwerte konnten nicht geladen werden.",
   },
   hilfe: {
-    einleitung:
-      "Was die Plattform kann, wie die Zahlen zustande kommen und was zu tun ist, wenn etwas " +
-      "nicht stimmt.",
     nurDeutsch: "",
     suchen: "In der Hilfe suchen",
     nichtsGefunden:
@@ -1229,7 +1187,7 @@ export const de = {
     navigation: "Hilfethemen",
   },
   meldungen: {
-    stand: (offen: number) => `Was aus den Ansichten als App Feedback gemeldet wurde. ${offen} offen`,
+    stand: (offen: number) => `${offen} offen`,
     neuSeit: (anzahl: number) => ` · ${anzahl} noch nicht angesehen`,
     nichtsGemeldet: "Noch kein App Feedback",
     nichtsGemeldetText:
@@ -1371,9 +1329,6 @@ export const de = {
     nameFehlt: "Ohne Namen geht es nicht.",
   },
   atr: {
-    einleitung:
-      "Der Teilekatalog ist die Grundlage: aus ihm holt ein Lieferschein Bezeichnung, Zeichnung " +
-      "und Gewicht. Gefunden wird über die Teilenummer ohne Beiwerk — nur die Ziffern zählen.",
     teilAnlegen: "Teil von Hand anlegen",
     teilBeispiel: "Teilenummer, z. B. VR-1234-56",
     anlegen: "Anlegen",
@@ -1400,8 +1355,6 @@ export const de = {
     nichtGespeichert: (meldung: string) => `Nicht gespeichert: ${meldung}`,
   },
   lieferungen: {
-    einleitung:
-      "Ein Lieferschein wird eingelesen, gegen den Teilekatalog abgeglichen und als Entwurf abgelegt. Mit den Dokumenten ist er erzeugt; legt der automatische Scan sie im Ausgangsordner ab, ist er abgelegt.",
     wirdGelesen: "Wird gelesen …",
     einlesen: "Lieferschein einlesen",
     laeuft: "Läuft …",
@@ -1464,9 +1417,6 @@ export const de = {
     dateiFehlt: (meldung: string) =>
       `Die Zeichnung selbst lässt sich nicht laden (${meldung}). Die Maße stehen ` +
       "trotzdem darunter.",
-    einleitung:
-      "Erstmusterprüfung: eine Zeichnung hochladen und zu jedem zu prüfenden Maß einen " +
-      "nummerierten Ballon setzen. Die Nummern vergibt die Datenbank und hält sie lückenlos.",
     bezeichnungFrei: "Bezeichnung (leer = Dateiname)",
     beispiel: "z. B. Welle 12×40, Zeichnung 4711",
     wirdGeladen: "Wird geladen …",
@@ -1539,9 +1489,6 @@ export const de = {
     beitraege: "Beiträge",
     belegschaftInZahlen: "Belegschaft in Zahlen",
     neuBeiUns: "Neu bei uns",
-    redaktionEinleitung:
-      "Eine Ausgabe je Quartal. Kapitel bestimmen die Reihenfolge im Heft; veröffentlicht wird " +
-      "sie erst, wenn sie fertig ist.",
     zurLeseransicht: "Zur Leseransicht",
     jahr: "Jahr",
     quartal: "Quartal",
@@ -1586,7 +1533,6 @@ export const de = {
     standEingefroren: "Stand eingefroren.",
   },
   signage: {
-    einleitung: "Medien, Playlists, Zeitpläne und Geräte der Bildschirme.",
     bereiche: "Signage-Bereiche",
     medien: "Medien",
     medienHinzu: "Medien hinzufügen",
@@ -1717,7 +1663,6 @@ export const de = {
   },
   einstellungen: {
     titel: "Einstellungen",
-    einleitung: "Was die Plattform rechnet, holt und zeigt — für alle gleich.",
     bereiche: "Bereiche",
     gruppen: {
       kennzahlen: "Kennzahlen",
@@ -2136,7 +2081,6 @@ export const de = {
   },
   kennzahlenHub: {
     titel: "KPI-Dashboard",
-    einleitung: "Kennzahlen je Fachbereich. Die Daten kommen aus den ERP-Exporten unter Uploads.",
     bereiche: {
       "/kpi/vertrieb": "Umsatz, Auftragswert, Kundenanteil",
       "/hr/kennzahlen": "Belegschaft, Fluktuation, Krankenstand — eigene Berechtigung",
@@ -2148,8 +2092,6 @@ export const de = {
     },
   },
   personalHub: {
-    einleitung:
-      "Die Personalarbeit, nach Bereichen. Die Zahlen sind einer davon.",
     bereiche: {
       "/hr/kennzahlen": "Belegschaft, Fluktuation, Krankenstand, Überstunden",
       "/hr/organigramm": "Wer wem berichtet",
@@ -2163,7 +2105,6 @@ export const de = {
   },
   bewertung: {
     titel: "KPI-Bewertung & Maßnahmen",
-    einleitung: "Kennzahlen bewerten, Maßnahmen ableiten, zuweisen und verfolgen.",
     uebersichtFehler: (meldung: string) => `Konnte nicht geladen werden: ${meldung}`,
     nurLesen:
       "Du kannst Bewertungen lesen, aber nicht schreiben. Dafür braucht es das Recht " +

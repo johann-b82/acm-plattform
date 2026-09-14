@@ -238,7 +238,6 @@ export function EinkaufDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.einkauf.einleitung}
         bedienung={
           <>
             <Zeitraumwahl wahl={wahl} datenstand={<Datenstand bereich="einkauf" />} />

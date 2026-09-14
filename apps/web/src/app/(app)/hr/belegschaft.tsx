@@ -30,11 +30,9 @@ import { useFormate } from "@/lib/kpi/use-formate";
 function Balken({
   titel,
   zeilen,
-  alsProzent,
 }: {
   titel: string;
   zeilen: { kategorie: string; anzahl: number }[];
-  alsProzent: boolean;
 }) {
   const worte = useTexte();
   const fmt = useFormate();
@@ -63,7 +61,7 @@ function Balken({
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate">{kategorie[z.kategorie] ?? z.kategorie}</span>
               <span className="shrink-0 font-mono tabular-nums text-[var(--fg-muted)]">
-                {alsProzent ? `${z.prozent} %` : fmt.zahl(z.anzahl)}
+                {`${fmt.zahl(z.anzahl)} (${z.prozent} %)`}
               </span>
             </div>
             <div className="mt-1 h-1.5 rounded bg-[var(--muted)]">
@@ -105,9 +103,6 @@ export function Belegschaft() {
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">{worte.belegschaft.titel}</h2>
-        <p className="max-w-prose text-xs text-[var(--fg-muted)]">
-          {worte.belegschaft.hinweis}
-        </p>
       </div>
 
       {fehler && (
@@ -160,13 +155,9 @@ export function Belegschaft() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Balken titel={worte.belegschaft.geschlecht} zeilen={je("geschlecht")} alsProzent />
-        <Balken
-          titel={worte.belegschaft.beschaeftigungsart}
-          zeilen={je("beschaeftigung")}
-          alsProzent={false}
-        />
-        <Balken titel={worte.belegschaft.abteilungen} zeilen={je("abteilung")} alsProzent={false} />
+        <Balken titel={worte.belegschaft.geschlecht} zeilen={je("geschlecht")} />
+        <Balken titel={worte.belegschaft.beschaeftigungsart} zeilen={je("beschaeftigung")} />
+        <Balken titel={worte.belegschaft.abteilungen} zeilen={je("abteilung")} />
       </div>
     </section>
   );

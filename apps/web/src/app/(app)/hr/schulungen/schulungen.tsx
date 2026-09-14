@@ -37,7 +37,6 @@ export function Schulungen({ darfSchreiben, start = "bearbeiten" }: { darfSchrei
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.schulungen.einleitung}
         unter={
           <div className="mt-2 flex flex-wrap justify-start gap-4 text-sm">
             <Link href="/hr/onboarding#vorgaenge" className="underline-offset-4 hover:underline">

@@ -47,7 +47,6 @@ type Ansicht = "material" | "personal";
  * Ansicht ist eine eigene Komponente, damit nur ihre Abfragen laufen.
  */
 export function FinanzenDashboard() {
-  const worte = useTexte();
   const wahl = useZeitraumwahl();
   const [ansicht, setAnsicht] = useState<Ansicht>("material");
 
@@ -57,7 +56,6 @@ export function FinanzenDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.finanzen.einleitung}
         links={
           // Kein eigener Titel: er stünde gleich unter der Kategorie „Ansicht“.
           <AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />

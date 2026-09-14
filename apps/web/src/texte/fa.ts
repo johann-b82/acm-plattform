@@ -244,8 +244,6 @@ export const fa: Texte = {
     auftragseingangHinweis: "با کسر ابطال‌ها",
   },
   einkauf: {
-    einleitung:
-      "پایبندی تأمین‌کنندگان به موعد تحویل. آنچه در این بازه رسیده است شمرده می‌شود.",
     keineDaten: "برای این بازه قلم تحویلی موجود نیست",
     ladeVor: "خروجی پایبندی به موعد تحویل را در ",
     ladeNach: " بارگذاری کنید.",
@@ -280,8 +278,6 @@ export const fa: Texte = {
     menge: "مقدار",
   },
   produktion: {
-    einleitung:
-      "سفارش‌های دارای تأخیر. سفارش تنها زمانی شمرده می‌شود که نتیجه‌اش روشن باشد.",
     keineDaten: "در این بازه سفارشی با نتیجهٔ روشن موجود نیست",
     ladeVor: "اقلام سفارش و برگه‌های تحویل را در ",
     ladeNach:
@@ -313,7 +309,6 @@ export const fa: Texte = {
     tageUeberfaellig: "روزهای گذشته از موعد",
   },
   finanzen: {
-    einleitung: "هزینهٔ مواد و پرسنل در نسبت با درآمد فاکتورشده.",
     keineDatenVor:
       "سه فایل لازم است: گردش انبار برای مصرف، قیمت مواد (رسید کالا) برای قیمت‌ها و درآمد " +
       "به‌عنوان مبنا. هر سه در ",
@@ -353,7 +348,6 @@ export const fa: Texte = {
     quoteBeiKosten: (kosten: string) => `نسبت با هزینهٔ ${kosten}`,
   },
   qualitaet: {
-    einleitung: "یافته‌های ممیزی، نرخ شکایت و مقدارهای بازرسی‌شده.",
     auditart: "نوع ممیزی:",
     reklamationsart: "نوع شکایت",
     keineArt: "هیچ نوع ممیزی برگزیده نشده است. دست‌کم یکی را برگزینید، وگرنه چیزی برای شمردن نیست.",
@@ -441,9 +435,6 @@ export const fa: Texte = {
     artikel: "کالا",
   },
   personal: {
-    einleitung:
-      "از همگام‌سازی Personio. موظفی روزانه از مدل کاری ثبت‌شدهٔ هر نفر می‌آید، نه از " +
-      "یک روز هشت‌ساعتهٔ یکسان.",
     uebersicht: "نمای کلی",
     keinAbgleich: "هنوز همگام‌سازی‌ای انجام نشده است. هر شب ساعت 02:15 خودبه‌خود اجرا می‌شود.",
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
@@ -495,11 +486,6 @@ export const fa: Texte = {
   },
   belegschaft: {
     titel: "نیروی انسانی",
-    hinweis:
-      "به تاریخ امروز. توزیع‌ها داده‌های پایهٔ کنونی را نشان می‌دهند، نه داده‌های آن " +
-      "زمان را — Personio تاریخچه نگه نمی‌دارد. اینکه «شاغلان» و نرخ صلاحیت مخرج‌های " +
-      "متفاوتی دارند عمدی است: یکی از وضعیت Personio پیروی می‌کند و دیگری از تاریخ ورود " +
-      "و خروج. هر دو راه از سامانهٔ پیشین آمده‌اند.",
     ladeFehler: (meldung: string) => `نیروی انسانی بارگذاری نشد: ${meldung}`,
     beschaeftigte: "شاغلان",
     beschaeftigteHinweis: "بر پایهٔ وضعیت «فعال» در Personio",
@@ -585,9 +571,6 @@ export const fa: Texte = {
     anmelden: "ورود",
   },
   uploads: {
-    einleitung:
-      "خواندن خروجی‌های ERP. بارگذاری دوبارهٔ همان فایل بی‌خطر است: سطرهای موجود " +
-      "به‌روز می‌شوند و دوباره ساخته نمی‌شوند.",
     dateiWaehlen: "انتخاب فایل",
     verarbeitet: "در حال پردازش …",
     uebersprungen: (datei: string) => `سطرهای ردشده از «${datei}»`,
@@ -656,9 +639,6 @@ export const fa: Texte = {
     },
   },
   organigramm: {
-    einleitung:
-      "از Personio. هرکس آنجا سرپرستی برایش ثبت نشده باشد در بالا می‌ایستد — این برای " +
-      "مدیریت درست است و در بقیهٔ موارد نشانهٔ خلأ در داده‌های پایه.",
     suchfeld: "نفر، سمت یا بخش",
     suchePlatzhalter: "نام، سمت، بخش",
     standort: "محل",
@@ -723,9 +703,6 @@ export const fa: Texte = {
     ohneTreffer: "بدون یافتن در Personio",
   },
   schulungen: {
-    einleitung:
-      "فهرست آموزش‌ها، دورهٔ آن‌ها و اینکه چه کسی آن را برآورده می‌کند. سررسیدها از " +
-      "آخرین تاریخ و دوره محاسبه می‌شوند و ذخیره نمی‌شوند.",
     dokumentenlauf: "گردش مدارک",
     bereich: "حوزه",
     neueSchulung: "آموزش تازه",
@@ -832,9 +809,6 @@ export const fa: Texte = {
     nameForm: "نام خانوادگی، نام",
   },
   kompetenzen: {
-    einleitung:
-      "آنچه یک سمت می‌طلبد و اینکه تا چه اندازه برآورده شده — برای هر حوزه یک ماتریس. " +
-      "از فایل حوزه خوانده می‌شود و سپس اینجا نگهداری می‌شود.",
     zumDashboard: "به داشبورد کارکنان",
     bereich: "حوزه",
     wirdGelesen: "در حال خواندن …",
@@ -872,9 +846,6 @@ export const fa: Texte = {
     note2: "خوب",
     note3: "رضایت‌بخش",
     note4: "کافی",
-    einleitung:
-      "از نمره‌ها و نکته‌ها زبان گواهی ساخته می‌شود. داده‌های پایه هنگام ساخت رونویسی " +
-      "می‌شوند — گواهی صادرشده با تغییر Personio تغییر نمی‌کند.",
     person: "نفر",
     waehlen: "— برگزینید —",
     art: "نوع",
@@ -1086,9 +1057,6 @@ export const fa: Texte = {
     matrixLeer: "هنوز محتوا یا واحدی وجود ندارد.",
     vorgaengeTitel: "فرایندهای آشناسازی و آموزش",
     matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
-    einleitung:
-      "چه کسی تازه‌وارد است و ماتریس الزام‌ها چه آموزش‌هایی برای او می‌خواهد. برنامه " +
-      "ذخیره نمی‌شود بلکه محاسبه می‌شود — با تغییر ماتریس، برنامه هم تغییر می‌کند.",
     nichtsGefehlt: "چیزی کم نبود.",
     angelegt: (anzahl: number) => `${anzahl} آموزش ساخته شد.`,
     neu90: "تازه (90 روز گذشته)",
@@ -1142,9 +1110,6 @@ export const fa: Texte = {
     fehlt: "کم است",
   },
   audit: {
-    einleitung:
-      "ممیزی‌ها از برنامه‌ریزی تا پایان. هر تغییر وضعیت در سابقه می‌آید — نوشتهٔ " +
-      "پایگاه داده، نه فرم، و پس از آن تغییرناپذیر.",
     zuKennzahlen: "به شاخص‌ها",
     nummer: "شماره",
     nummerBeispiel: "A-2026-01",
@@ -1196,9 +1161,6 @@ export const fa: Texte = {
     lieferant: "تأمین‌کننده",
   },
   wartung: {
-    einleitung:
-      "ماشین‌ها و کارهای نگهداری تکرارشوندهٔ آن‌ها. مستند به شکل برگه‌ای برای نصب " +
-      "ساخته می‌شود — برای هر نیم‌سال، با یک ستون برای هر هفتهٔ تقویمی.",
     zuKennzahlen: "به شاخص‌ها",
     neueMaschine: "ماشین تازه",
     beispiel: "برای نمونه فرز 3",
@@ -1215,9 +1177,6 @@ export const fa: Texte = {
     angelegt: "دستگاه ایجاد شد.",
   },
   sensoren: {
-    einleitung:
-      "دما و رطوبت با فاصله پرس‌وجوی تنظیم‌شده. مقدار خارج از حدود کلی با رنگ هشدار " +
-      "نمایش داده می‌شود.",
     misst: "در حال اندازه‌گیری …",
     jetztMessen: "اکنون اندازه بگیر",
     keinGeraet: "دستگاهی تنظیم نشده است",
@@ -1245,8 +1204,6 @@ export const fa: Texte = {
     ladeFehler: "بارگیری اندازه‌گیری‌ها ممکن نشد.",
   },
   hilfe: {
-    einleitung:
-      "پلتفرم چه می‌تواند، عددها چگونه به دست می‌آیند و اگر چیزی درست نبود چه باید کرد.",
     nurDeutsch: "صفحه‌های راهنما خودشان به آلمانی نوشته شده‌اند.",
     suchen: "جست‌وجو در راهنما",
     nichtsGefunden:
@@ -1255,7 +1212,7 @@ export const fa: Texte = {
     navigation: "موضوع‌های راهنما",
   },
   meldungen: {
-    stand: (offen: number) => `آنچه از نماها به‌عنوان App Feedback گزارش شده است. ${offen} باز`,
+    stand: (offen: number) => `${offen} باز`,
     neuSeit: (anzahl: number) => ` · ${anzahl} هنوز دیده نشده`,
     nichtsGemeldet: "هنوز App Feedback ثبت نشده",
     nichtsGemeldetText:
@@ -1396,9 +1353,6 @@ export const fa: Texte = {
     nameFehlt: "نام الزامی است.",
   },
   atr: {
-    einleitung:
-      "فهرست قطعه‌ها پایه است: برگهٔ تحویل شرح، نقشه و وزن را از آن می‌گیرد. جست‌وجو " +
-      "بر پایهٔ شمارهٔ قطعه و بدون پیرایه انجام می‌شود — تنها رقم‌ها به شمار می‌آیند.",
     teilAnlegen: "ساختن دستی قطعه",
     teilBeispiel: "شمارهٔ قطعه، برای نمونه VR-1234-56",
     anlegen: "بساز",
@@ -1425,8 +1379,6 @@ export const fa: Texte = {
     nichtGespeichert: (meldung: string) => `ذخیره نشد: ${meldung}`,
   },
   lieferungen: {
-    einleitung:
-      "برگه تحویل خوانده، با کاتالوگ قطعات مطابقت داده و به‌صورت پیش‌نویس ذخیره می‌شود. با ساخت اسناد «تولیدشده» است و وقتی اسکن خودکار آن‌ها را در پوشه خروجی بگذارد «تحویل‌شده».",
     wirdGelesen: "در حال خواندن …",
     einlesen: "خواندن برگهٔ تحویل",
     laeuft: "در حال اجرا …",
@@ -1487,9 +1439,6 @@ export const fa: Texte = {
   fair: {
     dateiFehlt: (meldung: string) =>
       `خود نقشه بارگذاری نمی‌شود (${meldung}). اندازه‌ها با این حال در پایین آمده‌اند.`,
-    einleitung:
-      "بازرسی نمونهٔ نخست: یک نقشه بارگذاری کنید و برای هر اندازهٔ قابل بازرسی یک " +
-      "بالون شماره‌دار بگذارید. شماره‌ها را پایگاه داده می‌دهد و بی‌شکاف نگه می‌دارد.",
     bezeichnungFrei: "شرح (خالی = نام فایل)",
     beispiel: "برای نمونه شفت 12×40، نقشهٔ 4711",
     wirdGeladen: "در حال بارگذاری …",
@@ -1562,9 +1511,6 @@ export const fa: Texte = {
     beitraege: "مطالب",
     belegschaftInZahlen: "نیروی انسانی در اعداد",
     neuBeiUns: "تازه‌واردان",
-    redaktionEinleitung:
-      "برای هر فصل یک شماره. فصل‌ها ترتیب را در دفترچه تعیین می‌کنند؛ انتشار تنها پس " +
-      "از آماده‌شدن انجام می‌شود.",
     zurLeseransicht: "به نمای خواننده",
     jahr: "سال",
     quartal: "فصل",
@@ -1608,7 +1554,6 @@ export const fa: Texte = {
     standEingefroren: "وضعیت ثابت شد.",
   },
   signage: {
-    einleitung: "رسانه‌ها، فهرست‌های پخش، زمان‌بندی‌ها و دستگاه‌های نمایشگرها.",
     bereiche: "بخش‌های Signage",
     medien: "رسانه‌ها",
     medienHinzu: "افزودن رسانه",
@@ -1738,7 +1683,6 @@ export const fa: Texte = {
   },
   einstellungen: {
     titel: "تنظیمات",
-    einleitung: "آنچه پلتفرم محاسبه می‌کند، می‌گیرد و نشان می‌دهد — برای همه یکسان.",
     bereiche: "بخش‌ها",
     gruppen: {
       kennzahlen: "شاخص‌ها",
@@ -2155,7 +2099,6 @@ export const fa: Texte = {
   },
   kennzahlenHub: {
     titel: "داشبورد KPI",
-    einleitung: "شاخص‌ها به تفکیک حوزه. داده‌ها از خروجی‌های ERP در بخش بارگذاری‌ها می‌آیند.",
     bereiche: {
       "/kpi/vertrieb": "درآمد، ارزش سفارش، سهم مشتریان",
       "/hr/kennzahlen": "نیروی انسانی، ترک خدمت، بیماری — دسترسی جداگانه",
@@ -2167,7 +2110,6 @@ export const fa: Texte = {
     },
   },
   personalHub: {
-    einleitung: "کار با کارکنان، به تفکیک حوزه. عددها یکی از آن‌هاست.",
     bereiche: {
       "/hr/kennzahlen": "نیروی انسانی، ترک خدمت، بیماری، اضافه‌کاری",
       "/hr/organigramm": "چه کسی به چه کسی گزارش می‌دهد",
@@ -2181,7 +2123,6 @@ export const fa: Texte = {
   },
   bewertung: {
     titel: "ارزیابی KPI و اقدام‌ها",
-    einleitung: "شاخص‌ها را ارزیابی کنید، اقدام تعیین کنید، واگذار و پیگیری کنید.",
     uebersichtFehler: (meldung: string) => `بارگذاری نشد: ${meldung}`,
     nurLesen:
       "شما می‌توانید ارزیابی‌ها را بخوانید، اما ننویسید. برای آن دسترسی «ویرایش» بر " +

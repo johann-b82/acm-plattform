@@ -216,7 +216,6 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.personal.einleitung}
         bedienung={
           <>
             {darfAbgleichen && <AbgleichKnopf />}

@@ -215,7 +215,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf untertitel={worte.lieferungen.einleitung} links={<Bereichswahl aktiv="lieferungen" />} />
+      <Seitenkopf links={<Bereichswahl aktiv="lieferungen" />} />
 
       {/* Einlesen und Durchsehen gelten für die ganze Liste: in der Schale
           stehen sie in der rechten Leiste, der Bericht bleibt auf der Seite. */}

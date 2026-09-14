@@ -247,7 +247,6 @@ export const en: Texte = {
     auftragseingangHinweis: "cancellations netted off",
   },
   einkauf: {
-    einleitung: "Supplier delivery reliability. Counted is what arrived within the period.",
     keineDaten: "No delivery lines for this period",
     ladeVor: "Upload the delivery-reliability export under ",
     ladeNach: ".",
@@ -282,7 +281,6 @@ export const en: Texte = {
     menge: "Quantity",
   },
   produktion: {
-    einleitung: "Orders running late. An order is counted once its outcome is settled.",
     keineDaten: "No order with a settled outcome in this period",
     ladeVor: "Upload the order lines and the delivery notes under ",
     ladeNach:
@@ -314,7 +312,6 @@ export const en: Texte = {
     tageUeberfaellig: "Days overdue",
   },
   finanzen: {
-    einleitung: "Material and personnel costs against invoiced revenue.",
     keineDatenVor:
       "Three files are needed: the stock movements for consumption, the material prices " +
       "(goods receipt) for the prices and the revenue as the reference. All three live under ",
@@ -354,7 +351,6 @@ export const en: Texte = {
     quoteBeiKosten: (kosten: string) => `Ratio at ${kosten} costs`,
   },
   qualitaet: {
-    einleitung: "Audit findings, complaint rate and inspected quantities.",
     auditart: "Audit type:",
     reklamationsart: "Complaint type",
     keineArt: "No audit type selected. Pick at least one, otherwise there is nothing to count.",
@@ -443,9 +439,6 @@ export const en: Texte = {
     artikel: "Article",
   },
   personal: {
-    einleitung:
-      "From the Personio sync. The daily target comes from each person's working-time model, " +
-      "not from a flat eight-hour day.",
     uebersicht: "Overview",
     keinAbgleich: "No sync has run yet. It runs by itself at 02:15 each night.",
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
@@ -497,11 +490,6 @@ export const en: Texte = {
   },
   belegschaft: {
     titel: "Workforce",
-    hinweis:
-      "As of today. The distributions show current master data, not what it was back then — " +
-      "Personio keeps no history. That “employees” and the skills rate use different " +
-      "denominators is deliberate: one figure follows the Personio status, the other the " +
-      "joining and leaving dates. Both ways come from the old system.",
     ladeFehler: (meldung: string) => `The workforce data could not be loaded: ${meldung}`,
     beschaeftigte: "Employees",
     beschaeftigteHinweis: "by Personio status “active”",
@@ -588,9 +576,6 @@ export const en: Texte = {
     anmelden: "Sign in",
   },
   uploads: {
-    einleitung:
-      "Read in the ERP exports. Uploading the same file again is harmless: existing rows are " +
-      "updated, not added twice.",
     dateiWaehlen: "Choose file",
     verarbeitet: "processing …",
     uebersprungen: (datei: string) => `Rows skipped from “${datei}”`,
@@ -659,9 +644,6 @@ export const en: Texte = {
     },
   },
   organigramm: {
-    einleitung:
-      "From Personio. Anyone without a supervisor recorded there appears at the top — which is " +
-      "right for the management and otherwise a sign of a gap in the master data.",
     suchfeld: "Person, position or department",
     suchePlatzhalter: "Name, position, department",
     standort: "Location",
@@ -725,9 +707,6 @@ export const en: Texte = {
     ohneTreffer: "no Personio match",
   },
   schulungen: {
-    einleitung:
-      "The catalogue, its cycle and who meets it. Due dates are calculated from the last date " +
-      "and the cycle, not stored.",
     dokumentenlauf: "Document run",
     bereich: "Area",
     neueSchulung: "New course",
@@ -834,9 +813,6 @@ export const en: Texte = {
     nameForm: "Surname, first name",
   },
   kompetenzen: {
-    einleitung:
-      "What a role requires and how far it is met — one matrix per area. Read in from the area " +
-      "file, maintained here afterwards.",
     zumDashboard: "To the people dashboard",
     bereich: "Area",
     wirdGelesen: "Reading …",
@@ -875,9 +851,6 @@ export const en: Texte = {
     note2: "good",
     note3: "satisfactory",
     note4: "sufficient",
-    einleitung:
-      "Grades and bullet points become reference language. The master data is copied when the " +
-      "reference is created — an issued reference does not change because Personio changes.",
     person: "Person",
     waehlen: "— choose —",
     art: "Type",
@@ -1090,9 +1063,6 @@ export const en: Texte = {
     matrixLeer: "No content or departments yet.",
     vorgaengeTitel: "Induction & training processes",
     matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
-    einleitung:
-      "Who is new and which courses the requirements matrix asks for. The plan is not stored but " +
-      "calculated — if the matrix changes, the plan changes.",
     nichtsGefehlt: "Nothing was missing.",
     angelegt: (anzahl: number) => `${anzahl} course${anzahl === 1 ? "" : "s"} created.`,
     neu90: "New (last 90 days)",
@@ -1148,9 +1118,6 @@ export const en: Texte = {
     fehlt: "missing",
   },
   audit: {
-    einleitung:
-      "Audits from planning to completion. Every change of status is recorded in the history — " +
-      "written by the database, not by the form, and unchangeable afterwards.",
     zuKennzahlen: "To the metrics",
     nummer: "Number",
     nummerBeispiel: "A-2026-01",
@@ -1203,9 +1170,6 @@ export const en: Texte = {
     lieferant: "Supplier",
   },
   wartung: {
-    einleitung:
-      "Machines and their recurring maintenance tasks. The record is produced as a sheet to put " +
-      "up — per half year, with one column per calendar week.",
     zuKennzahlen: "To the metrics",
     neueMaschine: "New machine",
     beispiel: "e.g. milling machine 3",
@@ -1222,9 +1186,6 @@ export const en: Texte = {
     angelegt: "Machine created.",
   },
   sensoren: {
-    einleitung:
-      "Temperature and humidity at the configured polling interval. A value outside the " +
-      "global limits is shown in warning colour.",
     misst: "Measuring …",
     jetztMessen: "Measure now",
     keinGeraet: "No device configured",
@@ -1252,9 +1213,6 @@ export const en: Texte = {
     ladeFehler: "Readings could not be loaded.",
   },
   hilfe: {
-    einleitung:
-      "What the platform can do, how the figures come about and what to do when something is " +
-      "not right.",
     nurDeutsch: "The help pages themselves are written in German.",
     suchen: "Search the help",
     nichtsGefunden:
@@ -1264,7 +1222,7 @@ export const en: Texte = {
     navigation: "Help topics",
   },
   meldungen: {
-    stand: (offen: number) => `What was reported from the views as App Feedback. ${offen} open`,
+    stand: (offen: number) => `${offen} open`,
     neuSeit: (anzahl: number) => ` · ${anzahl} not yet seen`,
     nichtsGemeldet: "No App Feedback yet",
     nichtsGemeldetText:
@@ -1406,9 +1364,6 @@ export const en: Texte = {
     nameFehlt: "A name is required.",
   },
   atr: {
-    einleitung:
-      "The parts catalogue is the basis: a delivery note takes description, drawing and weight " +
-      "from it. Matching goes by the part number without decoration — only the digits count.",
     teilAnlegen: "Add part by hand",
     teilBeispiel: "Part number, e.g. VR-1234-56",
     anlegen: "Create",
@@ -1435,8 +1390,6 @@ export const en: Texte = {
     nichtGespeichert: (meldung: string) => `Not saved: ${meldung}`,
   },
   lieferungen: {
-    einleitung:
-      "A delivery note is read in, matched against the parts catalogue and stored as a draft. Once its documents exist it is generated; when the automatic scan writes them to the output folder, it is delivered.",
     wirdGelesen: "Reading …",
     einlesen: "Read in delivery note",
     laeuft: "Running …",
@@ -1498,9 +1451,6 @@ export const en: Texte = {
     dateiFehlt: (meldung: string) =>
       `The drawing itself cannot be loaded (${meldung}). The measures are listed ` +
       "below all the same.",
-    einleitung:
-      "First article inspection: upload a drawing and put a numbered balloon on every dimension " +
-      "to be checked. The database issues the numbers and keeps them gap-free.",
     bezeichnungFrei: "Description (empty = file name)",
     beispiel: "e.g. shaft 12×40, drawing 4711",
     wirdGeladen: "Uploading …",
@@ -1573,9 +1523,6 @@ export const en: Texte = {
     beitraege: "Articles",
     belegschaftInZahlen: "The workforce in figures",
     neuBeiUns: "New with us",
-    redaktionEinleitung:
-      "One issue per quarter. Chapters set the order in the booklet; it is published only when " +
-      "it is finished.",
     zurLeseransicht: "To the reading view",
     jahr: "Year",
     quartal: "Quarter",
@@ -1620,7 +1567,6 @@ export const en: Texte = {
     standEingefroren: "State frozen.",
   },
   signage: {
-    einleitung: "Media, playlists, schedules and devices of the screens.",
     bereiche: "Signage areas",
     medien: "Media",
     medienHinzu: "Add media",
@@ -1748,7 +1694,6 @@ export const en: Texte = {
   },
   einstellungen: {
     titel: "Settings",
-    einleitung: "What the platform calculates, fetches and shows — the same for everyone.",
     bereiche: "Areas",
     gruppen: {
       kennzahlen: "Metrics",
@@ -2163,7 +2108,6 @@ export const en: Texte = {
   },
   kennzahlenHub: {
     titel: "KPI dashboard",
-    einleitung: "Metrics by department. The data comes from the ERP exports under Uploads.",
     bereiche: {
       "/kpi/vertrieb": "Revenue, order value, customer share",
       "/hr/kennzahlen": "Headcount, turnover, sickness — separate permission",
@@ -2175,7 +2119,6 @@ export const en: Texte = {
     },
   },
   personalHub: {
-    einleitung: "People work, by area. The figures are one of them.",
     bereiche: {
       "/hr/kennzahlen": "Headcount, turnover, sickness, overtime",
       "/hr/organigramm": "Who reports to whom",
@@ -2189,7 +2132,6 @@ export const en: Texte = {
   },
   bewertung: {
     titel: "KPI review & actions",
-    einleitung: "Review metrics, derive actions, assign and track them.",
     uebersichtFehler: (meldung: string) => `Could not be loaded: ${meldung}`,
     nurLesen:
       "You can read reviews but not write them. That needs the „Edit“ right on the settings.",
