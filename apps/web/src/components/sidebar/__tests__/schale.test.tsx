@@ -119,6 +119,15 @@ describe("Seitenleiste", () => {
     expect(leiste).toHaveAttribute("data-offen", "false");
   });
 
+  it("stellt das Logo links in die Kopfzeile, den Pfad rechts daneben", () => {
+    zeige();
+    const kopfzeile = screen.getByRole("banner");
+    const logo = within(kopfzeile).getByRole("link", { name: "Zur Übersicht" });
+    const pfadNavi = within(kopfzeile).getByRole("navigation", { name: "Pfad" });
+    expect(logo.compareDocumentPosition(pfadNavi) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(screen.getByTestId("seitenleiste")).queryByRole("link", { name: "Zur Übersicht" })).toBeNull();
+  });
+
   it("trägt das Benutzermenü in der Seitenleiste", () => {
     zeige();
     const leiste = screen.getByTestId("seitenleiste");

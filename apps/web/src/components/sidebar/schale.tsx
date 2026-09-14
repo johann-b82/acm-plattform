@@ -25,7 +25,7 @@ function unter(pfad: string, seite: string): boolean {
 
 /**
  * Die Schale aller angemeldeten Seiten: links die Seitenleiste, rechts eine
- * schmale Kopfzeile mit Pfad und den Zählern, darunter der Inhalt.
+ * schmale Kopfzeile mit Logo, Pfad und den Zählern, darunter der Inhalt.
  *
  * Die Leiste führt die Apps mit Recht und darunter die Unterseiten ihrer
  * Übersicht; die App der aktuellen Seite ist aufgeklappt. Eingeklappt bleibt
@@ -123,19 +123,14 @@ export function Schale({
           eingeklappt ? "md:w-16" : "md:w-64",
         )}
       >
-        <div className={cn("flex h-14 items-center gap-2 border-b border-[var(--border)] px-3", !mitText && "md:justify-center md:px-0")}>
-          {mitText && (
-            <Link href="/" onClick={schliessen} className="flex min-w-0 flex-1 items-center" aria-label={t.kopf.uebersicht}>
-              {logo ? (
-                // Eine signierte Adresse auf eine hochgeladene Datei; `next/image`
-                // bräuchte dafür eine Host-Freigabe und brächte hier nichts.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt={appName} className="h-8 w-auto max-w-40 object-contain" />
-              ) : (
-                <span className="truncate font-semibold tracking-tight">{appName}</span>
-              )}
-            </Link>
+        {/* Das Logo steht in der Kopfzeile; hier oben bleibt nur das Ein- und
+            Ausklappen (breit) bzw. das Schließen der Schublade (schmal). */}
+        <div
+          className={cn(
+            "flex h-14 items-center justify-end gap-2 border-b border-[var(--border)] px-3",
+            !mitText && "md:justify-center md:px-0",
           )}
+        >
           <button
             type="button"
             onClick={umschalten}
@@ -220,7 +215,19 @@ export function Schale({
           >
             <Menu className="h-[18px] w-[18px]" aria-hidden />
           </button>
-          <div className="min-w-0 flex-1">
+          {/* Oben links fängt das Auge an: dort das Logo als Weg nach Hause,
+              rechts daneben der Pfad. */}
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <Link href="/" className="flex shrink-0 items-center" aria-label={t.kopf.uebersicht}>
+              {logo ? (
+                // Eine signierte Adresse auf eine hochgeladene Datei; `next/image`
+                // bräuchte dafür eine Host-Freigabe und brächte hier nichts.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt={appName} className="h-8 w-auto max-w-44 object-contain" />
+              ) : (
+                <span className="font-semibold tracking-tight">{appName}</span>
+              )}
+            </Link>
             <Brotkrumen />
           </div>
           <div className="flex items-center gap-1">{kopf}</div>
