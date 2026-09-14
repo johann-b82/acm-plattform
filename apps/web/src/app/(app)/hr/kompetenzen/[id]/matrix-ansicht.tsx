@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, Plus } from "lucide-react";
 
 import {
   gruppiere,
@@ -17,7 +16,7 @@ import {
   type Qualifikation,
   type Stand,
 } from "@/lib/kompetenzen";
-import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/components/ui/primitives";
+import { Badge, Button, ButtonLink, Card, EmptyState, Input, Label, Select } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
@@ -146,9 +145,10 @@ export function MatrixAnsicht({ id, darfSchreiben }: { id: string; darfSchreiben
         </div>
       </div>
       <Seitenwerkzeuge kategorie="navigation">
-        <Link href="/hr/kompetenzen" className="text-sm underline-offset-4 hover:underline">
+        <ButtonLink href="/hr/kompetenzen" variant="outline">
+          <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
           {worte.matrix.zurUebersicht}
-        </Link>
+        </ButtonLink>
       </Seitenwerkzeuge>
       {darfSchreiben && (
         <Seitenwerkzeuge kategorie="ansicht">

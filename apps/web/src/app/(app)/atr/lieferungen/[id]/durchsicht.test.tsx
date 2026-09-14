@@ -116,6 +116,13 @@ describe("Durchsicht in der Schale", () => {
       return k;
     });
     expect(container).not.toContainElement(erzeugenKnopf);
+    // Die Downloads und der Rückweg sind Knöpfe wie „Dokumente erzeugen“, keine Textzeilen.
+    for (const name of ["Mappe", "PDF", "Etikett"]) {
+      expect(leiste.getByRole("button", { name }).className).toBe(erzeugenKnopf.className);
+    }
+    expect(within(platz.navigation).getByRole("link", { name: "Lieferungen" }).className).toBe(
+      erzeugenKnopf.className,
+    );
     fireEvent.click(erzeugenKnopf);
     await waitFor(() => expect(erzeugen).toHaveBeenCalledWith("l1"));
   });

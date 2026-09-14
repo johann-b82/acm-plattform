@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 import type { ComponentProps, ReactNode } from "react";
 
@@ -46,6 +47,17 @@ export function Button({
       {...props}
     />
   );
+}
+
+/** Ein Verweis im Kleid eines Knopfs — etwa der Rückweg in der rechten
+ *  Leiste, der neben den Aktionen nicht als Textzeile untergehen soll. */
+export function ButtonLink({
+  variant = "default",
+  size = "default",
+  className,
+  ...props
+}: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: ButtonSize }) {
+  return <Link className={cn(BUTTON_BASE, BUTTON_VARIANTS[variant], BUTTON_SIZES[size], className)} {...props} />;
 }
 
 // --- Formularelemente -----------------------------------------------------

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileDown, FileUp, Plus } from "lucide-react";
+import { ArrowLeft, FileDown, FileUp, Plus } from "lucide-react";
 
 import {
   INTERVALLE,
@@ -26,6 +25,7 @@ import { computeFetch } from "@/lib/compute";
 import {
   Badge,
   Button,
+  ButtonLink,
   Card,
   EmptyState,
   Input,
@@ -243,9 +243,10 @@ export function MaschineAnsicht({
         {/* Zurück und das Löschen der ganzen Maschine: in der Schale in der rechten Leiste. */}
         <div className={inSchale ? "contents" : "flex items-center gap-3"}>
           <Seitenwerkzeuge kategorie="navigation">
-            <Link href="/produktion" className="text-sm underline-offset-4 hover:underline">
+            <ButtonLink href="/produktion" variant="outline">
+              <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
               {worte.maschine.zurUebersicht}
-            </Link>
+            </ButtonLink>
           </Seitenwerkzeuge>
           {darfSchreiben && (
             <Seitenwerkzeuge kategorie="aktionen">
