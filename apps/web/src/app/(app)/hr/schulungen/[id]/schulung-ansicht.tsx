@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 
 import {
   dringlichkeit,
@@ -18,6 +17,7 @@ import {
 import {
   Badge,
   Button,
+  ButtonLink,
   Card,
   EmptyState,
   Input,
@@ -136,9 +136,10 @@ export function SchulungAnsicht({
       </div>
       {/* Der Weg zurück gilt der ganzen Seite: in der rechten Leiste. */}
       <Seitenwerkzeuge kategorie="navigation">
-        <Link href="/hr/schulungen" className="text-sm underline-offset-4 hover:underline">
+        <ButtonLink href="/hr/schulungen" variant="outline">
+          <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
           {worte.schulung.zumKatalog}
-        </Link>
+        </ButtonLink>
       </Seitenwerkzeuge>
 
       <Card className="space-y-4 p-5">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, GripVertical, Loader2, Plus, X } from "lucide-react";
@@ -25,7 +24,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { mediaFileUrl, signageApi, signageKeys } from "@/lib/signage/api";
 import type { SignageMedia, SignagePlaylist, SignagePlaylistItem, SignageTag } from "@/lib/signage/types";
-import { Button, Card, Input, Label, Select } from "@/components/ui/primitives";
+import { Button, ButtonLink, Card, Input, Label, Select } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { TagPicker } from "@/components/signage/tag-picker";
 import { useTexte } from "@/components/sprache/anbieter";
@@ -283,12 +282,10 @@ function EditorForm({ data }: { data: EditorData }) {
           Tags und Einträge. In der Schale stehen sie in der rechten Leiste:
           Zurück unter Navigation, Verwerfen und Speichern unter Aktionen. */}
       <Seitenwerkzeuge kategorie="navigation">
-        <Link
-          href="/signage/playlists"
-          className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
-        >
-          <ArrowLeft className="h-4 w-4" /> Alle Playlists
-        </Link>
+        <ButtonLink href="/signage/playlists" variant="outline">
+          <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
+          Alle Playlists
+        </ButtonLink>
       </Seitenwerkzeuge>
       <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">

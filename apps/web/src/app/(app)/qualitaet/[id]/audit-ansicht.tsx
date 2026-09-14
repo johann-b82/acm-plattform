@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 
 import {
   AUDIT_STATUS,
@@ -22,6 +21,7 @@ import {
 import {
   Badge,
   Button,
+  ButtonLink,
   Card,
   EmptyState,
   Input,
@@ -317,9 +317,10 @@ export function AuditAnsicht({
         {/* Zurück und der Status des ganzen Audits: in der Schale in der rechten Leiste. */}
         <div className={inSchale ? "contents" : "flex items-center gap-3"}>
           <Seitenwerkzeuge kategorie="navigation">
-            <Link href="/qualitaet" className="text-sm underline-offset-4 hover:underline">
+            <ButtonLink href="/qualitaet" variant="outline">
+              <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
               {worte.auditAnsicht.zurUebersicht}
-            </Link>
+            </ButtonLink>
           </Seitenwerkzeuge>
           <Seitenwerkzeuge kategorie="aktionen">
             <Werkzeug titel={worte.auditAnsicht.status}>

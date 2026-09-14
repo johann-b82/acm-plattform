@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, CircleDot, Maximize, Minus, Plus, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
@@ -29,7 +28,7 @@ import {
   useBallonGroesse,
 } from "@/lib/fair/ballon-groesse";
 import { beendeOcr, liesFeld } from "@/lib/fair/ocr";
-import { Button, Card, Select } from "@/components/ui/primitives";
+import { Button, ButtonLink, Card, Select } from "@/components/ui/primitives";
 import { Zeichenflaeche } from "./zeichenflaeche";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
@@ -322,13 +321,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
       {/* Rückweg und Zeichenwerkzeuge gelten für die ganze Zeichnung: in der
           Schale stehen sie in der rechten Leiste, die Fläche behält die Breite. */}
       <Seitenwerkzeuge kategorie="navigation">
-        <Link
-          href="/fair"
-          className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
+        <ButtonLink href="/fair" variant="outline">
+          <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" aria-hidden />
           Zeichnungen
-        </Link>
+        </ButtonLink>
       </Seitenwerkzeuge>
       <Seitenwerkzeuge kategorie="ansicht">
         <div className="flex flex-col items-stretch gap-2">
