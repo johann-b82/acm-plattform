@@ -4,7 +4,7 @@
  * hier nicht mehr gesetzt — einen Bubble-Knopf gibt es nicht.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import type { Bubble } from "@/lib/kpi/bewertung";
@@ -87,6 +87,8 @@ describe("Bubble-Ebene", () => {
   it("hakt eine ungesehene Bubble ab, wenn Schreibende sie öffnen", async () => {
     zeige(true);
     fireEvent.click(await screen.findByRole("button", { name: "Bubble 1: Text hier" }));
-    expect(api.bubbleGesehen).toHaveBeenCalledWith("hier");
+    // Die Mutation läuft nach dem Klick an; TanStack reicht neben der Kennung
+    // noch einen Kontext mit.
+    await waitFor(() => expect(api.bubbleGesehen).toHaveBeenCalledWith("hier", expect.anything()));
   });
 });
