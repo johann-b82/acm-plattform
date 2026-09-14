@@ -5,14 +5,13 @@ import { sprache } from "@/lib/sprache-server";
 import { hasLevel } from "@/lib/rechte";
 import { logoAdresse } from "@/lib/logo-server";
 import { ladeErscheinung } from "@/lib/erscheinung-server";
-import { navigation, SEITENLEISTE_COOKIE, type AppZeile } from "@/lib/navigation";
+import { navigation, SEITENLEISTE_COOKIE, WERKZEUGLEISTE_COOKIE, type AppZeile } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Providers } from "@/components/providers";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { Schale } from "@/components/sidebar/schale";
 import { FeedbackGlocke } from "@/components/feedback/glocke";
 import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
-import { MeldeKnopf } from "@/components/feedback/melde-knopf";
 
 /**
  * Shell für alle angemeldeten Seiten. Läuft immer pro Anfrage (die Sitzung
@@ -21,14 +20,17 @@ import { MeldeKnopf } from "@/components/feedback/melde-knopf";
  *
  * Die Navigation steht in der Seitenleiste (`Schale`); welche Apps und
  * Unterseiten dort stehen, rechnet `navigation` aus der Tabelle `apps` und dem
- * Claim `apps` — dieselbe Regel wie auf dem Starter.
+ * Claim `apps` — dieselbe Regel wie auf dem Starter. Filter, Aktionen und
+ * „App Feedback melden“ stehen in der rechten Leiste der Schale.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
   const logo = await logoAdresse();
   const { appName } = await ladeErscheinung();
   const gewaehlt = await sprache();
-  const eingeklappt = (await cookies()).get(SEITENLEISTE_COOKIE)?.value === "eingeklappt";
+  const kekse = await cookies();
+  const eingeklappt = kekse.get(SEITENLEISTE_COOKIE)?.value === "eingeklappt";
+  const werkzeugeEingeklappt = kekse.get(WERKZEUGLEISTE_COOKIE)?.value === "eingeklappt";
   // RLS: `apps` ist für alle Eingeloggten lesbar; die Sichtbarkeit kommt aus
   // dem Claim. Fehlt die Tabelle, bleibt die Leiste ohne Apps — die Seite
   // selbst soll daran nicht scheitern.
@@ -46,6 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Schale
           eintraege={eintraege}
           eingeklappt={eingeklappt}
+          werkzeugeEingeklappt={werkzeugeEingeklappt}
           logo={logo}
           appName={appName}
           email={session.email}
@@ -62,7 +65,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         >
           {children}
         </Schale>
-        <MeldeKnopf />
       </SprachAnbieter>
     </Providers>
   );

@@ -31,6 +31,11 @@ export const uk: Texte = {
     navigationSchliessen: "Закрити навігацію",
     unterseitenZeigen: (name: string) => `${name}: показати підсторінки`,
     unterseitenVerbergen: (name: string) => `${name}: приховати підсторінки`,
+    werkzeuge: "Фільтри та дії",
+    werkzeugeEinklappen: "Згорнути панель фільтрів",
+    werkzeugeAusklappen: "Розгорнути панель фільтрів",
+    werkzeugeOeffnen: "Відкрити фільтри",
+    werkzeugeSchliessen: "Закрити фільтри",
   },
   pfad: {
     aria: "Шлях",

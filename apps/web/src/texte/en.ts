@@ -35,6 +35,11 @@ export const en: Texte = {
     navigationSchliessen: "Close navigation",
     unterseitenZeigen: (name: string) => `${name}: show subpages`,
     unterseitenVerbergen: (name: string) => `${name}: hide subpages`,
+    werkzeuge: "Filters and actions",
+    werkzeugeEinklappen: "Collapse filter bar",
+    werkzeugeAusklappen: "Expand filter bar",
+    werkzeugeOeffnen: "Open filters",
+    werkzeugeSchliessen: "Close filters",
   },
   pfad: {
     aria: "Path",

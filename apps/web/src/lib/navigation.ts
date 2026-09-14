@@ -23,6 +23,9 @@ export type NavEintrag = { pfad: string; name: string; unterseiten: Unterseite[]
 /** Der gemerkte Zustand „eingeklappt“ der Seitenleiste. */
 export const SEITENLEISTE_COOKIE = "seitenleiste";
 
+/** Der gemerkte Zustand „eingeklappt“ der rechten Leiste mit Filtern und Aktionen. */
+export const WERKZEUGLEISTE_COOKIE = "werkzeugleiste";
+
 /** `platform` und `settings` sind Querschnitt, keine Apps: die Einstellungen
  *  hängen im Benutzermenü. Dieselbe Regel wie auf dem Starter. */
 const QUERSCHNITT = ["platform", "settings"];

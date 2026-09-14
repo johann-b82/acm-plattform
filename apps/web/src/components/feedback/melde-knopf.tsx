@@ -9,9 +9,11 @@ import { Button, Textarea } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { feedbackApi } from "@/lib/feedback";
 import { useTexte } from "@/components/sprache/anbieter";
+import { KNOPF } from "@/components/kopfzeile/knopf";
 
 /**
- * Der Melde-Knopf, der in jeder angemeldeten Ansicht unten rechts sitzt.
+ * „App Feedback melden“ — unten in der rechten Leiste jeder angemeldeten
+ * Ansicht; in der eingeklappten Leiste nur als Zeichen.
  *
  * Der Dialog geht sofort auf, die Aufnahme läuft daneben weiter. Gemessen
  * braucht sie auf einer Seite mit Diagramm mehrere Sekunden — so lange auf
@@ -26,7 +28,7 @@ import { useTexte } from "@/components/sprache/anbieter";
  * ein Bericht ohne Bild ist besser als keiner, und die Beschreibung ist
  * ohnehin das, was zählt.
  */
-export function MeldeKnopf() {
+export function MeldeKnopf({ mitText }: { mitText: boolean }) {
   const t = useTexte();
   const [offen, setOffen] = useState(false);
   const [nimmtAuf, setNimmtAuf] = useState(false);
@@ -116,11 +118,23 @@ export function MeldeKnopf() {
 
   return (
     <>
-      <div data-feedback-ui="true" className="fixed bottom-4 end-4 z-40">
-        <Button variant="outline" onClick={oeffnen} className="shadow-sm">
-          <MessageSquareWarning className="me-2 h-4 w-4" aria-hidden />
-          {t.melden.knopf}
-        </Button>
+      <div data-feedback-ui="true">
+        {mitText ? (
+          <Button variant="outline" onClick={oeffnen} className="w-full">
+            <MessageSquareWarning className="me-2 h-4 w-4" aria-hidden />
+            {t.melden.knopf}
+          </Button>
+        ) : (
+          <button
+            type="button"
+            onClick={oeffnen}
+            aria-label={t.melden.knopf}
+            title={t.melden.knopf}
+            className={KNOPF}
+          >
+            <MessageSquareWarning className="h-[18px] w-[18px]" aria-hidden />
+          </button>
+        )}
       </div>
 
       <div data-feedback-ui="true">

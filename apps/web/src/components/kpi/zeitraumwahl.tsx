@@ -4,7 +4,9 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { useTexte } from "@/components/sprache/anbieter";
+import { useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { fenster, type Zeitraum } from "@/lib/kpi/gemeinsam";
+import { cn } from "@/lib/cn";
 
 /** Die üblichen Stufen. Das Personal-Dashboard lässt „Alles" weg — ohne
  *  Fenster wäre der Nenner seiner Quoten unbestimmt. */
@@ -67,6 +69,9 @@ const FELD =
  *
  * Direkt darunter steht der Datenstand der Seite (KPI-08) — die Frage „wie
  * aktuell ist das?" gehört zu der Frage „welcher Zeitraum?".
+ *
+ * In der rechten Leiste füllt sie deren Breite, und der Datenstand bricht um.
+ * Ohne Schale steht sie rechtsbündig, der Datenstand ragt nach links über.
  */
 export function Zeitraumwahl({
   wahl,
@@ -80,8 +85,9 @@ export function Zeitraumwahl({
 }) {
   const t = useTexte();
   const id = useId();
+  const inLeiste = useInSchale();
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className={cn("flex flex-col gap-1", inLeiste ? "w-full items-stretch" : "items-end")}>
       <label htmlFor={id} className="sr-only">
         {t.zeitraum.aria}
       </label>
@@ -90,7 +96,7 @@ export function Zeitraumwahl({
           id={id}
           value={wahl.zeitraum}
           onChange={(e) => wahl.setZeitraum(e.target.value as Zeitraum)}
-          className={`${FELD} w-48 cursor-pointer appearance-none pe-8 font-medium`}
+          className={cn(FELD, inLeiste ? "w-full" : "w-48", "cursor-pointer appearance-none pe-8 font-medium")}
         >
           {stufen.map((z) => (
             <option key={z} value={z}>
@@ -105,7 +111,7 @@ export function Zeitraumwahl({
       </div>
 
       {wahl.zeitraum === "frei" && (
-        <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+        <div className={cn("flex flex-wrap items-center gap-2 text-sm", inLeiste ? "justify-start" : "justify-end")}>
           <label className="flex items-center gap-1.5">
             <span className="text-[var(--fg-muted)]">{t.zeitraum.von}</span>
             <input
@@ -128,16 +134,26 @@ export function Zeitraumwahl({
               className={FELD}
             />
           </label>
-          {wahl.verdreht && <span className="w-full text-end text-[var(--danger)]">{t.zeitraum.verdreht}</span>}
+          {wahl.verdreht && (
+            <span className={cn("w-full text-[var(--danger)]", inLeiste ? "text-start" : "text-end")}>
+              {t.zeitraum.verdreht}
+            </span>
+          )}
         </div>
       )}
 
-      {/* Der Datenstand zählt nicht zur Breite: ein langer Stand (etwa der
-          Personio-Abgleich mit Uhrzeit) stünde sonst breiter als das Feld,
-          und das Feld rückte vom Knopf daneben weg. So bleibt der Abstand auf
-          allen Seiten gleich, der Text steht rechtsbündig nach links über. */}
+      {/* Ohne Schale zählt der Datenstand nicht zur Breite: ein langer Stand
+          (etwa der Personio-Abgleich mit Uhrzeit) stünde sonst breiter als das
+          Feld, und das Feld rückte vom Knopf daneben weg. In der Leiste ist
+          die Breite fest, dort bricht er einfach um. */}
       {datenstand && (
-        <div data-datenstand className="flex w-0 min-w-full justify-end whitespace-nowrap text-end">
+        <div
+          data-datenstand
+          className={cn(
+            "flex",
+            inLeiste ? "justify-start text-start" : "w-0 min-w-full justify-end whitespace-nowrap text-end",
+          )}
+        >
           {datenstand}
         </div>
       )}

@@ -31,6 +31,11 @@ export const pl: Texte = {
     navigationSchliessen: "Zamknij nawigację",
     unterseitenZeigen: (name: string) => `${name}: pokaż podstrony`,
     unterseitenVerbergen: (name: string) => `${name}: ukryj podstrony`,
+    werkzeuge: "Filtry i akcje",
+    werkzeugeEinklappen: "Zwiń pasek filtrów",
+    werkzeugeAusklappen: "Rozwiń pasek filtrów",
+    werkzeugeOeffnen: "Otwórz filtry",
+    werkzeugeSchliessen: "Zamknij filtry",
   },
   pfad: {
     aria: "Ścieżka",
