@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { nachPerson, nachStatus, type Feedback } from "@/lib/feedback";
+import { gehoertZurSeite, nachPerson, nachStatus, type Feedback } from "@/lib/feedback";
+
+describe("Feedback zur Seite", () => {
+  it("nimmt den Pfad selbst, auch mit Suchteil", () => {
+    expect(gehoertZurSeite("/kpi/vertrieb", "/kpi/vertrieb")).toBe(true);
+    expect(gehoertZurSeite("/kpi/vertrieb?jahr=2026", "/kpi/vertrieb")).toBe(true);
+  });
+
+  it("nimmt keine Unterseite und keinen ähnlichen Pfad", () => {
+    expect(gehoertZurSeite("/kpi/vertrieb", "/kpi")).toBe(false);
+    expect(gehoertZurSeite("/kpi/vertrieb2", "/kpi/vertrieb")).toBe(false);
+    expect(gehoertZurSeite("/kpi_x", "/kpi")).toBe(false);
+  });
+});
 
 function meldung(
   id: string,

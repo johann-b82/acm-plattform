@@ -78,8 +78,15 @@ export function nachPerson(
   ];
 }
 
+/** Gehört eine Meldung zu dieser Seite? Gemeldet wird Pfad samt Suchteil;
+ *  zugeordnet wird nach dem Pfad allein, Unterseiten zählen nicht mit. */
+export function gehoertZurSeite(seite: string, pfad: string): boolean {
+  return seite === pfad || seite.startsWith(`${pfad}?`);
+}
+
 export const feedbackKeys = {
   liste: () => ["feedback", "liste"] as const,
+  seite: (pfad: string) => ["feedback", "seite", pfad] as const,
   offen: () => ["feedback", "offen"] as const,
   bild: (pfad: string) => ["feedback", "bild", pfad] as const,
   konten: () => ["feedback", "konten"] as const,
@@ -156,6 +163,23 @@ export const feedbackApi = {
       .order("erstellt_am", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []) as Feedback[];
+  },
+
+  /** Die nicht erledigten Meldungen zu einer Seite, neueste zuerst. `like`
+   *  grenzt in der Datenbank ein; ob der Rest wirklich dieser Pfad ist (und
+   *  nicht eine Unterseite oder ein `_` als Platzhalter), prüft
+   *  `gehoertZurSeite`. */
+  zurSeite: async (pfad: string): Promise<Feedback[]> => {
+    const { data, error } = await supabaseBrowser()
+      .from("feedback")
+      .select(
+        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email,zugewiesen",
+      )
+      .like("seite", `${pfad}%`)
+      .in("status", ["neu", "in_bearbeitung"])
+      .order("erstellt_am", { ascending: false });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as Feedback[]).filter((m) => gehoertZurSeite(m.seite, pfad));
   },
 
   /** Kurzlebige URL auf ein Bild im nicht-öffentlichen Eimer. */

@@ -1222,6 +1222,7 @@ export const de = {
     oeffnen: "Öffnen",
     ungesehen: "ungesehen",
     alsGesehen: "Als gesehen markieren",
+    zuDieserSeite: "App Feedback zu dieser Seite",
   },
   auditAnsicht: {
     gibtEsNicht: "Dieses Audit gibt es nicht",

@@ -1249,6 +1249,7 @@ export const uk: Texte = {
     oeffnen: "Відкрити",
     ungesehen: "не переглянуто",
     alsGesehen: "Позначити як переглянуте",
+    zuDieserSeite: "Відгуки про застосунок для цієї сторінки",
   },
   auditAnsicht: {
     gibtEsNicht: "Такого аудиту немає",

@@ -11,6 +11,7 @@ import { Providers } from "@/components/providers";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { Schale } from "@/components/sidebar/schale";
 import { FeedbackGlocke } from "@/components/feedback/glocke";
+import { SeitenFeedback } from "@/components/feedback/seiten-feedback";
 import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
 
 /**
@@ -62,6 +63,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {darfMassnahmen && <MassnahmenKnopf />}
             </>
           }
+          feedback={darfMeldungen ? <SeitenFeedback /> : undefined}
         >
           {children}
         </Schale>
