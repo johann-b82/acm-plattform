@@ -235,6 +235,7 @@ export function Redaktion({
               <div className="flex flex-col gap-1">
                 <Label htmlFor="titel">{worte.newsletter.titelDerAusgabe}</Label>
                 <Input
+                  key={aktiv.id}
                   id="titel"
                   defaultValue={aktiv.titel ?? ""}
                   placeholder={worte.newsletter.quartalJahr(aktiv.quartal, aktiv.jahr)}

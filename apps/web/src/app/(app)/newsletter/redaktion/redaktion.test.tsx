@@ -1,7 +1,8 @@
 /**
- * Die Redaktion stellt Anlegen einer Ausgabe und die Wahl der bearbeiteten
- * Ausgabe in die rechte Leiste. Das Formular der aktiven Ausgabe bleibt auf
- * der Seite.
+ * Die Redaktion: Anlegen einer Ausgabe und die Wahl der bearbeiteten Ausgabe
+ * stehen in der Schale in der rechten Leiste, das Formular der aktiven Ausgabe
+ * bleibt auf der Seite. Wer eine andere Ausgabe wählt, sieht deren Titel —
+ * nicht den der vorher gewählten.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -53,6 +54,24 @@ afterEach(() => {
   Object.values(platz).forEach((p) => p.remove());
 });
 
+describe("Redaktion", () => {
+  it("zeigt nach dem Wechsel der Ausgabe deren Titel", async () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Redaktion darfKpi darfHr />
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const titel = await screen.findByLabelText("Titel der Ausgabe");
+    await waitFor(() => expect(titel).toHaveValue("Sommer"));
+
+    fireEvent.change(screen.getByLabelText("Ausgabe bearbeiten"), { target: { value: "a1" } });
+
+    await waitFor(() => expect(screen.getByLabelText("Titel der Ausgabe")).toHaveValue("Frühling"));
+  });
+});
+
 describe("Redaktion in der Schale", () => {
   it("stellt Jahr, Quartal, Anlegen und Ausgabewahl in die Leiste", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -80,16 +99,13 @@ describe("Redaktion in der Schale", () => {
     fireEvent.click(leiste.getByRole("button", { name: "Ausgabe anlegen" }));
     await waitFor(() => expect(api.ausgabeAnlegen).toHaveBeenCalledWith(2027, 4));
 
-    // Der Platzhalter folgt der gewählten Ausgabe; der Titel selbst ist ein
-    // ungesteuertes Feld und bleibt beim Wechsel stehen (vorhandenes Verhalten).
-    const vorher = screen.getByLabelText("Titel der Ausgabe").getAttribute("placeholder");
+    // Die Ausgabewahl in der Leiste wechselt die bearbeitete Ausgabe; das
+    // Titelfeld auf der Seite folgt ihr.
     const ansicht = within(platz.ansicht);
     expect(ansicht.getByText("Ausgabe bearbeiten")).toBeInTheDocument();
     const wahl = ansicht.getByRole("combobox", { name: "Ausgabe bearbeiten" });
     fireEvent.change(wahl, { target: { value: "a1" } });
     expect(wahl).toHaveValue("a1");
-    await waitFor(() =>
-      expect(screen.getByLabelText("Titel der Ausgabe").getAttribute("placeholder")).not.toBe(vorher),
-    );
+    await waitFor(() => expect(screen.getByLabelText("Titel der Ausgabe")).toHaveValue("Frühling"));
   });
 });
