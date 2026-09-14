@@ -128,6 +128,15 @@ describe("Seitenleiste", () => {
     expect(within(screen.getByTestId("seitenleiste")).queryByRole("link", { name: "Zur Übersicht" })).toBeNull();
   });
 
+  it("stellt die Hilfe oben rechts hinter die Zähler", () => {
+    zeige();
+    const kopfzeile = screen.getByRole("banner");
+    const hilfe = within(kopfzeile).getByRole("link", { name: "Hilfe" });
+    expect(hilfe).toHaveAttribute("href", "/hilfe");
+    const zaehler = within(kopfzeile).getByText("Zähler");
+    expect(zaehler.compareDocumentPosition(hilfe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("zeigt die Einträge des Benutzermenüs direkt in der Seitenleiste", () => {
     zeige();
     const leiste = screen.getByTestId("seitenleiste");

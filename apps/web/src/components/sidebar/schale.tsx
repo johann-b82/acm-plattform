@@ -228,7 +228,14 @@ export function Schale({
             </Link>
             <Brotkrumen />
           </div>
-          <div className="flex items-center gap-1">{kopf}</div>
+          <div className="flex items-center gap-1">
+            {kopf}
+            {/* Die Hilfe auch hier oben, als Zeichen hinter den Zählern: sie
+                wird mitten in der Arbeit gebraucht, nicht erst beim Navigieren. */}
+            <Link href="/hilfe" aria-label={t.kopf.hilfe} title={t.kopf.hilfe} className={KNOPF}>
+              <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
+            </Link>
+          </div>
         </header>
         <main className="mx-auto w-full max-w-7xl p-6">{children}</main>
       </div>
