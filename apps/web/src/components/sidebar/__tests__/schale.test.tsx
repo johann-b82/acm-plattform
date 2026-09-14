@@ -128,9 +128,23 @@ describe("Seitenleiste", () => {
     expect(within(screen.getByTestId("seitenleiste")).queryByRole("link", { name: "Zur Übersicht" })).toBeNull();
   });
 
-  it("trägt das Benutzermenü in der Seitenleiste", () => {
+  it("zeigt die Einträge des Benutzermenüs direkt in der Seitenleiste", () => {
     zeige();
     const leiste = screen.getByTestId("seitenleiste");
-    expect(within(leiste).getByRole("button", { name: "Benutzermenü" })).toBeInTheDocument();
+    // Kein Menü hinter den Initialen mehr: alles steht offen da.
+    expect(within(leiste).queryByRole("button", { name: "Benutzermenü" })).toBeNull();
+    expect(within(leiste).getByText("anna@example.com")).toBeInTheDocument();
+    expect(within(leiste).getByRole("combobox", { name: "Sprache" })).toBeInTheDocument();
+    expect(within(leiste).getByText("Erscheinungsbild")).toBeInTheDocument();
+    expect(within(leiste).getByRole("link", { name: "Einstellungen" })).toHaveAttribute("href", "/einstellungen");
+    expect(within(leiste).getByRole("button", { name: "Abmelden" })).toBeInTheDocument();
+  });
+
+  it("behält eingeklappt Einstellungen und Abmelden als Zeichen", () => {
+    zeige(true);
+    const leiste = screen.getByTestId("seitenleiste");
+    expect(within(leiste).getByRole("link", { name: "Einstellungen" })).toBeInTheDocument();
+    expect(within(leiste).getByRole("button", { name: "Abmelden" })).toBeInTheDocument();
+    expect(within(leiste).queryByRole("combobox", { name: "Sprache" })).toBeNull();
   });
 });

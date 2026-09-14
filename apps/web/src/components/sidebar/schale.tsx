@@ -7,7 +7,7 @@ import { ChevronDown, CircleHelp, House, Menu, PanelLeftClose, PanelLeftOpen, X 
 
 import { useTexte } from "@/components/sprache/anbieter";
 import { Brotkrumen } from "@/components/brotkrumen";
-import { Benutzermenue } from "@/components/kopfzeile/benutzermenue";
+import { Benutzerbereich } from "@/components/sidebar/benutzerbereich";
 import { KNOPF } from "@/components/kopfzeile/knopf";
 import { setzeSeitenleiste } from "@/app/seitenleiste-aktion";
 import { symbol } from "@/lib/symbole";
@@ -194,14 +194,12 @@ export function Schale({
           </ul>
         </nav>
 
-        <div className={cn("flex items-center gap-2 border-t border-[var(--border)] p-3", !mitText && "md:justify-center md:px-0")}>
-          <Benutzermenue email={email} darfEinstellungen={darfEinstellungen} oeffnetNachOben />
-          {mitText && email && (
-            <span className="min-w-0 truncate text-xs text-[var(--fg-muted)]" title={email}>
-              {email}
-            </span>
-          )}
-        </div>
+        <Benutzerbereich
+          email={email}
+          darfEinstellungen={darfEinstellungen}
+          mitText={mitText}
+          onNavigieren={schliessen}
+        />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
