@@ -31,6 +31,11 @@ export const vi: Texte = {
     navigationSchliessen: "Đóng điều hướng",
     unterseitenZeigen: (name: string) => `${name}: hiện trang con`,
     unterseitenVerbergen: (name: string) => `${name}: ẩn trang con`,
+    werkzeuge: "Bộ lọc và thao tác",
+    werkzeugeEinklappen: "Thu gọn thanh bộ lọc",
+    werkzeugeAusklappen: "Mở rộng thanh bộ lọc",
+    werkzeugeOeffnen: "Mở bộ lọc",
+    werkzeugeSchliessen: "Đóng bộ lọc",
   },
   pfad: {
     aria: "Đường dẫn",

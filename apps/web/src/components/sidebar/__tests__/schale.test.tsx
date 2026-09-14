@@ -13,10 +13,15 @@ vi.mock("next/navigation", () => ({
 }));
 const aktion = vi.hoisted(() => ({ setzeSeitenleiste: vi.fn(async () => undefined) }));
 vi.mock("@/app/seitenleiste-aktion", () => aktion);
+const werkzeugAktion = vi.hoisted(() => ({ setzeWerkzeugleiste: vi.fn(async () => undefined) }));
+vi.mock("@/app/werkzeugleiste-aktion", () => werkzeugAktion);
 vi.mock("@/app/sprache-aktion", () => ({ setzeSprache: vi.fn() }));
 vi.mock("@/app/login/actions", () => ({ signOut: vi.fn() }));
 
+import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Seitenkopf } from "@/components/seitenkopf";
 import { Schale } from "../schale";
 import type { NavEintrag } from "@/lib/navigation";
 
@@ -37,21 +42,27 @@ const EINTRAEGE: NavEintrag[] = [
   { pfad: "/uploads", name: "Uploads", unterseiten: [] },
 ];
 
-function zeige(eingeklappt = false) {
+function zeige(
+  eingeklappt = false,
+  { werkzeugeEingeklappt = false, inhalt = <p>Inhalt</p> }: { werkzeugeEingeklappt?: boolean; inhalt?: ReactNode } = {},
+) {
   return render(
-    <SprachAnbieter sprache="de">
-      <Schale
-        eintraege={EINTRAEGE}
-        eingeklappt={eingeklappt}
-        logo={null}
-        appName="ACM-Plattform"
-        email="anna@example.com"
-        darfEinstellungen
-        kopf={<span>Zähler</span>}
-      >
-        <p>Inhalt</p>
-      </Schale>
-    </SprachAnbieter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <SprachAnbieter sprache="de">
+        <Schale
+          eintraege={EINTRAEGE}
+          eingeklappt={eingeklappt}
+          werkzeugeEingeklappt={werkzeugeEingeklappt}
+          logo={null}
+          appName="ACM-Plattform"
+          email="anna@example.com"
+          darfEinstellungen
+          kopf={<span>Zähler</span>}
+        >
+          {inhalt}
+        </Schale>
+      </SprachAnbieter>
+    </QueryClientProvider>,
   );
 }
 
@@ -155,5 +166,53 @@ describe("Seitenleiste", () => {
     expect(within(leiste).getByRole("link", { name: "Einstellungen" })).toBeInTheDocument();
     expect(within(leiste).getByRole("button", { name: "Abmelden" })).toBeInTheDocument();
     expect(within(leiste).queryByRole("combobox", { name: "Sprache" })).toBeNull();
+  });
+});
+
+describe("Rechte Leiste", () => {
+  const werkzeuge = () => screen.getByTestId("werkzeugleiste");
+
+  it("stellt Umschalter und Bedienung der Seite in die rechte Leiste, den Satz nicht", async () => {
+    zeige(false, {
+      inhalt: (
+        <Seitenkopf
+          untertitel="Satz über der Seite"
+          links={<button type="button">Umschalter</button>}
+          bedienung={<button type="button">Zeitraum</button>}
+        />
+      ),
+    });
+    expect(await within(werkzeuge()).findByRole("button", { name: "Umschalter" })).toBeInTheDocument();
+    expect(within(werkzeuge()).getByRole("button", { name: "Zeitraum" })).toBeInTheDocument();
+    expect(within(werkzeuge()).queryByText("Satz über der Seite")).toBeNull();
+    expect(screen.getByRole("main")).toHaveTextContent("Satz über der Seite");
+  });
+
+  it("trägt App Feedback melden, auch auf Seiten ohne Filter", () => {
+    zeige();
+    expect(within(werkzeuge()).getByRole("button", { name: "App Feedback melden" })).toBeInTheDocument();
+  });
+
+  it("klappt ein und merkt sich das; App Feedback bleibt erreichbar", () => {
+    zeige();
+    fireEvent.click(screen.getByRole("button", { name: "Filterleiste einklappen" }));
+    expect(werkzeugAktion.setzeWerkzeugleiste).toHaveBeenCalledWith(true);
+    expect(screen.getByRole("button", { name: "Filterleiste ausklappen" })).toBeInTheDocument();
+    expect(within(werkzeuge()).getByRole("button", { name: "App Feedback melden" })).toBeInTheDocument();
+  });
+
+  it("startet eingeklappt, wenn es so gemerkt ist", () => {
+    zeige(false, { werkzeugeEingeklappt: true });
+    fireEvent.click(screen.getByRole("button", { name: "Filterleiste ausklappen" }));
+    expect(werkzeugAktion.setzeWerkzeugleiste).toHaveBeenCalledWith(false);
+  });
+
+  it("öffnet und schließt die Filter auf schmalen Bildschirmen", () => {
+    zeige();
+    expect(werkzeuge()).toHaveAttribute("data-offen", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Filter öffnen" }));
+    expect(werkzeuge()).toHaveAttribute("data-offen", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Filter schließen" }));
+    expect(werkzeuge()).toHaveAttribute("data-offen", "false");
   });
 });

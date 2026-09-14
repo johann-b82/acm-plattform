@@ -36,6 +36,11 @@ export const de = {
     navigationSchliessen: "Navigation schließen",
     unterseitenZeigen: (name: string) => `${name}: Unterseiten zeigen`,
     unterseitenVerbergen: (name: string) => `${name}: Unterseiten verbergen`,
+    werkzeuge: "Filter und Aktionen",
+    werkzeugeEinklappen: "Filterleiste einklappen",
+    werkzeugeAusklappen: "Filterleiste ausklappen",
+    werkzeugeOeffnen: "Filter öffnen",
+    werkzeugeSchliessen: "Filter schließen",
   },
   pfad: {
     aria: "Pfad",

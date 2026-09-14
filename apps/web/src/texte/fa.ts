@@ -31,6 +31,11 @@ export const fa: Texte = {
     navigationSchliessen: "بستن پیمایش",
     unterseitenZeigen: (name: string) => `${name}: نمایش زیرصفحه‌ها`,
     unterseitenVerbergen: (name: string) => `${name}: پنهان کردن زیرصفحه‌ها`,
+    werkzeuge: "فیلترها و اقدامات",
+    werkzeugeEinklappen: "جمع کردن نوار فیلتر",
+    werkzeugeAusklappen: "گسترش نوار فیلتر",
+    werkzeugeOeffnen: "باز کردن فیلترها",
+    werkzeugeSchliessen: "بستن فیلترها",
   },
   pfad: {
     aria: "مسیر",

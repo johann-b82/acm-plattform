@@ -31,6 +31,11 @@ export const bg: Texte = {
     navigationSchliessen: "Затвори навигацията",
     unterseitenZeigen: (name: string) => `${name}: покажи подстраниците`,
     unterseitenVerbergen: (name: string) => `${name}: скрий подстраниците`,
+    werkzeuge: "Филтри и действия",
+    werkzeugeEinklappen: "Свий лентата с филтри",
+    werkzeugeAusklappen: "Разгъни лентата с филтри",
+    werkzeugeOeffnen: "Отвори филтрите",
+    werkzeugeSchliessen: "Затвори филтрите",
   },
   pfad: {
     aria: "Път",

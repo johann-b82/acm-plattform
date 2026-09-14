@@ -31,6 +31,11 @@ export const ar: Texte = {
     navigationSchliessen: "إغلاق التنقل",
     unterseitenZeigen: (name: string) => `${name}: إظهار الصفحات الفرعية`,
     unterseitenVerbergen: (name: string) => `${name}: إخفاء الصفحات الفرعية`,
+    werkzeuge: "عوامل التصفية والإجراءات",
+    werkzeugeEinklappen: "طيّ شريط التصفية",
+    werkzeugeAusklappen: "توسيع شريط التصفية",
+    werkzeugeOeffnen: "فتح عوامل التصفية",
+    werkzeugeSchliessen: "إغلاق عوامل التصفية",
   },
   pfad: {
     aria: "المسار",
