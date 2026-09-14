@@ -33,6 +33,7 @@ vi.mock("@/lib/zielwerte", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { FinanzenDashboard } from "../finanzen-dashboard";
 
 function zeige() {
@@ -100,6 +101,30 @@ describe("Finanzen", () => {
     expect(await screen.findAllByText("braucht einen Zeitraum")).toHaveLength(4);
     expect(api.personalkosten).not.toHaveBeenCalled();
     expect(screen.queryByText("Personalkosten je Abteilung")).not.toBeInTheDocument();
+  });
+
+  it("stellt Material/Personal in der Schale mit Titel in die Ansicht", () => {
+    const plaetze = {
+      navigation: document.createElement("div"),
+      ansicht: document.createElement("div"),
+      filter: document.createElement("div"),
+      zeitraum: document.createElement("div"),
+      aktionen: document.createElement("div"),
+    };
+    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <FinanzenDashboard darfUploads={false} />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const { ansicht } = plaetze;
+    expect(within(ansicht).getByRole("radiogroup", { name: "Ansicht" })).toBeInTheDocument();
+    expect(within(ansicht).getByText("Ansicht")).toBeInTheDocument();
+    Object.values(plaetze).forEach((p) => p.remove());
   });
 
   it("rechnet Material bei „Alles“ über den ganzen Bestand", async () => {

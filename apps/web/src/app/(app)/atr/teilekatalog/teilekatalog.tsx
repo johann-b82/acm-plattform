@@ -18,7 +18,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 import { Bereichswahl } from "../bereichswahl";
 
 /** Eine feste leere Menge: eine neue je Render hielte die Tabelle auf Seite 1. */
@@ -37,6 +37,7 @@ const KEINE: Teil[] = [];
  */
 export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const queryClient = useQueryClient();
   const [neueNummer, setNeueNummer] = useState("");
   const [bericht, setBericht] = useState<ImportErgebnis | null>(null);
@@ -211,17 +212,21 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
       {/* Anlegen und Einlesen gelten für den ganzen Katalog: in der Schale
           stehen sie in der rechten Leiste, der Bericht bleibt auf der Seite. */}
       {darfSchreiben && (
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
           <div className="flex flex-col items-stretch gap-2">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="neu">{worte.atr.teilAnlegen}</Label>
-              <Input
-                id="neu"
-                value={neueNummer}
-                placeholder={worte.atr.teilBeispiel}
-                onChange={(e) => setNeueNummer(e.target.value)}
-              />
-            </div>
+            {/* In der Leiste trägt der Werkzeugtitel die Beschriftung. */}
+            <Werkzeug titel={worte.atr.teilAnlegen}>
+              <div className="flex flex-col gap-1">
+                {!inSchale && <Label htmlFor="neu">{worte.atr.teilAnlegen}</Label>}
+                <Input
+                  id="neu"
+                  aria-label={worte.atr.teilAnlegen}
+                  value={neueNummer}
+                  placeholder={worte.atr.teilBeispiel}
+                  onChange={(e) => setNeueNummer(e.target.value)}
+                />
+              </div>
+            </Werkzeug>
             <Button
               disabled={!neueNummer.trim() || anlegen.isPending}
               onClick={() => anlegen.mutate()}

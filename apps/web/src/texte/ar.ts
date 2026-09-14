@@ -36,6 +36,13 @@ export const ar: Texte = {
     werkzeugeAusklappen: "توسيع شريط التصفية",
     werkzeugeOeffnen: "فتح عوامل التصفية",
     werkzeugeSchliessen: "إغلاق عوامل التصفية",
+    kategorien: {
+      navigation: "التنقل",
+      ansicht: "العرض",
+      filter: "عوامل التصفية",
+      zeitraum: "الفترة",
+      aktionen: "الإجراءات",
+    },
   },
   pfad: {
     aria: "المسار",
@@ -345,6 +352,7 @@ export const ar: Texte = {
   qualitaet: {
     einleitung: "نتائج التدقيق ونسبة الشكاوى وكميات الفحص.",
     auditart: "نوع التدقيق:",
+    reklamationsart: "نوع الشكوى",
     keineArt: "لم يُختر نوع تدقيق. اختر نوعاً واحداً على الأقل، وإلا فلا شيء يُحتسب.",
     keineDaten: "لا توجد نتائج تدقيق لهذه الفترة",
     ladeVor: "ارفع تصدير 8D في ",
@@ -1508,6 +1516,8 @@ export const ar: Texte = {
     verkleinern: "تصغير",
     vergroessern: "تكبير",
     einpassen: "ملاءمة",
+    darstellung: "العرض",
+    bubbleGroesse: "حجم الفقاعات",
     zeichnung: "الرسم",
     ladefehler: "تعذّر تحميل الرسم.",
     alleKunden: "كل العملاء",

@@ -151,16 +151,16 @@ export function ZeugnisAnsicht({ id }: { id: string }) {
         </div>
       </div>
       {/* Weg zurück und Löschen gelten dem ganzen Zeugnis: in der rechten Leiste. */}
-      <Seitenwerkzeuge>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link href="/hr/zeugnisse" className="text-sm underline-offset-4 hover:underline">
-            {worte.zeugnis.zurUebersicht}
-          </Link>
-          <ConfirmDeleteButton
-            itemLabel={worte.zeugnis.zeugnisVon(z.name)}
-            onConfirm={() => loeschen.mutateAsync().then(() => undefined)}
-          />
-        </div>
+      <Seitenwerkzeuge kategorie="navigation">
+        <Link href="/hr/zeugnisse" className="text-sm underline-offset-4 hover:underline">
+          {worte.zeugnis.zurUebersicht}
+        </Link>
+      </Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
+        <ConfirmDeleteButton
+          itemLabel={worte.zeugnis.zeugnisVon(z.name)}
+          onConfirm={() => loeschen.mutateAsync().then(() => undefined)}
+        />
       </Seitenwerkzeuge>
 
       <Card className="space-y-4 p-5">

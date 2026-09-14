@@ -26,7 +26,7 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useDringlichkeit } from "@/lib/tafeln";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 import { Klappbar } from "../klappbar";
 import { Standortfilter, umschalten } from "../standortfilter";
 import { Blaettern, Matrixsuche, useMatrixseiten } from "../matrixseiten";
@@ -61,13 +61,15 @@ export function RegisterStand() {
 
   return (
     <div className="space-y-6">
-      <Seitenwerkzeuge>
-        <Standortfilter
-          standorte={orte}
-          gewaehlt={gewaehlteOrte}
-          beschriftung={worte.schulungenReg.standort}
-          onToggle={(o) => setGewaehlteOrte((v) => umschalten(v, o))}
-        />
+      <Seitenwerkzeuge kategorie="filter">
+        <Werkzeug titel={worte.schulungenReg.standort}>
+          <Standortfilter
+            standorte={orte}
+            gewaehlt={gewaehlteOrte}
+            beschriftung={worte.schulungenReg.standort}
+            onToggle={(o) => setGewaehlteOrte((v) => umschalten(v, o))}
+          />
+        </Werkzeug>
       </Seitenwerkzeuge>
 
       <Offene stand={standDaten} personen={personen} katalog={katalogDaten} heute={heute} laedt={laedt} />

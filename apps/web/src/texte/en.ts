@@ -40,6 +40,13 @@ export const en: Texte = {
     werkzeugeAusklappen: "Expand filter bar",
     werkzeugeOeffnen: "Open filters",
     werkzeugeSchliessen: "Close filters",
+    kategorien: {
+      navigation: "Navigation",
+      ansicht: "View",
+      filter: "Filters",
+      zeitraum: "Period",
+      aktionen: "Actions",
+    },
   },
   pfad: {
     aria: "Path",
@@ -349,6 +356,7 @@ export const en: Texte = {
   qualitaet: {
     einleitung: "Audit findings, complaint rate and inspected quantities.",
     auditart: "Audit type:",
+    reklamationsart: "Complaint type",
     keineArt: "No audit type selected. Pick at least one, otherwise there is nothing to count.",
     keineDaten: "No audit findings for this period",
     ladeVor: "Upload the 8D export under ",
@@ -1525,6 +1533,8 @@ export const en: Texte = {
     verkleinern: "Zoom out",
     vergroessern: "Zoom in",
     einpassen: "Fit",
+    darstellung: "Display",
+    bubbleGroesse: "Bubble size",
     zeichnung: "Drawing",
     ladefehler: "The drawing could not be loaded.",
     alleKunden: "All customers",

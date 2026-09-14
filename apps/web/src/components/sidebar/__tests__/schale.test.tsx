@@ -215,4 +215,30 @@ describe("Rechte Leiste", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filter schließen" }));
     expect(werkzeuge()).toHaveAttribute("data-offen", "false");
   });
+
+  it("gliedert die Leiste in feste Kategorien mit Überschrift, in fester Reihenfolge", () => {
+    zeige();
+    const kategorien = within(werkzeuge())
+      .getAllByRole("region")
+      .map((r) => r.getAttribute("aria-label"));
+    expect(kategorien).toEqual(["Navigation", "Ansicht", "Filter", "Zeitraum", "Aktionen"]);
+    for (const name of kategorien) {
+      expect(within(werkzeuge()).getByRole("heading", { name: name! })).toBeInTheDocument();
+    }
+  });
+
+  it("ordnet Umschalter des Seitenkopfs der Ansicht zu, seine Bedienung den Aktionen", async () => {
+    zeige(false, {
+      inhalt: (
+        <Seitenkopf
+          links={<button type="button">Umschalter</button>}
+          bedienung={<button type="button">Uploads</button>}
+        />
+      ),
+    });
+    const ansicht = within(werkzeuge()).getByRole("region", { name: "Ansicht" });
+    const aktionen = within(werkzeuge()).getByRole("region", { name: "Aktionen" });
+    expect(await within(ansicht).findByRole("button", { name: "Umschalter" })).toBeInTheDocument();
+    expect(within(aktionen).getByRole("button", { name: "Uploads" })).toBeInTheDocument();
+  });
 });

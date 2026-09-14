@@ -63,4 +63,28 @@ describe("MaschineAnsicht", () => {
     expect(await within(platz).findByRole("button", { name: "Presse 1 löschen" })).toBeInTheDocument();
     expect(within(platz).getByRole("link", { name: "Zur Übersicht" })).toHaveAttribute("href", "/produktion");
   });
+
+  it("ordnet „Zur Übersicht“ der Navigation und das Löschen den Aktionen zu", async () => {
+    const plaetze = {
+      navigation: document.createElement("div"),
+      ansicht: document.createElement("div"),
+      filter: document.createElement("div"),
+      zeitraum: document.createElement("div"),
+      aktionen: document.createElement("div"),
+    };
+    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <MaschineAnsicht id="m1" darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const { navigation, aktionen } = plaetze;
+    expect(await within(aktionen).findByRole("button", { name: "Presse 1 löschen" })).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: "Zur Übersicht" })).toHaveAttribute("href", "/produktion");
+    expect(within(aktionen).queryByRole("link")).toBeNull();
+  });
 });

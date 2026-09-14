@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
-import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useAuditworte } from "@/lib/tafeln";
 import type { Texte } from "@/texte";
@@ -315,27 +315,31 @@ export function AuditAnsicht({
           </p>
         </div>
         {/* Zurück und der Status des ganzen Audits: in der Schale in der rechten Leiste. */}
-        <Seitenwerkzeuge>
-          <div className={inSchale ? "flex flex-col items-stretch gap-2" : "flex items-center gap-3"}>
+        <div className={inSchale ? "contents" : "flex items-center gap-3"}>
+          <Seitenwerkzeuge kategorie="navigation">
             <Link href="/qualitaet" className="text-sm underline-offset-4 hover:underline">
               {worte.auditAnsicht.zurUebersicht}
             </Link>
-            <Select
-              aria-label={worte.auditAnsicht.status}
-              value={a.status}
-              disabled={!darfSchreiben}
-              onChange={(e) =>
-                aendern.mutate({ status: e.target.value as Audit["status"] })
-              }
-            >
-              {AUDIT_STATUS.map((s) => (
-                <option key={s.wert} value={s.wert}>
-                  {auditworte[s.wert]}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </Seitenwerkzeuge>
+          </Seitenwerkzeuge>
+          <Seitenwerkzeuge kategorie="aktionen">
+            <Werkzeug titel={worte.auditAnsicht.status}>
+              <Select
+                aria-label={worte.auditAnsicht.status}
+                value={a.status}
+                disabled={!darfSchreiben}
+                onChange={(e) =>
+                  aendern.mutate({ status: e.target.value as Audit["status"] })
+                }
+              >
+                {AUDIT_STATUS.map((s) => (
+                  <option key={s.wert} value={s.wert}>
+                    {auditworte[s.wert]}
+                  </option>
+                ))}
+              </Select>
+            </Werkzeug>
+          </Seitenwerkzeuge>
+        </div>
       </div>
 
       <Card className="space-y-4 p-5">

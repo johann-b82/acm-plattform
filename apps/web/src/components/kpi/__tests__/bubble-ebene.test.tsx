@@ -102,6 +102,31 @@ describe("Bubble-Ebene", () => {
     platz.remove();
   });
 
+  it("ordnet den Bubble-Knopf in der Schale der Ansicht zu", () => {
+    const plaetze = {
+      navigation: document.createElement("div"),
+      ansicht: document.createElement("div"),
+      filter: document.createElement("div"),
+      zeitraum: document.createElement("div"),
+      aktionen: document.createElement("div"),
+    };
+    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <BubbleEbene darfLesen darfSchreiben>
+              <p>Dashboard</p>
+            </BubbleEbene>
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    expect(within(plaetze.ansicht).getByRole("button", { name: "Bubble" })).toBeInTheDocument();
+    expect(within(plaetze.aktionen).queryByRole("button", { name: "Bubble" })).toBeNull();
+    Object.values(plaetze).forEach((p) => p.remove());
+  });
+
   it("speichert ein aufgezogenes Rechteck mit Bereich, Text und Ampel", async () => {
     const { container } = zeige(true);
     await screen.findByRole("button", { name: "Bubble 1: Text hier" });

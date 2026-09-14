@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { useTexte } from "@/components/sprache/anbieter";
 import { Select } from "@/components/ui/primitives";
+import { Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Welche Ansicht von ATR offen ist (ATR-10). Wie im Altsystem ein Dropdown
@@ -14,14 +15,16 @@ export function Bereichswahl({ aktiv }: { aktiv: "lieferungen" | "teilekatalog" 
   const worte = useTexte();
   const router = useRouter();
   return (
-    <Select
-      aria-label={worte.atr.bereich}
-      className="w-auto min-w-44"
-      value={aktiv === "lieferungen" ? "/atr" : "/atr/teilekatalog"}
-      onChange={(e) => router.push(e.target.value)}
-    >
-      <option value="/atr">{worte.atr.lieferungen}</option>
-      <option value="/atr/teilekatalog">{worte.atr.teilekatalog}</option>
-    </Select>
+    <Werkzeug titel={worte.atr.bereich}>
+      <Select
+        aria-label={worte.atr.bereich}
+        className="w-auto min-w-44"
+        value={aktiv === "lieferungen" ? "/atr" : "/atr/teilekatalog"}
+        onChange={(e) => router.push(e.target.value)}
+      >
+        <option value="/atr">{worte.atr.lieferungen}</option>
+        <option value="/atr/teilekatalog">{worte.atr.teilekatalog}</option>
+      </Select>
+    </Werkzeug>
   );
 }

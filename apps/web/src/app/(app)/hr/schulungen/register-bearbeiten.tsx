@@ -15,7 +15,7 @@ import {
 } from "@/lib/schulungen";
 import { Badge, Button, Card, Input, Label, Switch } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -33,6 +33,7 @@ import { useDringlichkeit } from "@/lib/tafeln";
  */
 export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const dringlichkeitLabel = useDringlichkeit();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -212,12 +213,15 @@ export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }
   return (
     <div className="space-y-4">
       {darfSchreiben && (
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
           <div className="flex flex-col items-stretch gap-2">
+            {/* In der Leiste trägt der Werkzeug-Titel die Beschriftung, sonst das Label. */}
+            <Werkzeug titel={worte.schulungen.bereich}>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="neu-bereich">{worte.schulungen.bereich}</Label>
+              {!inSchale && <Label htmlFor="neu-bereich">{worte.schulungen.bereich}</Label>}
               <Input
                 id="neu-bereich"
+                aria-label={worte.schulungen.bereich}
                 value={neu.bereich}
                 list="bereiche"
                 onChange={(e) => setNeu({ ...neu, bereich: e.target.value })}
@@ -228,15 +232,19 @@ export function RegisterBearbeiten({ darfSchreiben }: { darfSchreiben: boolean }
                 ))}
               </datalist>
             </div>
+            </Werkzeug>
+            <Werkzeug titel={worte.schulungen.neueSchulung}>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="neu-name">{worte.schulungen.neueSchulung}</Label>
+              {!inSchale && <Label htmlFor="neu-name">{worte.schulungen.neueSchulung}</Label>}
               <Input
                 id="neu-name"
+                aria-label={worte.schulungen.neueSchulung}
                 value={neu.name}
                 placeholder={worte.schulungen.beispiel}
                 onChange={(e) => setNeu({ ...neu, name: e.target.value })}
               />
             </div>
+            </Werkzeug>
             <Button disabled={!neu.name.trim() || !neu.bereich.trim() || anlegen.isPending} onClick={() => anlegen.mutate()}>
               <Plus className="me-1.5 h-4 w-4" aria-hidden />
               {worte.schulungen.anlegen}

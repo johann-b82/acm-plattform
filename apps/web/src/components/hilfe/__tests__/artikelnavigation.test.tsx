@@ -47,10 +47,15 @@ describe("Artikelnavigation", () => {
   });
 
   it("steht in der Schale als schlichte Liste in der rechten Leiste", () => {
-    const platz = document.createElement("div");
-    document.body.appendChild(platz);
+    const plaetze = Object.fromEntries(
+      ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
+        k,
+        document.body.appendChild(document.createElement("div")),
+      ]),
+    );
+    const platz = plaetze.navigation;
     render(
-      <Werkzeugplatz.Provider value={platz}>
+      <Werkzeugplatz.Provider value={plaetze}>
         <Artikelnavigation aktuell={aktuell.slug} beschriftung={BESCHRIFTUNG} />
       </Werkzeugplatz.Provider>,
     );
@@ -60,7 +65,7 @@ describe("Artikelnavigation", () => {
     expect(platz.querySelector("details")).toBeNull();
     expect(leiste.className).not.toContain("hidden");
     expect(within(leiste).getByRole("link", { name: aktuell.titel }).getAttribute("aria-current")).toBe("page");
-    platz.remove();
+    Object.values(plaetze).forEach((div) => div.remove());
   });
 
   it("führt zurück zur Themenübersicht", () => {

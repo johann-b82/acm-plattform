@@ -29,24 +29,28 @@ import { Einstellungen } from "../einstellungen";
 
 describe("Einstellungen in der Schale", () => {
   it("stellt die Sprungliste senkrecht in die rechte Leiste", () => {
-    const platz = document.createElement("div");
-    document.body.appendChild(platz);
+    const plaetze = Object.fromEntries(
+      ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
+        k,
+        document.body.appendChild(document.createElement("div")),
+      ]),
+    );
     const { container } = render(
       <SprachAnbieter sprache="de">
-        <Werkzeugplatz.Provider value={platz}>
+        <Werkzeugplatz.Provider value={plaetze}>
           <Einstellungen eigeneId="u1" />
         </Werkzeugplatz.Provider>
       </SprachAnbieter>,
     );
     const worte = texteFuer("de");
     const nav = screen.getByRole("navigation", { name: worte.einstellungen.bereiche });
-    expect(platz).toContainElement(nav);
+    expect(plaetze.navigation).toContainElement(nav);
     expect(nav.querySelector("ul")!.className).toContain("flex-col");
     expect(within(nav).getAllByRole("link").map((a) => a.getAttribute("href"))).toEqual(
       GRUPPEN.map((g) => `#${g.id}`),
     );
     // Die Abschnitte bleiben im Inhalt.
     for (const g of GRUPPEN) expect(container.querySelector(`section#${g.id}`)).not.toBeNull();
-    platz.remove();
+    Object.values(plaetze).forEach((div) => div.remove());
   });
 });

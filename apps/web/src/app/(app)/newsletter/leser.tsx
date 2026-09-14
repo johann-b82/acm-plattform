@@ -12,7 +12,7 @@ import { Button, EmptyState, Select } from "@/components/ui/primitives";
 import { AusgabeAnsicht } from "./ausgabe-ansicht";
 import { useBildUrls } from "./bild-urls";
 import { useTexte } from "@/components/sprache/anbieter";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Newsletter lesen. Die Ausgabe wird als Folge von A4-Seiten gezeigt, und
@@ -90,9 +90,9 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
 
       {/* Ausgabewahl, Export und Redaktion gelten für die ganze Seite: in der
           Schale stehen sie in der rechten Leiste. */}
-      <Seitenwerkzeuge>
-        <div className="flex flex-col items-stretch gap-2">
-          {liste.length > 1 && (
+      {liste.length > 1 && (
+        <Seitenwerkzeuge kategorie="ansicht">
+          <Werkzeug titel={worte.newsletter.ausgabe}>
             <Select
               aria-label={worte.newsletter.ausgabe}
               value={aktiv.id}
@@ -105,7 +105,11 @@ export function NewsletterLeser({ darfSchreiben }: { darfSchreiben: boolean }) {
                 </option>
               ))}
             </Select>
-          )}
+          </Werkzeug>
+        </Seitenwerkzeuge>
+      )}
+      <Seitenwerkzeuge kategorie="aktionen">
+        <div className="flex flex-col items-stretch gap-2">
           <Button variant="outline" onClick={exportieren} disabled={pdfSeite !== null}>
             <FileDown className="me-2 h-4 w-4" aria-hidden />
             {pdfSeite === null

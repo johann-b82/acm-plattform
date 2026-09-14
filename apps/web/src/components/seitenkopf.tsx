@@ -44,12 +44,17 @@ export function Seitenkopf({
     return (
       <>
         {satz}
-        {(links || bedienung) && (
-          <Seitenwerkzeuge>
-            <div className="space-y-4">
-              {links && <div className="flex flex-col items-start gap-2">{links}</div>}
-              {bedienung && <div className="flex flex-col items-start gap-2">{bedienung}</div>}
-            </div>
+        {/* Umschalter gehören zur Ansicht, die übrige Bedienung zu den Aktionen.
+            Was eine andere Kategorie hat (die Zeitraumwahl, Filter), stellt
+            sich selbst dorthin. */}
+        {links && (
+          <Seitenwerkzeuge kategorie="ansicht">
+            <div className="flex flex-col items-start gap-2">{links}</div>
+          </Seitenwerkzeuge>
+        )}
+        {bedienung && (
+          <Seitenwerkzeuge kategorie="aktionen">
+            <div className="flex flex-col items-stretch gap-2">{bedienung}</div>
           </Seitenwerkzeuge>
         )}
       </>

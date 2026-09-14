@@ -2,7 +2,7 @@
  * Die Qualitätsseite im DOM: der Filter Auditart steht in derselben Zeile wie
  * der Umschalter Audits/Reklamationen/Qualitätsprüfung und nur bei Audits.
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -84,6 +84,60 @@ describe("Qualität", () => {
     expect(within(platz).queryByRole("button", { name: "gemeldete Menge" })).toBeNull();
     expect(screen.getByRole("button", { name: "gemeldete Menge" })).toBeInTheDocument();
     platz.remove();
+  });
+
+  describe("in der Schale mit Kategorien", () => {
+    function zeigeInSchale() {
+      const plaetze = {
+        navigation: document.createElement("div"),
+        ansicht: document.createElement("div"),
+        filter: document.createElement("div"),
+        zeitraum: document.createElement("div"),
+        aktionen: document.createElement("div"),
+      };
+      Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <SprachAnbieter sprache="de">
+            <Werkzeugplatz.Provider value={plaetze}>
+              <QualitaetDashboard darfUploads={false} />
+            </Werkzeugplatz.Provider>
+          </SprachAnbieter>
+        </QueryClientProvider>,
+      );
+      return plaetze;
+    }
+
+    afterEach(() => {
+      document.body.innerHTML = "";
+    });
+
+    it("stellt den Umschalter mit Titel in die Ansicht, die Auditart mit Titel in die Filter", () => {
+      const { ansicht, filter } = zeigeInSchale();
+      expect(within(ansicht).getByRole("radiogroup", { name: "Ansicht" })).toBeInTheDocument();
+      expect(within(ansicht).getByText("Ansicht")).toBeInTheDocument();
+      expect(within(filter).getByRole("button", { name: "Behörde" })).toBeInTheDocument();
+      // Titel ohne Doppelpunkt, keine zweite Beschriftung.
+      expect(within(filter).getByText("Auditart")).toBeInTheDocument();
+      expect(within(filter).queryByText("Auditart:")).toBeNull();
+      expect(within(ansicht).queryByRole("button", { name: "Behörde" })).toBeNull();
+    });
+
+    it("stellt die Artikelart mit Titel in die Filter", () => {
+      const { ansicht, filter } = zeigeInSchale();
+      fireEvent.click(within(ansicht).getByRole("radio", { name: "Qualitätsprüfung" }));
+      expect(within(filter).getByRole("radiogroup", { name: "Artikelart" })).toBeInTheDocument();
+      expect(within(filter).getByText("Artikelart")).toBeInTheDocument();
+      expect(within(ansicht).queryByRole("radiogroup", { name: "Artikelart" })).toBeNull();
+    });
+
+    it("stellt die Reklamationsart mit Titel in die Filter", () => {
+      const { ansicht, filter } = zeigeInSchale();
+      fireEvent.click(within(ansicht).getByRole("radio", { name: "Reklamationen" }));
+      expect(within(filter).getByRole("button", { name: "intern" })).toBeInTheDocument();
+      expect(within(filter).getByText("Reklamationsart")).toBeInTheDocument();
+      expect(within(ansicht).queryByRole("button", { name: "intern" })).toBeNull();
+    });
   });
 
   it("zeigt die Auditart nur bei Audits", () => {

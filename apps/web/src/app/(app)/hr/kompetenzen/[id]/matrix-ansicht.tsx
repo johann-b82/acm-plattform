@@ -145,23 +145,23 @@ export function MatrixAnsicht({ id, darfSchreiben }: { id: string; darfSchreiben
           </p>
         </div>
       </div>
-      <Seitenwerkzeuge>
-        <div className="flex flex-col items-stretch gap-2">
-          {darfSchreiben && (
-            <Button
-              variant={bearbeiten ? "default" : "outline"}
-              aria-pressed={bearbeiten}
-              onClick={() => setBearbeiten((v) => !v)}
-            >
-              <Pencil className="me-1.5 h-4 w-4" aria-hidden />
-              {bearbeiten ? worte.matrix.bearbeitenFertig : worte.matrix.bearbeiten}
-            </Button>
-          )}
-          <Link href="/hr/kompetenzen" className="text-sm underline-offset-4 hover:underline">
-            {worte.matrix.zurUebersicht}
-          </Link>
-        </div>
+      <Seitenwerkzeuge kategorie="navigation">
+        <Link href="/hr/kompetenzen" className="text-sm underline-offset-4 hover:underline">
+          {worte.matrix.zurUebersicht}
+        </Link>
       </Seitenwerkzeuge>
+      {darfSchreiben && (
+        <Seitenwerkzeuge kategorie="ansicht">
+          <Button
+            variant={bearbeiten ? "default" : "outline"}
+            aria-pressed={bearbeiten}
+            onClick={() => setBearbeiten((v) => !v)}
+          >
+            <Pencil className="me-1.5 h-4 w-4" aria-hidden />
+            {bearbeiten ? worte.matrix.bearbeitenFertig : worte.matrix.bearbeiten}
+          </Button>
+        </Seitenwerkzeuge>
+      )}
 
       {(qualifikationen.data ?? []).length === 0 ? (
         <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.matrix.keineZeilen}</Card>

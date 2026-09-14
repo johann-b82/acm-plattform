@@ -18,7 +18,7 @@ vi.mock("@/lib/fair", async (original) => {
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import type { Zeichnung } from "@/lib/fair";
 import { Zeichnungsliste } from "./zeichnungsliste";
 
@@ -38,19 +38,19 @@ function zeichnung(id: string, name: string, kunde: string | null): Zeichnung {
   } as Zeichnung;
 }
 
-let platz: HTMLElement;
+let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
   zeichnungen.mockResolvedValue([
     zeichnung("a", "Halter", "Pilatus"),
     zeichnung("b", "Winkel", "Airbus"),
   ]);
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const neu = () => document.body.appendChild(document.createElement("div"));
+  platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
 
 afterEach(() => {
-  platz.remove();
+  Object.values(platz).forEach((p) => p.remove());
 });
 
 describe("Zeichnungsliste in der Schale", () => {
@@ -66,12 +66,15 @@ describe("Zeichnungsliste in der Schale", () => {
       </QueryClientProvider>,
     );
     await screen.findByText("Halter");
-    const leiste = within(platz);
+    const leiste = within(platz.aktionen);
     const name = leiste.getByLabelText("Bezeichnung (leer = Dateiname)");
+    expect(leiste.getByText("Bezeichnung (leer = Dateiname)").tagName).not.toBe("LABEL");
     expect(container).not.toContainElement(name);
     expect(leiste.getByLabelText("Zeichnung wählen")).toBeInTheDocument();
 
-    const filter = leiste.getByRole("combobox", { name: "Nach Kunde filtern" });
+    const filterPlatz = within(platz.filter);
+    expect(filterPlatz.getByText("Kunde")).toBeInTheDocument();
+    const filter = filterPlatz.getByRole("combobox", { name: "Nach Kunde filtern" });
     fireEvent.change(filter, { target: { value: "Airbus" } });
     expect(screen.queryByText("Halter")).not.toBeInTheDocument();
     expect(screen.getByText("Winkel")).toBeInTheDocument();

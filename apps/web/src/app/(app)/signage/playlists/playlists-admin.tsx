@@ -292,7 +292,7 @@ export function PlaylistsAdmin() {
         ]}
       />
 
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
           <Button onClick={() => setNewOpen(true)}>{worte.signage.neuePlaylist}</Button>
         </div>

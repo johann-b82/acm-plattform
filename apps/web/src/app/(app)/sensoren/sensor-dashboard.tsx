@@ -35,6 +35,7 @@ import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import type { Texte } from "@/texte";
 
 /** Solange die Einstellung nicht geladen ist, gilt die Vorgabe der Migration. */
@@ -127,7 +128,10 @@ export function SensorDashboard() {
         untertitel={worte.sensoren.einleitung}
         bedienung={
           <>
-            <Fensterwahl stunden={stunden} onChange={setStunden} />
+            {/* Das Fenster ist der Zeitraum dieser Seite: in der Schale unter „Zeitraum“. */}
+            <Seitenwerkzeuge kategorie="zeitraum">
+              <Fensterwahl stunden={stunden} onChange={setStunden} />
+            </Seitenwerkzeuge>
             <Button variant="outline" onClick={() => messen.mutate()} disabled={messen.isPending}>
               <RefreshCw
                 className={cn("me-2 h-4 w-4", messen.isPending && "animate-spin")}

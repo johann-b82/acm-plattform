@@ -75,7 +75,7 @@ export function Artikelnavigation({
 
   if (inSchale) {
     return (
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="navigation">
         <nav aria-label={beschriftung.navigation} className="border-s border-[var(--border)] text-sm">
           {liste}
         </nav>

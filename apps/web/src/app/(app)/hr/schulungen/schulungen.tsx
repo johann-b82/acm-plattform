@@ -47,7 +47,7 @@ export function Schulungen({ darfSchreiben, start = "bearbeiten" }: { darfSchrei
         }
       />
 
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="navigation">
         <div
           className={cn(
             "flex gap-1",

@@ -60,7 +60,7 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
     return (
       <div className="space-y-6">
         <Seitenkopf untertitel={worte.einstellungen.einleitung} />
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="navigation">
           <nav aria-label={worte.einstellungen.bereiche} className="border-s border-[var(--border)]">
             <ul className="flex flex-col text-sm">
               {GRUPPEN.map((g) => (

@@ -36,6 +36,13 @@ export const fa: Texte = {
     werkzeugeAusklappen: "گسترش نوار فیلتر",
     werkzeugeOeffnen: "باز کردن فیلترها",
     werkzeugeSchliessen: "بستن فیلترها",
+    kategorien: {
+      navigation: "پیمایش",
+      ansicht: "نما",
+      filter: "فیلترها",
+      zeitraum: "بازهٔ زمانی",
+      aktionen: "اقدامات",
+    },
   },
   pfad: {
     aria: "مسیر",
@@ -348,6 +355,7 @@ export const fa: Texte = {
   qualitaet: {
     einleitung: "یافته‌های ممیزی، نرخ شکایت و مقدارهای بازرسی‌شده.",
     auditart: "نوع ممیزی:",
+    reklamationsart: "نوع شکایت",
     keineArt: "هیچ نوع ممیزی برگزیده نشده است. دست‌کم یکی را برگزینید، وگرنه چیزی برای شمردن نیست.",
     keineDaten: "برای این بازه یافتهٔ ممیزی موجود نیست",
     ladeVor: "خروجی 8D را در ",
@@ -1514,6 +1522,8 @@ export const fa: Texte = {
     verkleinern: "کوچک‌نمایی",
     vergroessern: "بزرگ‌نمایی",
     einpassen: "جای‌دهی",
+    darstellung: "نمایش",
+    bubbleGroesse: "اندازهٔ حباب‌ها",
     zeichnung: "نقشه",
     ladefehler: "نقشه بارگذاری نشد.",
     alleKunden: "همه مشتریان",

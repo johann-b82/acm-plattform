@@ -47,7 +47,7 @@ import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
 import { DiagrammartWahl, useDiagrammart, type Diagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -84,30 +84,41 @@ export function QualitaetDashboard({ darfUploads }: { darfUploads: boolean }) {
         untertitel={worte.qualitaet.einleitung}
         links={
           <>
-            <Segmentwahl
-              beschriftung={worte.qualitaet.ansicht}
-              wert={ansicht}
-              onChange={setAnsicht}
-              optionen={[
-                ["audits", worte.qualitaet.ansichtAudits],
-                ["reklamationen", worte.qualitaet.ansichtReklamationen],
-                ["pruefung", worte.qualitaet.ansichtPruefung],
-              ]}
-            />
-            {/* Der Filter einer Ansicht steht in derselben Zeile wie der
-                Umschalter — nur, solange die Ansicht zu sehen ist. */}
-            {ansicht === "audits" && <AuditartWahl arten={arten} setArten={setArten} />}
-            {ansicht === "pruefung" && (
+            <Werkzeug titel={worte.qualitaet.ansicht}>
               <Segmentwahl
-                beschriftung={worte.qualitaet.artikelart}
-                wert={artikelart}
-                onChange={setArtikelart}
+                beschriftung={worte.qualitaet.ansicht}
+                wert={ansicht}
+                onChange={setAnsicht}
                 optionen={[
-                  ["fertig", worte.qualitaet.artikelFertig],
-                  ["halbfertig", worte.qualitaet.artikelHalbfertig],
-                  ["alle", worte.qualitaet.artikelAlle],
+                  ["audits", worte.qualitaet.ansichtAudits],
+                  ["reklamationen", worte.qualitaet.ansichtReklamationen],
+                  ["pruefung", worte.qualitaet.ansichtPruefung],
                 ]}
               />
+            </Werkzeug>
+            {/* Der Filter einer Ansicht steht in derselben Zeile wie der
+                Umschalter — nur, solange die Ansicht zu sehen ist. In der
+                Schale steht er unter „Filter“. */}
+            {ansicht === "audits" && (
+              <Seitenwerkzeuge kategorie="filter">
+                <AuditartWahl arten={arten} setArten={setArten} />
+              </Seitenwerkzeuge>
+            )}
+            {ansicht === "pruefung" && (
+              <Seitenwerkzeuge kategorie="filter">
+                <Werkzeug titel={worte.qualitaet.artikelart}>
+                  <Segmentwahl
+                    beschriftung={worte.qualitaet.artikelart}
+                    wert={artikelart}
+                    onChange={setArtikelart}
+                    optionen={[
+                      ["fertig", worte.qualitaet.artikelFertig],
+                      ["halbfertig", worte.qualitaet.artikelHalbfertig],
+                      ["alle", worte.qualitaet.artikelAlle],
+                    ]}
+                  />
+                </Werkzeug>
+              </Seitenwerkzeuge>
             )}
           </>
         }
@@ -165,30 +176,42 @@ function AuditartWahl({
 }) {
   const worte = useTexte();
   const auditLabel = useAuditLabel();
+  const inSchale = useInSchale();
 
   function umschalten(art: string) {
     setArten((vorher) => (vorher.includes(art) ? vorher.filter((a) => a !== art) : [...vorher, art]));
   }
 
+  const knoepfe = AUDIT_ARTEN.map((art) => (
+    <button
+      key={art}
+      type="button"
+      onClick={() => umschalten(art)}
+      aria-pressed={arten.includes(art)}
+      className={cn(
+        "rounded-full border px-3 py-1 text-sm transition-colors",
+        arten.includes(art)
+          ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
+          : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
+      )}
+    >
+      {auditLabel[art]}
+    </button>
+  ));
+
+  // In der Schale trägt der Titel der Leiste die Beschriftung, ohne Doppelpunkt.
+  if (inSchale) {
+    return (
+      <Werkzeug titel={worte.qualitaet.auditart.replace(/:$/, "")}>
+        <div className="flex flex-wrap gap-2">{knoepfe}</div>
+      </Werkzeug>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2 ms-2">
       <span className="text-sm text-[var(--fg-muted)]">{worte.qualitaet.auditart}</span>
-      {AUDIT_ARTEN.map((art) => (
-        <button
-          key={art}
-          type="button"
-          onClick={() => umschalten(art)}
-          aria-pressed={arten.includes(art)}
-          className={cn(
-            "rounded-full border px-3 py-1 text-sm transition-colors",
-            arten.includes(art)
-              ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
-              : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
-          )}
-        >
-          {auditLabel[art]}
-        </button>
-      ))}
+      {knoepfe}
     </div>
   );
 }
@@ -488,25 +511,27 @@ function Reklamationen({
           <div className="flex flex-wrap gap-2">
             {/* Die Art gilt für Kachel und Liste der ganzen Ansicht: in der Schale
                 in der rechten Leiste. Die Mengenart betrifft nur diese Kachel. */}
-            <Seitenwerkzeuge>
-            <div className="flex flex-wrap gap-1 rounded-lg border border-[var(--border)] p-1">
-              {(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setReklArt(a)}
-                  aria-pressed={reklArt === a}
-                  className={cn(
-                    "rounded px-3 py-1 text-sm transition-colors",
-                    reklArt === a
-                      ? "bg-[var(--fg)] text-[var(--bg)]"
-                      : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
-                  )}
-                >
-                  {reklLabel[a]}
-                </button>
-              ))}
-            </div>
+            <Seitenwerkzeuge kategorie="filter">
+              <Werkzeug titel={worte.qualitaet.reklamationsart}>
+                <div className="flex flex-wrap gap-1 rounded-lg border border-[var(--border)] p-1">
+                  {(Object.keys(reklLabel) as ReklamationsArt[]).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => setReklArt(a)}
+                      aria-pressed={reklArt === a}
+                      className={cn(
+                        "rounded px-3 py-1 text-sm transition-colors",
+                        reklArt === a
+                          ? "bg-[var(--fg)] text-[var(--bg)]"
+                          : "text-[var(--fg-muted)] hover:text-[var(--fg)]",
+                      )}
+                    >
+                      {reklLabel[a]}
+                    </button>
+                  ))}
+                </div>
+              </Werkzeug>
             </Seitenwerkzeuge>
             <div className="flex gap-1 rounded-lg border border-[var(--border)] p-1">
               {(Object.keys(mengeLabel) as Mengenart[]).map((m) => (

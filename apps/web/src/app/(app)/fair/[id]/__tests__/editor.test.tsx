@@ -36,10 +36,10 @@ vi.mock("../zeichenflaeche", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import { Editor } from "../editor";
 
-let platz: HTMLElement;
+let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
   api.zeichnung.mockResolvedValue({
@@ -55,12 +55,12 @@ beforeEach(() => {
     drehung: 0,
     erstellt_am: "2026-09-01T00:00:00Z",
   });
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const neu = () => document.body.appendChild(document.createElement("div"));
+  platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
 
 afterEach(() => {
-  platz.remove();
+  Object.values(platz).forEach((p) => p.remove());
 });
 
 describe("Editor in der Schale", () => {
@@ -76,9 +76,15 @@ describe("Editor in der Schale", () => {
       </QueryClientProvider>,
     );
     await screen.findByRole("heading", { name: "Halter" });
-    const leiste = within(platz);
+    const leiste = within(platz.ansicht);
 
-    expect(leiste.getByRole("link", { name: "Zeichnungen" })).toHaveAttribute("href", "/fair");
+    expect(within(platz.navigation).getByRole("link", { name: "Zeichnungen" })).toHaveAttribute(
+      "href",
+      "/fair",
+    );
+    for (const titel of ["Seite", "Darstellung", "Bubble-Größe"]) {
+      expect(await leiste.findByText(titel)).toBeInTheDocument();
+    }
     for (const name of [
       "Ansicht drehen",
       "Verkleinern",

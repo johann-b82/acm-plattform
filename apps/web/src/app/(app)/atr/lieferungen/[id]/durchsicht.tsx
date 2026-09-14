@@ -289,16 +289,17 @@ export function Durchsicht({
     <div className="space-y-5">
       {/* Rückweg, Erzeugen und Herunterladen gelten für die ganze Lieferung:
           in der Schale stehen sie in der rechten Leiste. */}
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="navigation">
+        <Link
+          href="/atr"
+          className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" aria-hidden />
+          {worte.atr.lieferungen}
+        </Link>
+      </Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
-          <Link
-            href="/atr"
-            className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
-          >
-            <ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" aria-hidden />
-            {worte.atr.lieferungen}
-          </Link>
-
           {darfSchreiben && (
             <Button
               variant="outline"

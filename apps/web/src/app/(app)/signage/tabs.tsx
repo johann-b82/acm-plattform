@@ -22,7 +22,7 @@ export function SignageTabs() {
   const pathname = usePathname();
   const inSchale = useInSchale();
   return (
-    <Seitenwerkzeuge>
+    <Seitenwerkzeuge kategorie="navigation">
       <nav
         className={inSchale ? "flex flex-col items-stretch gap-1" : "flex gap-1 border-b border-[var(--border)]"}
         aria-label={worte.signage.bereiche}

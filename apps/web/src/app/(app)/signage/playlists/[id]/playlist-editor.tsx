@@ -280,15 +280,18 @@ function EditorForm({ data }: { data: EditorData }) {
   return (
     <div className="space-y-5">
       {/* Zurück, Verwerfen und Speichern gelten für die ganze Playlist — Name,
-          Tags und Einträge. In der Schale stehen sie in der rechten Leiste. */}
-      <Seitenwerkzeuge>
+          Tags und Einträge. In der Schale stehen sie in der rechten Leiste:
+          Zurück unter Navigation, Verwerfen und Speichern unter Aktionen. */}
+      <Seitenwerkzeuge kategorie="navigation">
+        <Link
+          href="/signage/playlists"
+          className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
+        >
+          <ArrowLeft className="h-4 w-4" /> Alle Playlists
+        </Link>
+      </Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
-          <Link
-            href="/signage/playlists"
-            className="inline-flex items-center gap-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
-          >
-            <ArrowLeft className="h-4 w-4" /> Alle Playlists
-          </Link>
           <Button variant="outline" disabled={!dirty || saveMutation.isPending} onClick={reset}>
             {worte.signage.verwerfen}
           </Button>

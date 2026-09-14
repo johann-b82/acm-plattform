@@ -307,7 +307,7 @@ export function DevicesAdmin() {
         ]}
       />
 
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
           <Button onClick={() => router.push("/signage/pair")}>{worte.signage.geraetKoppeln}</Button>
         </div>

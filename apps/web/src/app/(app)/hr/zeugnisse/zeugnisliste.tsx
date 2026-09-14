@@ -10,7 +10,7 @@ import { Plus } from "lucide-react";
 import { ARTEN, zeugnisApi, zeugnisKeys, type Zeugnis } from "@/lib/zeugnisse";
 import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
 import { Badge, Button, Label, Select } from "@/components/ui/primitives";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -31,6 +31,7 @@ import { Textbausteine } from "./textbausteine";
  */
 export function Zeugnisliste() {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const artLabel = useZeugnisart();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -136,11 +137,19 @@ export function Zeugnisliste() {
         <Textbausteine />
       </Klappbar>
 
-      <Seitenwerkzeuge>
+      {/* Person und Art gehören zum Anlegen, sie filtern die Liste nicht. In der
+          Leiste trägt der Werkzeug-Titel die Beschriftung, sonst das Label. */}
+      <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
+          <Werkzeug titel={worte.zeugnisse.person}>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="person">{worte.zeugnisse.person}</Label>
-            <Select id="person" value={person} onChange={(e) => setPerson(e.target.value)}>
+            {!inSchale && <Label htmlFor="person">{worte.zeugnisse.person}</Label>}
+            <Select
+              id="person"
+              aria-label={worte.zeugnisse.person}
+              value={person}
+              onChange={(e) => setPerson(e.target.value)}
+            >
               <option value="">{worte.zeugnisse.waehlen}</option>
               {(eintritte.data ?? []).map((e) => (
                 <option
@@ -153,9 +162,11 @@ export function Zeugnisliste() {
               ))}
             </Select>
           </div>
+          </Werkzeug>
+          <Werkzeug titel={worte.zeugnisse.art}>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="art">{worte.zeugnisse.art}</Label>
-            <Select id="art" value={art} onChange={(e) => setArt(e.target.value)}>
+            {!inSchale && <Label htmlFor="art">{worte.zeugnisse.art}</Label>}
+            <Select id="art" aria-label={worte.zeugnisse.art} value={art} onChange={(e) => setArt(e.target.value)}>
               {ARTEN.map((a) => (
                 <option key={a.wert} value={a.wert}>
                   {artLabel[a.wert]}
@@ -163,6 +174,7 @@ export function Zeugnisliste() {
               ))}
             </Select>
           </div>
+          </Werkzeug>
           <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
             <Plus className="me-1.5 h-4 w-4" aria-hidden />
             {worte.zeugnisse.anlegen}

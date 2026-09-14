@@ -56,4 +56,33 @@ describe("Auditliste", () => {
     expect(screen.getByLabelText("Nummer")).toBeInTheDocument();
     expect(within(platz).queryByLabelText("Nummer")).toBeNull();
   });
+
+  it("ordnet Status und Art den Filtern mit Titel zu, „Neues Audit“ den Aktionen", () => {
+    const plaetze = {
+      navigation: document.createElement("div"),
+      ansicht: document.createElement("div"),
+      filter: document.createElement("div"),
+      zeitraum: document.createElement("div"),
+      aktionen: document.createElement("div"),
+    };
+    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <Auditliste darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const { filter, aktionen } = plaetze;
+    expect(within(filter).getByRole("combobox", { name: "Status" })).toBeInTheDocument();
+    expect(within(filter).getByRole("combobox", { name: "Art" })).toBeInTheDocument();
+    // Je Filter genau ein Titel, keine zweite Beschriftung daneben.
+    expect(within(filter).getAllByText("Status")).toHaveLength(1);
+    expect(within(filter).getAllByText("Art")).toHaveLength(1);
+    expect(within(filter).getByText("Status").closest(".text-xs")).not.toBeNull();
+    expect(within(aktionen).getByRole("button", { name: "Neues Audit" })).toBeInTheDocument();
+    expect(within(filter).queryByRole("button")).toBeNull();
+  });
 });

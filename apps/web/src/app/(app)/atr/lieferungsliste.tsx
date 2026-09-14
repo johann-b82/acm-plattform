@@ -220,7 +220,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       {/* Einlesen und Durchsehen gelten für die ganze Liste: in der Schale
           stehen sie in der rechten Leiste, der Bericht bleibt auf der Seite. */}
       {darfSchreiben && (
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
           <div className="flex flex-col items-stretch gap-2">
             <label
               className={

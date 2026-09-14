@@ -135,7 +135,7 @@ export function SchulungAnsicht({
         </div>
       </div>
       {/* Der Weg zurück gilt der ganzen Seite: in der rechten Leiste. */}
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="navigation">
         <Link href="/hr/schulungen" className="text-sm underline-offset-4 hover:underline">
           {worte.schulung.zumKatalog}
         </Link>

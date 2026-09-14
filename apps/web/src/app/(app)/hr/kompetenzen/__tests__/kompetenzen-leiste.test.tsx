@@ -34,7 +34,7 @@ vi.mock("@/lib/kompetenzen", async (importOriginal) => {
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import { Matrixliste } from "../matrixliste";
 import { MatrixAnsicht } from "../[id]/matrix-ansicht";
 
@@ -54,8 +54,29 @@ function zeige(inhalt: ReactNode) {
 
 afterEach(() => {
   cleanup();
-  platz.remove();
+  document.body.innerHTML = "";
 });
+
+/** Je Kategorie ein eigener Platz — so zeigt sich, wohin jedes Bedienelement geht. */
+function zeigeInKategorien(inhalt: ReactNode) {
+  const platzFuer = () => document.body.appendChild(document.createElement("div"));
+  const orte: Record<Kategorie, HTMLElement> = {
+    navigation: platzFuer(),
+    ansicht: platzFuer(),
+    filter: platzFuer(),
+    zeitraum: platzFuer(),
+    aktionen: platzFuer(),
+  };
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <SprachAnbieter sprache="de">
+        <Werkzeugplatz.Provider value={orte}>{inhalt}</Werkzeugplatz.Provider>
+      </SprachAnbieter>
+    </QueryClientProvider>,
+  );
+  return orte;
+}
+
 
 describe("Kompetenzen in der rechten Leiste", () => {
   it("stellt Bereichswahl und Einlesen der Übersicht in die Leiste", () => {
@@ -71,5 +92,22 @@ describe("Kompetenzen in der rechten Leiste", () => {
     fireEvent.click(knopf);
     expect(within(platz).getByRole("button", { name: "Fertig" }).getAttribute("aria-pressed")).toBe("true");
     expect(within(platz).getByRole("link", { name: "Zur Übersicht" })).toBeTruthy();
+  });
+
+  it("stellt Bereichswahl mit Titel und Einlesen zu den Aktionen", () => {
+    const orte = zeigeInKategorien(<Matrixliste darfSchreiben />);
+    const aktionen = within(orte.aktionen);
+    expect(aktionen.getByLabelText("Bereich")).toBeTruthy();
+    expect(aktionen.getByText("Bereich", { selector: "div" })).toBeTruthy();
+    expect(orte.aktionen.querySelector("label[for]")).toBeNull();
+    expect(aktionen.getByLabelText("Bereichsdatei einlesen")).toBeTruthy();
+  });
+
+  it("stellt „Bearbeiten“ in die Ansicht und den Weg zur Übersicht in die Navigation", async () => {
+    const orte = zeigeInKategorien(<MatrixAnsicht id="m1" darfSchreiben />);
+    await screen.findByRole("heading", { name: "Montage" });
+    expect(within(orte.ansicht).getByRole("button", { name: "Bearbeiten" })).toBeTruthy();
+    expect(within(orte.navigation).getByRole("link", { name: "Zur Übersicht" })).toBeTruthy();
+    expect(within(orte.navigation).queryByRole("button")).toBeNull();
   });
 });

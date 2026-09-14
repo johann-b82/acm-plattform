@@ -28,7 +28,7 @@ import {
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { useKompetenzbereich } from "@/lib/tafeln";
 
 
@@ -43,6 +43,7 @@ import { useKompetenzbereich } from "@/lib/tafeln";
  */
 export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const bereichLabel = useKompetenzbereich();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
@@ -84,12 +85,16 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       />
 
       {darfSchreiben && (
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
           <div className="flex flex-col items-stretch gap-2">
+            {/* Der Bereich gehört zum Einlesen, nicht zur Liste: er filtert nichts.
+                In der Leiste trägt der Werkzeug-Titel die Beschriftung. */}
+            <Werkzeug titel={worte.kompetenzen.bereich}>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="bereich">{worte.kompetenzen.bereich}</Label>
+              {!inSchale && <Label htmlFor="bereich">{worte.kompetenzen.bereich}</Label>}
               <Select
                 id="bereich"
+                aria-label={worte.kompetenzen.bereich}
                 value={bereich}
                 onChange={(e) => {
                   setBereich(e.target.value as Bereich);
@@ -103,6 +108,7 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 ))}
               </Select>
             </div>
+            </Werkzeug>
             <label
               className={
                 "inline-flex h-9 cursor-pointer items-center rounded-md border " +

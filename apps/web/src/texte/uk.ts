@@ -36,6 +36,13 @@ export const uk: Texte = {
     werkzeugeAusklappen: "Розгорнути панель фільтрів",
     werkzeugeOeffnen: "Відкрити фільтри",
     werkzeugeSchliessen: "Закрити фільтри",
+    kategorien: {
+      navigation: "Навігація",
+      ansicht: "Вигляд",
+      filter: "Фільтри",
+      zeitraum: "Період",
+      aktionen: "Дії",
+    },
   },
   pfad: {
     aria: "Шлях",
@@ -347,6 +354,7 @@ export const uk: Texte = {
   qualitaet: {
     einleitung: "Невідповідності аудитів, частка рекламацій і обсяги перевірок.",
     auditart: "Вид аудиту:",
+    reklamationsart: "Тип рекламації",
     keineArt: "Не вибрано жодного виду аудиту. Виберіть хоча б один, інакше нема чого рахувати.",
     keineDaten: "За цей період немає невідповідностей аудиту",
     ladeVor: "Завантажте експорт 8D у розділі ",
@@ -1515,6 +1523,8 @@ export const uk: Texte = {
     verkleinern: "Зменшити",
     vergroessern: "Збільшити",
     einpassen: "Вписати",
+    darstellung: "Відображення",
+    bubbleGroesse: "Розмір бульбашок",
     zeichnung: "Креслення",
     ladefehler: "Не вдалося завантажити креслення.",
     alleKunden: "Усі клієнти",

@@ -36,7 +36,7 @@ import { Ballonliste } from "./ballonliste";
 import { Projektkopf, type Kopffeld } from "./projektkopf";
 import { feldAlsLeinwand, seitenAlsBilder } from "./raster";
 import { useTexte } from "@/components/sprache/anbieter";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Der Editor: Zeichnung anzeigen, Bereiche markieren, Ballons setzen.
@@ -321,17 +321,19 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     <div className="space-y-4">
       {/* Rückweg und Zeichenwerkzeuge gelten für die ganze Zeichnung: in der
           Schale stehen sie in der rechten Leiste, die Fläche behält die Breite. */}
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="navigation">
+        <Link
+          href="/fair"
+          className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
+          Zeichnungen
+        </Link>
+      </Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="ansicht">
         <div className="flex flex-col items-stretch gap-2">
-          <Link
-            href="/fair"
-            className="inline-flex items-center text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
-          >
-            <ArrowLeft className="me-1 h-4 w-4" aria-hidden />
-            Zeichnungen
-          </Link>
-
           {seiten > 1 && (
+            <Werkzeug titel={worte.fair.seite}>
             <Select
               aria-label={worte.fair.seite}
               value={seite}
@@ -343,7 +345,9 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
                 </option>
               ))}
             </Select>
+            </Werkzeug>
           )}
+          <Werkzeug titel={worte.fair.darstellung}>
           <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -374,8 +378,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
             <Maximize className="h-4 w-4" />
           </Button>
           </div>
+          </Werkzeug>
 
           {/* Bubblegröße (FAI-04): eigenes Paar, unabhängig vom Zoom. */}
+          <Werkzeug titel={worte.fair.bubbleGroesse}>
           <div className="flex items-center gap-1">
           <CircleDot className="h-4 w-4 text-[var(--fg-muted)]" aria-hidden />
           <Button
@@ -399,6 +405,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
             <Plus className="h-4 w-4" />
           </Button>
           </div>
+          </Werkzeug>
         </div>
       </Seitenwerkzeuge>
 

@@ -19,7 +19,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 
 
@@ -28,6 +28,7 @@ import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
  */
 export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -110,17 +111,21 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       {/* Hochladen und Kundenfilter gelten für die ganze Liste: in der Schale
           stehen sie in der rechten Leiste. */}
       {darfSchreiben && (
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="name">{worte.fair.bezeichnungFrei}</Label>
-            <Input
-              id="name"
-              value={name}
-              placeholder={worte.fair.beispiel}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+          {/* In der Leiste trägt der Werkzeugtitel die Beschriftung. */}
+          <Werkzeug titel={worte.fair.bezeichnungFrei}>
+            <div className="flex flex-col gap-1">
+              {!inSchale && <Label htmlFor="name">{worte.fair.bezeichnungFrei}</Label>}
+              <Input
+                id="name"
+                aria-label={worte.fair.bezeichnungFrei}
+                value={name}
+                placeholder={worte.fair.beispiel}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </Werkzeug>
           <label
             className={
               "inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[var(--fg)] px-4 " +
@@ -148,20 +153,22 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {liste.length > 0 && (
-        <Seitenwerkzeuge>
-          <Select
-            aria-label={worte.fair.kundenfilter}
-            value={kunde}
-            onChange={(e) => setKunde(e.target.value)}
-          >
-            <option value="">{worte.fair.alleKunden}</option>
-            {auswahl.kunden.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-            {auswahl.ohneKunde && <option value={OHNE_KUNDE}>{worte.fair.ohneKunde}</option>}
-          </Select>
+        <Seitenwerkzeuge kategorie="filter">
+          <Werkzeug titel={worte.fair.kunde}>
+            <Select
+              aria-label={worte.fair.kundenfilter}
+              value={kunde}
+              onChange={(e) => setKunde(e.target.value)}
+            >
+              <option value="">{worte.fair.alleKunden}</option>
+              {auswahl.kunden.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+              {auswahl.ohneKunde && <option value={OHNE_KUNDE}>{worte.fair.ohneKunde}</option>}
+            </Select>
+          </Werkzeug>
         </Seitenwerkzeuge>
       )}
 

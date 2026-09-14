@@ -83,18 +83,18 @@ import { SchedulesAdmin } from "../schedules/schedules-admin";
 import { DevicesAdmin } from "../devices/devices-admin";
 import { PlaylistEditor } from "../playlists/[id]/playlist-editor";
 
-let platz: HTMLElement;
+let plaetze: Record<"navigation" | "ansicht" | "filter" | "zeitraum" | "aktionen", HTMLElement>;
 beforeEach(() => {
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const div = () => document.body.appendChild(document.createElement("div"));
+  plaetze = { navigation: div(), ansicht: div(), filter: div(), zeitraum: div(), aktionen: div() };
 });
-afterEach(() => platz.remove());
+afterEach(() => Object.values(plaetze).forEach((div) => div.remove()));
 
 function zeige(kinder: ReactNode) {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <SprachAnbieter sprache="de">
-        <Werkzeugplatz.Provider value={platz}>
+        <Werkzeugplatz.Provider value={plaetze}>
           <main data-testid="inhalt">{kinder}</main>
         </Werkzeugplatz.Provider>
       </SprachAnbieter>
@@ -106,46 +106,56 @@ describe("Signage in der rechten Leiste", () => {
   it("führt die Bereiche als senkrechte Liste in der Leiste", () => {
     zeige(<SignageTabs />);
     const nav = screen.getByRole("navigation", { name: "Signage-Bereiche" });
-    expect(platz).toContainElement(nav);
+    expect(plaetze.navigation).toContainElement(nav);
     expect(nav.className).toContain("flex-col");
     expect(screen.getByRole("link", { name: "Playlists" }).getAttribute("aria-current")).toBe("page");
   });
 
   it("stellt „Medien hinzufügen“ in die Leiste, die Medien bleiben im Inhalt", async () => {
     zeige(<MediaAdmin />);
-    expect(platz).toContainElement(screen.getByRole("heading", { name: "Medien hinzufügen" }));
-    expect(platz).toContainElement(screen.getByRole("button", { name: "Datei auswählen" }));
+    const aktionen = plaetze.aktionen;
+    expect(aktionen).toContainElement(screen.getByRole("heading", { name: "Medien hinzufügen" }));
+    expect(aktionen).toContainElement(screen.getByRole("button", { name: "Datei auswählen" }));
+    // Die Felder des Formulars tragen in der Leiste einen Titel und behalten ihren Namen.
+    for (const [feld, titel] of [
+      [screen.getByRole("combobox", { name: "Art" }), "Art"],
+      [screen.getByRole("textbox", { name: "Titel" }), "Titel"],
+      [screen.getByRole("textbox", { name: "URL" }), "URL"],
+    ] as const) {
+      expect(aktionen).toContainElement(feld);
+      expect(feld.parentElement!.firstElementChild!.textContent).toBe(titel);
+    }
     expect(await screen.findByText("Noch keine Medien")).not.toBeNull();
-    expect(platz).not.toContainElement(screen.getByText("Noch keine Medien"));
+    expect(aktionen).not.toContainElement(screen.getByText("Noch keine Medien"));
   });
 
   it("stellt „Neue Playlist“ in die Leiste", async () => {
     zeige(<PlaylistsAdmin />);
     const knopf = await screen.findByRole("button", { name: "Neue Playlist" });
-    expect(platz).toContainElement(knopf);
-    expect(platz).not.toContainElement(screen.getByRole("link", { name: "Foyer" }));
+    expect(plaetze.aktionen).toContainElement(knopf);
+    expect(plaetze.aktionen).not.toContainElement(screen.getByRole("link", { name: "Foyer" }));
   });
 
   it("stellt „Neuer Zeitplan“ in die Leiste", async () => {
     zeige(<SchedulesAdmin />);
-    expect(platz).toContainElement(await screen.findByRole("button", { name: "Neuer Zeitplan" }));
+    expect(plaetze.aktionen).toContainElement(await screen.findByRole("button", { name: "Neuer Zeitplan" }));
   });
 
   it("stellt „Gerät koppeln“ in die Leiste und koppelt weiter", async () => {
     zeige(<DevicesAdmin />);
     const knopf = await screen.findByRole("button", { name: "Gerät koppeln" });
-    expect(platz).toContainElement(knopf);
+    expect(plaetze.aktionen).toContainElement(knopf);
     knopf.click();
     expect(push).toHaveBeenCalledWith("/signage/pair");
   });
 
-  it("stellt im Editor Zurück, Verwerfen und Speichern in die Leiste", async () => {
+  it("stellt im Editor Zurück in die Navigation, Verwerfen und Speichern in die Aktionen", async () => {
     zeige(<PlaylistEditor playlistId="p1" />);
     const zurueck = await screen.findByRole("link", { name: /Alle Playlists/ });
-    expect(platz).toContainElement(zurueck);
-    expect(platz).toContainElement(screen.getByRole("button", { name: "Verwerfen" }));
-    expect(platz).toContainElement(screen.getByRole("button", { name: "Speichern" }));
+    expect(plaetze.navigation).toContainElement(zurueck);
+    expect(plaetze.aktionen).toContainElement(screen.getByRole("button", { name: "Verwerfen" }));
+    expect(plaetze.aktionen).toContainElement(screen.getByRole("button", { name: "Speichern" }));
     // Name und Tags bleiben im Inhalt.
-    expect(platz).not.toContainElement(screen.getByLabelText("Name"));
+    for (const div of Object.values(plaetze)) expect(div).not.toContainElement(screen.getByLabelText("Name"));
   });
 });

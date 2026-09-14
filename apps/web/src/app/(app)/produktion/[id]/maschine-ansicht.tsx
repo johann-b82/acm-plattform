@@ -241,19 +241,21 @@ export function MaschineAnsicht({
           </p>
         </div>
         {/* Zurück und das Löschen der ganzen Maschine: in der Schale in der rechten Leiste. */}
-        <Seitenwerkzeuge>
-          <div className={inSchale ? "flex flex-col items-start gap-2" : "flex items-center gap-3"}>
+        <div className={inSchale ? "contents" : "flex items-center gap-3"}>
+          <Seitenwerkzeuge kategorie="navigation">
             <Link href="/produktion" className="text-sm underline-offset-4 hover:underline">
               {worte.maschine.zurUebersicht}
             </Link>
-            {darfSchreiben && (
+          </Seitenwerkzeuge>
+          {darfSchreiben && (
+            <Seitenwerkzeuge kategorie="aktionen">
               <ConfirmDeleteButton
                 itemLabel={m.name}
                 onConfirm={() => maschineWeg.mutateAsync().then(() => undefined)}
               />
-            )}
-          </div>
-        </Seitenwerkzeuge>
+            </Seitenwerkzeuge>
+          )}
+        </div>
       </div>
 
       <Card className="space-y-4 p-5">

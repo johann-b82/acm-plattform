@@ -36,6 +36,13 @@ export const bg: Texte = {
     werkzeugeAusklappen: "Разгъни лентата с филтри",
     werkzeugeOeffnen: "Отвори филтрите",
     werkzeugeSchliessen: "Затвори филтрите",
+    kategorien: {
+      navigation: "Навигация",
+      ansicht: "Изглед",
+      filter: "Филтри",
+      zeitraum: "Период",
+      aktionen: "Действия",
+    },
   },
   pfad: {
     aria: "Път",
@@ -349,6 +356,7 @@ export const bg: Texte = {
   qualitaet: {
     einleitung: "Одитни констатации, процент рекламации и проверени количества.",
     auditart: "Вид одит:",
+    reklamationsart: "Вид рекламация",
     keineArt: "Не е избран вид одит. Изберете поне един, иначе няма какво да се брои.",
     keineDaten: "За този период няма одитни констатации",
     ladeVor: "Качете 8D експорта в ",
@@ -1532,6 +1540,8 @@ export const bg: Texte = {
     verkleinern: "Намали",
     vergroessern: "Увеличи",
     einpassen: "Побери",
+    darstellung: "Изглед",
+    bubbleGroesse: "Размер на балоните",
     zeichnung: "Чертеж",
     ladefehler: "Чертежът не можа да се зареди.",
     alleKunden: "Всички клиенти",

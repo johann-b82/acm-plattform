@@ -70,7 +70,7 @@ vi.mock("@/lib/zeugnisse", async (importOriginal) => {
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import { Zeugnisliste } from "../zeugnisliste";
 import { ZeugnisAnsicht } from "../[id]/zeugnis-ansicht";
 
@@ -90,8 +90,29 @@ function zeige(inhalt: ReactNode) {
 
 afterEach(() => {
   cleanup();
-  platz.remove();
+  document.body.innerHTML = "";
 });
+
+/** Je Kategorie ein eigener Platz — so zeigt sich, wohin jedes Bedienelement geht. */
+function zeigeInKategorien(inhalt: ReactNode) {
+  const platzFuer = () => document.body.appendChild(document.createElement("div"));
+  const orte: Record<Kategorie, HTMLElement> = {
+    navigation: platzFuer(),
+    ansicht: platzFuer(),
+    filter: platzFuer(),
+    zeitraum: platzFuer(),
+    aktionen: platzFuer(),
+  };
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <SprachAnbieter sprache="de">
+        <Werkzeugplatz.Provider value={orte}>{inhalt}</Werkzeugplatz.Provider>
+      </SprachAnbieter>
+    </QueryClientProvider>,
+  );
+  return orte;
+}
+
 
 describe("Zeugnisse in der rechten Leiste", () => {
   it("stellt Person, Art und „Anlegen“ in die Leiste", async () => {
@@ -110,5 +131,24 @@ describe("Zeugnisse in der rechten Leiste", () => {
     await screen.findByRole("heading", { name: "Clara" });
     expect(within(platz).getByRole("link", { name: "Zur Übersicht" })).toBeTruthy();
     expect(within(platz).getByRole("button", { name: /löschen/i })).toBeTruthy();
+  });
+
+  it("stellt Person und Art mit Titel samt „Anlegen“ zu den Aktionen", () => {
+    const orte = zeigeInKategorien(<Zeugnisliste />);
+    const aktionen = within(orte.aktionen);
+    expect(aktionen.getByLabelText("Person")).toBeTruthy();
+    expect(aktionen.getByLabelText("Art")).toBeTruthy();
+    expect(aktionen.getByText("Person", { selector: "div" })).toBeTruthy();
+    expect(aktionen.getByText("Art", { selector: "div" })).toBeTruthy();
+    expect(orte.aktionen.querySelector("label")).toBeNull();
+    expect(aktionen.getByRole("button", { name: "Anlegen" })).toBeTruthy();
+  });
+
+  it("stellt den Weg zur Übersicht in die Navigation und das Löschen zu den Aktionen", async () => {
+    const orte = zeigeInKategorien(<ZeugnisAnsicht id="z1" />);
+    await screen.findByRole("heading", { name: "Clara" });
+    expect(within(orte.navigation).getByRole("link", { name: "Zur Übersicht" })).toBeTruthy();
+    expect(within(orte.navigation).queryByRole("button")).toBeNull();
+    expect(within(orte.aktionen).getByRole("button", { name: /löschen/i })).toBeTruthy();
   });
 });

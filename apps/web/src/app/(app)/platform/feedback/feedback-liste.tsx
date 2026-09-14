@@ -33,6 +33,7 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Werkzeug } from "@/components/sidebar/werkzeugplatz";
 import { cn } from "@/lib/cn";
 
 type Ansicht = "tabelle" | "kanban";
@@ -342,19 +343,23 @@ export function FeedbackListe() {
         }
         links={
           <>
-            <Umschalter
-              beschriftung={w.ansicht}
-              wert={ansicht}
-              onChange={setAnsicht}
-              optionen={ANSICHTEN.map((a) => [a, a === "tabelle" ? w.tabelle : w.kanban])}
-            />
-            {ansicht === "kanban" && (
+            <Werkzeug titel={w.ansicht}>
               <Umschalter
-                beschriftung={w.gruppieren}
-                wert={gruppierung}
-                onChange={setGruppierung}
-                optionen={GRUPPIERUNGEN.map((g) => [g, g === "status" ? w.nachStatus : w.nachPerson])}
+                beschriftung={w.ansicht}
+                wert={ansicht}
+                onChange={setAnsicht}
+                optionen={ANSICHTEN.map((a) => [a, a === "tabelle" ? w.tabelle : w.kanban])}
               />
+            </Werkzeug>
+            {ansicht === "kanban" && (
+              <Werkzeug titel={w.gruppieren}>
+                <Umschalter
+                  beschriftung={w.gruppieren}
+                  wert={gruppierung}
+                  onChange={setGruppierung}
+                  optionen={GRUPPIERUNGEN.map((g) => [g, g === "status" ? w.nachStatus : w.nachPerson])}
+                />
+              </Werkzeug>
             )}
           </>
         }

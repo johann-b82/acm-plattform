@@ -369,7 +369,7 @@ export function SchedulesAdmin() {
           },
         ]}
       />
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
         <div className="flex flex-col items-stretch gap-2">
           <Button onClick={() => openDialog(null)}>{worte.signage.neuerZeitplan}</Button>
         </div>

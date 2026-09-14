@@ -26,7 +26,7 @@ import {
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 import { useKapitelart } from "@/lib/tafeln";
 
 /**
@@ -46,6 +46,7 @@ export function Redaktion({
   darfHr: boolean;
 }) {
   const worte = useTexte();
+  const inSchale = useInSchale();
   const kapitelart = useKapitelart();
   const queryClient = useQueryClient();
   const jetzt = new Date();
@@ -166,50 +167,61 @@ export function Redaktion({
       {/* Anlegen und die Wahl der bearbeiteten Ausgabe gelten für die ganze
           Seite: in der Schale stehen sie in der rechten Leiste. Das Formular
           der gewählten Ausgabe bleibt auf der Seite. */}
-      <Seitenwerkzeuge>
+      <Seitenwerkzeuge kategorie="aktionen">
       <div className="flex flex-col items-stretch gap-2">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="jahr">{worte.newsletter.jahr}</Label>
-          <Input
-            id="jahr"
-            value={neuJahr}
-            onChange={(e) => setNeuJahr(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="quartal">{worte.newsletter.quartal}</Label>
-          <Select
-            id="quartal"
-            value={neuQuartal}
-            onChange={(e) => setNeuQuartal(e.target.value)}
-          >
-            {[1, 2, 3, 4].map((q) => (
-              <option key={q} value={q}>
-                {q}
-              </option>
-            ))}
-          </Select>
-        </div>
+        {/* In der Leiste tragen die Werkzeugtitel die Beschriftungen. */}
+        <Werkzeug titel={worte.newsletter.jahr}>
+          <div className="flex flex-col gap-1">
+            {!inSchale && <Label htmlFor="jahr">{worte.newsletter.jahr}</Label>}
+            <Input
+              id="jahr"
+              aria-label={worte.newsletter.jahr}
+              value={neuJahr}
+              onChange={(e) => setNeuJahr(e.target.value)}
+            />
+          </div>
+        </Werkzeug>
+        <Werkzeug titel={worte.newsletter.quartal}>
+          <div className="flex flex-col gap-1">
+            {!inSchale && <Label htmlFor="quartal">{worte.newsletter.quartal}</Label>}
+            <Select
+              id="quartal"
+              aria-label={worte.newsletter.quartal}
+              value={neuQuartal}
+              onChange={(e) => setNeuQuartal(e.target.value)}
+            >
+              {[1, 2, 3, 4].map((q) => (
+                <option key={q} value={q}>
+                  {q}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </Werkzeug>
         <Button onClick={() => ausgabeAnlegen.mutate(undefined as never)}>
           <Plus className="me-2 h-4 w-4" aria-hidden />
           {worte.newsletter.ausgabeAnlegen}
         </Button>
-        {liste.length > 0 && (
-          <Select
-            aria-label={worte.newsletter.ausgabeBearbeiten}
-            value={aktiv?.id ?? ""}
-            onChange={(e) => setGewaehlt(e.target.value)}
-          >
-            {liste.map((a) => (
-              <option key={a.id} value={a.id}>
-                {worte.newsletter.quartalKurz(a.quartal, a.jahr)} ·{" "}
-                {a.status === "entwurf" ? worte.newsletter.entwurf : worte.newsletter.veroeffentlicht}
-              </option>
-            ))}
-          </Select>
-        )}
       </div>
       </Seitenwerkzeuge>
+      {liste.length > 0 && (
+        <Seitenwerkzeuge kategorie="ansicht">
+          <Werkzeug titel={worte.newsletter.ausgabeBearbeiten}>
+            <Select
+              aria-label={worte.newsletter.ausgabeBearbeiten}
+              value={aktiv?.id ?? ""}
+              onChange={(e) => setGewaehlt(e.target.value)}
+            >
+              {liste.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {worte.newsletter.quartalKurz(a.quartal, a.jahr)} ·{" "}
+                  {a.status === "entwurf" ? worte.newsletter.entwurf : worte.newsletter.veroeffentlicht}
+                </option>
+              ))}
+            </Select>
+          </Werkzeug>
+        </Seitenwerkzeuge>
+      )}
 
       {!aktiv ? (
         <EmptyState

@@ -36,6 +36,13 @@ export const pl: Texte = {
     werkzeugeAusklappen: "Rozwiń pasek filtrów",
     werkzeugeOeffnen: "Otwórz filtry",
     werkzeugeSchliessen: "Zamknij filtry",
+    kategorien: {
+      navigation: "Nawigacja",
+      ansicht: "Widok",
+      filter: "Filtry",
+      zeitraum: "Okres",
+      aktionen: "Akcje",
+    },
   },
   pfad: {
     aria: "Ścieżka",
@@ -349,6 +356,7 @@ export const pl: Texte = {
   qualitaet: {
     einleitung: "Ustalenia z auditów, wskaźnik reklamacji i ilości kontrolowane.",
     auditart: "Rodzaj auditu:",
+    reklamationsart: "Rodzaj reklamacji",
     keineArt: "Nie wybrano rodzaju auditu. Wybierz co najmniej jeden, inaczej nie ma czego liczyć.",
     keineDaten: "Brak ustaleń z auditów za ten okres",
     ladeVor: "Wczytaj eksport 8D w ",
@@ -1528,6 +1536,8 @@ export const pl: Texte = {
     verkleinern: "Pomniejsz",
     vergroessern: "Powiększ",
     einpassen: "Dopasuj",
+    darstellung: "Widok",
+    bubbleGroesse: "Rozmiar dymków",
     zeichnung: "Rysunek",
     ladefehler: "Nie udało się wczytać rysunku.",
     alleKunden: "Wszyscy klienci",

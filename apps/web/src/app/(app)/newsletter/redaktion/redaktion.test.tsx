@@ -25,7 +25,7 @@ vi.mock("@/lib/newsletter", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import { Redaktion } from "./redaktion";
 
 function ausgabe(id: string, quartal: number, titel: string) {
@@ -41,16 +41,16 @@ function ausgabe(id: string, quartal: number, titel: string) {
   };
 }
 
-let platz: HTMLElement;
+let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
   api.ausgaben.mockResolvedValue([ausgabe("a2", 2, "Sommer"), ausgabe("a1", 1, "Frühling")]);
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const neu = () => document.body.appendChild(document.createElement("div"));
+  platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
 
 afterEach(() => {
-  platz.remove();
+  Object.values(platz).forEach((p) => p.remove());
 });
 
 describe("Redaktion in der Schale", () => {
@@ -69,9 +69,12 @@ describe("Redaktion in der Schale", () => {
     expect(container).toContainElement(titel);
     expect(titel).toHaveValue("Sommer");
 
-    const leiste = within(platz);
+    const leiste = within(platz.aktionen);
     const jahr = leiste.getByLabelText("Jahr");
     expect(container).not.toContainElement(jahr);
+    for (const titel of ["Jahr", "Quartal"]) {
+      expect(leiste.getByText(titel).tagName).not.toBe("LABEL");
+    }
     fireEvent.change(jahr, { target: { value: "2027" } });
     fireEvent.change(leiste.getByLabelText("Quartal"), { target: { value: "4" } });
     fireEvent.click(leiste.getByRole("button", { name: "Ausgabe anlegen" }));
@@ -80,7 +83,9 @@ describe("Redaktion in der Schale", () => {
     // Der Platzhalter folgt der gewählten Ausgabe; der Titel selbst ist ein
     // ungesteuertes Feld und bleibt beim Wechsel stehen (vorhandenes Verhalten).
     const vorher = screen.getByLabelText("Titel der Ausgabe").getAttribute("placeholder");
-    const wahl = leiste.getByRole("combobox", { name: "Ausgabe bearbeiten" });
+    const ansicht = within(platz.ansicht);
+    expect(ansicht.getByText("Ausgabe bearbeiten")).toBeInTheDocument();
+    const wahl = ansicht.getByRole("combobox", { name: "Ausgabe bearbeiten" });
     fireEvent.change(wahl, { target: { value: "a1" } });
     expect(wahl).toHaveValue("a1");
     await waitFor(() =>

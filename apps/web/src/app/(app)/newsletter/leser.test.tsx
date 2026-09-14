@@ -26,7 +26,7 @@ vi.mock("./ausgabe-ansicht", () => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import { NewsletterLeser } from "./leser";
 
 function ausgabe(id: string, quartal: number) {
@@ -42,16 +42,16 @@ function ausgabe(id: string, quartal: number) {
   };
 }
 
-let platz: HTMLElement;
+let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
   api.ausgaben.mockResolvedValue([ausgabe("a2", 2), ausgabe("a1", 1)]);
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const neu = () => document.body.appendChild(document.createElement("div"));
+  platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
 
 afterEach(() => {
-  platz.remove();
+  Object.values(platz).forEach((p) => p.remove());
 });
 
 describe("Newsletter-Leser in der Schale", () => {
@@ -67,7 +67,7 @@ describe("Newsletter-Leser in der Schale", () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByText("Ansicht a2")).toBeInTheDocument();
-    const leiste = within(platz);
+    const leiste = within(platz.aktionen);
     const pdf = leiste.getByRole("button", { name: "Als PDF" });
     expect(container).not.toContainElement(pdf);
     expect(leiste.getByRole("link", { name: "Redaktion" })).toHaveAttribute(
@@ -75,7 +75,9 @@ describe("Newsletter-Leser in der Schale", () => {
       "/newsletter/redaktion",
     );
 
-    fireEvent.change(leiste.getByRole("combobox", { name: "Ausgabe" }), {
+    const ansicht = within(platz.ansicht);
+    expect(ansicht.getByText("Ausgabe")).toBeInTheDocument();
+    fireEvent.change(ansicht.getByRole("combobox", { name: "Ausgabe" }), {
       target: { value: "a1" },
     });
     expect(await screen.findByText("Ansicht a1")).toBeInTheDocument();

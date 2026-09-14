@@ -6,13 +6,13 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import { Seitenwerkzeuge, Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 
 describe("Seitenwerkzeuge", () => {
   it("zeigt die Kinder ohne Schale an Ort und Stelle", () => {
     const { container } = render(
       <div data-testid="seite">
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
           <button type="button">Neues Audit</button>
         </Seitenwerkzeuge>
       </div>,
@@ -28,7 +28,7 @@ describe("Seitenwerkzeuge", () => {
     render(
       <Werkzeugplatz.Provider value={platz}>
         <div data-testid="seite">
-          <Seitenwerkzeuge>
+          <Seitenwerkzeuge kategorie="aktionen">
             <button type="button">Neues Audit</button>
           </Seitenwerkzeuge>
         </div>
@@ -38,10 +38,45 @@ describe("Seitenwerkzeuge", () => {
     platz.remove();
   });
 
+  it("stellt die Kinder in den Platz ihrer Kategorie, wenn die Leiste gegliedert ist", () => {
+    const filter = document.createElement("div");
+    const aktionen = document.createElement("div");
+    document.body.append(filter, aktionen);
+    render(
+      <Werkzeugplatz.Provider value={{ filter, aktionen }}>
+        <Seitenwerkzeuge kategorie="aktionen">
+          <button type="button">Neues Audit</button>
+        </Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="filter">
+          <Werkzeug titel="Status">
+            <select aria-label="Status" />
+          </Werkzeug>
+        </Seitenwerkzeuge>
+      </Werkzeugplatz.Provider>,
+    );
+    expect(aktionen).toContainElement(screen.getByRole("button", { name: "Neues Audit" }));
+    expect(filter).toContainElement(screen.getByRole("combobox", { name: "Status" }));
+    // In der Leiste trägt jedes Werkzeug seine Beschriftung.
+    expect(filter).toHaveTextContent("Status");
+    filter.remove();
+    aktionen.remove();
+  });
+
+  it("zeigt ohne Schale keine zusätzliche Beschriftung", () => {
+    const { container } = render(
+      <Seitenwerkzeuge kategorie="filter">
+        <Werkzeug titel="Status">
+          <select aria-label="Filter-Auswahl" />
+        </Werkzeug>
+      </Seitenwerkzeuge>,
+    );
+    expect(container).not.toHaveTextContent("Status");
+  });
+
   it("zeichnet in der Schale nichts, solange der Platz noch nicht eingehängt ist", () => {
     render(
       <Werkzeugplatz.Provider value={null}>
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="aktionen">
           <button type="button">Neues Audit</button>
         </Seitenwerkzeuge>
       </Werkzeugplatz.Provider>,

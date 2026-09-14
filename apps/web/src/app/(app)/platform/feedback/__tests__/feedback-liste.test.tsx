@@ -27,6 +27,7 @@ vi.mock("@/lib/feedback", async (original) => ({
 }));
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
+import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { FeedbackListe, ablegen } from "../feedback-liste";
 
 function meldung(id: string, felder: Partial<Feedback>): Feedback {
@@ -140,6 +141,36 @@ describe("App Feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: /ungesehen/ }));
     await waitFor(() => expect(api.gesehen).toHaveBeenCalledWith(["a"]));
     expect(api.status).not.toHaveBeenCalled();
+  });
+});
+
+describe("App Feedback in der Schale", () => {
+  it("stellt Ansicht und Gruppierung mit Titel in die Kategorie Ansicht", async () => {
+    const plaetze = Object.fromEntries(
+      ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
+        k,
+        document.body.appendChild(document.createElement("div")),
+      ]),
+    );
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <FeedbackListe />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Beschreibung a");
+    const ansicht = screen.getByRole("radiogroup", { name: "Ansicht" });
+    expect(plaetze.ansicht).toContainElement(ansicht);
+    expect(ansicht.parentElement!.firstElementChild!.textContent).toBe("Ansicht");
+
+    fireEvent.click(screen.getByRole("radio", { name: "Kanban" }));
+    const gruppieren = screen.getByRole("radiogroup", { name: "Gruppieren nach" });
+    expect(plaetze.ansicht).toContainElement(gruppieren);
+    expect(gruppieren.parentElement!.firstElementChild!.textContent).toBe("Gruppieren nach");
+    Object.values(plaetze).forEach((div) => div.remove());
   });
 });
 

@@ -31,6 +31,7 @@ import { Vergleiche } from "@/components/kpi/vergleich";
 import { Datenstand } from "@/components/kpi/datenstand";
 import { DiagrammartWahl, useDiagrammart } from "@/components/kpi/diagrammart";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { Werkzeug } from "@/components/sidebar/werkzeugplatz";
 import { useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { useVergleich } from "@/lib/kpi/use-vergleich";
@@ -57,7 +58,11 @@ export function FinanzenDashboard({ darfUploads }: { darfUploads: boolean }) {
     <div className="space-y-6">
       <Seitenkopf
         untertitel={worte.finanzen.einleitung}
-        links={<AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />}
+        links={
+          <Werkzeug titel={worte.finanzen.ansicht}>
+            <AnsichtWahl ansicht={ansicht} onChange={setAnsicht} />
+          </Werkzeug>
+        }
         bedienung={
           <>
             {darfUploads && <UploadVerweis />}

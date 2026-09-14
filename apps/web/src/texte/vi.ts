@@ -36,6 +36,13 @@ export const vi: Texte = {
     werkzeugeAusklappen: "Mở rộng thanh bộ lọc",
     werkzeugeOeffnen: "Mở bộ lọc",
     werkzeugeSchliessen: "Đóng bộ lọc",
+    kategorien: {
+      navigation: "Điều hướng",
+      ansicht: "Chế độ xem",
+      filter: "Bộ lọc",
+      zeitraum: "Khoảng thời gian",
+      aktionen: "Thao tác",
+    },
   },
   pfad: {
     aria: "Đường dẫn",
@@ -348,6 +355,7 @@ export const vi: Texte = {
   qualitaet: {
     einleitung: "Phát hiện audit, tỷ lệ khiếu nại và sản lượng kiểm tra.",
     auditart: "Loại audit:",
+    reklamationsart: "Loại khiếu nại",
     keineArt:
       "Chưa chọn loại audit nào. Hãy chọn ít nhất một loại, nếu không thì không có gì để đếm.",
     keineDaten: "Không có phát hiện audit nào trong kỳ này",
@@ -1525,6 +1533,8 @@ export const vi: Texte = {
     verkleinern: "Thu nhỏ",
     vergroessern: "Phóng to",
     einpassen: "Vừa khung",
+    darstellung: "Hiển thị",
+    bubbleGroesse: "Kích thước bong bóng",
     zeichnung: "Bản vẽ",
     ladefehler: "Không tải được bản vẽ.",
     alleKunden: "Tất cả khách hàng",

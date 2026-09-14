@@ -22,7 +22,7 @@ vi.mock("@/lib/atr", async (original) => {
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import type { AtrPosition, Lieferung } from "@/lib/atr";
 import { Durchsicht } from "./durchsicht";
 
@@ -73,18 +73,18 @@ const POSITION = {
   seriennummern: [],
 } as unknown as AtrPosition;
 
-let platz: HTMLElement;
+let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
   eine.mockResolvedValue(LIEFERUNG);
   positionen.mockResolvedValue([POSITION]);
   erzeugen.mockResolvedValue({ pdf_hinweis: null });
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const neu = () => document.body.appendChild(document.createElement("div"));
+  platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
 
 afterEach(() => {
-  platz.remove();
+  Object.values(platz).forEach((p) => p.remove());
 });
 
 describe("Durchsicht in der Schale", () => {
@@ -100,8 +100,11 @@ describe("Durchsicht in der Schale", () => {
       </QueryClientProvider>,
     );
     await screen.findByText("Lieferschein LS-1");
-    const leiste = within(platz);
-    expect(leiste.getByRole("link", { name: "Lieferungen" })).toHaveAttribute("href", "/atr");
+    expect(within(platz.navigation).getByRole("link", { name: "Lieferungen" })).toHaveAttribute(
+      "href",
+      "/atr",
+    );
+    const leiste = within(platz.aktionen);
     for (const name of ["Mappe", "PDF", "Etikett"]) {
       expect(leiste.getByRole("button", { name })).toBeDisabled();
     }

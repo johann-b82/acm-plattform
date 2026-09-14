@@ -22,20 +22,20 @@ vi.mock("@/lib/atr", async (original) => {
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { Werkzeugplatz, type Kategorie } from "@/components/sidebar/werkzeugplatz";
 import { Lieferungsliste } from "./lieferungsliste";
 
-let platz: HTMLElement;
+let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
   liste.mockResolvedValue([]);
   lauf.mockResolvedValue({ gelesen: 0, angelegt: 0, hinweise: [] });
-  platz = document.createElement("div");
-  document.body.appendChild(platz);
+  const neu = () => document.body.appendChild(document.createElement("div"));
+  platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
 
 afterEach(() => {
-  platz.remove();
+  Object.values(platz).forEach((p) => p.remove());
 });
 
 function zeige() {
@@ -54,7 +54,11 @@ function zeige() {
 describe("Lieferungsliste in der Schale", () => {
   it("stellt Einlesen und Eingang durchsehen in die Leiste", async () => {
     const { container } = zeige();
-    const leiste = within(platz);
+    const ansicht = within(platz.ansicht);
+    expect(ansicht.getByRole("combobox", { name: "Bereich" })).toBeInTheDocument();
+    expect(ansicht.getByText("Bereich")).toBeInTheDocument();
+
+    const leiste = within(platz.aktionen);
     expect(leiste.getByLabelText("Lieferschein einlesen")).toBeInTheDocument();
     const knopf = leiste.getByRole("button", { name: "Eingang durchsehen" });
     expect(container).not.toContainElement(knopf);

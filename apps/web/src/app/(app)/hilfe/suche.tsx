@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { suche } from "@/hilfe/registry";
 import { Card, Input } from "@/components/ui/primitives";
 import { useTexte } from "@/components/sprache/anbieter";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 /**
  * Volltextsuche über die Hilfe.
@@ -27,20 +27,22 @@ export function Suche() {
 
   return (
     <>
-      <Seitenwerkzeuge>
-        <div className="relative max-w-md">
-          <Search
-            className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
-            aria-hidden
-          />
-          <Input
-            value={begriff}
-            placeholder={t.hilfe.suchen}
-            aria-label={t.hilfe.suchen}
-            className="ps-9"
-            onChange={(e) => setBegriff(e.target.value)}
-          />
-        </div>
+      <Seitenwerkzeuge kategorie="filter">
+        <Werkzeug titel={t.hilfe.suchen}>
+          <div className="relative max-w-md">
+            <Search
+              className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fg-muted)]"
+              aria-hidden
+            />
+            <Input
+              value={begriff}
+              placeholder={t.hilfe.suchen}
+              aria-label={t.hilfe.suchen}
+              className="ps-9"
+              onChange={(e) => setBegriff(e.target.value)}
+            />
+          </div>
+        </Werkzeug>
       </Seitenwerkzeuge>
 
       {gesucht && (

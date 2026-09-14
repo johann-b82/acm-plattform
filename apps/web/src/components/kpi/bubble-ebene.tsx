@@ -311,7 +311,7 @@ function Ebene({
         // Der Modus gilt für die ganze Seite: in der Schale steht der Knopf in
         // der rechten Leiste. Ohne Schale schwebt er über dem Melde-Knopf, an
         // derselben Kante — wie im Altsystem.
-        <Seitenwerkzeuge>
+        <Seitenwerkzeuge kategorie="ansicht">
           <Button
             variant={modus ? "default" : "outline"}
             aria-pressed={modus}

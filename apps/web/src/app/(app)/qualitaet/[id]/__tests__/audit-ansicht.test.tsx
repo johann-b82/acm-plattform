@@ -74,4 +74,30 @@ describe("AuditAnsicht", () => {
     fireEvent.change(status, { target: { value: "abgeschlossen" } });
     await waitFor(() => expect(api.aendern).toHaveBeenCalledWith("a1", { status: "abgeschlossen" }));
   });
+
+  it("ordnet „Zur Übersicht“ der Navigation und den Status mit Titel den Aktionen zu", async () => {
+    api.eines.mockResolvedValue(AUDIT);
+    const plaetze = {
+      navigation: document.createElement("div"),
+      ansicht: document.createElement("div"),
+      filter: document.createElement("div"),
+      zeitraum: document.createElement("div"),
+      aktionen: document.createElement("div"),
+    };
+    Object.values(plaetze).forEach((p) => document.body.appendChild(p));
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={plaetze}>
+            <AuditAnsicht id="a1" darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const { navigation, aktionen } = plaetze;
+    expect(await within(aktionen).findByRole("combobox", { name: "Status" })).toBeInTheDocument();
+    expect(within(aktionen).getByText("Status")).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: "Zur Übersicht" })).toHaveAttribute("href", "/qualitaet");
+    expect(within(aktionen).queryByRole("link")).toBeNull();
+  });
 });

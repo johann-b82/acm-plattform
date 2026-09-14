@@ -41,6 +41,13 @@ export const de = {
     werkzeugeAusklappen: "Filterleiste ausklappen",
     werkzeugeOeffnen: "Filter öffnen",
     werkzeugeSchliessen: "Filter schließen",
+    kategorien: {
+      navigation: "Navigation",
+      ansicht: "Ansicht",
+      filter: "Filter",
+      zeitraum: "Zeitraum",
+      aktionen: "Aktionen",
+    },
   },
   pfad: {
     aria: "Pfad",
@@ -313,6 +320,7 @@ export const de = {
   qualitaet: {
     einleitung: "Audit-Findings, Reklamationsquote und Prüfmengen.",
     auditart: "Auditart:",
+    reklamationsart: "Reklamationsart",
     keineArt: "Keine Auditart ausgewählt. Wähle mindestens eine, sonst gibt es nichts zu zählen.",
     keineDaten: "Für diesen Zeitraum liegen keine Audit-Befunde vor",
     ladeVor: "Lade den 8D-Export unter ",
@@ -1491,6 +1499,8 @@ export const de = {
     verkleinern: "Verkleinern",
     vergroessern: "Vergrößern",
     einpassen: "Einpassen",
+    darstellung: "Darstellung",
+    bubbleGroesse: "Bubble-Größe",
     zeichnung: "Zeichnung",
     ladefehler: "Die Zeichnung ließ sich nicht laden.",
     alleKunden: "Alle Kunden",

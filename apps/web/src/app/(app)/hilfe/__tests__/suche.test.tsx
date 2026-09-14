@@ -12,11 +12,16 @@ import { Suche } from "../suche";
 
 describe("Hilfesuche", () => {
   it("stellt das Suchfeld in die Leiste und zeigt die Treffer im Inhalt", () => {
-    const platz = document.createElement("div");
-    document.body.appendChild(platz);
+    const plaetze = Object.fromEntries(
+      ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
+        k,
+        document.body.appendChild(document.createElement("div")),
+      ]),
+    );
+    const platz = plaetze.filter;
     render(
       <SprachAnbieter sprache="de">
-        <Werkzeugplatz.Provider value={platz}>
+        <Werkzeugplatz.Provider value={plaetze}>
           <main data-testid="inhalt">
             <Suche />
           </main>
@@ -25,11 +30,13 @@ describe("Hilfesuche", () => {
     );
     const feld = screen.getByRole("textbox", { name: texteFuer("de").hilfe.suchen });
     expect(platz).toContainElement(feld);
+    // Jeder Filter trägt in der Leiste einen Titel.
+    expect(platz.textContent).toContain(texteFuer("de").hilfe.suchen);
 
     fireEvent.change(feld, { target: { value: "hochladen" } });
     const treffer = screen.getByRole("link", { name: "Daten hochladen" });
     expect(screen.getByTestId("inhalt")).toContainElement(treffer);
     expect(platz).not.toContainElement(treffer);
-    platz.remove();
+    Object.values(plaetze).forEach((div) => div.remove());
   });
 });

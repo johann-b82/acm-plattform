@@ -22,7 +22,7 @@ vi.mock("@/lib/atr", async (original) => {
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
-import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
+import { KATEGORIEN, Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import type { Teil } from "@/lib/atr";
 import { Teilekatalog } from "./teilekatalog";
 
@@ -148,8 +148,9 @@ describe("Teilekatalog", () => {
 
   it("stellt Anlegen und Mappe einlesen in der Schale in die rechte Leiste", async () => {
     teilAnlegen.mockResolvedValue(undefined);
-    const platz = document.createElement("div");
-    document.body.appendChild(platz);
+    const platz = Object.fromEntries(
+      KATEGORIEN.map((k) => [k, document.body.appendChild(document.createElement("div"))]),
+    );
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const { container } = render(
       <QueryClientProvider client={client}>
@@ -161,14 +162,19 @@ describe("Teilekatalog", () => {
       </QueryClientProvider>,
     );
     await screen.findByText("Carpet FWD");
-    const leiste = within(platz);
+    const ansicht = within(platz.ansicht);
+    expect(ansicht.getByRole("combobox", { name: "Bereich" })).toBeInTheDocument();
+    expect(ansicht.getByText("Bereich")).toBeInTheDocument();
+
+    const leiste = within(platz.aktionen);
     const nummer = leiste.getByLabelText("Teil von Hand anlegen");
+    expect(leiste.getByText("Teil von Hand anlegen").tagName).not.toBe("LABEL");
     expect(leiste.getByLabelText("Referenzmappe einlesen")).toBeInTheDocument();
     expect(container).not.toContainElement(nummer);
 
     fireEvent.change(nummer, { target: { value: "VR-9" } });
     fireEvent.click(leiste.getByRole("button", { name: "Anlegen" }));
     await waitFor(() => expect(teilAnlegen).toHaveBeenCalledWith("VR-9"));
-    platz.remove();
+    Object.values(platz).forEach((p) => p.remove());
   });
 });
