@@ -21,10 +21,48 @@ vi.mock("@/lib/sensoren", async (importOriginal) => {
   };
 });
 
-import { FENSTER } from "@/lib/sensoren";
+import { FENSTER, sensorApi } from "@/lib/sensoren";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { SensorDashboard } from "../sensor-dashboard";
+
+describe("Sensor-Kachel", () => {
+  it("zeigt Wert und Min/Max, aber keine Tendenz zu vor 1 h oder 24 h", async () => {
+    vi.mocked(sensorApi.liste).mockResolvedValueOnce([
+      {
+        id: "s1", name: "Klebeschrank Lager", rechner: "192.9.201.65", port: 161,
+        temperatur_oid: "1.2.3", feuchte_oid: "1.2.4", temperatur_faktor: "1", feuchte_faktor: "1",
+        aktiv: true, farbe: null,
+      },
+    ]);
+    vi.mocked(sensorApi.stand).mockResolvedValueOnce([
+      {
+        sensor_id: "s1", gemessen_am: "2026-09-11T21:18:00Z", temperatur: "21.3", feuchte: "59",
+        versucht_am: "2026-09-11T21:18:00Z", erfolg: true, fehler: null,
+      },
+    ]);
+    vi.mocked(sensorApi.kennzahlen).mockResolvedValueOnce([
+      {
+        sensor_id: "s1", gemessen_am: "2026-09-11T21:18:00Z", temperatur: "21.3", feuchte: "59",
+        temperatur_min: null, temperatur_max: null, feuchte_min: null, feuchte_max: null,
+        temperatur_aenderung_1h: "-0.1", temperatur_aenderung_24h: "-0.5",
+        feuchte_aenderung_1h: "0", feuchte_aenderung_24h: "-0.6",
+      },
+    ]);
+    const { findByText, queryByText } = render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <SensorDashboard />
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    expect(await findByText("Klebeschrank Lager")).toBeInTheDocument();
+    expect(await findByText("21,3 °C")).toBeInTheDocument();
+    expect(queryByText(/zu vor 1 h/)).toBeNull();
+    expect(queryByText(/zu vor 24 h/)).toBeNull();
+    expect(queryByText(/-0,5/)).toBeNull();
+  });
+});
 
 describe("Sensoren in der Schale", () => {
   it("stellt das Zeitfenster als volle Auswahlliste unter „Zeitraum“", () => {
