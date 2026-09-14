@@ -47,16 +47,12 @@ export function Seitenkopf({
         {/* Umschalter gehören zur Ansicht, die übrige Bedienung zu den Aktionen.
             Was eine andere Kategorie hat (die Zeitraumwahl, Filter), stellt
             sich selbst dorthin. */}
-        {links && (
-          <Seitenwerkzeuge kategorie="ansicht">
-            <div className="flex flex-col items-start gap-2">{links}</div>
-          </Seitenwerkzeuge>
-        )}
-        {bedienung && (
-          <Seitenwerkzeuge kategorie="aktionen">
-            <div className="flex flex-col items-stretch gap-2">{bedienung}</div>
-          </Seitenwerkzeuge>
-        )}
+        {/* Ohne eigene Hülle: der Platz der Leiste ordnet selbst untereinander
+            und in voller Breite. Eine Hülle bliebe leer zurück, wenn ihr Inhalt
+            (etwa die Zeitraumwahl) in eine andere Kategorie wandert — und die
+            Leiste zeigte die Überschrift einer leeren Kategorie. */}
+        {links && <Seitenwerkzeuge kategorie="ansicht">{links}</Seitenwerkzeuge>}
+        {bedienung && <Seitenwerkzeuge kategorie="aktionen">{bedienung}</Seitenwerkzeuge>}
       </>
     );
   }

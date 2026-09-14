@@ -238,9 +238,6 @@ export function Schale({
                 );
               })}
             </ul>
-            <ul className="mt-auto space-y-0.5 border-t border-[var(--border)] pt-2">
-              <li className="flex">{verweis("/hilfe", t.kopf.hilfe, <CircleHelp className="h-[18px] w-[18px] shrink-0" aria-hidden />)}</li>
-            </ul>
           </nav>
 
           <Benutzerbereich
@@ -279,8 +276,8 @@ export function Schale({
             </div>
             <div className="flex items-center gap-1">
               {kopf}
-              {/* Die Hilfe auch hier oben, als Zeichen hinter den Zählern: sie
-                  wird mitten in der Arbeit gebraucht, nicht erst beim Navigieren. */}
+              {/* Die Hilfe steht nur hier oben, als Zeichen hinter den Zählern:
+                  sie wird mitten in der Arbeit gebraucht, nicht beim Navigieren. */}
               <Link href="/hilfe" aria-label={t.kopf.hilfe} title={t.kopf.hilfe} className={KNOPF}>
                 <CircleHelp className="h-[18px] w-[18px]" aria-hidden />
               </Link>
@@ -295,7 +292,9 @@ export function Schale({
               </button>
             </div>
           </header>
-          <main className="mx-auto w-full max-w-7xl p-6">{children}</main>
+          {/* Höchstens 1600 px: auf großen Bildschirmen nutzen Tabellen und Diagramme
+              die Fläche, Texte bleiben lesbar. */}
+          <main className="mx-auto w-full max-w-[100rem] p-6">{children}</main>
         </div>
 
         <aside
