@@ -35,7 +35,8 @@ import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
-import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import type { Texte } from "@/texte";
 
 /** Solange die Einstellung nicht geladen ist, gilt die Vorgabe der Migration. */
@@ -203,6 +204,19 @@ export function SensorDashboard() {
 function Fensterwahl({ stunden, onChange }: { stunden: number; onChange: (s: number) => void }) {
   const worte = useTexte();
   const id = useId();
+  // In der Leiste so breit wie die Leiste, der Pfeil im Feld — wie die übrigen
+  // Auswahllisten dort. Die feste Breite passte nur neben den Knöpfen im Kopf.
+  const inSchale = useInSchale();
+  if (inSchale) {
+    return (
+      <Leistenwahl
+        beschriftung={worte.zeitraum.aria}
+        wert={String(stunden)}
+        onChange={(w) => onChange(Number(w))}
+        optionen={FENSTER.map((f) => [String(f), fensterText(f, worte)] as const)}
+      />
+    );
+  }
   return (
     <div className="relative">
       <label htmlFor={id} className="sr-only">
