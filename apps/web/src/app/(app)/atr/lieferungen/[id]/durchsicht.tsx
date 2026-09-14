@@ -316,8 +316,7 @@ export function Durchsicht({
             return (
               <Button
                 key={feld}
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 disabled={!pfad}
                 onClick={() =>
                   pfad &&
@@ -327,7 +326,7 @@ export function Durchsicht({
                   })
                 }
               >
-                <Download className="me-1.5 h-3.5 w-3.5" aria-hidden />
+                <Download className="me-2 h-4 w-4" aria-hidden />
                 {name}
               </Button>
             );

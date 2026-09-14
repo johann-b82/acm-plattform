@@ -116,6 +116,10 @@ describe("Durchsicht in der Schale", () => {
       return k;
     });
     expect(container).not.toContainElement(erzeugenKnopf);
+    // Die Downloads sind Knöpfe wie „Dokumente erzeugen“, keine Textzeilen.
+    for (const name of ["Mappe", "PDF", "Etikett"]) {
+      expect(leiste.getByRole("button", { name }).className).toBe(erzeugenKnopf.className);
+    }
     fireEvent.click(erzeugenKnopf);
     await waitFor(() => expect(erzeugen).toHaveBeenCalledWith("l1"));
   });
