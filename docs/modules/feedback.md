@@ -43,6 +43,13 @@ das Ablegen ändert, entscheidet `ablegen()` in `feedback-liste.tsx`. In der
 **Tabelle** ist der Status eine Auswahlliste je Zeile; die Zuweisung steht
 dort nur.
 
+**In der rechten Leiste** steht für die Plattform-Verwaltung auf jeder Seite,
+was zu genau diesem Pfad gemeldet und noch nicht erledigt ist (offen und In
+Bearbeitung): Beschreibung, Status, Zuständige, Datum. Zugeordnet wird nach
+dem Pfad ohne Suchteil, Unterseiten zählen nicht mit (`gehoertZurSeite`). Jeder
+Eintrag führt zur Liste; ist nichts offen, fehlt der Abschnitt. Die Leiste
+zeigt nur und hakt nichts als gesehen ab.
+
 **Gesehen ist kein Status.** Ungesehen ist ein Punkt an der Meldung.
 Abgehakt wird er, wenn jemand den Punkt anklickt, das Bild öffnet oder die
 Karte in eine andere Spalte zieht — wie im

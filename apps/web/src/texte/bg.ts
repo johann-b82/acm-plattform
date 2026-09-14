@@ -1261,6 +1261,7 @@ export const bg: Texte = {
     oeffnen: "Отвори",
     ungesehen: "невидян",
     alsGesehen: "Отбележи като видян",
+    zuDieserSeite: "Обратна връзка за тази страница",
   },
   auditAnsicht: {
     gibtEsNicht: "Този одит не съществува",

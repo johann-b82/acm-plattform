@@ -1257,6 +1257,7 @@ export const vi: Texte = {
     oeffnen: "Mở",
     ungesehen: "chưa xem",
     alsGesehen: "Đánh dấu đã xem",
+    zuDieserSeite: "Phản hồi ứng dụng cho trang này",
   },
   auditAnsicht: {
     gibtEsNicht: "Audit này không tồn tại",

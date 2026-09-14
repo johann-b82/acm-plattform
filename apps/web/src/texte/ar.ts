@@ -1244,6 +1244,7 @@ export const ar: Texte = {
     oeffnen: "افتح",
     ungesehen: "غير مُشاهَد",
     alsGesehen: "علّم كمُشاهَد",
+    zuDieserSeite: "ملاحظات التطبيق لهذه الصفحة",
   },
   auditAnsicht: {
     gibtEsNicht: "هذا التدقيق غير موجود",

@@ -1261,6 +1261,7 @@ export const pl: Texte = {
     oeffnen: "Otwórz",
     ungesehen: "nieobejrzane",
     alsGesehen: "Oznacz jako obejrzane",
+    zuDieserSeite: "Opinie o aplikacji dla tej strony",
   },
   auditAnsicht: {
     gibtEsNicht: "Takiego auditu nie ma",

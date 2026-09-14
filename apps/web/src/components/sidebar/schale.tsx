@@ -64,6 +64,7 @@ export function Schale({
   email,
   darfEinstellungen,
   kopf,
+  feedback,
   children,
 }: {
   eintraege: NavEintrag[];
@@ -75,6 +76,9 @@ export function Schale({
   darfEinstellungen: boolean;
   /** Was rechts in der Kopfzeile steht: Glocke, Maßnahmen. */
   kopf: ReactNode;
+  /** App Feedback zur aktuellen Seite, über „App Feedback melden“ — nur wer
+   *  Feedback lesen darf, bekommt es mitgegeben. */
+  feedback?: ReactNode;
   children: ReactNode;
 }) {
   const t = useTexte();
@@ -355,6 +359,7 @@ export function Schale({
                 <div data-platz={k} ref={platzRefs[k]} className="flex flex-col items-stretch gap-3" />
               </section>
             ))}
+            {feedback}
           </div>
           {!werkzeugeMitText && <div className="hidden flex-1 md:block" />}
 

@@ -1247,6 +1247,7 @@ export const fa: Texte = {
     oeffnen: "باز کردن",
     ungesehen: "دیده‌نشده",
     alsGesehen: "علامت دیده‌شده",
+    zuDieserSeite: "بازخورد برنامه برای این صفحه",
   },
   auditAnsicht: {
     gibtEsNicht: "این ممیزی وجود ندارد",

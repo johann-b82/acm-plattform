@@ -45,7 +45,11 @@ const EINTRAEGE: NavEintrag[] = [
 
 function zeige(
   eingeklappt = false,
-  { werkzeugeEingeklappt = false, inhalt = <p>Inhalt</p> }: { werkzeugeEingeklappt?: boolean; inhalt?: ReactNode } = {},
+  {
+    werkzeugeEingeklappt = false,
+    inhalt = <p>Inhalt</p>,
+    feedback,
+  }: { werkzeugeEingeklappt?: boolean; inhalt?: ReactNode; feedback?: ReactNode } = {},
 ) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -59,6 +63,7 @@ function zeige(
           email="anna@example.com"
           darfEinstellungen
           kopf={<span>Zähler</span>}
+          feedback={feedback}
         >
           {inhalt}
         </Schale>
@@ -214,6 +219,14 @@ describe("Rechte Leiste", () => {
     expect(within(werkzeuge()).getByRole("button", { name: "Zeitraum" })).toBeInTheDocument();
     expect(within(werkzeuge()).queryByText("Satz über der Seite")).toBeNull();
     expect(screen.getByRole("main")).toHaveTextContent("Satz über der Seite");
+  });
+
+  it("stellt das Feedback zur Seite über „App Feedback melden“, wenn es mitgegeben ist", () => {
+    zeige(false, { feedback: <p>Feedback zur Seite</p> });
+    const leiste = within(werkzeuge());
+    const feedback = leiste.getByText("Feedback zur Seite");
+    const melden = leiste.getByRole("button", { name: "App Feedback melden" });
+    expect(feedback.compareDocumentPosition(melden) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("trägt App Feedback melden, auch auf Seiten ohne Filter", () => {

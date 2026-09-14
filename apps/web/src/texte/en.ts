@@ -1257,6 +1257,7 @@ export const en: Texte = {
     oeffnen: "Open",
     ungesehen: "unseen",
     alsGesehen: "Mark as seen",
+    zuDieserSeite: "App feedback for this page",
   },
   auditAnsicht: {
     gibtEsNicht: "This audit does not exist",
