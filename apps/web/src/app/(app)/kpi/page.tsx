@@ -25,7 +25,6 @@ export default async function KpiHubPage() {
   const t = await texte();
   return (
     <Kacheln
-      untertitel={t.kennzahlenHub.einleitung}
       eintraege={BEREICHE.map((pfad) => ({
         pfad,
         name: pfad === "/hr/kennzahlen" ? t.pfad.seiten["/hr"] : t.pfad.seiten[pfad],

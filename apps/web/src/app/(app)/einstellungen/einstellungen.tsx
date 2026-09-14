@@ -59,7 +59,6 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
   if (inSchale) {
     return (
       <div className="space-y-6">
-        <Seitenkopf untertitel={worte.einstellungen.einleitung} />
         <Seitenwerkzeuge kategorie="navigation">
           <nav aria-label={worte.einstellungen.bereiche} className="border-s border-[var(--border)]">
             <ul className="flex flex-col text-sm">
@@ -84,7 +83,6 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.einstellungen.einleitung}
       />
 
       <div className="grid gap-8 lg:grid-cols-[11rem_minmax(0,1fr)]">

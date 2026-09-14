@@ -7,7 +7,6 @@ import { LogOut, Settings } from "lucide-react";
 
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ErscheinungsbildUmschalter } from "@/components/erscheinungsbild/umschalter";
-import { initialen } from "@/lib/initialen";
 import { SPRACHEN, SPRACHE_LABEL } from "@/lib/sprache";
 import { setzeSprache } from "@/app/sprache-aktion";
 import { signOut } from "@/app/login/actions";
@@ -50,24 +49,6 @@ export function Benutzerbereich({
 
   return (
     <div className="space-y-2 border-t border-[var(--border)] p-2">
-      <div className={cn("flex items-center gap-2 px-2 pt-1", !mitText && "md:justify-center md:px-0")}>
-        <span
-          title={email ?? undefined}
-          aria-hidden={mitText}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--muted)] text-xs font-semibold tracking-wide"
-        >
-          {initialen(email)}
-        </span>
-        {mitText && email && (
-          <div className="min-w-0 text-xs text-[var(--fg-muted)]">
-            {t.kopf.angemeldetAls}
-            <div className="truncate text-sm text-[var(--fg)]" title={email}>
-              {email}
-            </div>
-          </div>
-        )}
-      </div>
-
       {mitText && (
         <div className="space-y-2 px-2">
           <div>
@@ -103,20 +84,30 @@ export function Benutzerbereich({
         </div>
       )}
 
+      {darfEinstellungen && (
+        <Link
+          href="/einstellungen"
+          onClick={onNavigieren}
+          title={mitText ? undefined : t.kopf.einstellungen}
+          className={cn(EINTRAG, !mitText && "justify-center px-0")}
+        >
+          <Settings className="h-[18px] w-[18px] shrink-0" aria-hidden />
+          <span className={cn("truncate", !mitText && "sr-only")}>{t.kopf.einstellungen}</span>
+        </Link>
+      )}
+
+      {/* Wer angemeldet ist, steht direkt über „Abmelden“ — beides gehört zum
+          Konto, nicht zu den Einstellungen der Oberfläche. */}
+      {mitText && email && (
+        <div className="min-w-0 px-2 py-1 text-xs text-[var(--fg-muted)]">
+          {t.kopf.angemeldetAls}
+          <div className="truncate text-sm text-[var(--fg)]" title={email}>
+            {email}
+          </div>
+        </div>
+      )}
+
       <ul className="space-y-0.5">
-        {darfEinstellungen && (
-          <li>
-            <Link
-              href="/einstellungen"
-              onClick={onNavigieren}
-              title={mitText ? undefined : t.kopf.einstellungen}
-              className={cn(EINTRAG, !mitText && "justify-center px-0")}
-            >
-              <Settings className="h-[18px] w-[18px] shrink-0" aria-hidden />
-              <span className={cn("truncate", !mitText && "sr-only")}>{t.kopf.einstellungen}</span>
-            </Link>
-          </li>
-        )}
         <li>
           <form action={signOut}>
             <button

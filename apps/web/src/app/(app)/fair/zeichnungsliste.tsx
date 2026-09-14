@@ -18,7 +18,6 @@ import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle"
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
-import { Seitenkopf } from "@/components/seitenkopf";
 import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
 
@@ -106,7 +105,6 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf untertitel={worte.fair.einleitung} />
 
       {/* Hochladen und Kundenfilter gelten für die ganze Liste: in der Schale
           stehen sie in der rechten Leiste. */}

@@ -207,7 +207,7 @@ export function Teilekatalog({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf untertitel={worte.atr.einleitung} links={<Bereichswahl aktiv="teilekatalog" />} />
+      <Seitenkopf links={<Bereichswahl aktiv="teilekatalog" />} />
 
       {/* Anlegen und Einlesen gelten für den ganzen Katalog: in der Schale
           stehen sie in der rechten Leiste, der Bericht bleibt auf der Seite. */}

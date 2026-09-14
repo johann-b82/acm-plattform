@@ -144,6 +144,11 @@ describe("Qualität", () => {
     });
   });
 
+  it("zeigt keinen erklärenden Satz über der Seite", () => {
+    zeige();
+    expect(screen.queryByText("Audit-Findings, Reklamationsquote und Prüfmengen.")).toBeNull();
+  });
+
   it("zeigt die Auditart nur bei Audits", () => {
     zeige();
     const umschalter = screen.getByRole("radiogroup", { name: "Ansicht" });

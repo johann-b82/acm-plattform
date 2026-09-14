@@ -81,7 +81,6 @@ export function QualitaetDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.qualitaet.einleitung}
         links={
           <>
             {/* Kein eigener Titel: er stünde gleich unter der Kategorie „Ansicht“. */}

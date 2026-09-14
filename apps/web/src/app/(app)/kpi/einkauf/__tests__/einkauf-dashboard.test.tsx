@@ -70,6 +70,11 @@ function zeige() {
 }
 
 describe("Einkauf-Seite", () => {
+  it("zeigt keinen erklärenden Satz über der Seite", () => {
+    zeige();
+    expect(screen.queryByText("Liefertermintreue der Lieferanten. Gezählt wird, was im Zeitraum angekommen ist.")).toBeNull();
+  });
+
   it("ordnet Verlauf → Lieferpositionen → Lager", async () => {
     zeige();
     const verlauf = await screen.findByRole("heading", { name: "OTD-Quote im Zeitverlauf" });

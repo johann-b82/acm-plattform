@@ -15,7 +15,6 @@ import { cn } from "@/lib/cn";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { useFormate } from "@/lib/kpi/use-formate";
 import { ZAHL_TAG } from "@/lib/sprache";
-import { Seitenkopf } from "@/components/seitenkopf";
 
 /**
  * Die ERP-Exporte. Jede Art hat ihren eigenen Endpunkt in compute, weil die
@@ -252,7 +251,6 @@ export function UploadsAdmin() {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf untertitel={worte.uploads.einleitung} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {ARTEN.map((art) => (

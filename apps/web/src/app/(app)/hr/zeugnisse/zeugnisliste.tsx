@@ -130,7 +130,6 @@ export function Zeugnisliste() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.zeugnisse.einleitung}
       />
 
       <Klappbar titel={worte.zeugnisse.bausteineTitel} offenStart={false}>

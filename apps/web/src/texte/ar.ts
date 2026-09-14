@@ -243,7 +243,6 @@ export const ar: Texte = {
     auftragseingangHinweis: "بعد خصم عمليات الإلغاء",
   },
   einkauf: {
-    einleitung: "التزام المورّدين بمواعيد التسليم. يُحتسب ما وصل ضمن الفترة.",
     keineDaten: "لا توجد بنود توريد لهذه الفترة",
     ladeVor: "ارفع تصدير الالتزام بالتسليم في ",
     ladeNach: ".",
@@ -278,7 +277,6 @@ export const ar: Texte = {
     menge: "الكمية",
   },
   produktion: {
-    einleitung: "الطلبات المتأخرة. لا يُحتسب الطلب إلا بعد أن تتحدد نتيجته.",
     keineDaten: "لا يوجد طلب محدَّد النتيجة في هذه الفترة",
     ladeVor: "ارفع بنود الطلبات وإشعارات التسليم في ",
     ladeNach:
@@ -310,7 +308,6 @@ export const ar: Texte = {
     tageUeberfaellig: "أيام التجاوز",
   },
   finanzen: {
-    einleitung: "تكاليف المواد والعاملين قياساً إلى الإيرادات المفوترة.",
     keineDatenVor:
       "يلزم ثلاثة ملفات: حركات المخزون للاستهلاك، وأسعار المواد (استلام البضائع) للأسعار، " +
       "والإيرادات كمرجع. الثلاثة كلها في ",
@@ -350,7 +347,6 @@ export const ar: Texte = {
     quoteBeiKosten: (kosten: string) => `النسبة عند تكاليف ${kosten}`,
   },
   qualitaet: {
-    einleitung: "نتائج التدقيق ونسبة الشكاوى وكميات الفحص.",
     auditart: "نوع التدقيق:",
     reklamationsart: "نوع الشكوى",
     keineArt: "لم يُختر نوع تدقيق. اختر نوعاً واحداً على الأقل، وإلا فلا شيء يُحتسب.",
@@ -438,9 +434,6 @@ export const ar: Texte = {
     artikel: "الصنف",
   },
   personal: {
-    einleitung:
-      "من مزامنة Personio. الهدف اليومي مأخوذ من نموذج وقت العمل المسجَّل لكل شخص، " +
-      "لا من يوم عمل ثابت من ثماني ساعات.",
     uebersicht: "نظرة عامة",
     keinAbgleich: "لم تُجرَ أي مزامنة بعد. تعمل تلقائياً كل ليلة في 02:15.",
     bestand: (personen: string, anwesenheiten: string, abwesenheiten: string) =>
@@ -492,10 +485,6 @@ export const ar: Texte = {
   },
   belegschaft: {
     titel: "القوى العاملة",
-    hinweis:
-      "حتى اليوم. التوزيعات تعرض البيانات الأساسية الحالية لا بيانات ذلك الوقت — " +
-      "فـ Personio لا يحفظ تاريخاً. واختلاف المقام بين «الموظفين» ونسبة الكفاءات مقصود: " +
-      "رقم يتبع حالة Personio، والآخر تاريخَي الالتحاق والمغادرة. كلا الطريقين من النظام القديم.",
     ladeFehler: (meldung: string) => `تعذّر تحميل بيانات القوى العاملة: ${meldung}`,
     beschaeftigte: "الموظفون",
     beschaeftigteHinweis: "حسب حالة Personio «نشط»",
@@ -581,9 +570,6 @@ export const ar: Texte = {
     anmelden: "تسجيل الدخول",
   },
   uploads: {
-    einleitung:
-      "قراءة تصديرات نظام ERP. رفع الملف نفسه مرة أخرى غير ضار: تُحدَّث الأسطر القائمة " +
-      "ولا تُنشأ مرتين.",
     dateiWaehlen: "اختر ملفاً",
     verarbeitet: "جارٍ المعالجة …",
     uebersprungen: (datei: string) => `أسطر متجاوَزة من «${datei}»`,
@@ -652,9 +638,6 @@ export const ar: Texte = {
     },
   },
   organigramm: {
-    einleitung:
-      "من Personio. من لا رئيس مسجَّل له هناك يظهر في الأعلى — وهذا صحيح بالنسبة إلى " +
-      "الإدارة، وفي ما عداها دليل على نقص في البيانات الأساسية.",
     suchfeld: "شخص أو منصب أو قسم",
     suchePlatzhalter: "الاسم، المنصب، القسم",
     standort: "الموقع",
@@ -718,9 +701,6 @@ export const ar: Texte = {
     ohneTreffer: "بلا تطابق في Personio",
   },
   schulungen: {
-    einleitung:
-      "الكتالوج ودورته ومن يستوفيه. مواعيد الاستحقاق تُحسب من آخر موعد ومن الدورة، " +
-      "ولا تُخزَّن.",
     dokumentenlauf: "دورة المستندات",
     bereich: "المجال",
     neueSchulung: "تدريب جديد",
@@ -827,9 +807,6 @@ export const ar: Texte = {
     nameForm: "اسم العائلة، الاسم الأول",
   },
   kompetenzen: {
-    einleitung:
-      "ما تتطلبه الوظيفة ومدى استيفائه — مصفوفة لكل مجال. تُقرأ من ملف المجال، " +
-      "ثم تُدار هنا.",
     zumDashboard: "إلى لوحة شؤون الموظفين",
     bereich: "المجال",
     wirdGelesen: "جارٍ القراءة …",
@@ -867,9 +844,6 @@ export const ar: Texte = {
     note2: "جيد",
     note3: "مُرضٍ",
     note4: "مقبول",
-    einleitung:
-      "من الدرجات والنقاط تُصاغ لغة شهادة العمل. تُنسخ البيانات الأساسية عند الإنشاء — " +
-      "فالشهادة الصادرة لا تتغير لأن Personio تغيّر.",
     person: "الشخص",
     waehlen: "— اختر —",
     art: "النوع",
@@ -1081,9 +1055,6 @@ export const ar: Texte = {
     matrixLeer: "لا توجد محتويات أو إدارات بعد.",
     vorgaengeTitel: "إجراءات التأهيل والتدريب",
     matrixZelle: (inhalt: string, abteilung: string) => `${inhalt} – ${abteilung}`,
-    einleitung:
-      "من هو الجديد وأي تدريبات تطلبها مصفوفة المتطلبات له. الخطة لا تُخزَّن بل " +
-      "تُحسب — فإذا تغيرت المصفوفة تغيرت الخطة.",
     nichtsGefehlt: "لم ينقص شيء.",
     angelegt: (anzahl: number) => `أُنشئ ${anzahl} ${anzahl === 1 ? "تدريب" : "تدريباً"}.`,
     neu90: "جدد (آخر 90 يوماً)",
@@ -1137,9 +1108,6 @@ export const ar: Texte = {
     fehlt: "ناقص",
   },
   audit: {
-    einleitung:
-      "التدقيقات من التخطيط حتى الإغلاق. كل تغيير في الحالة يُسجَّل في السجل — " +
-      "تكتبه قاعدة البيانات لا الشاشة، ولا يتغير بعدها.",
     zuKennzahlen: "إلى المؤشرات",
     nummer: "الرقم",
     nummerBeispiel: "A-2026-01",
@@ -1191,9 +1159,6 @@ export const ar: Texte = {
     lieferant: "المورّد",
   },
   wartung: {
-    einleitung:
-      "الآلات ومهام صيانتها المتكررة. ينشأ الإثبات كاستمارة للتعليق — لكل نصف سنة، " +
-      "بعمود لكل أسبوع تقويمي.",
     zuKennzahlen: "إلى المؤشرات",
     neueMaschine: "آلة جديدة",
     beispiel: "مثلاً: آلة تفريز 3",
@@ -1210,9 +1175,6 @@ export const ar: Texte = {
     angelegt: "تم إنشاء الآلة.",
   },
   sensoren: {
-    einleitung:
-      "درجة الحرارة والرطوبة وفق فترة الاستعلام المضبوطة. تظهر القيمة خارج الحدود العامة " +
-      "بلون التحذير.",
     misst: "جارٍ القياس …",
     jetztMessen: "قِس الآن",
     keinGeraet: "لا جهاز مُعدّ",
@@ -1240,8 +1202,6 @@ export const ar: Texte = {
     ladeFehler: "تعذر تحميل القياسات.",
   },
   hilfe: {
-    einleitung:
-      "ما تستطيعه المنصة، وكيف تنشأ الأرقام، وما العمل حين لا يكون شيء على ما يرام.",
     nurDeutsch: "صفحات المساعدة نفسها مكتوبة بالألمانية.",
     suchen: "ابحث في المساعدة",
     nichtsGefunden:
@@ -1250,7 +1210,7 @@ export const ar: Texte = {
     navigation: "مواضيع المساعدة",
   },
   meldungen: {
-    stand: (offen: number) => `ما أُبلغ عنه من الشاشات عبر App Feedback. ${offen} مفتوح`,
+    stand: (offen: number) => `${offen} مفتوح`,
     neuSeit: (anzahl: number) => ` · ${anzahl} لم يُشاهَد بعد`,
     nichtsGemeldet: "لا App Feedback بعد",
     nichtsGemeldetText:
@@ -1390,9 +1350,6 @@ export const ar: Texte = {
     nameFehlt: "الاسم مطلوب.",
   },
   atr: {
-    einleitung:
-      "كتالوج القطع هو الأساس: منه يأخذ إشعار التسليم الوصف والرسم والوزن. والمطابقة " +
-      "تتم برقم القطعة دون زوائد — الأرقام وحدها هي ما يُحتسب.",
     teilAnlegen: "أضف قطعة يدوياً",
     teilBeispiel: "رقم القطعة، مثلاً VR-1234-56",
     anlegen: "أنشئ",
@@ -1419,8 +1376,6 @@ export const ar: Texte = {
     nichtGespeichert: (meldung: string) => `لم يُحفظ: ${meldung}`,
   },
   lieferungen: {
-    einleitung:
-      "يُقرأ إشعار التسليم ويُطابق مع كتالوج القطع ويُحفظ كمسودة. بعد إنشاء المستندات يصبح «مُنشأ»، وعندما يضعها الفحص التلقائي في مجلد الإخراج يصبح «مُسلَّم».",
     wirdGelesen: "جارٍ القراءة …",
     einlesen: "اقرأ إشعار تسليم",
     laeuft: "جارٍ التنفيذ …",
@@ -1481,9 +1436,6 @@ export const ar: Texte = {
   fair: {
     dateiFehlt: (meldung: string) =>
       `تعذّر تحميل الرسم نفسه (${meldung}). الأبعاد مدرجة أدناه على أي حال.`,
-    einleitung:
-      "فحص العينة الأولى: ارفع رسماً هندسياً وضع بالوناً مرقّماً عند كل بُعد يجب فحصه. " +
-      "الأرقام تمنحها قاعدة البيانات وتبقيها متسلسلة بلا فجوات.",
     bezeichnungFrei: "الوصف (فارغ = اسم الملف)",
     beispiel: "مثلاً: عمود 12×40، رسم 4711",
     wirdGeladen: "جارٍ الرفع …",
@@ -1556,8 +1508,6 @@ export const ar: Texte = {
     beitraege: "المقالات",
     belegschaftInZahlen: "القوى العاملة بالأرقام",
     neuBeiUns: "جدد بيننا",
-    redaktionEinleitung:
-      "عدد واحد لكل ربع. الفصول تحدد الترتيب في المجلة؛ ولا تُنشر إلا حين تكتمل.",
     zurLeseransicht: "إلى عرض القارئ",
     jahr: "السنة",
     quartal: "الربع",
@@ -1602,7 +1552,6 @@ export const ar: Texte = {
     standEingefroren: "جُمّدت الحالة.",
   },
   signage: {
-    einleitung: "وسائط الشاشات وقوائم تشغيلها وجداولها الزمنية وأجهزتها.",
     bereiche: "أقسام Signage",
     medien: "الوسائط",
     medienHinzu: "أضف وسائط",
@@ -1731,7 +1680,6 @@ export const ar: Texte = {
   },
   einstellungen: {
     titel: "الإعدادات",
-    einleitung: "ما تحسبه المنصة وتجلبه وتعرضه — واحد للجميع.",
     bereiche: "الأقسام",
     gruppen: {
       kennzahlen: "المؤشرات",
@@ -2145,7 +2093,6 @@ export const ar: Texte = {
   },
   kennzahlenHub: {
     titel: "لوحة KPI",
-    einleitung: "المؤشرات لكل قسم. البيانات تأتي من تصديرات ERP في قسم الملفات المرفوعة.",
     bereiche: {
       "/kpi/vertrieb": "الإيرادات، قيمة الطلب، حصة العملاء",
       "/hr/kennzahlen": "القوى العاملة، دوران العمالة، المرض — صلاحية منفصلة",
@@ -2157,7 +2104,6 @@ export const ar: Texte = {
     },
   },
   personalHub: {
-    einleitung: "شؤون الموظفين، حسب المجالات. والأرقام واحد منها.",
     bereiche: {
       "/hr/kennzahlen": "القوى العاملة، دوران العمالة، المرض، العمل الإضافي",
       "/hr/organigramm": "من يرفع تقاريره إلى من",
@@ -2171,7 +2117,6 @@ export const ar: Texte = {
   },
   bewertung: {
     titel: "تقييم KPI والإجراءات",
-    einleitung: "قيّم المؤشرات واستخلص الإجراءات ووزّعها وتابعها.",
     uebersichtFehler: (meldung: string) => `تعذّر التحميل: ${meldung}`,
     nurLesen:
       "تستطيع قراءة التقييمات لا كتابتها. لذلك يلزم حق «التحرير» على الإعدادات.",

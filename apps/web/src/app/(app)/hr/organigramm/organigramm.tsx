@@ -72,7 +72,6 @@ export function Organigramm() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.organigramm.einleitung}
       />
 
       {/* In der Leiste trägt der Werkzeug-Titel die Beschriftung, sonst das Label. */}

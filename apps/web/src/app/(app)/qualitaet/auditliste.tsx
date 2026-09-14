@@ -224,7 +224,6 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.audit.einleitung}
         unter={
           <div className="mt-2 flex justify-start text-sm">
             <Link href="/kpi/qualitaet" className="underline-offset-4 hover:underline">

@@ -23,7 +23,6 @@ import { Badge, Button, Card, Input, Select } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { BubbleMarke } from "@/components/kpi/bubble-ebene";
-import { Seitenkopf } from "@/components/seitenkopf";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { cn } from "@/lib/cn";
@@ -262,7 +261,6 @@ export function BewertungSeite({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf untertitel={t.einleitung} />
 
       {ladeFehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">{t.uebersichtFehler((ladeFehler as Error).message)}</Card>

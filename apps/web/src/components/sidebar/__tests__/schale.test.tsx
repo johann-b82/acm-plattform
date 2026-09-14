@@ -4,7 +4,7 @@
  * auf schmalen Bildschirmen als Schublade, unten das Benutzermenü.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 const pfad = vi.hoisted(() => ({ jetzt: "/kpi/vertrieb" }));
 vi.mock("next/navigation", () => ({
@@ -170,6 +170,30 @@ describe("Seitenleiste", () => {
     expect(within(leiste).getByRole("link", { name: "Einstellungen" })).toBeInTheDocument();
     expect(within(leiste).getByRole("button", { name: "Abmelden" })).toBeInTheDocument();
     expect(within(leiste).queryByRole("combobox", { name: "Sprache" })).toBeNull();
+  });
+});
+
+describe("Benutzerbereich", () => {
+  const folgt = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  it("stellt „Angemeldet als“ direkt über „Abmelden“, unter die Einstellungen", () => {
+    zeige();
+    const leiste = within(screen.getByTestId("seitenleiste"));
+    const wer = leiste.getByText("anna@example.com");
+    const einstellungen = leiste.getByRole("link", { name: "Einstellungen" });
+    const abmelden = leiste.getByRole("button", { name: "Abmelden" });
+    const sprache = leiste.getByRole("combobox", { name: "Sprache" });
+    expect(folgt(sprache, wer)).toBe(true);
+    expect(folgt(einstellungen, wer)).toBe(true);
+    expect(folgt(wer, abmelden)).toBe(true);
+  });
+
+  it("zeigt nur die Adresse, kein Kürzel davor — auch eingeklappt nicht", () => {
+    zeige();
+    expect(within(screen.getByTestId("seitenleiste")).queryByText("AN")).toBeNull();
+    cleanup();
+    zeige(true);
+    expect(within(screen.getByTestId("seitenleiste")).queryByText("AN")).toBeNull();
   });
 });
 

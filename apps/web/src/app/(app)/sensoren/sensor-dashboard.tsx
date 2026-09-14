@@ -125,7 +125,6 @@ export function SensorDashboard() {
   return (
     <div className="space-y-6">
       <Seitenkopf
-        untertitel={worte.sensoren.einleitung}
         bedienung={
           <>
             {/* Das Fenster ist der Zeitraum dieser Seite: in der Schale unter „Zeitraum“. */}
