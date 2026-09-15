@@ -38,10 +38,12 @@ export function Kacheln({
             <li key={k.pfad}>
               <Link
                 href={k.pfad}
-                className="flex h-full items-stretch gap-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
+                className="relative block h-full rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--fg-muted)]"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium">{k.name}</div>
+                <div className="min-w-0">
+                  {/* Rechts Platz für das Sinnbild in der Ecke, damit ein langer
+                      Name nicht darunter läuft. */}
+                  <div className="pe-8 font-medium">{k.name}</div>
                   {/* Zwei Textzeilen sind immer reserviert — ob Beschreibung
                       oder Rechtestufe, ob ein- oder zweizeilig —, damit alle
                       Kacheln (App-Starter wie Übersichten) gleich hoch wirken
@@ -59,18 +61,10 @@ export function Kacheln({
                     )}
                   </div>
                 </div>
-                {/* Das Sinnbild sitzt am rechten Rand, vertikal mittig im
-                    gestreckten Streifen. Die Höhe ist fest — drei Viertel der
-                    einzeiligen Kachel (Name 1.5rem + Abstand 0.25rem + zwei
-                    reservierte Zeilen 2.5rem = 4.25rem) —, damit ein
-                    umbrechender Name das Bild nicht größer macht. w-auto hält
-                    es quadratisch. */}
-                <span className="flex shrink-0 items-center self-stretch">
-                  <Bild
-                    className="h-[3.1875rem] w-auto text-[var(--fg-muted)]"
-                    aria-hidden
-                    strokeWidth={1.5}
-                  />
+                {/* Das Sinnbild sitzt klein oben rechts in der Ecke, in fester
+                    Größe — ein umbrechender Name verschiebt es nicht. */}
+                <span className="absolute top-4 end-4">
+                  <Bild className="h-[1.40625rem] w-[1.40625rem] text-[var(--fg-muted)]" aria-hidden strokeWidth={1.5} />
                 </span>
               </Link>
             </li>
