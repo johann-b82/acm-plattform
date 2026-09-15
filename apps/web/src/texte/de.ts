@@ -48,6 +48,9 @@ export const de = {
       zeitraum: "Zeitraum",
       aktionen: "Aktionen",
     },
+    auchGeoeffnet: (namen: string) => `Auch geöffnet von ${namen}`,
+    konflikt: "Inzwischen von jemand anderem geändert — der aktuelle Stand ist geladen.",
+    geloeschtVonAnderen: "Inzwischen von jemand anderem gelöscht.",
   },
   pfad: {
     aria: "Pfad",

@@ -7,6 +7,8 @@ import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/kpi/vertrieb" }));
+const live = vi.hoisted(() => ({ useLiveTabellen: vi.fn() }));
+vi.mock("@/components/realtime/live", () => live);
 
 const api = vi.hoisted(() => ({
   zurSeite: vi.fn(),
@@ -33,6 +35,7 @@ function meldung(id: string, status: "neu" | "in_bearbeitung", zugewiesen: strin
     erstellt_am: "2026-09-01T08:00:00Z",
     melder_email: null,
     zugewiesen,
+    version: 1,
   };
 }
 
@@ -69,5 +72,12 @@ describe("SeitenFeedback", () => {
     const { container } = zeige();
     await vi.waitFor(() => expect(api.zurSeite).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("hält App Feedback live — eine neue Meldung zur Seite erscheint ohne Neuladen", async () => {
+    api.zurSeite.mockResolvedValue([]);
+    zeige();
+    await vi.waitFor(() => expect(api.zurSeite).toHaveBeenCalled());
+    expect(live.useLiveTabellen).toHaveBeenCalledWith(["feedback"]);
   });
 });

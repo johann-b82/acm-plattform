@@ -307,3 +307,29 @@ setzt nur die Plattform-Verwaltung.
 Vor Ort geprüft am 10.09.2026 gegen `\\acm_file\Dateiablage\0900 - EDV\Test_ATR`:
 ein echter Diehl-Lieferschein, 8 Positionen, alle 8 im Katalog gefunden, Mappe
 mit `Total weight 4,63` — und die Datei danach im Archiv.
+
+## Gleichzeitig arbeiten
+
+Lieferungen und Positionen sind Tabellen der Phase 1 von ADR-0006. Jede Zeile
+trägt eine `version`, die die Datenbank bei jeder Änderung hochzählt — auch
+wenn der Scan, die Erzeugung oder die Containerbeschriftung in `compute`
+schreiben. Die Oberfläche speichert und löscht nur mit der geladenen Version;
+war jemand anders schneller, sagt sie es und lädt den aktuellen Stand.
+
+Liste und Durchsicht bleiben live (`tabelle:atr_lieferungen`,
+`tabelle:atr_positionen`), und die Durchsicht zeigt, wer dieselbe Lieferung
+gerade offen hat.
+
+**Positionen speichern mit der Version beim Betreten des Feldes.** Eine
+Position speichert beim Verlassen jedes Feldes. Gespeichert wird mit der
+Version, die sie beim Betreten hatte — hat jemand anders sie inzwischen
+geändert, fällt das auf, auch wenn die Liste schon live nachgeladen hat. Wer
+von Feld zu Feld springt, ist schneller als das Neuladen: die Änderungen einer
+Lieferung laufen deshalb hintereinander, und was die eigene vorige
+Speicherung aus der Version gemacht hat, gilt als Fortsetzung — kein Konflikt
+mit sich selbst. Ändert ein anderer einen Wert, steht er im Feld, sobald es
+niemand bearbeitet.
+
+Die Kopfdaten sind ein Entwurf mit „Speichern“. Ändert jemand anders die
+Lieferung, während der Entwurf offen ist, setzt die Maske ihn auf den neuen
+Stand zurück — sie hängt am Änderungsstempel.

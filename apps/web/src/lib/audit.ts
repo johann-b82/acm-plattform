@@ -1,4 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { speichereVersioniert } from "@/lib/versioniert";
 
 /**
  * Audit: Planung, Phasen-Checkliste, Normbezug und Verlauf.
@@ -74,6 +75,8 @@ export interface Audit {
   prioritaet: number;
   status: AuditStatus;
   vorlage_id: string | null;
+  /** Zählt die Datenbank bei jeder Änderung (ADR-0006). */
+  version: number;
 }
 
 export interface Stand {
@@ -98,6 +101,7 @@ export interface Phase {
   erledigt_am: string | null;
   kommentar: string;
   uebersprungen_warum: string | null;
+  version: number;
 }
 
 export interface Norm {
@@ -194,10 +198,10 @@ export function phasenFehler(
 
 const AUDIT_FELDER =
   "id,nummer,titel,art,bereich,ziel,leitender_auditor,team,geplant_von," +
-  "geplant_bis,prioritaet,status,vorlage_id";
+  "geplant_bis,prioritaet,status,vorlage_id,version";
 const PHASE_FELDER =
   "id,audit_id,position,titel,beschreibung,pflicht,status,verantwortlich," +
-  "faellig_am,erledigt_am,kommentar,uebersprungen_warum";
+  "faellig_am,erledigt_am,kommentar,uebersprungen_warum,version";
 
 export const auditKeys = {
   liste: () => ["audit", "liste"] as const,
@@ -279,14 +283,9 @@ export const auditApi = {
     return (data ?? []) as unknown as { audit_id: string; kategorie: Kategorie }[];
   },
 
-  aendern: async (id: string, felder: Partial<Audit>): Promise<void> => {
-    const { data, error } = await sb()
-      .from("audits")
-      .update(felder)
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");
+  // Gespeichert wird nur mit der geladenen Version (ADR-0006).
+  aendern: async (a: Pick<Audit, "id" | "version">, felder: Partial<Audit>): Promise<void> => {
+    await speichereVersioniert("audits", a.id, a.version, felder);
   },
 
   phasen: async (audit_id: string): Promise<Phase[]> => {
@@ -299,14 +298,8 @@ export const auditApi = {
     return (data ?? []) as unknown as Phase[];
   },
 
-  phaseAendern: async (id: string, felder: Partial<Phase>): Promise<void> => {
-    const { data, error } = await sb()
-      .from("audit_phasen")
-      .update(felder)
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");
+  phaseAendern: async (phase: Pick<Phase, "id" | "version">, felder: Partial<Phase>): Promise<void> => {
+    await speichereVersioniert("audit_phasen", phase.id, phase.version, felder);
   },
 
   phaseAnlegen: async (audit_id: string, titel: string, position: number) => {

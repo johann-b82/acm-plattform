@@ -131,6 +131,24 @@ Die Aufnahme ist freiwillig. Misslingt sie, oder ist sie größer als der Eimer
 zulässt, geht der Bericht ohne Bild und sagt es im Hinweis. Ein Bericht ohne
 Bild ist besser als keiner.
 
+## Gleichzeitig arbeiten
+
+App Feedback gehört zur Phase 1 von ADR-0006. Status, Zuweisung und Löschen
+gehen nur mit der geladenen `version`: ziehen zwei dieselbe Karte in
+verschiedene Spalten, gewinnt nicht still der Letzte — der Zweite erfährt, dass
+jemand schneller war, und sieht den neuen Stand. Vor dem Löschen einer Meldung
+mit Bild prüft die Oberfläche die Version zuerst; das Bild ist sonst weg.
+
+**Gesehen ist keine Änderung am Inhalt.** Die Liste hakt ab, was angezeigt
+wurde, und oft im selben Zug mit einem Statuswechsel. Zählte das die Version
+hoch, scheiterte der Statuswechsel an der eigenen Markierung. Der Trigger lässt
+die Version deshalb stehen, wenn sich nur `gesehen_am` ändert; gemeldet wird
+die Änderung trotzdem, damit die Glocke überall stimmt.
+
+Liste, Glocke und „App Feedback zu dieser Seite“ bleiben live
+(`tabelle:feedback`) — der Kanal verlangt dasselbe Recht wie das Lesen, also
+die Plattform-Verwaltung.
+
 ## Was es nicht gibt
 
 Keine Antwortfunktion, keine Zuweisung, keine Benachrichtigung. Eine Meldung

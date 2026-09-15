@@ -58,7 +58,7 @@ Postgres 17: public.* (Alembic), auth.*, storage.*      Embeds der Plattform per
 | Dateien | `directus_files` + Bind-Mount | Supabase Storage (Buckets `hr-dokumente`, `fair`, `maintenance`, `zeugnisse`, `newsletter`) |
 | Geplante Jobs | APScheduler im API-Prozess | Aufräum-Jobs `pg_cron`, Sync-Jobs in `compute`, Signage-Jobs in `signage-api` |
 | DDL | Alembic für `public.*` | Alembic für `public.*` bleibt alleiniger Eigentümer. Supabase-Schemata (`auth`, `storage`) gehören Supabase. |
-| Realtime | Signage-SSE via LISTEN/NOTIFY | Plattform: Supabase Realtime nur wo nötig. Signage: eigenes SSE bleibt. |
+| Realtime | Signage-SSE via LISTEN/NOTIFY | Plattform: Supabase Realtime und Konfliktschutz (Version je Zeile) für alle Module, in denen Daten bearbeitet werden — in Phasen, ADR-0006. Signage: eigenes SSE bleibt. |
 
 ### 3.2 Supabase self-hosted konkret
 

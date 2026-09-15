@@ -33,6 +33,7 @@ function meldung(
     erstellt_am: "2026-09-01T00:00:00Z",
     melder_email: null,
     zugewiesen,
+    version: 1,
   };
 }
 

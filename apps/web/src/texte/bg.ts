@@ -43,6 +43,9 @@ export const bg: Texte = {
       zeitraum: "Период",
       aktionen: "Действия",
     },
+    auchGeoeffnet: (namen: string) => `Отворено също от ${namen}`,
+    konflikt: "Междувременно променено от друг — заредено е актуалното състояние.",
+    geloeschtVonAnderen: "Междувременно изтрито от друг.",
   },
   pfad: {
     aria: "Път",

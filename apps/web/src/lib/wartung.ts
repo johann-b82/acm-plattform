@@ -1,4 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { loescheVersioniert, pruefeVersion, speichereVersioniert } from "@/lib/versioniert";
 
 /**
  * Wartung: Maschinen, ihre wiederkehrenden Aufgaben und die Dateien dazu.
@@ -58,6 +59,8 @@ export interface Maschine {
   status: Status;
   notizen: string;
   geaendert_am: string;
+  /** Zählt die Datenbank bei jeder Änderung (ADR-0006). */
+  version: number;
 }
 
 export interface Aufgabe {
@@ -68,6 +71,7 @@ export interface Aufgabe {
   intervall: Intervall;
   wochen: number | null;
   erstellt_am: string;
+  version: number;
 }
 
 export interface Datei {
@@ -109,7 +113,7 @@ export function maschinenEingabe(entwurf: MaschinenEntwurf): MaschinenEingabe {
 
 const MASCHINE_FELDER =
   "id,name,inventarnummer,standort,hersteller,modell,verantwortlich,status," +
-  "notizen,geaendert_am";
+  "notizen,geaendert_am,version";
 
 export const wartungKeys = {
   maschinen: () => ["wartung", "maschinen"] as const,
@@ -160,32 +164,28 @@ export const wartungApi = {
     return data as unknown as Maschine;
   },
 
-  aendern: async (id: string, felder: Partial<Maschine>): Promise<void> => {
-    const { data, error } = await sb()
-      .from("maschinen")
-      .update(felder)
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    // Eine abgewiesene Änderung meldet Postgres als „0 Zeilen", nicht als
-    // Fehler — ohne diese Prüfung stünde „gespeichert", wo nichts steht.
-    if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");
+  // Gespeichert und gelöscht wird nur mit der geladenen Version (ADR-0006).
+  // Eine abgewiesene Änderung meldet Postgres als „0 Zeilen"; `versioniert`
+  // unterscheidet, ob jemand schneller war oder das Recht fehlt.
+  aendern: async (m: Pick<Maschine, "id" | "version">, felder: Partial<Maschine>): Promise<void> => {
+    await speichereVersioniert("maschinen", m.id, m.version, felder);
   },
 
-  loeschen: async (maschine: Maschine, dateien: Datei[]): Promise<void> => {
-    // Erst die Bytes, dann die Zeile: die Kaskade räumt die Zeilen, die
-    // Dateien muss die Oberfläche selbst nehmen.
+  loeschen: async (maschine: Pick<Maschine, "id" | "version">, dateien: Pick<Datei, "pfad">[]): Promise<void> => {
+    // Erst prüfen, dann die Bytes, dann die Zeile: die Kaskade räumt die
+    // Zeilen, die Dateien muss die Oberfläche selbst nehmen — und die sind
+    // nicht zurückzuholen, wenn jemand anders die Maschine inzwischen geändert hat.
     if (dateien.length) {
+      await pruefeVersion("maschinen", maschine.id, maschine.version);
       await sb().storage.from(EIMER).remove(dateien.map((d) => d.pfad));
     }
-    const { error } = await sb().from("maschinen").delete().eq("id", maschine.id);
-    if (error) throw new Error(error.message);
+    await loescheVersioniert("maschinen", maschine.id, maschine.version);
   },
 
   aufgaben: async (maschine_id: string): Promise<Aufgabe[]> => {
     const { data, error } = await sb()
       .from("wartungsaufgaben")
-      .select("id,maschine_id,titel,anleitung,intervall,wochen,erstellt_am")
+      .select("id,maschine_id,titel,anleitung,intervall,wochen,erstellt_am,version")
       .eq("maschine_id", maschine_id)
       .order("erstellt_am");
     if (error) throw new Error(error.message);
@@ -209,19 +209,12 @@ export const wartungApi = {
     if (error) throw new Error(error.message);
   },
 
-  aufgabeAendern: async (id: string, felder: Partial<Aufgabe>): Promise<void> => {
-    const { data, error } = await sb()
-      .from("wartungsaufgaben")
-      .update(felder)
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    if (!data?.length) throw new Error("Nicht gespeichert — fehlt das Recht?");
+  aufgabeAendern: async (a: Pick<Aufgabe, "id" | "version">, felder: Partial<Aufgabe>): Promise<void> => {
+    await speichereVersioniert("wartungsaufgaben", a.id, a.version, felder);
   },
 
-  aufgabeLoeschen: async (id: string): Promise<void> => {
-    const { error } = await sb().from("wartungsaufgaben").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+  aufgabeLoeschen: async (a: Pick<Aufgabe, "id" | "version">): Promise<void> => {
+    await loescheVersioniert("wartungsaufgaben", a.id, a.version);
   },
 
   dateien: async (maschine_id: string): Promise<Datei[]> => {

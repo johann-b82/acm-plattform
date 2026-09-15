@@ -21,11 +21,16 @@ import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
+import { useLiveTabellen } from "@/components/realtime/live";
+import { useKonfliktMeldung } from "@/components/realtime/konflikt";
 import { Bereichswahl } from "./bereichswahl";
 import { StatusAbzeichen, useStatusText } from "./status-abzeichen";
 
 /** Eine feste leere Menge: eine neue je Render hielte die Tabelle auf Seite 1. */
 const KEINE: Lieferung[] = [];
+
+/** Legt jemand eine Lieferung an oder ändert sie, sieht es jeder hier (ADR-0006). */
+const LIVE_TABELLEN = ["atr_lieferungen"];
 
 /**
  * Die eingelesenen Lieferscheine — der Einstieg in ATR (ATR-10).
@@ -46,6 +51,8 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const [auswahl, setAuswahl] = useState<ReadonlySet<string>>(new Set());
   const [frage, setFrage] = useState(false);
   const [nummer, setNummer] = useState("");
+  const melde = useKonfliktMeldung();
+  useLiveTabellen(LIVE_TABELLEN);
 
   const lieferungen = useQuery({
     queryKey: lieferungKeys.liste(),
@@ -83,9 +90,9 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   });
 
   const loeschen = useMutation({
-    mutationFn: (l: Lieferung) => lieferungApi.loeschen(l.id),
+    mutationFn: (l: Lieferung) => lieferungApi.loeschen(l),
     onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => melde(fehler),
   });
 
   const container = useMutation({

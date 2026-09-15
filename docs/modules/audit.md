@@ -74,6 +74,23 @@ werden stillgelegt; der Fremdschlüssel steht auf `restrict`.
 Begründung, und „erledigt" braucht ein Datum. Die Maske fragt vorher — die
 Datenbank hält es trotzdem.
 
+## Gleichzeitig arbeiten
+
+Audits und Phasen gehören zur Phase 1 von ADR-0006: Status, Stammdaten und
+jede Phase speichern nur mit der geladenen `version`. Hat jemand anders das
+Audit oder die Phase inzwischen geändert, sagt die Maske es und lädt den
+aktuellen Stand, statt still zu überschreiben. Die Prüfungen der Phasen
+(Begründung, Datum) melden sich weiter mit ihrem eigenen Text.
+
+Der Stammdaten-Entwurf und die Phasenmaske speichern mit der Version, mit der
+sie geöffnet wurden — nicht mit dem Stand, den die Seite inzwischen live
+nachgeladen hat. Sonst überschriebe ein offener Entwurf still, was ein
+anderer gerade gespeichert hat.
+
+Übersicht und Audit bleiben live (`tabelle:audits`, `tabelle:audit_phasen`);
+im Audit steht, wer es gerade noch offen hat. Kategorien und Normbezüge sind
+Zuordnungen ohne eigene Version — dort gilt weiter: wer zuletzt setzt, gilt.
+
 ## Was noch fehlt
 
 Findings und Maßnahmen (CAPA), das Auditprogramm als Jahresplan und der

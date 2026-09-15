@@ -43,6 +43,9 @@ export const vi: Texte = {
       zeitraum: "Khoảng thời gian",
       aktionen: "Thao tác",
     },
+    auchGeoeffnet: (namen: string) => `Cũng đang mở bởi ${namen}`,
+    konflikt: "Người khác đã thay đổi trong lúc này — trạng thái hiện tại đã được tải.",
+    geloeschtVonAnderen: "Người khác đã xóa trong lúc này.",
   },
   pfad: {
     aria: "Đường dẫn",

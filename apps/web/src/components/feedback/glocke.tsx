@@ -5,7 +5,11 @@ import { Bell } from "lucide-react";
 
 import { Zaehlknopf } from "@/components/kopfzeile/zaehlknopf";
 import { useTexte } from "@/components/sprache/anbieter";
+import { useLiveTabellen } from "@/components/realtime/live";
 import { feedbackApi, feedbackKeys } from "@/lib/feedback";
+
+/** Die Glocke hängt am Kanal von App Feedback (ADR-0006). */
+const LIVE_TABELLEN = ["feedback"];
 
 /**
  * Die Glocke: wie viele Seitenmeldungen noch niemand angesehen hat.
@@ -14,16 +18,16 @@ import { feedbackApi, feedbackKeys } from "@/lib/feedback";
  * nicht erst ein, und die Leseregel auf `feedback` zählt für alle anderen
  * ohnehin 0.
  *
- * Fragt alle 60 Sekunden nach und beim Zurückkommen ins Fenster. Eine Meldung
- * ist nichts, was auf die Sekunde ankommt; ein offener Kanal (Realtime) für
- * eine Zahl wäre Aufwand ohne Gewinn.
+ * Live über den Realtime-Kanal von App Feedback: kommt eine Meldung dazu oder
+ * hakt jemand sie ab, stimmt die Zahl sofort (ADR-0006). Beim Zurückkommen ins
+ * Fenster fragt sie trotzdem nach — falls der Kanal gerade nicht steht.
  */
 export function FeedbackGlocke() {
   const t = useTexte();
+  useLiveTabellen(LIVE_TABELLEN);
   const { data: anzahl = 0 } = useQuery({
     queryKey: feedbackKeys.offen(),
     queryFn: feedbackApi.ungeseheneAnzahl,
-    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   });
 

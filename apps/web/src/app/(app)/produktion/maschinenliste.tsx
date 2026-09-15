@@ -19,6 +19,7 @@ import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/compone
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
+import { useLiveTabellen } from "@/components/realtime/live";
 
 const LEER: MaschinenEntwurf = {
   name: "",
@@ -29,6 +30,9 @@ const LEER: MaschinenEntwurf = {
   verantwortlich: "",
   status: "aktiv",
 };
+
+/** Legt jemand eine Maschine an oder ändert sie, sieht es jeder hier (ADR-0006). */
+const LIVE_TABELLEN = ["maschinen"];
 
 /**
  * Die Maschinen und ihre Wartung.
@@ -45,6 +49,7 @@ export function Maschinenliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const queryClient = useQueryClient();
   const [formular, setFormular] = useState(false);
   const [neu, setNeu] = useState<MaschinenEntwurf>(LEER);
+  useLiveTabellen(LIVE_TABELLEN);
 
   const maschinen = useQuery({
     queryKey: wartungKeys.maschinen(),

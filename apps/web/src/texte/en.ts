@@ -47,6 +47,9 @@ export const en: Texte = {
       zeitraum: "Period",
       aktionen: "Actions",
     },
+    auchGeoeffnet: (namen: string) => `Also open by ${namen}`,
+    konflikt: "Changed by someone else in the meantime — the current state has been loaded.",
+    geloeschtVonAnderen: "Deleted by someone else in the meantime.",
   },
   pfad: {
     aria: "Path",

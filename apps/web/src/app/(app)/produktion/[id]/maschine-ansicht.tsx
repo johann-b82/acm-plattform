@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -39,8 +39,16 @@ import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useIntervall } from "@/lib/tafeln";
+import { useLiveTabellen } from "@/components/realtime/live";
+import { Anwesenheit } from "@/components/realtime/anwesenheit";
+import { useKonfliktMeldung } from "@/components/realtime/konflikt";
 
-type Stammentwurf = MaschinenEntwurf & { notizen: string };
+/** Der Entwurf merkt sich die Version, auf der er beruht (ADR-0006): lädt die
+ *  Seite live nach, darf er trotzdem nicht auf dem neuen Stand speichern. */
+type Stammentwurf = MaschinenEntwurf & { notizen: string; version: number };
+
+/** Die Maschine und ihre Aufgaben bleiben live (ADR-0006). */
+const LIVE_TABELLEN = ["maschinen", "wartungsaufgaben"];
 
 function entwurfAus(m: Maschine): Stammentwurf {
   return {
@@ -52,6 +60,7 @@ function entwurfAus(m: Maschine): Stammentwurf {
     verantwortlich: m.verantwortlich ?? "",
     status: m.status,
     notizen: m.notizen,
+    version: m.version,
   };
 }
 
@@ -78,6 +87,10 @@ export function MaschineAnsicht({
   });
   // EDIT-01: Stammdaten erst lesend, „Bearbeiten" öffnet einen Entwurf.
   const [stamm, setStamm] = useState<Stammentwurf | null>(null);
+  useLiveTabellen(LIVE_TABELLEN);
+  const konflikt = useKonfliktMeldung();
+  // Je Aufgabe die Version beim Betreten ihres Titelfeldes.
+  const aufgabeBasis = useRef(new Map<string, number>());
 
   const maschine = useQuery({
     queryKey: wartungKeys.maschine(id),
@@ -94,15 +107,17 @@ export function MaschineAnsicht({
 
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["wartung"] });
 
+  // Gespeichert wird mit der Version, auf der der Entwurf beruht; gelöscht mit
+  // dem geladenen Stand (ADR-0006).
   const stammSpeichern = useMutation({
     mutationFn: (e: Stammentwurf) =>
-      wartungApi.aendern(id, { ...maschinenEingabe(e), notizen: e.notizen }),
+      wartungApi.aendern({ id, version: e.version }, { ...maschinenEingabe(e), notizen: e.notizen }),
     onSuccess: () => {
       setStamm(null);
       toast.success(worte.maschine.gespeichert);
       return neuLaden();
     },
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => konflikt(fehler),
   });
 
   const anlegen = useMutation({
@@ -121,9 +136,9 @@ export function MaschineAnsicht({
   });
 
   const aufgabeWeg = useMutation({
-    mutationFn: (aufgabe: Aufgabe) => wartungApi.aufgabeLoeschen(aufgabe.id),
+    mutationFn: (aufgabe: Aufgabe) => wartungApi.aufgabeLoeschen(aufgabe),
     onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => konflikt(fehler),
   });
 
   const hochladen = useMutation({
@@ -149,7 +164,7 @@ export function MaschineAnsicht({
       router.push("/produktion");
       return neuLaden();
     },
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => konflikt(fehler),
   });
 
   /**
@@ -189,16 +204,19 @@ export function MaschineAnsicht({
       wert: (a) => a.titel,
       zelle: (a) => (
         <Input
+          // Neu aufgesetzt, wenn sich der gespeicherte Titel ändert.
+          key={`${a.id}:${a.titel}`}
           defaultValue={a.titel}
           aria-label={worte.maschine.aufgabe}
           disabled={!darfSchreiben}
+          onFocus={() => aufgabeBasis.current.set(a.id, a.version)}
           onBlur={(e) => {
             const wert = e.target.value.trim();
             if (wert && wert !== a.titel) {
               wartungApi
-                .aufgabeAendern(a.id, { titel: wert })
+                .aufgabeAendern({ id: a.id, version: aufgabeBasis.current.get(a.id) ?? a.version }, { titel: wert })
                 .then(neuLaden)
-                .catch((f: Error) => toast.error(f.message));
+                .catch((f: Error) => konflikt(f));
             }
           }}
         />
@@ -239,6 +257,7 @@ export function MaschineAnsicht({
           <p className="mt-1 text-sm text-[var(--fg-muted)]">
             {[m.hersteller, m.modell].filter(Boolean).join(" · ") || "Ohne Herstellerangabe"}
           </p>
+          <Anwesenheit tabelle="maschinen" kennung={m.id} />
         </div>
         {/* Zurück und das Löschen der ganzen Maschine: in der Schale in der rechten Leiste. */}
         <div className={inSchale ? "contents" : "flex items-center gap-3"}>

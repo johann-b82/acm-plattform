@@ -26,9 +26,13 @@ import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { useAuditworte } from "@/lib/tafeln";
+import { useLiveTabellen } from "@/components/realtime/live";
 
 /** Ein Audit gilt als laufend, solange es nicht abgeschlossen oder abgesagt ist. */
 const LAEUFT = new Set(["geplant", "in_vorbereitung", "in_durchfuehrung", "berichtet", "massnahmen_offen"]);
+
+/** Legt jemand ein Audit an oder ändert es, sieht es jeder hier (ADR-0006). */
+const LIVE_TABELLEN = ["audits"];
 
 /** Wie im Altsystem: ein neues Audit ist zunächst ein Prozessaudit. */
 const LEER: NeuesAudit = {
@@ -62,6 +66,7 @@ export function Auditliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const [filter, setFilter] = useState({ status: "", art: "" });
   const [formular, setFormular] = useState(false);
   const [neu, setNeu] = useState<NeuesAudit>(LEER);
+  useLiveTabellen(LIVE_TABELLEN);
 
   const audits = useQuery({ queryKey: auditKeys.liste(), queryFn: auditApi.liste });
   const stand = useQuery({ queryKey: auditKeys.stand(), queryFn: auditApi.stand });

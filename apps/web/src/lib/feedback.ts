@@ -1,4 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { loescheVersioniert, pruefeVersion, speichereVersioniert } from "@/lib/versioniert";
 
 /**
  * Seiten-Feedback: melden, was auf einer Seite nicht stimmt.
@@ -37,6 +38,8 @@ export interface Feedback {
   melder_email: string | null;
   /** Das Konto, das sich kümmert — `null`, solange niemand zugewiesen ist. */
   zugewiesen: string | null;
+  /** Zählt die Datenbank bei jeder Änderung (ADR-0006). */
+  version: number;
 }
 
 /** Wem eine Meldung zugewiesen werden kann: jedes Konto der Plattform. */
@@ -91,12 +94,6 @@ export const feedbackKeys = {
   bild: (pfad: string) => ["feedback", "bild", pfad] as const,
   konten: () => ["feedback", "konten"] as const,
 };
-
-function pruefeBetroffen(daten: unknown[] | null): void {
-  if (!daten?.length) {
-    throw new Error("Nicht gespeichert — fehlt das Recht der Plattform-Verwaltung?");
-  }
-}
 
 /** Objektname im Eimer: erster Abschnitt ist die eigene Kennung, sonst weist
  *  die Regel auf `storage.objects` den Upload ab. */
@@ -158,7 +155,7 @@ export const feedbackApi = {
     const { data, error } = await supabaseBrowser()
       .from("feedback")
       .select(
-        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email,zugewiesen",
+        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email,zugewiesen,version",
       )
       .order("erstellt_am", { ascending: false });
     if (error) throw new Error(error.message);
@@ -173,7 +170,7 @@ export const feedbackApi = {
     const { data, error } = await supabaseBrowser()
       .from("feedback")
       .select(
-        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email,zugewiesen",
+        "id,seite,beschreibung,bild_pfad,browser,ansicht,status,gesehen_am,erstellt_am,melder_email,zugewiesen,version",
       )
       .like("seite", `${pfad}%`)
       .in("status", ["neu", "in_bearbeitung"])
@@ -208,24 +205,16 @@ export const feedbackApi = {
     if (error) throw new Error(error.message);
   },
 
-  status: async (id: string, status: FeedbackStatus): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("feedback")
-      .update({ status })
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
+  // Status, Zuweisung und Löschen nur mit der geladenen Version (ADR-0006):
+  // ziehen zwei die Karte gleichzeitig, gewinnt nicht still der Letzte.
+  // „Gesehen" dagegen ohne — das hakt ab, was angezeigt wurde, und darf nie
+  // an einer Version scheitern.
+  status: async (m: Pick<Feedback, "id" | "version">, status: FeedbackStatus): Promise<void> => {
+    await speichereVersioniert("feedback", m.id, m.version, { status });
   },
 
-  zuweisen: async (id: string, zugewiesen: string | null): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("feedback")
-      .update({ zugewiesen })
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
+  zuweisen: async (m: Pick<Feedback, "id" | "version">, zugewiesen: string | null): Promise<void> => {
+    await speichereVersioniert("feedback", m.id, m.version, { zugewiesen });
   },
 
   /** Die Konten, denen zugewiesen werden kann — dieselbe Sicht wie die
@@ -241,19 +230,14 @@ export const feedbackApi = {
 
   /** Löscht Bericht und Bild. Das Bild zuerst: bleibt die Zeile stehen,
    *  weil der Speicher klemmt, ist nichts verloren — umgekehrt bliebe ein
-   *  Bild ohne Zeile im Eimer liegen, das niemand mehr findet. */
-  loeschen: async (id: string, bildPfad: string | null): Promise<void> => {
-    const sb = supabaseBrowser();
-    if (bildPfad) {
-      const { error } = await sb.storage.from(EIMER).remove([bildPfad]);
+   *  Bild ohne Zeile im Eimer liegen, das niemand mehr findet. Davor die
+   *  Version: hat jemand die Meldung inzwischen geändert, bleibt beides. */
+  loeschen: async (m: Pick<Feedback, "id" | "version" | "bild_pfad">): Promise<void> => {
+    if (m.bild_pfad) {
+      await pruefeVersion("feedback", m.id, m.version);
+      const { error } = await supabaseBrowser().storage.from(EIMER).remove([m.bild_pfad]);
       if (error) throw new Error(error.message);
     }
-    const { data, error } = await sb
-      .from("feedback")
-      .delete()
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
+    await loescheVersioniert("feedback", m.id, m.version);
   },
 };

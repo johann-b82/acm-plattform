@@ -1,4 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { loescheVersioniert, speichereVersioniert } from "@/lib/versioniert";
 import { computeFetch, computeJson } from "@/lib/compute";
 
 /**
@@ -271,6 +272,8 @@ export interface Lieferung {
   erzeugt_am: string | null;
   geaendert_am: string;
   erstellt_am: string;
+  /** Zählt die Datenbank bei jeder Änderung (ADR-0006). */
+  version: number;
 }
 
 export interface AtrPosition {
@@ -289,6 +292,7 @@ export interface AtrPosition {
   gewicht_kg: string | null;
   bestellposition: string | null;
   seriennummern: string[];
+  version: number;
 }
 
 export interface ErzeugtErgebnis {
@@ -313,11 +317,11 @@ const LIEFERUNG_FELDER =
   "id,quelle_dateiname,lieferschein_nr,datum,ba_auftrag,bestellnummer,programm," +
   "programm_grund,bereich,msn,bettvariante,satz_titel,atr_nummer,containernummer," +
   "wiegedatum,pruefdatum,qs_unterschrift,max_gewicht_kg,status,hinweise," +
-  "mappe_pfad,pdf_pfad,etikett_pfad,erzeugt_am,geaendert_am,erstellt_am";
+  "mappe_pfad,pdf_pfad,etikett_pfad,erzeugt_am,geaendert_am,erstellt_am,version";
 
 const POSITION_FELDER =
   "id,lieferung_id,reihenfolge,pos,lieferantennummer,teilenummer,teilenummer_norm," +
-  "teil_id,bezeichnung,zeichnung,kategorie,menge,gewicht_kg,bestellposition,seriennummern";
+  "teil_id,bezeichnung,zeichnung,kategorie,menge,gewicht_kg,bestellposition,seriennummern,version";
 
 export const lieferungKeys = {
   liste: () => ["atr", "lieferungen"] as const,
@@ -383,47 +387,24 @@ export const lieferungApi = {
     return (data ?? []) as unknown as AtrPosition[];
   },
 
-  aendern: async (id: string, felder: Partial<Lieferung>): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("atr_lieferungen")
-      .update(felder)
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
+  // Gespeichert und gelöscht wird nur mit der geladenen Version (ADR-0006).
+  aendern: async (l: Pick<Lieferung, "id" | "version">, felder: Partial<Lieferung>): Promise<void> => {
+    await speichereVersioniert("atr_lieferungen", l.id, l.version, felder);
   },
 
+  /** Gibt die neue Version zurück — die nächste Änderung derselben Position
+   *  braucht sie, bevor die Liste neu geladen ist. */
   positionAendern: async (
-    id: string,
+    p: Pick<AtrPosition, "id" | "version">,
     felder: Partial<AtrPosition>,
-  ): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("atr_positionen")
-      .update(felder)
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
+  ): Promise<number> => speichereVersioniert("atr_positionen", p.id, p.version, felder),
+
+  positionLoeschen: async (p: Pick<AtrPosition, "id" | "version">): Promise<void> => {
+    await loescheVersioniert("atr_positionen", p.id, p.version);
   },
 
-  positionLoeschen: async (id: string): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("atr_positionen")
-      .delete()
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
-  },
-
-  loeschen: async (id: string): Promise<void> => {
-    const { data, error } = await supabaseBrowser()
-      .from("atr_lieferungen")
-      .delete()
-      .eq("id", id)
-      .select("id");
-    if (error) throw new Error(error.message);
-    pruefeBetroffen(data);
+  loeschen: async (l: Pick<Lieferung, "id" | "version">): Promise<void> => {
+    await loescheVersioniert("atr_lieferungen", l.id, l.version);
   },
 
   /** Erzeugt Mappe, PDF und Etikett — über `compute`, weil dort openpyxl und
