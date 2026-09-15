@@ -16,6 +16,7 @@ const audit = (teil: Partial<Audit>): Audit => ({
   prioritaet: 2,
   status: "geplant",
   vorlage_id: null,
+  version: 1,
   ...teil,
 });
 

@@ -43,6 +43,9 @@ export const pl: Texte = {
       zeitraum: "Okres",
       aktionen: "Akcje",
     },
+    auchGeoeffnet: (namen: string) => `Otwarte również przez ${namen}`,
+    konflikt: "W międzyczasie zmienione przez kogoś innego — wczytano aktualny stan.",
+    geloeschtVonAnderen: "W międzyczasie usunięte przez kogoś innego.",
   },
   pfad: {
     aria: "Ścieżka",

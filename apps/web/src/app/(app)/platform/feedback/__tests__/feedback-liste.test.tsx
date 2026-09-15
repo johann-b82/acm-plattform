@@ -11,6 +11,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Feedback } from "@/lib/feedback";
 
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
+const live = vi.hoisted(() => ({ useLiveTabellen: vi.fn() }));
+vi.mock("@/components/realtime/live", () => live);
 
 const api = vi.hoisted(() => ({
   liste: vi.fn(),
@@ -43,6 +45,7 @@ function meldung(id: string, felder: Partial<Feedback>): Feedback {
     erstellt_am: "2026-09-01T10:00:00Z",
     melder_email: `${id}@example.com`,
     zugewiesen: null,
+    version: 1,
     ...felder,
   };
 }
@@ -97,7 +100,10 @@ describe("App Feedback", () => {
     const auswahl = screen.getByRole("combobox", { name: "Status: Beschreibung a" });
     expect(auswahl).toHaveValue("neu");
     fireEvent.change(auswahl, { target: { value: "in_bearbeitung" } });
-    await waitFor(() => expect(api.status).toHaveBeenCalledWith("a", "in_bearbeitung"));
+    // Gespeichert wird mit der geladenen Meldung — samt Version (ADR-0006).
+    await waitFor(() =>
+      expect(api.status).toHaveBeenCalledWith(expect.objectContaining({ id: "a", version: 1 }), "in_bearbeitung"),
+    );
     expect(api.gesehen).toHaveBeenCalledWith(["a"]);
     expect(screen.getByRole("combobox", { name: "Status: Beschreibung c" })).toHaveValue("erledigt");
   });
@@ -141,6 +147,12 @@ describe("App Feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: /ungesehen/ }));
     await waitFor(() => expect(api.gesehen).toHaveBeenCalledWith(["a"]));
     expect(api.status).not.toHaveBeenCalled();
+  });
+
+  it("hält App Feedback live", async () => {
+    zeige();
+    await screen.findByText("Beschreibung a");
+    expect(live.useLiveTabellen).toHaveBeenCalledWith(["feedback"]);
   });
 });
 

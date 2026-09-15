@@ -56,6 +56,19 @@
 		reverse_proxy compute:8000
 	}
 
+	# --- /supabase/realtime/* → Kong, ohne Cookies (ADR-0006). Der Browser
+	# schickt beim WebSocket-Aufbau alle Cookies mit, darunter das
+	# Sitzungs-Cookie mit dem `apps`-Claim; der Realtime-Dienst weist so große
+	# Kopfzeilen mit HTTP 431 ab. Er braucht sie nicht: der Schlüssel steht in
+	# der Adresse, das Token kommt mit dem Beitritt zum Kanal. Muss VOR der
+	# allgemeinen /supabase/*-Regel stehen.
+	handle /supabase/realtime/* {
+		uri strip_prefix /supabase
+		reverse_proxy kong:8000 {
+			header_up -Cookie
+		}
+	}
+
 	# --- /supabase/* → Kong (Auth, PostgREST, Storage). Prefix wird gestrippt,
 	# Kong erwartet /auth/v1, /rest/v1, /storage/v1.
 	handle_path /supabase/* {

@@ -36,11 +36,16 @@ import { Seitenkopf } from "@/components/seitenkopf";
 import { Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
 import { Leistenwahl } from "@/components/sidebar/leistenwahl";
 import { cn } from "@/lib/cn";
+import { useLiveTabellen } from "@/components/realtime/live";
+import { useKonfliktMeldung } from "@/components/realtime/konflikt";
 
 type Ansicht = "tabelle" | "kanban";
 const ANSICHTEN: Ansicht[] = ["tabelle", "kanban"];
 type Gruppierung = "status" | "person";
 const GRUPPIERUNGEN: Gruppierung[] = ["status", "person"];
+
+/** Neue Meldungen, Status und Zuweisung anderer erscheinen sofort (ADR-0006). */
+const LIVE_TABELLEN = ["feedback"];
 
 /**
  * Was das Ablegen einer Karte in einer Kanban-Spalte ändert — `null`, wenn
@@ -94,6 +99,8 @@ export function FeedbackListe() {
   const [ansicht, setAnsicht] = useState<Ansicht>("tabelle");
   const [gruppierung, setGruppierung] = useState<Gruppierung>("status");
   const [bild, setBild] = useState<{ url: string; seite: string } | null>(null);
+  useLiveTabellen(LIVE_TABELLEN);
+  const konflikt = useKonfliktMeldung();
 
   const liste = useQuery({ queryKey: feedbackKeys.liste(), queryFn: feedbackApi.liste });
   const daten = liste.data;
@@ -121,22 +128,23 @@ export function FeedbackListe() {
   };
 
   const setzeStatus = useMutation({
-    mutationFn: ({ m, status }: { m: Feedback; status: FeedbackStatus }) => feedbackApi.status(m.id, status),
+    // Status, Zuweisung und Löschen mit der geladenen Meldung — samt Version (ADR-0006).
+    mutationFn: ({ m, status }: { m: Feedback; status: FeedbackStatus }) => feedbackApi.status(m, status),
     onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => konflikt(fehler),
   });
 
   const weiseZu = useMutation({
     mutationFn: ({ m, zugewiesen }: { m: Feedback; zugewiesen: string | null }) =>
-      feedbackApi.zuweisen(m.id, zugewiesen),
+      feedbackApi.zuweisen(m, zugewiesen),
     onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => konflikt(fehler),
   });
 
   const loeschen = useMutation({
-    mutationFn: (m: Feedback) => feedbackApi.loeschen(m.id, m.bild_pfad),
+    mutationFn: (m: Feedback) => feedbackApi.loeschen(m),
     onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => konflikt(fehler),
   });
 
   const zeigeBild = useMutation({

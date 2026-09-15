@@ -62,3 +62,20 @@ Kaskade die Zeilen — die Bytes muss die Oberfläche selbst nehmen, und zwar
 gelöschte Datei mit Zeile wäre ein Geist. Im Browser nachgemessen: nach dem
 Löschen null Zeilen in allen drei Tabellen, null Objekte in `storage.objects`
 und null Dateien im Volume.
+
+## Gleichzeitig arbeiten
+
+Maschinen und Wartungsaufgaben gehören zur Phase 1 von ADR-0006: Stammdaten,
+Aufgaben und das Löschen gehen nur mit der geladenen `version`. War jemand
+anders schneller, sagt die Maske es und lädt den aktuellen Stand. Der
+Stammdaten-Entwurf nutzt die Version, mit der er geöffnet wurde, der Titel
+einer Aufgabe die Version beim Betreten des Feldes — so greift der Schutz auch,
+wenn die Seite inzwischen live nachgeladen hat.
+
+Vor dem Löschen einer Maschine mit Dateien prüft die Oberfläche die Version
+**zuerst** — die Bytes im Eimer lassen sich nicht zurückholen. Hat jemand die
+Maschine inzwischen geändert, bleiben Dateien und Zeile stehen.
+
+Liste und Maschine bleiben live (`tabelle:maschinen`,
+`tabelle:wartungsaufgaben`); an der Maschine steht, wer sie gerade noch offen
+hat. Die Dateizeilen haben keine eigene Version.

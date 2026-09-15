@@ -422,6 +422,8 @@ atr_lieferungen = sa.Table(
     sa.Column("erzeugt_am", sa.DateTime(timezone=True)),
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    # Zählt die Datenbank (ADR-0006); `compute` schreibt sie nie selbst.
+    sa.Column("version", sa.Integer, nullable=False),
 )
 
 atr_positionen = sa.Table(
@@ -449,6 +451,7 @@ atr_positionen = sa.Table(
     sa.Column("seriennummern", sa.ARRAY(sa.Text), nullable=False),
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("version", sa.Integer, nullable=False),
 )
 
 atr_scan = sa.Table(
@@ -527,6 +530,7 @@ maschinen = sa.Table(
     sa.Column("notizen", sa.Text, nullable=False),
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("version", sa.Integer, nullable=False),
 )
 
 wartungsaufgaben = sa.Table(
@@ -540,6 +544,7 @@ wartungsaufgaben = sa.Table(
     sa.Column("wochen", sa.Integer),
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("version", sa.Integer, nullable=False),
 )
 
 wartungsdateien = sa.Table(

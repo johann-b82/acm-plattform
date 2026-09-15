@@ -107,3 +107,67 @@ $$;
 create trigger protect_objects_delete
     before delete on storage.objects
     for each statement execute function storage.protect_delete();
+
+-- ---------------------------------------------------------------------------
+-- Schema `realtime`, so weit die Migrationen es beruehren (ab
+-- 0057_realtime_konfliktschutz). In einer echten Instanz legt der
+-- Realtime-Dienst das an (gepinnt: supabase/realtime v2.102.3); Spalten,
+-- `topic()` und `send(jsonb, …)` sind dem Original nachgebildet. Der Dienst
+-- prueft die Rechte eines Kanals, indem er mit gesetztem `realtime.topic`
+-- aus `realtime.messages` liest (empfangen) bzw. hineinschreibt (Presence) —
+-- genau das koennen die Tests hier nachstellen.
+-- ---------------------------------------------------------------------------
+create role supabase_realtime_admin nologin noinherit;
+
+create schema if not exists realtime authorization supabase_realtime_admin;
+grant usage on schema realtime to anon, authenticated;
+
+create table realtime.messages (
+    topic          text not null,
+    extension      text not null,
+    payload        jsonb,
+    event          text,
+    private        boolean default false,
+    updated_at     timestamp not null default now(),
+    inserted_at    timestamp not null default now(),
+    id             uuid not null default gen_random_uuid(),
+    binary_payload bytea
+);
+
+alter table realtime.messages enable row level security;
+grant select, insert, update on realtime.messages to anon, authenticated;
+
+create or replace function realtime.topic()
+returns text
+language sql
+stable
+as $$
+    select nullif(current_setting('realtime.topic', true), '')::text;
+$$;
+
+create or replace function realtime.send(payload jsonb, event text, topic text, private boolean default true)
+returns void
+language plpgsql
+as $$
+declare
+    generated_id uuid;
+    final_payload jsonb;
+begin
+    begin
+        generated_id := gen_random_uuid();
+        if payload ? 'id' then
+            final_payload := payload;
+        else
+            final_payload := jsonb_set(payload, '{id}', to_jsonb(generated_id));
+        end if;
+        execute format('set local realtime.topic to %L', topic);
+        insert into realtime.messages (id, payload, event, topic, private, extension)
+        values (generated_id, final_payload, event, topic, private, 'broadcast');
+    exception
+        when others then
+            raise warning 'ErrorSendingBroadcastMessage: %', sqlerrm;
+    end;
+end;
+$$;
+
+grant execute on function realtime.topic() to anon, authenticated;

@@ -6,19 +6,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const { eine, positionen, erzeugen } = vi.hoisted(() => ({
+const { eine, positionen, erzeugen, positionAendern } = vi.hoisted(() => ({
   eine: vi.fn(),
   positionen: vi.fn(),
   erzeugen: vi.fn(),
+  positionAendern: vi.fn(),
 }));
 
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({ supabaseBrowser: () => ({}) }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }) }));
+const live = vi.hoisted(() => ({ useLiveTabellen: vi.fn() }));
+vi.mock("@/components/realtime/live", () => live);
+vi.mock("@/components/realtime/anwesenheit", () => ({
+  Anwesenheit: ({ tabelle, kennung }: { tabelle: string; kennung: string }) => (
+    <p data-testid="anwesenheit">{`${tabelle}:${kennung}`}</p>
+  ),
+}));
 vi.mock("@/lib/atr", async (original) => {
   const echt = await original<typeof import("@/lib/atr")>();
-  return { ...echt, lieferungApi: { ...echt.lieferungApi, eine, positionen, erzeugen } };
+  return { ...echt, lieferungApi: { ...echt.lieferungApi, eine, positionen, erzeugen, positionAendern } };
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
@@ -53,6 +61,7 @@ const LIEFERUNG: Lieferung = {
   erzeugt_am: null,
   geaendert_am: "2026-09-01T00:00:00Z",
   erstellt_am: "2026-09-01T00:00:00Z",
+  version: 3,
 };
 
 const POSITION = {
@@ -71,6 +80,7 @@ const POSITION = {
   gewicht_kg: "1.000",
   bestellposition: null,
   seriennummern: [],
+  version: 1,
 } as unknown as AtrPosition;
 
 let platz: Record<Kategorie, HTMLElement>;
@@ -125,5 +135,103 @@ describe("Durchsicht in der Schale", () => {
     );
     fireEvent.click(erzeugenKnopf);
     await waitFor(() => expect(erzeugen).toHaveBeenCalledWith("l1"));
+  });
+
+  it("hält Lieferung und Positionen live und zeigt, wer die Lieferung noch offen hat", async () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Durchsicht id="l1" darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Lieferschein LS-1");
+    expect(live.useLiveTabellen).toHaveBeenCalledWith(["atr_lieferungen", "atr_positionen"]);
+    expect(screen.getByTestId("anwesenheit")).toHaveTextContent("atr_lieferungen:l1");
+  });
+
+  it("speichert zwei schnelle Änderungen derselben Position nacheinander, jede mit der neuesten Version", async () => {
+    // Die Datenbank zählt die Version; die Positionen kommen mit dem aktuellen Stand.
+    let stand = 1;
+    positionAendern.mockImplementation(async () => ++stand);
+    positionen.mockImplementation(async () => [{ ...POSITION, version: stand }]);
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Durchsicht id="l1" darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    const feld = await screen.findByDisplayValue("Teil");
+    // Wer von Feld zu Feld springt, speichert schneller, als die Liste neu lädt —
+    // das darf nicht als Konflikt mit sich selbst enden.
+    fireEvent.change(feld, { target: { value: "A" } });
+    fireEvent.blur(feld);
+    fireEvent.change(feld, { target: { value: "B" } });
+    fireEvent.blur(feld);
+    await waitFor(() => expect(positionAendern).toHaveBeenCalledTimes(2));
+    expect(positionAendern).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ id: "p1", version: 1 }),
+      { bezeichnung: "A" },
+    );
+    expect(positionAendern).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: "p1", version: 2 }),
+      { bezeichnung: "B" },
+    );
+  });
+
+  function zeigeMitClient() {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Durchsicht id="l1" darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    return client;
+  }
+
+  it("speichert mit der Version beim Betreten des Feldes — eine fremde Änderung dazwischen fällt auf", async () => {
+    let stand = 1;
+    positionAendern.mockReset();
+    positionAendern.mockImplementation(async () => ++stand);
+    positionen.mockImplementation(async () => [{ ...POSITION, version: stand }]);
+    const client = zeigeMitClient();
+    const feld = await screen.findByDisplayValue("Teil");
+    fireEvent.focus(feld);
+    // Jemand anders ändert die Position, während hier getippt wird; die Liste lädt live nach.
+    const vorher = positionen.mock.calls.length;
+    stand = 5;
+    await client.invalidateQueries();
+    await waitFor(() => expect(positionen.mock.calls.length).toBeGreaterThan(vorher));
+    fireEvent.change(feld, { target: { value: "Meins" } });
+    fireEvent.blur(feld);
+    await waitFor(() => expect(positionAendern).toHaveBeenCalledTimes(1));
+    // Mit Version 1 — die Datenbank weist das ab, und die Seite meldet den Konflikt.
+    expect(positionAendern).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "p1", version: 1 }),
+      { bezeichnung: "Meins" },
+    );
+  });
+
+  it("zeigt eine fremde Änderung in einem Feld, das gerade niemand bearbeitet", async () => {
+    let bezeichnung = "Teil";
+    let stand = 1;
+    positionen.mockImplementation(async () => [{ ...POSITION, bezeichnung, version: stand }]);
+    const client = zeigeMitClient();
+    await screen.findByDisplayValue("Teil");
+    bezeichnung = "Von Zoe";
+    stand = 2;
+    await client.invalidateQueries();
+    expect(await screen.findByDisplayValue("Von Zoe")).toBeInTheDocument();
   });
 });

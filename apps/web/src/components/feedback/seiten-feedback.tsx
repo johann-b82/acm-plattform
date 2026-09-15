@@ -7,6 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { feedbackApi, feedbackKeys, type FeedbackStatus } from "@/lib/feedback";
 import { ZAHL_TAG } from "@/lib/sprache";
+import { useLiveTabellen } from "@/components/realtime/live";
+
+/** Eine neue Meldung zur Seite erscheint ohne Neuladen (ADR-0006). */
+const LIVE_TABELLEN = ["feedback"];
 
 /**
  * App Feedback zur aktuellen Seite, in der rechten Leiste: was hier gemeldet
@@ -21,6 +25,7 @@ export function SeitenFeedback() {
   const t = useTexte();
   const w = t.meldungen;
   const pfad = usePathname() ?? "/";
+  useLiveTabellen(LIVE_TABELLEN);
   const format = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "short", timeStyle: "short" });
   const { data: meldungen = [] } = useQuery({
     queryKey: feedbackKeys.seite(pfad),

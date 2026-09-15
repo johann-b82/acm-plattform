@@ -35,6 +35,9 @@ import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/wer
 import { ZAHL_TAG } from "@/lib/sprache";
 import { useAuditworte } from "@/lib/tafeln";
 import type { Texte } from "@/texte";
+import { useLiveTabellen } from "@/components/realtime/live";
+import { Anwesenheit } from "@/components/realtime/anwesenheit";
+import { useKonfliktMeldung } from "@/components/realtime/konflikt";
 
 type StammFeld = "titel" | "bereich" | "leitender_auditor" | "team" | "geplant_von" | "geplant_bis";
 
@@ -47,7 +50,12 @@ const STAMM: { feld: StammFeld; wort: keyof Texte["auditAnsicht"]; art?: "date" 
   { feld: "geplant_bis", wort: "geplantBis", art: "date" },
 ];
 
-type Stammentwurf = Record<StammFeld, string> & { prioritaet: string; ziel: string };
+/** Der Entwurf merkt sich die Version, auf der er beruht (ADR-0006): lädt die
+ *  Seite live nach, darf er trotzdem nicht auf dem neuen Stand speichern. */
+type Stammentwurf = Record<StammFeld, string> & { prioritaet: string; ziel: string; version: number };
+
+/** Das Audit und seine Phasen bleiben live (ADR-0006). */
+const LIVE_TABELLEN = ["audits", "audit_phasen"];
 
 function entwurfAus(a: Audit): Stammentwurf {
   return {
@@ -59,6 +67,7 @@ function entwurfAus(a: Audit): Stammentwurf {
     geplant_bis: a.geplant_bis ?? "",
     prioritaet: String(a.prioritaet),
     ziel: a.ziel,
+    version: a.version,
   };
 }
 
@@ -100,6 +109,8 @@ export function AuditAnsicht({
   const [stamm, setStamm] = useState<Stammentwurf | null>(null);
   // Welche Phase gerade bearbeitet wird — höchstens eine.
   const [offen, setOffen] = useState<string | null>(null);
+  useLiveTabellen(LIVE_TABELLEN);
+  const konflikt = useKonfliktMeldung();
 
   const audit = useQuery({ queryKey: auditKeys.eines(id), queryFn: () => auditApi.eines(id) });
   const phasen = useQuery({ queryKey: auditKeys.phasen(id), queryFn: () => auditApi.phasen(id) });
@@ -119,17 +130,18 @@ export function AuditAnsicht({
   });
 
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["audit"] });
-  const melde = (fehler: Error) => toast.error(fehler.message);
+  const melde = (fehler: Error) => konflikt(fehler);
 
+  // Gespeichert wird mit dem geladenen Audit — samt Version (ADR-0006).
   const aendern = useMutation({
-    mutationFn: (felder: Partial<Audit>) => auditApi.aendern(id, felder),
+    mutationFn: (felder: Partial<Audit>) => auditApi.aendern(audit.data!, felder),
     onSuccess: neuLaden,
     onError: melde,
   });
 
   const stammSpeichern = useMutation({
     mutationFn: (e: Stammentwurf) =>
-      auditApi.aendern(id, {
+      auditApi.aendern({ id, version: e.version }, {
         titel: e.titel.trim(),
         bereich: e.bereich.trim(),
         leitender_auditor: e.leitender_auditor.trim() || null,
@@ -145,24 +157,28 @@ export function AuditAnsicht({
       return neuLaden();
     },
     onError: (fehler: Error) =>
-      toast.error(/audits_zeitraum/.test(fehler.message) ? worte.audit.zeitraumFehler : fehler.message),
+      konflikt(fehler, (f) =>
+        toast.error(/audits_zeitraum/.test(f.message) ? worte.audit.zeitraumFehler : f.message),
+      ),
   });
 
   const phaseSpeichern = useMutation({
     mutationFn: ({ phase, felder }: { phase: Phase; felder: Partial<Phase> }) =>
-      auditApi.phaseAendern(phase.id, felder),
+      auditApi.phaseAendern(phase, felder),
     onSuccess: () => {
       setOffen(null);
       toast.success(worte.auditAnsicht.phaseGespeichert);
       return neuLaden();
     },
     onError: (fehler: Error) =>
-      toast.error(
-        /audit_phasen_grund/.test(fehler.message)
-          ? worte.auditAnsicht.grundPflicht
-          : /audit_phasen_erledigt/.test(fehler.message)
-            ? worte.auditAnsicht.datumPflicht
-            : fehler.message,
+      konflikt(fehler, (f) =>
+        toast.error(
+          /audit_phasen_grund/.test(f.message)
+            ? worte.auditAnsicht.grundPflicht
+            : /audit_phasen_erledigt/.test(f.message)
+              ? worte.auditAnsicht.datumPflicht
+              : f.message,
+        ),
       ),
   });
 
@@ -313,6 +329,7 @@ export function AuditAnsicht({
               </span>
             )}
           </p>
+          <Anwesenheit tabelle="audits" kennung={a.id} />
         </div>
         {/* Zurück und der Status des ganzen Audits: in der Schale in der rechten Leiste. */}
         <div className={inSchale ? "contents" : "flex items-center gap-3"}>
@@ -501,7 +518,9 @@ export function AuditAnsicht({
                 <PhasenMaske
                   phase={p}
                   speichert={phaseSpeichern.isPending}
-                  onSpeichern={(felder) => phaseSpeichern.mutate({ phase: p, felder })}
+                  onSpeichern={(felder, version) =>
+                    phaseSpeichern.mutate({ phase: { ...p, version }, felder })
+                  }
                   onAbbrechen={() => setOffen(null)}
                 />
               ) : null
@@ -584,11 +603,14 @@ function PhasenMaske({
 }: {
   phase: Phase;
   speichert: boolean;
-  onSpeichern: (felder: Partial<Phase>) => void;
+  /** Mit der Version, mit der die Maske geöffnet wurde (ADR-0006). */
+  onSpeichern: (felder: Partial<Phase>, version: number) => void;
   onAbbrechen: () => void;
 }) {
   const worte = useTexte();
   const auditworte = useAuditworte();
+  // Lädt die Seite live nach, bleibt der Entwurf auf der Version, auf der er beruht.
+  const [basis] = useState(phase.version);
   const [e, setE] = useState({
     status: phase.status,
     verantwortlich: phase.verantwortlich ?? "",
@@ -695,7 +717,7 @@ function PhasenMaske({
               kommentar: e.kommentar,
               uebersprungen_warum:
                 e.status === "nicht_zutreffend" ? e.uebersprungen_warum.trim() || null : null,
-            })
+            }, basis)
           }
         >
           {worte.auditAnsicht.phaseSpeichern}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Download, FileCog } from "lucide-react";
@@ -23,6 +23,9 @@ import { cn } from "@/lib/cn";
 import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import type { Texte } from "@/texte";
 import { StatusAbzeichen } from "../../status-abzeichen";
+import { useLiveTabellen } from "@/components/realtime/live";
+import { Anwesenheit } from "@/components/realtime/anwesenheit";
+import { useKonfliktMeldung } from "@/components/realtime/konflikt";
 
 /**
  * Durchsicht einer Lieferung: Kopfdaten ergänzen, Positionen prüfen,
@@ -62,6 +65,9 @@ const KOPFFELDER: { feld: keyof Lieferung; wort: keyof Texte["durchsicht"]; typ?
 
 const KEINE: AtrPosition[] = [];
 
+/** Die Lieferung und ihre Positionen bleiben live (ADR-0006). */
+const LIVE_TABELLEN = ["atr_lieferungen", "atr_positionen"];
+
 export function Durchsicht({
   id,
   darfSchreiben,
@@ -71,6 +77,13 @@ export function Durchsicht({
 }) {
   const worte = useTexte();
   const queryClient = useQueryClient();
+  const melde = useKonfliktMeldung();
+  useLiveTabellen(LIVE_TABELLEN);
+  // Je Position die Version, auf der die laufende Eingabe beruht (beim Betreten
+  // eines Feldes gemerkt), und welche Version jede eigene Speicherung aus
+  // welcher gemacht hat.
+  const basis = useRef(new Map<string, number>());
+  const eigene = useRef(new Map<string, number>());
 
   const lieferung = useQuery({
     queryKey: lieferungKeys.eine(id),
@@ -87,17 +100,36 @@ export function Durchsicht({
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["atr"] });
 
   // Wie im Altsystem: eine Position speichert beim Verlassen ihres Feldes.
+  // Gespeichert wird mit der Version, die die Position beim Betreten des Feldes
+  // hatte — hat jemand anders sie seither geändert, weist die Datenbank das ab
+  // (ADR-0006). Wer von Feld zu Feld springt, speichert schneller, als die
+  // Liste neu lädt: die Änderungen laufen deshalb nacheinander (`scope`), und
+  // was die eigene vorige Speicherung aus einer Version gemacht hat, gilt als
+  // Fortsetzung — kein Konflikt mit sich selbst.
   const positionAendern = useMutation({
-    mutationFn: ({ pid, felder }: { pid: string; felder: Partial<AtrPosition> }) =>
-      lieferungApi.positionAendern(pid, felder),
-    onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    scope: { id: `atr-positionen-${id}` },
+    mutationFn: async ({ p, felder }: { p: AtrPosition; felder: Partial<AtrPosition> }) => {
+      let version = basis.current.get(p.id) ?? p.version;
+      while (eigene.current.has(`${p.id}:${version}`)) {
+        version = eigene.current.get(`${p.id}:${version}`)!;
+      }
+      const neu = await lieferungApi.positionAendern({ id: p.id, version }, felder);
+      eigene.current.set(`${p.id}:${version}`, neu);
+      return neu;
+    },
+    onSuccess: (version, { p, felder }) => {
+      queryClient.setQueryData<AtrPosition[]>(lieferungKeys.positionen(id), (alt) =>
+        alt?.map((x) => (x.id === p.id ? { ...x, ...felder, version } : x)),
+      );
+      return neuLaden();
+    },
+    onError: (fehler: Error) => melde(fehler),
   });
 
   const positionLoeschen = useMutation({
-    mutationFn: (pid: string) => lieferungApi.positionLoeschen(pid),
+    mutationFn: (p: AtrPosition) => lieferungApi.positionLoeschen(p),
     onSuccess: neuLaden,
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => melde(fehler),
   });
 
   const erzeugen = useMutation({
@@ -109,7 +141,7 @@ export function Durchsicht({
       if (e.pdf_hinweis) toast.error(e.pdf_hinweis);
       return neuLaden();
     },
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => melde(fehler),
   });
 
   const herunterladen = useMutation({
@@ -120,7 +152,7 @@ export function Durchsicht({
       a.download = name;
       a.click();
     },
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => melde(fehler),
   });
 
   if (lieferung.isLoading) {
@@ -138,17 +170,22 @@ export function Durchsicht({
   const ohneKatalog = zeilen.filter((p) => !p.teil_id).length;
 
   const posName = (p: AtrPosition) => String(p.pos ?? p.reihenfolge);
+  const merkeBasis = (p: AtrPosition) => basis.current.set(p.id, p.version);
 
   const textfeld = (p: AtrPosition, feld: "bezeichnung" | "zeichnung", titel: string, breite?: string) => (
     <Input
+      // Neu aufgesetzt, wenn sich der gespeicherte Wert ändert — sonst stünde
+      // eine Änderung von anderen nicht im Feld.
+      key={`${p.id}:${feld}:${p[feld] ?? ""}`}
       className={breite}
       defaultValue={p[feld] ?? ""}
+      onFocus={() => merkeBasis(p)}
       aria-label={`${titel} Position ${posName(p)}`}
       placeholder="—"
       disabled={!darfSchreiben}
       onBlur={(e) => {
         const wert = e.target.value.trim() || null;
-        if (wert !== p[feld]) positionAendern.mutate({ pid: p.id, felder: { [feld]: wert } });
+        if (wert !== p[feld]) positionAendern.mutate({ p, felder: { [feld]: wert } });
       }}
     />
   );
@@ -206,8 +243,10 @@ export function Durchsicht({
       suchtext: (p) => p.gewicht_kg,
       zelle: (p) => (
         <Input
+          key={`${p.id}:gewicht:${p.gewicht_kg ?? ""}`}
           className="w-24"
           defaultValue={p.gewicht_kg ?? ""}
+          onFocus={() => merkeBasis(p)}
           aria-label={`${worte.atr.gewicht} Position ${posName(p)}`}
           placeholder="—"
           disabled={!darfSchreiben}
@@ -216,7 +255,7 @@ export function Durchsicht({
             if ("fehler" in gewicht) {
               toast.error(worte.atr.gewichtUngueltig);
             } else if (gewicht.wert !== p.gewicht_kg) {
-              positionAendern.mutate({ pid: p.id, felder: { gewicht_kg: gewicht.wert } });
+              positionAendern.mutate({ p, felder: { gewicht_kg: gewicht.wert } });
             }
           }}
         />
@@ -246,8 +285,10 @@ export function Durchsicht({
         return (
           <div>
             <Input
+              key={`${p.id}:seriennummern:${p.seriennummern.join(",")}`}
               className={cn("w-56", abweichung && "border-[var(--danger)]")}
               defaultValue={p.seriennummern.join(", ")}
+              onFocus={() => merkeBasis(p)}
               aria-label={worte.durchsicht.seriennummernFeld(posName(p))}
               aria-invalid={abweichung}
               title={hinweis}
@@ -255,7 +296,7 @@ export function Durchsicht({
               onBlur={(e) => {
                 const neu = seriennummernAusText(e.target.value);
                 if (neu.join("\n") !== p.seriennummern.join("\n")) {
-                  positionAendern.mutate({ pid: p.id, felder: { seriennummern: neu } });
+                  positionAendern.mutate({ p, felder: { seriennummern: neu } });
                 }
               }}
             />
@@ -278,7 +319,7 @@ export function Durchsicht({
       zelle: (p) => (
         <ConfirmDeleteButton
           itemLabel={`Position ${posName(p)}`}
-          onConfirm={() => positionLoeschen.mutateAsync(p.id).then(() => undefined)}
+          onConfirm={() => positionLoeschen.mutateAsync(p).then(() => undefined)}
         />
       ),
     });
@@ -343,6 +384,7 @@ export function Durchsicht({
           Lieferschein {l.lieferschein_nr ?? l.quelle_dateiname}
         </h2>
         <StatusAbzeichen status={l.status} />
+        <Anwesenheit tabelle="atr_lieferungen" kennung={l.id} />
       </div>
 
       {l.programm_grund && (
@@ -395,6 +437,7 @@ export function Durchsicht({
 function Kopfdaten({ lieferung: l, darfSchreiben }: { lieferung: Lieferung; darfSchreiben: boolean }) {
   const worte = useTexte();
   const queryClient = useQueryClient();
+  const melde = useKonfliktMeldung();
   const anfang = Object.fromEntries(
     KOPFFELDER.map(({ feld }) => [feld, ((l[feld] as string | null) ?? "").trim()]),
   );
@@ -404,14 +447,14 @@ function Kopfdaten({ lieferung: l, darfSchreiben }: { lieferung: Lieferung; darf
   const speichern = useMutation({
     mutationFn: () =>
       lieferungApi.aendern(
-        l.id,
+        l,
         Object.fromEntries(geaendert.map(({ feld }) => [feld, entwurf[feld].trim() || null])),
       ),
     onSuccess: () => {
       toast.success(worte.durchsicht.gespeichert);
       return queryClient.invalidateQueries({ queryKey: ["atr"] });
     },
-    onError: (fehler: Error) => toast.error(fehler.message),
+    onError: (fehler: Error) => melde(fehler),
   });
 
   return (

@@ -9,6 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({ supabaseBrowser: () => ({}) }));
+const live = vi.hoisted(() => ({ useLiveTabellen: vi.fn() }));
+vi.mock("@/components/realtime/live", () => live);
 vi.mock("@/lib/audit", async (original) => {
   const echt = await original<typeof import("@/lib/audit")>();
   return {
@@ -84,5 +86,10 @@ describe("Auditliste", () => {
     expect(within(filter).getByText("Status").closest(".text-xs")).not.toBeNull();
     expect(within(aktionen).getByRole("button", { name: "Neues Audit" })).toBeInTheDocument();
     expect(within(filter).queryByRole("button")).toBeNull();
+  });
+
+  it("hält die Audits live", () => {
+    zeige();
+    expect(live.useLiveTabellen).toHaveBeenCalledWith(["audits"]);
   });
 });

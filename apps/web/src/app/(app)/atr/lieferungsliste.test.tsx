@@ -12,6 +12,8 @@ vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }))
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => "/atr" }));
 vi.mock("@/lib/supabase/client", () => ({ supabaseBrowser: () => ({}) }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }) }));
+const live = vi.hoisted(() => ({ useLiveTabellen: vi.fn() }));
+vi.mock("@/components/realtime/live", () => live);
 vi.mock("@/lib/atr", async (original) => {
   const echt = await original<typeof import("@/lib/atr")>();
   return {
@@ -66,5 +68,11 @@ describe("Lieferungsliste in der Schale", () => {
     fireEvent.click(knopf);
     await waitFor(() => expect(lauf).toHaveBeenCalled());
     expect(screen.queryByRole("button", { name: "Eingang durchsehen" })).toBeInTheDocument();
+  });
+
+  it("hält die Lieferungen live", async () => {
+    zeige();
+    await waitFor(() => expect(liste).toHaveBeenCalled());
+    expect(live.useLiveTabellen).toHaveBeenCalledWith(["atr_lieferungen"]);
   });
 });

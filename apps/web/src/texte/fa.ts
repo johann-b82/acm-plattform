@@ -43,6 +43,9 @@ export const fa: Texte = {
       zeitraum: "بازهٔ زمانی",
       aktionen: "اقدامات",
     },
+    auchGeoeffnet: (namen: string) => `همچنین باز توسط ${namen}`,
+    konflikt: "در این فاصله کس دیگری آن را تغییر داده است — وضعیت فعلی بارگذاری شد.",
+    geloeschtVonAnderen: "در این فاصله کس دیگری آن را حذف کرده است.",
   },
   pfad: {
     aria: "مسیر",

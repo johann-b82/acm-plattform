@@ -43,6 +43,9 @@ export const uk: Texte = {
       zeitraum: "Період",
       aktionen: "Дії",
     },
+    auchGeoeffnet: (namen: string) => `Також відкрито: ${namen}`,
+    konflikt: "Тим часом змінено іншою особою — завантажено актуальний стан.",
+    geloeschtVonAnderen: "Тим часом видалено іншою особою.",
   },
   pfad: {
     aria: "Шлях",

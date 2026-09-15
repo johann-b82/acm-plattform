@@ -43,6 +43,9 @@ export const ar: Texte = {
       zeitraum: "الفترة",
       aktionen: "الإجراءات",
     },
+    auchGeoeffnet: (namen: string) => `مفتوح أيضًا لدى ${namen}`,
+    konflikt: "غيّره شخص آخر في هذه الأثناء — تم تحميل الحالة الحالية.",
+    geloeschtVonAnderen: "حذفه شخص آخر في هذه الأثناء.",
   },
   pfad: {
     aria: "المسار",
