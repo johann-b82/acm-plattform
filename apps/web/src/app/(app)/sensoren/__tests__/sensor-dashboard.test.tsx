@@ -56,7 +56,12 @@ describe("Sensor-Kachel", () => {
         </SprachAnbieter>
       </QueryClientProvider>,
     );
-    expect(await findByText("Klebeschrank Lager")).toBeInTheDocument();
+    const name = await findByText("Klebeschrank Lager");
+    expect(name).toBeInTheDocument();
+    // Das Farbfeld vor dem Namen ist der Schlüssel zur Linie im Verlauf — eckig.
+    const farbfeld = name.parentElement!.querySelector("span[aria-hidden]");
+    expect(farbfeld).not.toBeNull();
+    expect(farbfeld!.className).not.toMatch(/\brounded/);
     expect(await findByText("21,3 °C")).toBeInTheDocument();
     expect(queryByText(/zu vor 1 h/)).toBeNull();
     expect(queryByText(/zu vor 24 h/)).toBeNull();

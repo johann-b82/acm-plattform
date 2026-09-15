@@ -75,5 +75,9 @@ describe("Kundenanteil, Legende", () => {
     const legende = within(container.querySelector("ol")!);
     const eintraege = legende.getAllByRole("listitem").map((li) => li.textContent);
     expect(eintraege).toEqual(["Diehl Aviation", "Ethiopian Airlines", "B/E Aerospace", "Restkunden (2)"]);
+    // Die Farbfelder sind eckig wie die Säulen.
+    for (const feld of container.querySelectorAll("ol li > span[aria-hidden]")) {
+      expect(feld.className).not.toMatch(/\brounded/);
+    }
   });
 });

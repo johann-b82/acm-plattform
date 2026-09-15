@@ -130,7 +130,7 @@ export function KundenanteilDiagramm({
             <ol className="space-y-1 text-xs md:w-72 md:shrink-0">
               {saeulen.map((s) => (
                 <li key={s.platz ?? "rest"} className="flex items-baseline gap-2">
-                  <span aria-hidden className="h-2.5 w-2.5 shrink-0 self-center rounded-sm" style={{ background: farbe(s) }} />
+                  <span aria-hidden className="h-2.5 w-2.5 shrink-0 self-center" style={{ background: farbe(s) }} />
                   <span className="min-w-0 flex-1 break-words">{name(s)}</span>
                 </li>
               ))}

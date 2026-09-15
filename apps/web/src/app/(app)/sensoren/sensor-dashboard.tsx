@@ -279,7 +279,7 @@ function Kachel({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="h-2.5 w-2.5 shrink-0 rounded-full"
+          className="h-2.5 w-2.5 shrink-0"
           style={{ backgroundColor: farbe }}
         />
         <h2 className="min-w-0 truncate font-medium" title={sensor.name}>
