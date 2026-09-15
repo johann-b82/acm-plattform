@@ -11,8 +11,9 @@ describe("Kacheln", () => {
     render(<Kacheln eintraege={[{ pfad: "/kpi", name: "KPI-Dashboard", marke: "Verwalten" }]} />);
     const bild = screen.getByRole("link", { name: /KPI-Dashboard/ }).querySelector("svg");
     const klassen = bild?.getAttribute("class") ?? "";
-    expect(klassen).toContain("h-5");
-    expect(klassen).toContain("w-5");
+    // 22,5 px: erst 20 px, dann 50 % größer (30 px), dann 25 % kleiner.
+    expect(klassen).toContain("h-[1.40625rem]");
+    expect(klassen).toContain("w-[1.40625rem]");
     expect(klassen).not.toContain("h-[3.1875rem]");
   });
 

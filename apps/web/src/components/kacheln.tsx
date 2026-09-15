@@ -43,7 +43,7 @@ export function Kacheln({
                 <div className="min-w-0">
                   {/* Rechts Platz für das Sinnbild in der Ecke, damit ein langer
                       Name nicht darunter läuft. */}
-                  <div className="pe-7 font-medium">{k.name}</div>
+                  <div className="pe-8 font-medium">{k.name}</div>
                   {/* Zwei Textzeilen sind immer reserviert — ob Beschreibung
                       oder Rechtestufe, ob ein- oder zweizeilig —, damit alle
                       Kacheln (App-Starter wie Übersichten) gleich hoch wirken
@@ -64,7 +64,7 @@ export function Kacheln({
                 {/* Das Sinnbild sitzt klein oben rechts in der Ecke, in fester
                     Größe — ein umbrechender Name verschiebt es nicht. */}
                 <span className="absolute top-4 end-4">
-                  <Bild className="h-5 w-5 text-[var(--fg-muted)]" aria-hidden strokeWidth={1.5} />
+                  <Bild className="h-[1.40625rem] w-[1.40625rem] text-[var(--fg-muted)]" aria-hidden strokeWidth={1.5} />
                 </span>
               </Link>
             </li>
