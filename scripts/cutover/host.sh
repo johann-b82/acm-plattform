@@ -193,12 +193,16 @@ h_1c_zurueck() {
   (cd "$alt" && docker compose up -d)
 }
 
+lan_ports_ausser() {  # dienst — liest «Dienst Ports»-Zeilen; 127.0.0.1-Bindungen zählen nicht
+  awk -v frei="$1" '$1 != frei && ($0 ~ /0\.0\.0\.0:[0-9]+->/ || $0 ~ /\[?::\]?:[0-9]+->/) {print $1}'
+}
+
 h_1c_pruefen() {
   local neu="${BASIS}/lumeapps-neu" rc=0 x
   warte_auf_stack "$neu" 600 || rc=1
   cd "$neu"
-  x="$(${C_PROD} ps --format '{{.Service}} {{.Ports}}' | awk '$1!="caddy" && /->/ {print $1}')"
-  [ -z "$x" ] && gut "nur caddy veröffentlicht Ports" || { schlecht "veröffentlichen Ports: $x"; rc=1; }
+  x="$(${C_PROD} ps --format '{{.Service}} {{.Ports}}' | lan_ports_ausser caddy)"
+  [ -z "$x" ] && gut "nur caddy ist aus dem LAN erreichbar" || { schlecht "aus dem LAN erreichbar: $x"; rc=1; }
   [ "$(${C_PROD} exec -T api id -u | tr -d '\r')" = 10001 ] && gut "api läuft als 10001" || { schlecht "api nicht als 10001"; rc=1; }
   ${C_PROD} exec -T api test ! -e /app/tests && gut "keine Testsuite im Bild" || { schlecht "/app/tests vorhanden"; rc=1; }
   ${C_PROD} exec -T api python -c 'import socket; socket.gethostbyname("api.personio.de")' >/dev/null 2>&1 \

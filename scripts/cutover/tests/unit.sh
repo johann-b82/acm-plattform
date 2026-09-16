@@ -172,6 +172,15 @@ t_altverzeichnis_folgt_den_daten() {
 }
 pruefe "alt_verzeichnis zeigt dorthin, wo postgres_data liegt" t_altverzeichnis_folgt_den_daten
 
+t_lan_ports_nur_von_aussen_erreichbare() {
+  zeilen='caddy 0.0.0.0:80->80/tcp, [::]:80->80/tcp
+directus 127.0.0.1:8055->8055/tcp
+api 8000/tcp
+frontend 0.0.0.0:5173->5173/tcp'
+  gleich "$(printf '%s\n' "$zeilen" | lan_ports_ausser caddy)" frontend
+}
+pruefe "1c: nur LAN-weit veröffentlichte Ports zählen, 127.0.0.1 nicht" t_lan_ports_nur_von_aussen_erreichbare
+
 # --- 3 ------------------------------------------------------------------------
 
 plattform_anlegen() {
