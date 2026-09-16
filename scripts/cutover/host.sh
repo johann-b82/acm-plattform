@@ -299,12 +299,28 @@ h_4a_trocken() {
   mit_altnetz "$c" compute_cli uebernahme-nutzer --trocken
 }
 
+# uebernahme-nutzer schreibt Bericht und CSV in dieselbe Ausgabe. Der Bericht
+# gehört ins Terminal, das CSV (ab der Kopfzeile) nur in die Datei.
+zugaenge_trennen() {  # rohausgabe csv-datei — gibt den Bericht aus
+  ( umask 077; awk '/^email;passwort$/ {csv=1} csv' "$1" > "$2" )
+  awk '/^Zugangsdaten/ || /^email;passwort$/ {exit} {print}' "$1"
+}
+zugaenge_anzahl() { awk 'NR > 1 && /;/' "$1" | wc -l | tr -d ' '; }
+
 h_4a_echt() {
-  local c liste; c="$(compute_container)"; [ -n "$c" ] || { abbruch "compute läuft nicht"; return 1; }
+  local c liste roh rc=0; c="$(compute_container)"; [ -n "$c" ] || { abbruch "compute läuft nicht"; return 1; }
   mit_altnetz "$c" compute_cli uebernahme --leeren || return 1
   liste="${BASIS}/acm-plattform/zugaenge-$(date +%Y%m%d-%H%M%S).csv"
-  ( umask 077; mit_altnetz "$c" compute_cli uebernahme-nutzer > "$liste" ) || { abbruch "Nutzer-Übernahme gescheitert, Teilausgabe in $liste"; return 1; }
-  gut "neue Zugänge: $(( $(wc -l < "$liste") - 1 )) Personen, Passwörter in $liste (0600) — verteilen, dann löschen"
+  roh="$(umask 077; mktemp)"
+  ( umask 077; mit_altnetz "$c" compute_cli uebernahme-nutzer > "$roh" ) || rc=1
+  zugaenge_trennen "$roh" "$liste"
+  rm -f "$roh"
+  [ $rc -eq 0 ] || { abbruch "Nutzer-Übernahme gescheitert — schon angelegte Zugänge stehen in $liste"; return 1; }
+  if [ "$(zugaenge_anzahl "$liste")" -gt 0 ]; then
+    gut "neue Zugänge: $(zugaenge_anzahl "$liste"), Passwörter in $liste (0600) — verteilen, dann löschen"
+  else
+    rm -f "$liste"; gut "keine neuen Zugänge"
+  fi
   mit_altnetz "$c" compute_cli abgleich
 }
 

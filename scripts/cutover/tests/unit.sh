@@ -243,6 +243,19 @@ t_3_env_setzt_adressen_und_erzeugt_secrets() {
 }
 pruefe "3: Adressen mit Port und Pfad, Secrets einmalig erzeugt" t_3_env_setzt_adressen_und_erzeugt_secrets
 
+t_4a_zugaenge_trennt_bericht_und_csv() {
+  sandbox
+  roh="${SANDBOX}/roh"; csv="${SANDBOX}/zugaenge.csv"
+  printf 'Übernahme Nutzer\n  Angelegt: 1\n  Gab es schon: 0\n\nZugangsdaten — nur jetzt sichtbar, bitte wegschreiben:\nemail;passwort\nanna@example.com;geheim-pw\n' > "$roh"
+  out="$(zugaenge_trennen "$roh" "$csv")"
+  gleich "$(cat "$csv")" "email;passwort
+anna@example.com;geheim-pw"
+  enthaelt "$out" "Angelegt: 1"
+  enthaelt_nicht "$out" "geheim-pw"
+  gleich "$(zugaenge_anzahl "$csv")" 1
+}
+pruefe "4a: Zugangsliste enthält nur das CSV, Passwörter nie im Terminal" t_4a_zugaenge_trennt_bericht_und_csv
+
 # --- 4d -----------------------------------------------------------------------
 
 signage_anlegen() {
