@@ -10,6 +10,28 @@ Was hier steht, ist entweder lokal nachgestellt oder ausdrücklich als ungeprüf
 | **am Host geprüft** | auf `acm@192.9.201.9` selbst nachgesehen |
 | **ungeprüft** | braucht den Host, ist hier nur beschrieben |
 
+## Automatisiert
+
+`scripts/cutover/cutover.sh` fährt die Schritte unten vom Mac aus, per ssh auf den Host und die Pis:
+
+```bash
+cp scripts/cutover/cutover.conf.example scripts/cutover/cutover.conf   # Host, Pis, Klone eintragen
+bash scripts/cutover/cutover.sh schritt vorab   # nur lesen: Werkzeuge, Speicher, Altprojekt, Pis
+bash scripts/cutover/cutover.sh plan            # Reihenfolge und was schon erledigt ist
+bash scripts/cutover/cutover.sh lauf            # alles Offene, hält vor jedem Ausfall an
+```
+
+- **Haltepunkte:** vor 1c, vor jedem echten Datenlauf (4a, 4d), vor dem ersten Pi und vor den übrigen. Weiter geht es nur mit ausgeschriebenem `ja`. Schlägt eine Prüfung nach 1c oder an einem Pi fehl, bietet das Skript den Rückweg an; von Hand: `cutover.sh zurueck 1c` bzw. `cutover.sh zurueck 5 [PI]`.
+- **Fortsetzen:** Erledigte Schritte stehen auf dem Host unter `/home/acm/.cutover`. `lauf` überspringt sie; `schritt X` fährt einen Schritt erneut.
+- **Reihenfolge:** 0b liest die Adresse jedes Pis. Zeigt einer auf `:8000`, zieht Signage vor der Härtung um (3, 4d, 5, dann 1).
+- **Code** kommt per `git archive` aus den lokalen Klonen, der Host braucht kein GitHub-Konto. Die Oberfläche des Altprojekts baut der Mac (1b).
+- **Secrets** liest das Skript auf dem Host aus den `.env`-Dateien; sie erscheinen in keiner Ausgabe. Die Passwortliste neuer Zugänge liegt nur auf dem Host (`acm-plattform/zugaenge-*.csv`, 0600).
+- **Pis:** Das Skript tauscht nur die Adresse in den zwei Units und sichert die alten als `*.vor-cutover`, statt `provision-pi.sh` neu zu fahren — kein apt, kein git, Rückweg exakt.
+- **Bleibt von Hand**, das Skript hält dort an und zeigt die Befehle: Zertifikat (2), Firmenlogo und ATR-Eingangsordner (4b), signierte Adressen der HR-Tafeln (4d), Host-Vorlagen mit `sudo` (6), Umzug der Plattform auf Port 80.
+- **Medienverzeichnis:** `signage-api` läuft als uid 10001. Das Skript gibt `acm-signage/data/media` diesem Nutzer (per `docker run`, ohne `sudo`); von Hand angelegt gehört es `acm`, und Uploads wie Übernahme scheitern.
+
+Unit-Tests: `bash scripts/cutover/tests/unit.sh` (auch in CI).
+
 ## Der Host, wie er wirklich aussieht
 
 **am Host geprüft** (2026-09-10, aus dem LAN)

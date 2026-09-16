@@ -16,6 +16,8 @@ jobs:
         run: bash scripts/ci/check_log_hygiene.sh
       - name: service_role-Guard (Quellcode)
         run: bash scripts/ci/check_service_role.sh
+      - name: Stichtag-Skript (Unit-Tests)
+        run: bash scripts/cutover/tests/unit.sh
       - name: Compose-Modell validieren
         run: |
           cp .env.example .env

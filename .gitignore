@@ -28,3 +28,7 @@ certs/*.pem
 .vscode/
 .idea/
 backups/
+
+# Stichtag-Skript: Konfiguration mit Host- und Pi-Adressen, Test-Schlüssel
+scripts/cutover/cutover.conf
+scripts/cutover/tests/e2e/.ssh/
