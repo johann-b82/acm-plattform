@@ -7,7 +7,7 @@ Kurzfassung. Begründungen in `docs/plan.md`, Entscheidungen in `docs/adr/`.
 ```
 Host (Linux, 192.9.201.9)
 │
-├── Compose-Projekt "acm"  (/srv/acm)
+├── Compose-Projekt "acm"  (/home/acm/acm-plattform)
 │   ├── caddy       :443  TLS, Security-Header, Body-Limit, Access-Log nur Fehler
 │   │     /           → web
 │   │     /api/signage/* → web        (Proxy zum Signage-Stack, hängt das Token an)
@@ -24,8 +24,8 @@ Host (Linux, 192.9.201.9)
 │   ├── kong, meta, imgproxy
 │   └── (analytics, vector: deaktiviert)
 │
-└── Compose-Projekt "signage"  (/srv/signage, eigenes Repo acm-signage)
-    ├── caddy-signage :8443  eigene Instanz, SSE-Passthrough
+└── Compose-Projekt "signage"  (/home/acm/acm-signage, eigenes Repo acm-signage)
+    ├── caddy-signage :8080  eigene Instanz, SSE-Passthrough, vorerst HTTP (TLS offen)
     ├── signage-api   FastAPI --workers 1, Player-Bundle im Image, SSE, Pairing, Device-JWT, PPTX
     ├── signage-db    Postgres 17, 10 Tabellen, eigene Alembic-Kette, NOTIFY-Trigger
     └── (optional nach Spike: payload als Content-Admin)
@@ -38,7 +38,7 @@ Host (Linux, 192.9.201.9)
 - **Rechte kommen aus dem Claim `apps`.** Middleware (Web), RLS (DB) und `compute` (Python) prüfen denselben Claim. Keine zweite Rollen-Quelle.
 - **Same-Origin über Caddy.** Kein CORS, keine direkt veröffentlichten Ports außer Caddy.
 - **`compute` ist zustandslos und mehrfach startbar.** Kein In-Process-Scheduler mit Fanout, kein SSE. Was Langlebigkeit braucht, lebt im Signage-Stack.
-- **Kein Host-Pfad wird von beiden Stacks benutzt.** `/srv/acm` und `/srv/signage` sind getrennt.
+- **Kein Host-Pfad wird von beiden Stacks benutzt.** `/home/acm/acm-plattform` und `/home/acm/acm-signage` sind getrennt (`/srv` gehört auf dem Host root, siehe `docs/cutover.md`).
 - **Logging nach `docs/logging.md`.** Anker auf jedem Dienst, keine Access-Logs auf Erfolg.
 - **Tests laufen nie gegen eine Datenbank ohne `test` im Namen.**
 
