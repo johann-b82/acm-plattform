@@ -6,3 +6,8 @@ services:
     dns:
       - 1.1.1.1
       - 9.9.9.9
+  # Am Host gemessen (docs/cutover.md § 1): Postgres nur auf 127.0.0.1:5432.
+  # Woher die Bindung dort stammt, ist nicht gesehen; hier liegt sie im Override.
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"

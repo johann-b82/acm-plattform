@@ -162,8 +162,15 @@ schritt_0b() {
 }
 
 schritt_1a() {
-  fern h_existiert lumeapps-neu && { echo "  ✗ ${BASIS}/lumeapps-neu gibt es schon, 1a ist aber nicht als erledigt markiert — von Hand prüfen"; return 1; }
-  local sha; sha="$(git -C "${REPO_LUMEAPPS}" rev-parse --short "${REF_LUMEAPPS}")"
+  local sha
+  if fern h_existiert lumeapps-neu; then
+    # Nach erledigtem 1a nur die Dateien neben dem Code auffrischen — der Code
+    # läuft womöglich schon (1c), ein zweites Auspacken wäre ein Deployment.
+    [ -n "$(fern h_marke_lesen 1a 2>/dev/null)" ] || { echo "  ✗ ${BASIS}/lumeapps-neu gibt es schon, 1a ist aber nicht als erledigt markiert — von Hand prüfen"; return 1; }
+    sha="$(fern h_lesen lumeapps-neu/DEPLOYED_COMMIT)" || return 1
+    fern h_1a "${sha}"; return
+  fi
+  sha="$(git -C "${REPO_LUMEAPPS}" rev-parse --short "${REF_LUMEAPPS}")"
   code_zum_host "${REPO_LUMEAPPS}" "${REF_LUMEAPPS}" "${BASIS}/lumeapps-neu" || return 1
   fern h_1a "${sha}"
 }

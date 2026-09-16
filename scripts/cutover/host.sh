@@ -11,7 +11,9 @@
 # certs/ zieht nicht mit: im alten Baum liegt dort nur das kompromittierte
 # mkcert-Material (nirgends eingebunden), im neuen Stand ist certs/ eingecheckt.
 DATENVERZEICHNISSE="postgres_data directus_database directus_extensions directus_uploads caddy_data caddy_config backups frontend_node_modules"
-C_PROD="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+# Letzte Datei: vom Skript in 1a angelegt, nimmt der alten Datenbank den
+# Host-Port (siehe h_1a). Nur im gehärteten Altprojekt, nicht im Rückweg.
+C_PROD="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml"
 
 sag() { printf '  %s\n' "$*"; }
 gut() { printf '  ✓ %s\n' "$*"; }
@@ -114,6 +116,12 @@ ports_im_weg() {  # port... — die davon, die schon ein Container belegt
   for p in "$@"; do printf '%s\n' "$belegt" | grep -qx "$p" && echo "$p"; done; true
 }
 
+compose_kann_reset() {  # "Docker Compose version v2.40.3" → ab 2.24
+  local v; v="$(printf '%s' "$1" | sed -n 's/^Docker Compose version v\{0,1\}\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p')"
+  [ -n "$v" ] || return 1
+  [ "${v%%.*}" -gt 2 ] || { [ "${v%%.*}" -eq 2 ] && [ "${v#*.}" -ge 24 ]; }
+}
+
 # --- vorab (nur lesen) --------------------------------------------------------
 
 h_vorab() {
@@ -122,7 +130,8 @@ h_vorab() {
   sag "Speicher frei: $(awk '/MemAvailable/ {printf "%.1f GB", $2/1048576}' /proc/meminfo 2>/dev/null || echo ?)"
   sag "Platte frei unter ${BASIS}: $(df -h "${BASIS}" | awk 'NR==2 {print $4}')"
   docker info >/dev/null 2>&1 && gut "Docker ohne root" || { schlecht "docker nicht nutzbar"; rc=1; }
-  docker compose version >/dev/null 2>&1 && gut "docker compose v2" || { schlecht "docker compose fehlt"; rc=1; }
+  compose_kann_reset "$(docker compose version 2>/dev/null)" && gut "$(docker compose version --short 2>/dev/null) (ab 2.24 für !reset)" \
+    || { schlecht "docker compose ab 2.24 nötig, da: $(docker compose version 2>/dev/null)"; rc=1; }
   for w in tar curl python3 openssl awk; do command -v "$w" >/dev/null || { schlecht "$w fehlt"; rc=1; }; done
   local a; a="$(alt_verzeichnis)"
   sag "Altprojekt aktiv in: $a"
@@ -156,6 +165,16 @@ h_1a() {  # commit — Code liegt schon in lumeapps-neu (git archive vom Mac)
   [ -f "$neu/.env" ] || cp "$alt/.env" "$neu/.env"
   [ -f "$neu/docker-compose.override.yml" ] || cp "$alt/docker-compose.override.yml" "$neu/"
   [ -n "$(env_lesen "$neu/.env" COMPOSE_PROJECT_NAME)" ] || env_setzen "$neu/.env" COMPOSE_PROJECT_NAME lumeapps
+  # Am Host bindet die alte Datenbank 127.0.0.1:5432. Die Plattform braucht den
+  # Port, und ihr POSTGRES_PORT ist nicht verlegbar (Supabase nutzt ihn intern).
+  # !reset leert die Liste, gleich aus welcher Datei die Bindung stammt; die
+  # Override-Datei mit den DNS-Servern bleibt unangetastet.
+  cat > "$neu/docker-compose.cutover.yml" <<'YAML'
+# Angelegt von scripts/cutover (Schritt 1a): die alte Datenbank ohne Host-Port.
+services:
+  db:
+    ports: !reset []
+YAML
   chmod 600 "$neu/.env"
   echo "$1" > "$neu/DEPLOYED_COMMIT"
   gut "lumeapps-neu vorbereitet (Stand $1, Projektname $(env_lesen "$neu/.env" COMPOSE_PROJECT_NAME))"
@@ -168,6 +187,17 @@ h_1b_pruefen() {
 }
 
 # --- 1c: umschalten -----------------------------------------------------------
+
+# Das alte Projekt im alten Baum starten — ebenfalls ohne Host-Port der
+# Datenbank, denn nach Schritt 3 hält die Plattform 127.0.0.1:5432.
+alt_starten() {
+  local alt="${BASIS}/lumeapps" neu="${BASIS}/lumeapps-neu"
+  if [ -f "$neu/docker-compose.cutover.yml" ]; then
+    (cd "$alt" && docker compose -f docker-compose.yml -f docker-compose.override.yml -f "$neu/docker-compose.cutover.yml" up -d)
+  else
+    (cd "$alt" && docker compose up -d)
+  fi
+}
 
 h_1c_umschalten() {  # 2 = vor dem Herunterfahren abgebrochen, nichts verändert
   local alt="${BASIS}/lumeapps" neu="${BASIS}/lumeapps-neu" d
@@ -188,7 +218,7 @@ h_1c_umschalten() {  # 2 = vor dem Herunterfahren abgebrochen, nichts verändert
   if ! datenverzeichnisse_verschieben "$alt" "$neu"; then
     schlecht "Umzug der Daten unvollständig — neuer Stack startet nicht, alles zurück"
     datenverzeichnisse_verschieben "$neu" "$alt" || schlecht "Rückzug unvollständig — von Hand prüfen, bevor etwas startet"
-    (cd "$alt" && docker compose up -d)
+    alt_starten
     return 3
   fi
   (cd "$neu" && ${C_PROD} up -d --build)
@@ -221,7 +251,7 @@ h_1c_zurueck() {
   local alt="${BASIS}/lumeapps" neu="${BASIS}/lumeapps-neu" d
   (cd "$neu" && ${C_PROD} down)
   datenverzeichnisse_verschieben "$neu" "$alt" || { abbruch "Rückzug unvollständig — altes Projekt startet nicht, von Hand prüfen"; return 1; }
-  (cd "$alt" && docker compose up -d)
+  alt_starten
 }
 
 lan_ports_ausser() {  # dienst — liest «Dienst Ports»-Zeilen; 127.0.0.1-Bindungen zählen nicht
@@ -236,6 +266,8 @@ h_1c_pruefen() {
   case "$x" in ''|0) schlecht "Datenbank ohne Personen — leer neu angelegt statt umgezogen?"; rc=1;; *) gut "Datenbank mit Bestand ($x Personen)";; esac
   x="$(${C_PROD} ps --format '{{.Service}} {{.Ports}}' | lan_ports_ausser caddy)"
   [ -z "$x" ] && gut "nur caddy ist aus dem LAN erreichbar" || { schlecht "aus dem LAN erreichbar: $x"; rc=1; }
+  x="$(docker ps --filter label=com.docker.compose.project=lumeapps --filter label=com.docker.compose.service=db --format '{{.Ports}}')"
+  printf '%s' "$x" | grep -q -- '->' && { schlecht "alte Datenbank veröffentlicht noch einen Port: $x"; rc=1; } || gut "alte Datenbank ohne Host-Port"
   [ "$(${C_PROD} exec -T api id -u | tr -d '\r')" = 10001 ] && gut "api läuft als 10001" || { schlecht "api nicht als 10001"; rc=1; }
   ${C_PROD} exec -T api test ! -e /app/tests && gut "keine Testsuite im Bild" || { schlecht "/app/tests vorhanden"; rc=1; }
   ${C_PROD} exec -T api python -c 'import socket; socket.gethostbyname("api.personio.de")' >/dev/null 2>&1 \

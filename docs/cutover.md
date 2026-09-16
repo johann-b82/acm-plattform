@@ -30,7 +30,7 @@ bash scripts/cutover/cutover.sh lauf            # alles Offene, hält vor jedem 
 - **Bleibt von Hand**, das Skript hält dort an und zeigt die Befehle: Zertifikat (2), Firmenlogo und ATR-Eingangsordner (4b), signierte Adressen der HR-Tafeln (4d), Host-Vorlagen mit `sudo` (6), Umzug der Plattform auf Port 80.
 - **Medienverzeichnis:** `signage-api` läuft als uid 10001. Das Skript gibt `acm-signage/data/media` diesem Nutzer (per `docker run`, ohne `sudo`); von Hand angelegt gehört es `acm`, und Uploads wie Übernahme scheitern.
 
-- **Ports:** Schritt 3 legt Kong auf `127.0.0.1:8010` (Vorgabe 8000 ist die alte Dev-API, der Rückweg von 1c startete sonst nicht) und prüft vor dem ersten Start, ob Plattform-, Kong- und Postgres-Port frei sind. `POSTGRES_PORT` lässt sich nicht verlegen; bindet die alte Datenbank am Host `127.0.0.1:5432`, bricht Schritt 3 mit dieser Meldung ab.
+- **Ports:** Schritt 3 legt Kong auf `127.0.0.1:8010` (Vorgabe 8000 ist die alte Dev-API, der Rückweg von 1c startete sonst nicht) und prüft vor dem ersten Start, ob Plattform-, Kong- und Postgres-Port frei sind. `POSTGRES_PORT` lässt sich nicht verlegen; deshalb nimmt 1a der alten Datenbank ihren Host-Port (`docker-compose.cutover.yml`, `!reset`, Compose ab 2.24 — prüft `vorab`).
 
 Unit-Tests: `bash scripts/cutover/tests/unit.sh` (auch in CI). Gesamtlauf gegen einen nachgebauten Linux-Host und Pi: `scripts/cutover/tests/e2e/` — **geprüft** am 2026-09-16 von `vorab` bis `pruefen`, mit Rückwegen für 1c und 5. Nicht nachgestellt: die Reihenfolge für Pis auf `:8000`, echte Pi-Hardware, TLS.
 
@@ -58,17 +58,17 @@ docker compose -f docker-compose.yml config | grep -c dns:   # 0
 docker compose config | grep -c dns:                          # 1
 ```
 
-Jeder Aufruf mit dem Prod-Overlay nennt die Override-Datei deshalb **mit**:
+Jeder Aufruf mit dem Prod-Overlay nennt die Override-Datei deshalb **mit** — und als letzte die in 1a angelegte `docker-compose.cutover.yml`:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml <befehl>
+docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml <befehl>
 ```
 
 Der Kürze halber steht unten `$C` dafür:
 
 ```bash
-cd /home/acm/lumeapps
-C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+cd /home/acm/lumeapps-neu
+C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml"
 ```
 
 ---
@@ -138,8 +138,22 @@ git clone https://github.com/johann-b82/lumeapps.git lumeapps-neu
 cd lumeapps-neu
 cp ../lumeapps/.env ../lumeapps/docker-compose.override.yml .
 grep -q '^COMPOSE_PROJECT_NAME=' .env || echo 'COMPOSE_PROJECT_NAME=lumeapps' >> .env
+cat > docker-compose.cutover.yml <<'YAML'
+services:
+  db:
+    ports: !reset []
+YAML
 git rev-parse --short HEAD > DEPLOYED_COMMIT
 ```
+
+`docker-compose.cutover.yml` nimmt der alten Datenbank den Host-Port. Am Host
+bindet sie `127.0.0.1:5432`; die Plattform braucht in Schritt 3 denselben Port,
+und ihr `POSTGRES_PORT` lässt sich nicht verlegen (Supabase nutzt ihn intern).
+`!reset` leert die Liste, gleich aus welcher Datei die Bindung stammt — die
+Override-Datei mit den DNS-Servern bleibt, wie sie ist. Braucht Docker Compose
+ab 2.24 (`docker compose version`). Zugriff auf die alte Datenbank danach über
+`docker exec lumeapps-db-1 psql …`. Auch der Rückweg in 1c startet das alte
+Projekt mit dieser Datei — nach Schritt 3 hält die Plattform den Port.
 
 Die `COMPOSE_PROJECT_NAME`-Zeile ist keine Kosmetik. Compose leitet den
 Projektnamen aus dem Verzeichnis ab, und das Altprojekt setzt keinen eigenen.
@@ -231,14 +245,14 @@ ls -d /home/acm/lumeapps/postgres_data /home/acm/lumeapps/directus_uploads 2>/de
 
 # 3) neuen Stack hochfahren
 cd /home/acm/lumeapps-neu
-C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml"
 $C up -d --build
 ```
 
 Prüfen:
 
 ```bash
-$C ps --format '{{.Service}}\t{{.Ports}}'          # nur caddy auf :80
+$C ps --format '{{.Service}}\t{{.Ports}}'          # nur caddy auf :80, db ohne Port
 $C exec api id                                     # uid=10001
 $C exec api ls /app/tests                          # darf es nicht geben
 $C exec api python -c 'import pytest'              # ModuleNotFoundError
@@ -280,7 +294,8 @@ for d in postgres_data directus_database directus_extensions directus_uploads \
 done
 [ -e /home/acm/lumeapps-neu/backend/media ] && [ ! -e /home/acm/lumeapps/backend/media ] \
   && docker run --rm -v /home/acm:/h alpine mv /h/lumeapps-neu/backend/media /h/lumeapps/backend/
-cd /home/acm/lumeapps && docker compose up -d
+cd /home/acm/lumeapps && docker compose -f docker-compose.yml -f docker-compose.override.yml \
+  -f /home/acm/lumeapps-neu/docker-compose.cutover.yml up -d
 ```
 
 ---

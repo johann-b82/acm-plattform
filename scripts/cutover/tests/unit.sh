@@ -105,6 +105,28 @@ t_1a_kopiert_env_und_setzt_projektnamen_einmal() {
 }
 pruefe "1a: .env und Override kopiert, COMPOSE_PROJECT_NAME genau einmal" t_1a_kopiert_env_und_setzt_projektnamen_einmal
 
+t_1a_nimmt_der_alten_datenbank_den_hostport() {
+  sandbox; altprojekt_anlegen; neuer_klon_anlegen
+  printf 'services:\n  api:\n    dns: [192.9.200.1]\n  db:\n    ports:\n      - "127.0.0.1:5432:5432"\n' > "${BASIS}/lumeapps/docker-compose.override.yml"
+  h_1a abc1234
+  n="${BASIS}/lumeapps-neu"
+  gleich "$(cat "$n/docker-compose.cutover.yml" | grep -v '^#')" "services:
+  db:
+    ports: !reset []"
+  # Override bleibt wie am Host (DNS), der alte Baum unverändert
+  gleich "$(cat "$n/docker-compose.override.yml")" "$(cat "${BASIS}/lumeapps/docker-compose.override.yml")"
+  enthaelt "$C_PROD" "-f docker-compose.cutover.yml"
+}
+pruefe "1a: gehärtetes Altprojekt ohne Host-Port der Datenbank (5432 für die Plattform)" t_1a_nimmt_der_alten_datenbank_den_hostport
+
+t_compose_version_fuer_reset() {
+  compose_kann_reset "Docker Compose version v2.40.3"
+  compose_kann_reset "Docker Compose version 2.24.0"
+  ! compose_kann_reset "Docker Compose version v2.23.3" || return 1
+  ! compose_kann_reset "docker-compose version 1.29.2"
+}
+pruefe "vorab: !reset braucht Compose ab 2.24" t_compose_version_fuer_reset
+
 t_1a_verweigert_ohne_override() {
   sandbox; altprojekt_anlegen; neuer_klon_anlegen
   rm "${BASIS}/lumeapps/docker-compose.override.yml"
@@ -123,7 +145,7 @@ t_1c_zieht_daten_und_folien_um() {
   [ ! -e "${BASIS}/lumeapps/postgres_data" ] && [ ! -e "${BASIS}/lumeapps/backend/media" ]
   a="$(cat "${AUFRUFE}")"
   enthaelt "$a" "docker compose down"
-  enthaelt "$a" "docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml up -d --build"
+  enthaelt "$a" "docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml up -d --build"
 }
 pruefe "1c: Datenverzeichnisse und backend/media ziehen um, Prod-Aufruf mit Override" t_1c_zieht_daten_und_folien_um
 
@@ -182,9 +204,9 @@ t_1c_startet_nie_ohne_daten() {
   mv_scheitert_an_postgres_data   # und docker verschiebt nichts
   rc=0; h_1c_umschalten || rc=$?
   [ "$rc" -ne 0 ] || { echo "Umschalten meldete Erfolg ohne Datenbank"; return 1; }
-  enthaelt_nicht "$(cat "${AUFRUFE}")" "docker-compose.prod.yml up"
+  enthaelt_nicht "$(cat "${AUFRUFE}")" "docker-compose.prod.yml -f docker-compose.cutover.yml up"
+  enthaelt "$(tail -1 "${AUFRUFE}")" "-f ${BASIS}/lumeapps-neu/docker-compose.cutover.yml up -d"
   [ -d "${BASIS}/lumeapps/postgres_data" ] && [ -f "${BASIS}/lumeapps/directus_uploads/x.png" ]
-  enthaelt "$(tail -1 "${AUFRUFE}")" "docker compose up -d"
 }
 pruefe "1c: scheitert der Umzug, startet der neue Stack nicht — alles zurück, alter läuft" t_1c_startet_nie_ohne_daten
 
@@ -194,7 +216,8 @@ t_1c_zurueck_stellt_alles_wieder_her() {
   h_1c_zurueck
   [ -f "${BASIS}/lumeapps/backend/media/slides/abc/1.png" ] && [ -d "${BASIS}/lumeapps/postgres_data" ]
   [ ! -e "${BASIS}/lumeapps-neu/postgres_data" ]
-  enthaelt "$(tail -1 "${AUFRUFE}")" "docker compose up -d"
+  # auch zurück ohne Host-Port der DB: nach Schritt 3 hält die Plattform 5432
+  enthaelt "$(tail -1 "${AUFRUFE}")" "docker compose -f docker-compose.yml -f docker-compose.override.yml -f ${BASIS}/lumeapps-neu/docker-compose.cutover.yml up -d"
 }
 pruefe "1c zurück: Daten und Folien wieder im alten Baum, alter Stack startet" t_1c_zurueck_stellt_alles_wieder_her
 
