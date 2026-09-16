@@ -112,6 +112,8 @@ Alle Pis prüfen, nicht nur einen — sie wurden nicht zwingend mit derselben Ad
 
 **geprüft** — lokal gegen den vollständigen Stack: keine Host-Ports außer `:80`, API als `uid 10001`, kein `--reload`, gebaute Oberfläche unter `/`, Anmeldung mit echtem Directus-Token erfolgreich.
 
+**Nachtrag 2026-09-16, gegen einen nachgebauten Linux-Host** (`scripts/cutover/tests/e2e`): Der lokale Lauf unter macOS hatte eine Lücke. Unter Linux scheitert das `mv` von `postgres_data` als `acm` an den Rechten, die Schleife lief weiter, und der neue Stack startete mit einer leeren Datenbank — alle bisherigen Prüfungen grün. Die Befehle in 1c verschieben deshalb als root per `docker run`, und die Prüfung zählt Personen in der Datenbank.
+
 **Vorher am Host gemessen** (2026-09-10, aus dem LAN), damit hinterher vergleichbar ist, was sich geändert hat:
 
 | Befund | Zustand heute |
@@ -206,16 +208,24 @@ ist der einzige Moment mit Ausfall — Sekunden bis eine Minute.
 #    die Container um Port 80 und die Netzwerke
 cd /home/acm/lumeapps && docker compose down
 
-# 2) Datenverzeichnisse mitnehmen (jetzt schreibt nichts mehr darauf)
+# 2) Datenverzeichnisse mitnehmen (jetzt schreibt nichts mehr darauf).
+#    Als root in einem Wegwerf-Container: postgres_data gehört dem Postgres-Nutzer
+#    (drwx------), und ein Verzeichnis in einen anderen Ordner zu verschieben
+#    verlangt Schreibrecht auf das Verzeichnis selbst — ein mv als acm scheitert
+#    mit «Permission denied», und der neue Stack legte eine LEERE Datenbank an.
 for d in postgres_data directus_database directus_extensions directus_uploads \
          caddy_data caddy_config backups frontend_node_modules; do
-  [ -e "/home/acm/lumeapps/$d" ] && mv "/home/acm/lumeapps/$d" /home/acm/lumeapps-neu/
+  [ -e "/home/acm/lumeapps/$d" ] && docker run --rm -v /home/acm:/h alpine mv "/h/lumeapps/$d" /h/lumeapps-neu/
 done
 # die PPTX-Folien liegen im alten Quellbaum (gitignored) und fehlen im Klon;
 # docker-compose.prod.yml mountet ./backend/media — ohne sie zeigen die
 # Bildschirme bei jeder PPTX-Folie ein leeres Bild
 [ -e /home/acm/lumeapps/backend/media ] && [ ! -e /home/acm/lumeapps-neu/backend/media ] \
-  && mv /home/acm/lumeapps/backend/media /home/acm/lumeapps-neu/backend/
+  && docker run --rm -v /home/acm:/h alpine mv /h/lumeapps/backend/media /h/lumeapps-neu/backend/
+
+# Nichts darf liegen geblieben sein — sonst NICHT starten, sondern zurück (unten)
+ls -d /home/acm/lumeapps/postgres_data /home/acm/lumeapps/directus_uploads 2>/dev/null \
+  && echo "NICHT STARTEN: Daten liegen noch im alten Baum"
 
 # 3) neuen Stack hochfahren
 cd /home/acm/lumeapps-neu
@@ -233,6 +243,7 @@ $C exec api python -c 'import pytest'              # ModuleNotFoundError
 $C exec api python -c 'import socket; print(socket.gethostbyname("api.personio.de"))'
 curl -sI http://127.0.0.1/ | grep -i x-content-type # nosniff
 curl -s http://127.0.0.1/api/hr/embed/birthdays/this-week | head -c 200
+$C exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select count(*) from directus_users"'  # > 0, sonst leere Datenbank
 $C exec api ls /app/media/slides | head -3            # PPTX-Folien sind da
 docker network ls --format '{{.Name}}' | grep lumeapps  # lumeapps_default, nicht lumeapps-neu_default
 ```
@@ -263,10 +274,10 @@ Zurück geht es symmetrisch — der alte Baum ist unangetastet geblieben:
 cd /home/acm/lumeapps-neu && $C down
 for d in postgres_data directus_database directus_extensions directus_uploads \
          caddy_data caddy_config backups frontend_node_modules; do
-  [ -e "/home/acm/lumeapps-neu/$d" ] && mv "/home/acm/lumeapps-neu/$d" /home/acm/lumeapps/
+  [ -e "/home/acm/lumeapps-neu/$d" ] && docker run --rm -v /home/acm:/h alpine mv "/h/lumeapps-neu/$d" /h/lumeapps/
 done
 [ -e /home/acm/lumeapps-neu/backend/media ] && [ ! -e /home/acm/lumeapps/backend/media ] \
-  && mv /home/acm/lumeapps-neu/backend/media /home/acm/lumeapps/backend/
+  && docker run --rm -v /home/acm:/h alpine mv /h/lumeapps-neu/backend/media /h/lumeapps/backend/
 cd /home/acm/lumeapps && docker compose up -d
 ```
 

@@ -178,18 +178,42 @@ h_1c_umschalten() {  # 2 = vor dem Herunterfahren abgebrochen, nichts verändert
   done
 
   (cd "$alt" && docker compose down)
-  for d in ${DATENVERZEICHNISSE}; do [ -e "$alt/$d" ] && mv "$alt/$d" "$neu/"; done
-  if [ -e "$alt/backend/media" ]; then mkdir -p "$neu/backend" && mv "$alt/backend/media" "$neu/backend/"; fi
+  if ! datenverzeichnisse_verschieben "$alt" "$neu"; then
+    schlecht "Umzug der Daten unvollständig — neuer Stack startet nicht, alles zurück"
+    datenverzeichnisse_verschieben "$neu" "$alt" || schlecht "Rückzug unvollständig — von Hand prüfen, bevor etwas startet"
+    (cd "$alt" && docker compose up -d)
+    return 3
+  fi
   (cd "$neu" && ${C_PROD} up -d --build)
+}
+
+# Verschiebt ein Verzeichnis in einen anderen Ordner. postgres_data gehört dem
+# Postgres-Nutzer (drwx------); ein Verzeichnis in einen anderen Ordner zu
+# verschieben verlangt Schreibrecht auf das Verzeichnis selbst. acm hat das
+# nicht — dann als root in einem Wegwerf-Container, ohne sudo.
+verschieben() {  # quelle zielordner
+  mv "$1" "$2/" 2>/dev/null && return 0
+  docker run --rm -v "${BASIS}:/h" alpine mv "/h${1#"${BASIS}"}" "/h${2#"${BASIS}"}/" || true
+  [ ! -e "$1" ] && [ -e "$2/$(basename "$1")" ]
+}
+
+datenverzeichnisse_verschieben() {  # von nach — gibt 1 zurück, wenn etwas liegen blieb
+  local von="$1" nach="$2" d rc=0
+  for d in ${DATENVERZEICHNISSE}; do
+    if [ -e "$von/$d" ] && [ ! -e "$nach/$d" ]; then verschieben "$von/$d" "$nach" || { schlecht "$d liegt noch in $von"; rc=1; }; fi
+  done
+  if [ -e "$von/backend/media" ] && [ ! -e "$nach/backend/media" ]; then
+    mkdir -p "$nach/backend"
+    verschieben "$von/backend/media" "$nach/backend" || { schlecht "backend/media liegt noch in $von"; rc=1; }
+  fi
+  [ -e "$nach/postgres_data" ] || { schlecht "keine Datenbank in $nach"; rc=1; }
+  return $rc
 }
 
 h_1c_zurueck() {
   local alt="${BASIS}/lumeapps" neu="${BASIS}/lumeapps-neu" d
   (cd "$neu" && ${C_PROD} down)
-  for d in ${DATENVERZEICHNISSE}; do
-    if [ -e "$neu/$d" ] && [ ! -e "$alt/$d" ]; then mv "$neu/$d" "$alt/"; fi
-  done
-  if [ -e "$neu/backend/media" ] && [ ! -e "$alt/backend/media" ]; then mv "$neu/backend/media" "$alt/backend/"; fi
+  datenverzeichnisse_verschieben "$neu" "$alt" || { abbruch "Rückzug unvollständig — altes Projekt startet nicht, von Hand prüfen"; return 1; }
   (cd "$alt" && docker compose up -d)
 }
 
@@ -201,6 +225,8 @@ h_1c_pruefen() {
   local neu="${BASIS}/lumeapps-neu" rc=0 x
   warte_auf_stack "$neu" 600 || rc=1
   cd "$neu"
+  x="$(${C_PROD} exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select count(*) from directus_users"' 2>/dev/null | tr -d '\r')"
+  case "$x" in ''|0) schlecht "Datenbank ohne Personen — leer neu angelegt statt umgezogen?"; rc=1;; *) gut "Datenbank mit Bestand ($x Personen)";; esac
   x="$(${C_PROD} ps --format '{{.Service}} {{.Ports}}' | lan_ports_ausser caddy)"
   [ -z "$x" ] && gut "nur caddy ist aus dem LAN erreichbar" || { schlecht "aus dem LAN erreichbar: $x"; rc=1; }
   [ "$(${C_PROD} exec -T api id -u | tr -d '\r')" = 10001 ] && gut "api läuft als 10001" || { schlecht "api nicht als 10001"; rc=1; }

@@ -154,6 +154,40 @@ t_1c_abbruch_vor_dem_herunterfahren_meldet_2() {
 }
 pruefe "1c: Abbruch vor dem Herunterfahren gibt 2 zurück, nichts gestoppt" t_1c_abbruch_vor_dem_herunterfahren_meldet_2
 
+# Auf dem Host gehört postgres_data dem Postgres-Nutzer (70, drwx------): acm darf
+# es nicht in einen anderen Ordner verschieben. Nachgestellt mit einem mv, das
+# genau daran scheitert, und einem docker, das als root verschiebt.
+mv_scheitert_an_postgres_data() {
+  cat > "${SANDBOX}/bin/mv" <<'EOF2'
+#!/usr/bin/env bash
+case "$*" in *postgres_data*) echo "mv: cannot move: Permission denied" >&2; exit 1;; esac
+exec /bin/mv "$@"
+EOF2
+  chmod +x "${SANDBOX}/bin/mv"
+}
+docker_verschiebt_als_root() {  # docker run --rm -v BASIS:/h alpine mv /h/x /h/y
+  export ATTRAPPE_DOCKER='case "$*" in *" alpine mv "*) set -- $*; q="${@: -2:1}"; z="${@: -1}"; /bin/mv "${BASIS}${q#/h}" "${BASIS}${z#/h}";; esac'
+}
+
+t_1c_verschiebt_postgres_data_als_root() {
+  sandbox; altprojekt_anlegen; neuer_klon_anlegen; h_1a abc1234
+  mv_scheitert_an_postgres_data; docker_verschiebt_als_root
+  h_1c_umschalten
+  [ -d "${BASIS}/lumeapps-neu/postgres_data" ] && [ ! -e "${BASIS}/lumeapps/postgres_data" ]
+}
+pruefe "1c: postgres_data zieht auch um, wenn acm es nicht verschieben darf" t_1c_verschiebt_postgres_data_als_root
+
+t_1c_startet_nie_ohne_daten() {
+  sandbox; altprojekt_anlegen; neuer_klon_anlegen; h_1a abc1234
+  mv_scheitert_an_postgres_data   # und docker verschiebt nichts
+  rc=0; h_1c_umschalten || rc=$?
+  [ "$rc" -ne 0 ] || { echo "Umschalten meldete Erfolg ohne Datenbank"; return 1; }
+  enthaelt_nicht "$(cat "${AUFRUFE}")" "docker-compose.prod.yml up"
+  [ -d "${BASIS}/lumeapps/postgres_data" ] && [ -f "${BASIS}/lumeapps/directus_uploads/x.png" ]
+  enthaelt "$(tail -1 "${AUFRUFE}")" "docker compose up -d"
+}
+pruefe "1c: scheitert der Umzug, startet der neue Stack nicht — alles zurück, alter läuft" t_1c_startet_nie_ohne_daten
+
 t_1c_zurueck_stellt_alles_wieder_her() {
   sandbox; altprojekt_anlegen; neuer_klon_anlegen; h_1a abc1234
   h_1c_umschalten
