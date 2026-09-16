@@ -221,7 +221,7 @@ plattform_anlegen() {
   local p="${BASIS}/acm-plattform"
   mkdir -p "$p/infra/supabase/upstream/utils" "$p/scripts"
   echo v1 > "$p/infra/supabase/UPSTREAM_TAG"; echo v1 > "$p/infra/supabase/upstream/UPSTREAM_TAG"
-  printf 'CADDY_HTTP_PORT=80\nSITE_URL=http://localhost\nSUPABASE_PUBLIC_URL=http://localhost/supabase\nAPI_EXTERNAL_URL=http://localhost/supabase/auth/v1\nJWT_SECRET=\nEMBED_SECRET=\nGEHEIM_SCHLUESSEL=\nEMBED_FRAME_ANCESTORS=*\n' > "$p/.env.example"
+  printf 'CADDY_HTTP_PORT=80\nKONG_HTTP_PORT=8000\nPOSTGRES_PORT=5432\nSITE_URL=http://localhost\nSUPABASE_PUBLIC_URL=http://localhost/supabase\nAPI_EXTERNAL_URL=http://localhost/supabase/auth/v1\nJWT_SECRET=\nEMBED_SECRET=\nGEHEIM_SCHLUESSEL=\nEMBED_FRAME_ANCESTORS=*\n' > "$p/.env.example"
   cat > "$p/scripts/init-env.sh" <<'EOF'
 cd "$(dirname "$0")/.."; cp .env.example .env; sed -i.bak 's/^JWT_SECRET=.*/JWT_SECRET=plattform-jwt/' .env; rm .env.bak
 EOF
@@ -236,6 +236,7 @@ t_3_env_setzt_adressen_und_erzeugt_secrets() {
   gleich "$(env_lesen "$e" SITE_URL)" http://192.9.201.9:8081
   gleich "$(env_lesen "$e" SUPABASE_PUBLIC_URL)" http://192.9.201.9:8081/supabase
   gleich "$(env_lesen "$e" API_EXTERNAL_URL)" http://192.9.201.9:8081/supabase/auth/v1
+  gleich "$(env_lesen "$e" KONG_HTTP_PORT)" 8010   # 8000 braucht das alte Dev-Projekt für den Rückweg
   [ -n "$(env_lesen "$e" EMBED_SECRET)" ] && [ -n "$(env_lesen "$e" GEHEIM_SCHLUESSEL)" ]
   # zweiter Lauf behält die Secrets
   vorher="$(env_lesen "$e" EMBED_SECRET)"; h_3_env
@@ -255,6 +256,15 @@ anna@example.com;geheim-pw"
   gleich "$(zugaenge_anzahl "$csv")" 1
 }
 pruefe "4a: Zugangsliste enthält nur das CSV, Passwörter nie im Terminal" t_4a_zugaenge_trennt_bericht_und_csv
+
+t_3_portkonflikt_erkannt() {
+  sandbox
+  export ATTRAPPE_DOCKER='echo "127.0.0.1:5432->5432/tcp"; echo "0.0.0.0:80->80/tcp, [::]:80->80/tcp"; echo "127.0.0.1:8055->8055/tcp"'
+  gleich "$(belegte_hostports | tr '\n' ' ')" "80 5432 8055 "
+  gleich "$(ports_im_weg 8081 8010 5432 | tr '\n' ' ')" "5432 "
+  gleich "$(ports_im_weg 8081 8010 | tr '\n' ' ')" ""
+}
+pruefe "3: belegte Host-Ports vor dem Start erkannt (alte DB auf 5432)" t_3_portkonflikt_erkannt
 
 # --- 4d -----------------------------------------------------------------------
 

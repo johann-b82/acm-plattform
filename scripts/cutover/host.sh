@@ -107,6 +107,13 @@ warte_auf_stack() {  # verzeichnis sekunden
   done
 }
 
+belegte_hostports() { docker ps --format '{{.Ports}}' | tr ',' '\n' | sed -n 's/.*:\([0-9][0-9]*\)->.*/\1/p' | sort -un; }
+
+ports_im_weg() {  # port... — die davon, die schon ein Container belegt
+  local belegt p; belegt="$(belegte_hostports)"
+  for p in "$@"; do printf '%s\n' "$belegt" | grep -qx "$p" && echo "$p"; done; true
+}
+
 # --- vorab (nur lesen) --------------------------------------------------------
 
 h_vorab() {
@@ -124,7 +131,7 @@ h_vorab() {
   [ -n "$(alt_db_container)" ] && gut "alte Datenbank läuft: $(alt_db_container)" || { schlecht "alte Datenbank läuft nicht"; rc=1; }
   docker network inspect lumeapps_default >/dev/null 2>&1 && gut "Netz lumeapps_default" || { schlecht "Netz lumeapps_default fehlt"; rc=1; }
   for d in acm-plattform acm-signage lumeapps-neu; do [ -e "${BASIS}/$d" ] && sag "vorhanden: ${BASIS}/$d"; done
-  sag "belegte Ports: $(docker ps --format '{{.Ports}}' | tr ',' '\n' | sed -n 's/.*:\([0-9]*\)->.*/\1/p' | sort -un | tr '\n' ' ')"
+  sag "belegte Ports: $(belegte_hostports | tr '\n' ' ')"
   return $rc
 }
 
@@ -258,6 +265,10 @@ h_3_env() {
   env_setzen "$e" SUPABASE_PUBLIC_URL "$url/supabase"
   env_setzen "$e" API_EXTERNAL_URL "$url/supabase/auth/v1"
   env_setzen "$e" SIGNAGE_API_URL "http://host.docker.internal:${SIGNAGE_PORT}"
+  # Kong bindet 127.0.0.1:KONG_HTTP_PORT (nur bootstrap-admin nutzt ihn). Die
+  # Vorgabe 8000 ist der Port der alten Dev-API: nach Schritt 3 ließe sich 1c
+  # sonst nicht mehr zurückrollen — das alte Projekt startete nicht.
+  [ "$(env_lesen "$e" KONG_HTTP_PORT)" != 8000 ] || env_setzen "$e" KONG_HTTP_PORT 8010
   [ -n "$(env_lesen "$e" EMBED_SECRET)" ] || env_setzen "$e" EMBED_SECRET "$(zufall_url)"
   [ -n "$(env_lesen "$e" GEHEIM_SCHLUESSEL)" ] || env_setzen "$e" GEHEIM_SCHLUESSEL "$(zufall_fernet)"
   chmod 600 "$e"
@@ -270,7 +281,15 @@ h_3_env() {
 }
 
 h_3_start() {
-  local p="${BASIS}/acm-plattform" code
+  local p="${BASIS}/acm-plattform" code weg
+  if [ -z "$(cd "$p" && docker compose ps -q 2>/dev/null)" ]; then
+    weg="$(ports_im_weg "${PLATTFORM_PORT}" "$(env_lesen "$p/.env" KONG_HTTP_PORT)" "$(env_lesen "$p/.env" POSTGRES_PORT)")"
+    if [ -n "$weg" ]; then
+      abbruch "Host-Ports schon belegt: $(echo $weg) — $(docker ps --format '{{.Names}} {{.Ports}}' | grep -E ":($(echo $weg | tr ' ' '|'))->" | cut -d' ' -f1 | tr '\n' ' ')"
+      sag "POSTGRES_PORT lässt sich nicht verlegen (Supabase nutzt ihn intern). Belegt ihn die alte Datenbank, dort die Bindung auf 127.0.0.1:5432 entfernen."
+      return 1
+    fi
+  fi
   (cd "$p" && docker compose up -d --build)
   warte_auf_stack "$p" 900 || return 1
   code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PLATTFORM_PORT}/")"
