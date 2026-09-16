@@ -23,6 +23,8 @@ bash down.sh
 
 Durchgelaufen am 2026-09-16: `vorab` bis `pruefen` grün, danach 4a wiederholt (kein neuer Zugang, 83 Tabellen stimmen), `zurueck 5` und erneut 5, `zurueck 1c` nach Schritt 3 (altes Projekt läuft wieder mit Bestand) und erneut 1c. Gefunden und behoben: leere Datenbank nach 1c (`mv` ohne Rechte), `certs/certs`, Kong auf 8000 blockierte den Rückweg, Zugangsliste mit Bericht vermischt, Endlosschleife beim Pi-Adresstausch.
 
+Nachgereicht am selben Tag, mit der DB-Bindung `127.0.0.1:5432` im Override wie am Host gemessen: 1a legt `docker-compose.cutover.yml` an, 1c läuft ohne Host-Port der alten Datenbank, `zurueck 1c` startet das alte Projekt neben der Plattform (die 5432 hält), erneut 1c und `pruefen` grün.
+
 Die Testdaten brauchen zwei Anpassungen, die in Produktion nicht nötig sind: eine ATR-Vorlage mit Dateinamen (`fixtures/atr-fixtures.sql`) und derselbe `FERNET_KEY` wie beim kopierten Bestand (`up.sh` übernimmt ihn aus der lokalen `lumeapps/.env` nach `.work/seed/`).
 
 ## Konfiguration fürs Skript
