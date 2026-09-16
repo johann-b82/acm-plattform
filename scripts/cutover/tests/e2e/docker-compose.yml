@@ -1,0 +1,54 @@
+# Testumgebung für das Umschalt-Skript: ein nachgebauter Produktionshost und
+# ein nachgebauter Pi. Nur über up.sh/down.sh benutzen (die legen .ssh/ und
+# .work/ an). Alle Ports nur auf 127.0.0.1.
+name: cutover-e2e
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "2"
+
+services:
+  host:
+    build: ./host
+    hostname: acm-host
+    privileged: true
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:2222:22"      # ssh acm@
+      - "127.0.0.1:18080:80"     # Caddy am Host (alt: lumeapps, später: Plattform)
+      - "127.0.0.1:18081:8081"   # Host :8081
+      - "127.0.0.1:18082:8080"   # Host :8080 (Signage-Stack)
+    volumes:
+      - host-docker:/var/lib/docker
+      - host-home:/home/acm
+      - ./.ssh/id_ed25519.pub:/etc/e2e/authorized_keys:ro
+      - ./.work/seed:/seed:ro
+      - ./fixtures:/fixtures:ro
+    networks:
+      e2e:
+        ipv4_address: 10.213.0.10
+
+  pi:
+    build: ./pi
+    hostname: signage-pi
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:2223:22"
+    volumes:
+      - ./.ssh/id_ed25519.pub:/etc/e2e/authorized_keys:ro
+      - ./.work/pi-units:/etc/e2e/units:ro
+    networks:
+      e2e:
+        ipv4_address: 10.213.0.20
+
+networks:
+  e2e:
+    ipam:
+      config:
+        - subnet: 10.213.0.0/24
+
+volumes:
+  host-docker:
+  host-home:

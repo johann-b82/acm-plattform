@@ -1,0 +1,8 @@
+# Nachbau der Datei, die am Produktionshost neben docker-compose.yml liegt
+# und nicht im Repo steht. Dort: 192.9.200.1/.2 (Firmen-DNS). Im Test
+# öffentliche Resolver, damit der api-Container Namen auflösen kann.
+services:
+  api:
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9

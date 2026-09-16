@@ -30,7 +30,9 @@ bash scripts/cutover/cutover.sh lauf            # alles Offene, hält vor jedem 
 - **Bleibt von Hand**, das Skript hält dort an und zeigt die Befehle: Zertifikat (2), Firmenlogo und ATR-Eingangsordner (4b), signierte Adressen der HR-Tafeln (4d), Host-Vorlagen mit `sudo` (6), Umzug der Plattform auf Port 80.
 - **Medienverzeichnis:** `signage-api` läuft als uid 10001. Das Skript gibt `acm-signage/data/media` diesem Nutzer (per `docker run`, ohne `sudo`); von Hand angelegt gehört es `acm`, und Uploads wie Übernahme scheitern.
 
-Unit-Tests: `bash scripts/cutover/tests/unit.sh` (auch in CI).
+- **Ports:** Schritt 3 legt Kong auf `127.0.0.1:8010` (Vorgabe 8000 ist die alte Dev-API, der Rückweg von 1c startete sonst nicht) und prüft vor dem ersten Start, ob Plattform-, Kong- und Postgres-Port frei sind. `POSTGRES_PORT` lässt sich nicht verlegen; bindet die alte Datenbank am Host `127.0.0.1:5432`, bricht Schritt 3 mit dieser Meldung ab.
+
+Unit-Tests: `bash scripts/cutover/tests/unit.sh` (auch in CI). Gesamtlauf gegen einen nachgebauten Linux-Host und Pi: `scripts/cutover/tests/e2e/` — **geprüft** am 2026-09-16 von `vorab` bis `pruefen`, mit Rückwegen für 1c und 5. Nicht nachgestellt: die Reihenfolge für Pis auf `:8000`, echte Pi-Hardware, TLS.
 
 ## Der Host, wie er wirklich aussieht
 
