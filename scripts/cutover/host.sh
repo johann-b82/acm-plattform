@@ -8,7 +8,9 @@
 #
 # Erwartete Variablen: BASIS, HOST_IP, PLATTFORM_PORT, SIGNAGE_PORT.
 
-DATENVERZEICHNISSE="postgres_data directus_database directus_extensions directus_uploads caddy_data caddy_config backups certs frontend_node_modules"
+# certs/ zieht nicht mit: im alten Baum liegt dort nur das kompromittierte
+# mkcert-Material (nirgends eingebunden), im neuen Stand ist certs/ eingecheckt.
+DATENVERZEICHNISSE="postgres_data directus_database directus_extensions directus_uploads caddy_data caddy_config backups frontend_node_modules"
 C_PROD="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
 
 sag() { printf '  %s\n' "$*"; }
@@ -160,19 +162,19 @@ h_1b_pruefen() {
 
 # --- 1c: umschalten -----------------------------------------------------------
 
-h_1c_umschalten() {
+h_1c_umschalten() {  # 2 = vor dem Herunterfahren abgebrochen, nichts verändert
   local alt="${BASIS}/lumeapps" neu="${BASIS}/lumeapps-neu" d
   if [ ! -d "$alt/postgres_data" ] && [ -d "$neu/postgres_data" ]; then
     sag "schon umgeschaltet — stelle nur sicher, dass der Stack läuft"
     (cd "$neu" && ${C_PROD} up -d --build); return
   fi
-  [ -d "$alt/postgres_data" ] || { abbruch "$alt/postgres_data fehlt"; return 1; }
-  [ "$(env_lesen "$neu/.env" COMPOSE_PROJECT_NAME)" = lumeapps ] || { abbruch "COMPOSE_PROJECT_NAME in $neu/.env ist nicht lumeapps (Schritt 1a)"; return 1; }
+  [ -d "$alt/postgres_data" ] || { abbruch "$alt/postgres_data fehlt"; return 2; }
+  [ "$(env_lesen "$neu/.env" COMPOSE_PROJECT_NAME)" = lumeapps ] || { abbruch "COMPOSE_PROJECT_NAME in $neu/.env ist nicht lumeapps (Schritt 1a)"; return 2; }
   if [ -e "$alt/backend/media" ] && [ -e "$neu/backend/media" ]; then
-    abbruch "$neu/backend/media gibt es schon — die Folien würden verschachtelt. Von Hand klären."; return 1
+    abbruch "$neu/backend/media gibt es schon — die Folien würden verschachtelt. Von Hand klären."; return 2
   fi
   for d in ${DATENVERZEICHNISSE}; do
-    if [ -e "$alt/$d" ] && [ -e "$neu/$d" ]; then abbruch "$neu/$d gibt es schon"; return 1; fi
+    if [ -e "$alt/$d" ] && [ -e "$neu/$d" ]; then abbruch "$neu/$d gibt es schon"; return 2; fi
   done
 
   (cd "$alt" && docker compose down)

@@ -144,8 +144,13 @@ Ohne die Zeile hießen nach 1c Netz und Datenbank `lumeapps-neu_default` und
 `lumeapps_default` und `lumeapps-db-1` nennt, ginge ins Leere.
 
 Die Datenverzeichnisse (`postgres_data`, `directus_*`, `caddy_*`, `backups`,
-`certs`, `frontend_node_modules`) bleiben vorerst im alten Verzeichnis — sie
+`frontend_node_modules`) bleiben vorerst im alten Verzeichnis — sie
 ziehen erst beim Umschalten um, wenn nichts mehr darauf schreibt.
+
+`certs/` zieht **nicht** mit: Der neue Stand hat es eingecheckt (nur eine
+README), ein `mv` legte das alte als `certs/certs` hinein. Im alten Baum liegt
+dort nur das kompromittierte mkcert-Material, das nirgends eingebunden ist —
+neues Material kommt in Schritt 2 nach `/home/acm/certs`.
 
 > **Nicht per rsync über das laufende Verzeichnis.**
 >
@@ -203,7 +208,7 @@ cd /home/acm/lumeapps && docker compose down
 
 # 2) Datenverzeichnisse mitnehmen (jetzt schreibt nichts mehr darauf)
 for d in postgres_data directus_database directus_extensions directus_uploads \
-         caddy_data caddy_config backups certs frontend_node_modules; do
+         caddy_data caddy_config backups frontend_node_modules; do
   [ -e "/home/acm/lumeapps/$d" ] && mv "/home/acm/lumeapps/$d" /home/acm/lumeapps-neu/
 done
 # die PPTX-Folien liegen im alten Quellbaum (gitignored) und fehlen im Klon;
@@ -257,7 +262,7 @@ Zurück geht es symmetrisch — der alte Baum ist unangetastet geblieben:
 ```bash
 cd /home/acm/lumeapps-neu && $C down
 for d in postgres_data directus_database directus_extensions directus_uploads \
-         caddy_data caddy_config backups certs frontend_node_modules; do
+         caddy_data caddy_config backups frontend_node_modules; do
   [ -e "/home/acm/lumeapps-neu/$d" ] && mv "/home/acm/lumeapps-neu/$d" /home/acm/lumeapps/
 done
 [ -e /home/acm/lumeapps-neu/backend/media ] && [ ! -e /home/acm/lumeapps/backend/media ] \

@@ -191,10 +191,16 @@ schritt_1c() {
   haltepunkt "Das Altprojekt geht herunter und startet gehärtet aus ${BASIS}/lumeapps-neu.
 Ausfall: Sekunden bis eine Minute. Bildschirme, die über Caddy laufen, sind kurz schwarz.
 Rückweg: cutover.sh zurueck 1c" || return 1
-  fern h_1c_umschalten || { echo "  ✗ Umschalten gescheitert"; umschalten_zurueck_anbieten; return 1; }
+  local rc=0
+  fern h_1c_umschalten || rc=$?
+  case $rc in
+    0) ;;
+    2) echo "  ✗ vor dem Herunterfahren abgebrochen — das Altprojekt läuft unverändert"; return 1;;
+    *) echo "  ✗ Umschalten gescheitert"; umschalten_zurueck_anbieten; return 1;;
+  esac
   if ! fern h_1c_pruefen; then umschalten_zurueck_anbieten; return 1; fi
   if [ "${PORTPRUEFUNG}" != aus ]; then
-    local p rc=0
+    local p
     nc -z -G 3 "${HOST_IP}" 80 && echo "  ✓ :80 offen" || { echo "  ✗ :80 zu"; rc=1; }
     for p in 5173 8000; do nc -z -G 3 "${HOST_IP}" "$p" && { echo "  ✗ :$p noch offen"; rc=1; } || echo "  ✓ :$p zu"; done
     [ $rc -eq 0 ] || { umschalten_zurueck_anbieten; return 1; }

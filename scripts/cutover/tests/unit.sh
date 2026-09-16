@@ -15,7 +15,12 @@ BESTANDEN=0
 
 pruefe() {  # pruefe <name> <befehl...>
   local name="$1"; shift
-  if ( "$@" ) >"${AUSGABE}" 2>&1; then
+  # set -e wirkt nur, wenn die Subshell allein steht — in if, && oder || zählte
+  # sonst nur die letzte Zeile eines Tests
+  local rc
+  ( set -e; "$@" ) >"${AUSGABE}" 2>&1
+  rc=$?
+  if [ "${rc}" -eq 0 ]; then
     BESTANDEN=$((BESTANDEN + 1)); printf '  ok    %s\n' "${name}"
   else
     FEHLER=$((FEHLER + 1)); printf '  FEHLER %s\n' "${name}"; sed 's/^/        | /' "${AUSGABE}"
@@ -130,6 +135,24 @@ t_1c_verschachtelt_folien_nicht() {
   [ ! -e "${BASIS}/lumeapps-neu/backend/media/media" ]
 }
 pruefe "1c: bricht ab statt Folien zu verschachteln, wenn Ziel schon existiert" t_1c_verschachtelt_folien_nicht
+
+t_1c_laesst_certs_im_alten_baum() {
+  sandbox; altprojekt_anlegen; neuer_klon_anlegen; h_1a abc1234
+  mkdir -p "${BASIS}/lumeapps/certs" "${BASIS}/lumeapps-neu/certs"
+  echo alt > "${BASIS}/lumeapps/certs/internal.key"; echo readme > "${BASIS}/lumeapps-neu/certs/README.md"
+  h_1c_umschalten || { echo "Umschalten scheiterte"; return 1; }
+  [ -f "${BASIS}/lumeapps/certs/internal.key" ] && [ ! -e "${BASIS}/lumeapps-neu/certs/certs" ]
+}
+pruefe "1c: certs/ (im neuen Stand eingecheckt) bleibt liegen, nichts verschachtelt" t_1c_laesst_certs_im_alten_baum
+
+t_1c_abbruch_vor_dem_herunterfahren_meldet_2() {
+  sandbox; altprojekt_anlegen; neuer_klon_anlegen; h_1a abc1234
+  mkdir -p "${BASIS}/lumeapps-neu/directus_uploads"
+  rc=0; h_1c_umschalten || rc=$?
+  gleich "$rc" 2
+  enthaelt_nicht "$(cat "${AUFRUFE}")" "down"
+}
+pruefe "1c: Abbruch vor dem Herunterfahren gibt 2 zurück, nichts gestoppt" t_1c_abbruch_vor_dem_herunterfahren_meldet_2
 
 t_1c_zurueck_stellt_alles_wieder_her() {
   sandbox; altprojekt_anlegen; neuer_klon_anlegen; h_1a abc1234
