@@ -1897,7 +1897,10 @@ export const vi: Texte = {
     qsUnterschrift: "Chữ ký QA",
     eingangsordner: "Thư mục hộp đến",
     eingangHinweis:
-      "Phiếu giao hàng trong thư mục đầu vào được đọc, trở thành lô giao và chuyển vào lưu trữ. Máy chủ được phép do ATR_SMB_ERLAUBT quy định. Mật khẩu nhập ở đây được ưu tiên hơn ATR_SMB_PASSWORT trong môi trường.",
+      "Phiếu giao hàng trong thư mục đầu vào được đọc, trở thành lô giao và chuyển vào lưu trữ.",
+    dateiserver: "Máy chủ tệp",
+    dateiserverHinweis:
+      "Máy chủ, vùng chia sẻ và tài khoản dịch vụ áp dụng cho thư mục đầu vào và cho „Lưu lên máy chủ“. Máy chủ được phép do ATR_SMB_ERLAUBT quy định. Mật khẩu nhập ở đây được ưu tiên hơn ATR_SMB_PASSWORT trong môi trường.",
     laeuft: "đang chạy",
     aus: "tắt",
     zuletzt: (zeit: string, text: string) => `Lần cuối ${zeit}: ${text}`,

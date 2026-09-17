@@ -3,7 +3,7 @@
  * sichtbar, änderbar, und ein Ziel wird nie still geleert.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const { einstellung, aendern, passwortStand } = vi.hoisted(() => ({
@@ -102,5 +102,32 @@ describe("Ablageziele", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/Zielordner ist ungültig/);
+  });
+});
+
+describe("Gliederung", () => {
+  it("erst der Dateiserver, dann der Eingangsordner, dann Auf Server speichern", async () => {
+    zeige();
+    await screen.findByLabelText("Mappe A380");
+    // Die Überschrift trägt den Hinweis für Vorlesesoftware mit; es zählt ihr Anfang.
+    const teile = screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent ?? "");
+    const erwartet = ["Dateiserver", "Eingangsordner", "Auf Server speichern"];
+    expect(teile).toHaveLength(3);
+    teile.forEach((t, i) => expect(t.startsWith(erwartet[i])).toBe(true));
+
+    const [dateiserver, eingang, ablage] = document.querySelectorAll("form > section");
+    for (const feld of ["Rechner", "Freigabe", "Domäne", "Benutzer", "Passwort des Dienstkontos"]) {
+      expect(within(dateiserver as HTMLElement).getByLabelText(feld)).toBeInTheDocument();
+    }
+    expect(
+      within(dateiserver as HTMLElement).getByRole("button", { name: "Verbindung prüfen" }),
+    ).toBeInTheDocument();
+    for (const feld of ["Eingang", "Ausgang", "Archiv"]) {
+      expect(within(eingang as HTMLElement).getByLabelText(feld)).toBeInTheDocument();
+    }
+    expect(
+      within(eingang as HTMLElement).getByRole("button", { name: "Jetzt durchsehen" }),
+    ).toBeInTheDocument();
+    expect(within(ablage as HTMLElement).getAllByRole("textbox")).toHaveLength(4);
   });
 });

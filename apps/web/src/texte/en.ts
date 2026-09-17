@@ -1896,7 +1896,10 @@ export const en: Texte = {
     qsUnterschrift: "QA signature",
     eingangsordner: "Inbox folder",
     eingangHinweis:
-      "A delivery note in the input folder is read, becomes a delivery and moves to the archive. Which hosts are allowed is set by ATR_SMB_ERLAUBT. A password entered here takes precedence over ATR_SMB_PASSWORT from the environment.",
+      "A delivery note in the input folder is read, becomes a delivery and moves to the archive.",
+    dateiserver: "File server",
+    dateiserverHinweis:
+      "Host, share and service account apply to the input folder and to “Save to server”. Which hosts are allowed is set by ATR_SMB_ERLAUBT. A password entered here takes precedence over ATR_SMB_PASSWORT from the environment.",
     laeuft: "running",
     aus: "off",
     zuletzt: (zeit: string, text: string) => `Last ${zeit}: ${text}`,
