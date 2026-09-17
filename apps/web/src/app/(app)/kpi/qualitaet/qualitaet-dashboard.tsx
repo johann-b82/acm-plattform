@@ -27,7 +27,7 @@ import {
   pruefungApi,
   qualitaetApi,
   reklamationApi,
-  verlaufJeBucket,
+  verlaufJeArt,
   type Artikelart,
   type AuditFinding,
   type BuchungsZeile,
@@ -154,6 +154,18 @@ export function QualitaetDashboard() {
 // ---------------------------------------------------------------------------
 
 /** Die Schlüssel kommen aus der Datenbank, die Namen aus dem Wörterbuch. */
+/**
+ * Farbe je Auditart, in der Stapelreihenfolge geprüft (hell #ffffff, dunkel
+ * #171c21; benachbarte Paare ΔE 9,2 bzw. 9,4 bei Rotgrünblindheit). Dieselben
+ * vier Töne in beiden Diagrammen, damit die Legende von Level 1 nach Level 2
+ * trägt — so hält es auch das Altprojekt (`ART_COLOR`).
+ */
+const AUDIT_FARBEN = `
+.auditfarben{--au-1:#2a78d6;--au-2:#eb6834;--au-3:#1baf7a;--au-4:#4a3aa7}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .auditfarben{--au-1:#3987e5;--au-2:#d95926;--au-3:#199e70;--au-4:#9085e9}}
+:root[data-theme="dark"] .auditfarben{--au-1:#3987e5;--au-2:#d95926;--au-3:#199e70;--au-4:#9085e9}
+`;
+
 function useAuditLabel(): Record<string, string> {
   const worte = useTexte();
   return {
@@ -253,15 +265,29 @@ function Audits({
   const zielL2 = zielNach["qualitaet_audit_level2"];
 
   const verlaufDaten = verlauf.data;
+  // Je Level ein Diagramm, darin die Arten gestapelt — wie im Altprojekt.
+  // Gezeigt werden nur die gewählten Arten, in fester Reihenfolge, damit die
+  // Farben beim Filtern nicht springen.
+  const gewaehlteArten = useMemo(
+    () => AUDIT_ARTEN.filter((a) => arten.includes(a)),
+    [arten],
+  );
   const chartDaten = useMemo(
     () =>
-      verlaufJeBucket(verlaufDaten ?? []).map((p) => ({
-        label: fmt.bucket(p.bucket, t),
-        level_1: p.level_1,
-        level_2: p.level_2,
-      })),
-    [verlaufDaten, t, fmt],
+      ([1, 2] as const).map((level) =>
+        verlaufJeArt(verlaufDaten ?? [], level, gewaehlteArten).map((p) => ({
+          ...p,
+          label: fmt.bucket(String(p.bucket), t),
+        })),
+      ),
+    [verlaufDaten, gewaehlteArten, t, fmt],
   );
+  const auditReihen = gewaehlteArten.map((art, i) => ({
+    schluessel: art,
+    name: auditLabel[art] ?? art,
+    farbe: `var(--au-${i + 1})`,
+    stapel: "findings",
+  }));
   const findings = liste.data ?? KEINE;
   const diagnose = useMemo(() => ohneLevel(liste.data ?? KEINE), [liste.data]);
 
@@ -357,19 +383,33 @@ function Audits({
         />
       </div>
 
-      {chartDaten.length > 0 && (
-        <Card className="p-5">
-          <DiagrammKopf titel={worte.qualitaet.auditVerlauf} art={diagrammart} onChange={setDiagrammart} />
-          <Zeitverlauf
-            daten={chartDaten}
-            art={diagrammart}
-            ganzzahlig
-            reihen={[
-              { schluessel: "level_1", name: "Level 1", farbe: "var(--danger, #b4443c)" },
-              { schluessel: "level_2", name: "Level 2", farbe: "var(--accent, #2f6f8f)" },
-            ]}
-          />
-        </Card>
+      {chartDaten.some((d) => d.length > 0) && (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <style>{AUDIT_FARBEN}</style>
+          {([1, 2] as const).map((level) => (
+            <Card key={level} className="auditfarben p-5">
+              <DiagrammKopf
+                titel={worte.qualitaet.auditVerlaufLevel(level)}
+                art={diagrammart}
+                onChange={setDiagrammart}
+              />
+              <Zeitverlauf
+                daten={chartDaten[level - 1]}
+                art={diagrammart}
+                ganzzahlig
+                reihen={auditReihen}
+                ziel={
+                  (level === 1 ? zielL1 : zielL2) == null
+                    ? undefined
+                    : {
+                        wert: Number(level === 1 ? zielL1 : zielL2),
+                        text: worte.qualitaet.ziellinie,
+                      }
+                }
+              />
+            </Card>
+          ))}
+        </div>
       )}
 
       <Card className="p-5">
@@ -985,8 +1025,9 @@ function DiagrammKopf({
 }
 
 /**
- * Ein Zeitverlauf als Balken oder Fläche (VER-04B). Mehrere Reihen werden als
- * Fläche nicht gestapelt, fehlende Werte nicht überbrückt. Eine Ziellinie
+ * Ein Zeitverlauf als Balken oder Fläche (VER-04B). Mehrere Reihen stehen
+ * nebeneinander, es sei denn, sie teilen sich einen `stapel`; fehlende Werte
+ * werden nicht überbrückt. Eine Ziellinie
  * weitet die Achse, damit sie auch über den Werten sichtbar bleibt.
  */
 function Zeitverlauf({
@@ -1000,7 +1041,8 @@ function Zeitverlauf({
   ganzzahlig = false,
 }: {
   daten: readonly object[];
-  reihen: readonly { schluessel: string; name: string; farbe: string }[];
+  /** `stapel` setzt die Reihen übereinander (gemeinsame `stackId`). */
+  reihen: readonly { schluessel: string; name: string; farbe: string; stapel?: string }[];
   art: Diagrammart;
   ziel?: { wert: number; text: string };
   bereich?: [number, number];
@@ -1054,6 +1096,7 @@ function Zeitverlauf({
                 dataKey={r.schluessel}
                 name={r.name}
                 fill={r.farbe}
+                stackId={r.stapel}
                 isAnimationActive={false}
                 maxBarSize={48}
               />
@@ -1063,6 +1106,7 @@ function Zeitverlauf({
                 type="monotone"
                 dataKey={r.schluessel}
                 name={r.name}
+                stackId={r.stapel}
                 stroke={r.farbe}
                 fill={r.farbe}
                 fillOpacity={0.2}

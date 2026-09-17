@@ -366,6 +366,7 @@ export const ar: Texte = {
     ohneLevelHinweis: "لا تُحتسب في أي بطاقة",
     hoechstens: (ziel: number) => `${ziel} كحدٍّ أقصى`,
     auditVerlauf: "نتائج التدقيق عبر الزمن",
+    auditVerlaufLevel: (level: number) => `نتائج التدقيق المستوى ${level} عبر الزمن`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) => `حصة الكمية بلا شكوى. المرجع: ${bezug}.`,
     fehlerquote: (quote: string) => `نسبة العيوب: ${quote}`,

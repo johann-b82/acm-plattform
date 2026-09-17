@@ -367,6 +367,7 @@ export const uk: Texte = {
     ohneLevelHinweis: "не входить у жодну плитку",
     hoechstens: (ziel: number) => `Не більше ${ziel}`,
     auditVerlauf: "Невідповідності аудиту у часі",
+    auditVerlaufLevel: (level: number) => `Аудиторські знахідки рівня ${level} у часі`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) => `Частка кількості без рекламацій. База: ${bezug}.`,
     fehlerquote: (quote: string) => `Частка дефектів: ${quote}`,

@@ -334,6 +334,7 @@ export const de = {
     ohneLevelHinweis: "zählt in keiner Kachel",
     hoechstens: (ziel: number) => `Höchstens ${ziel}`,
     auditVerlauf: "Audit-Findings im Zeitverlauf",
+    auditVerlaufLevel: (level: number) => `Audit-Findings Level ${level} im Zeitverlauf`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) => `Anteil der Menge ohne Beanstandung. Bezugsgröße: ${bezug}.`,
     fehlerquote: (quote: string) => `Fehlerquote: ${quote}`,

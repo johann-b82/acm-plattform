@@ -516,6 +516,15 @@ Level-Ableitung im Parser: Text enthält `Major … Level 1` → Level 1, `Minor
 
 - **Anzeige**: Kacheln „Audit-Findings Level 1" und „Level 2", Chart „… nach Kategorie". `GET /api/quality/audit-findings` → `level_1`, `level_2`. Registry-Key `quality.audit_findings`.
 - **Daten**: `quality_records` mit `art` in den Audit-Codes `BH AUD`, `EX AUD`, `IN AUD`, `KU AUD`.
+- **Anzeige neu**: **zwei** Diagramme nebeneinander, „Audit-Findings Level 1"
+  und „Level 2", in jedem die vier Auditarten gestapelt (`verlaufJeArt`) — wie
+  im Altprojekt (`QualityKpiCharts.tsx`, `stackId="findings"`). Vorher zeigte
+  ein einziges Diagramm Level 1 gegen Level 2, und die Auditart war nur noch
+  ein Filter; die Aufschlüsselung, die `kpi_qualitaet_audits_verlauf` ohnehin
+  je Art liefert, blieb ungenutzt. Die Reihenfolge der Arten ist fest, damit
+  beim Filtern keine Farbe springt; dieselben vier Farben in beiden
+  Diagrammen, in der Stapelreihenfolge geprüft (hell und dunkel, ΔE 9,2 bzw.
+  9,4 bei Rotgrünblindheit). Ein Zeitraum ohne jede Zeile bleibt eine Lücke.
 - **Rechenweg**: `COUNT(*)` je `level` (1 oder 2) über `report_date` im Fenster und `art` im Filter. Reine Zeilenzahl, keine Mengen, keine Quote.
 - **Filter/Defaults**: `audit_types` als Komma-Liste, Default alle vier; unbekannte Codes → HTTP 400. Verlauf zusätzlich je `art` aufgeschlüsselt, der Bucket-Gesamtwert ist die Summe der Aufschlüsselung.
 - **Zielwerte**: `target_audit_findings_level1` (Fallback 0), `target_audit_findings_level2` (Fallback 5), als gestrichelte Linie.

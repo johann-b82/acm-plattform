@@ -64,6 +64,38 @@ export function ohneLevel(liste: readonly AuditFinding[]): AuditFinding[] {
 }
 
 /**
+ * Die Verlaufszeilen eines Levels je Bucket nach Auditart aufschlüsseln.
+ *
+ * Wie im Altprojekt (`QualityKpiCharts.tsx`): je Level ein Diagramm, darin die
+ * vier Arten übereinander gestapelt. Vorher zeigte ein einziges Diagramm nur
+ * Level 1 gegen Level 2, und die Art war bloß noch ein Filter — die
+ * Aufschlüsselung, die die Datenbank ohnehin liefert, fiel unter den Tisch.
+ *
+ * Jede Art ist ein eigener Schlüssel; Arten ohne Zeile in diesem Bucket stehen
+ * auf 0, damit der Stapel nicht springt. Ein Bucket ohne jede Zeile kommt gar
+ * nicht erst vor — das bleibt eine Lücke, keine erfundene Null.
+ */
+export function verlaufJeArt(
+  zeilen: readonly AuditVerlaufZeile[],
+  level: 1 | 2,
+  arten: readonly string[],
+): Record<string, number | string>[] {
+  const nach = new Map<string, Record<string, number | string>>();
+  for (const z of zeilen) {
+    if (!arten.includes(z.art)) continue;
+    const eintrag =
+      nach.get(z.bucket) ??
+      ({ bucket: z.bucket, ...Object.fromEntries(arten.map((a) => [a, 0])) } as Record<
+        string,
+        number | string
+      >);
+    eintrag[z.art] = Number(eintrag[z.art] ?? 0) + Number(level === 1 ? z.level_1 : z.level_2);
+    nach.set(z.bucket, eintrag);
+  }
+  return [...nach.values()].sort((a, b) => String(a.bucket).localeCompare(String(b.bucket)));
+}
+
+/**
  * Die nach Art aufgeschlüsselten Verlaufszeilen zu einem Punkt je Bucket
  * zusammenfassen. Die Summe der Aufschlüsselung ist der Bucket-Gesamtwert.
  */

@@ -368,6 +368,7 @@ export const bg: Texte = {
     ohneLevelHinweis: "не се брои в нито една карта",
     hoechstens: (ziel: number) => `Най-много ${ziel}`,
     auditVerlauf: "Одитни констатации във времето",
+    auditVerlaufLevel: (level: number) => `Одит находки ниво ${level} във времето`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) => `Дял на количеството без рекламация. База: ${bezug}.`,
     fehlerquote: (quote: string) => `Процент дефекти: ${quote}`,

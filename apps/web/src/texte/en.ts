@@ -370,6 +370,7 @@ export const en: Texte = {
     ohneLevelHinweis: "counted in no tile",
     hoechstens: (ziel: number) => `At most ${ziel}`,
     auditVerlauf: "Audit findings over time",
+    auditVerlaufLevel: (level: number) => `Audit findings level ${level} over time`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) =>
       `Share of quantity without complaint. Reference: ${bezug}.`,
