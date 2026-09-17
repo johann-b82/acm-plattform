@@ -186,7 +186,9 @@ export function Vorgaenge({ darfSchreiben }: { darfSchreiben: boolean }) {
       zelle: (v) => {
         const ziel = naechste(v.status);
         return (
-          <div className="flex flex-wrap justify-end gap-2">
+          // Bis zu fünf Bedienelemente nebeneinander, mehrere davon randlos:
+          // mit gap-2 standen sie zu eng, um sie auseinanderzuhalten.
+          <div className="flex flex-wrap justify-end gap-x-3 gap-y-2">
             <Button size="sm" variant="outline" onClick={() => oeffnen.mutate({ id: v.id, was: "blatt.pdf" })}>
               <FileDown className="me-1.5 h-3.5 w-3.5" aria-hidden />
               {worte.dokumentenlauf.blatt}
