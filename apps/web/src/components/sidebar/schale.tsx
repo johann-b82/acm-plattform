@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-import { useTexte } from "@/components/sprache/anbieter";
+import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { Brotkrumen } from "@/components/brotkrumen";
 import { Benutzerbereich } from "@/components/sidebar/benutzerbereich";
 import { KATEGORIEN, Werkzeugplatz, type Kategorie, type Plaetze } from "@/components/sidebar/werkzeugplatz";
@@ -26,6 +26,7 @@ import { setzeSeitenleiste } from "@/app/seitenleiste-aktion";
 import { setzeWerkzeugleiste } from "@/app/werkzeugleiste-aktion";
 import { symbol } from "@/lib/symbole";
 import { cn } from "@/lib/cn";
+import { SCHREIBRICHTUNG } from "@/lib/sprache";
 import type { NavEintrag } from "@/lib/navigation";
 
 const EINTRAG =
@@ -83,6 +84,26 @@ export function Schale({
 }) {
   const t = useTexte();
   const pfad = usePathname() ?? "/";
+  /**
+   * Wohin eine geschlossene Leiste aus dem Bild rückt.
+   *
+   * Zwei Dinge stehen hier bewusst so:
+   *
+   * `max-md:` — die Verschiebung gilt **nur** auf schmalen Bildschirmen. Vorher
+   * stand sie ohne Umbruch da und wurde auf dem Breitbild von `md:translate-x-0`
+   * zurückgenommen; welche der beiden Klassen gewinnt, entschied dann aber die
+   * Reihenfolge im erzeugten CSS. In einer Rechts-nach-links-Sprache gewann
+   * `rtl:` — und die Navigationsleiste blieb auch auf dem Breitbild draußen.
+   * `max-md:` und `md:` sind sich ausschließende Media-Queries; wo sie sich nie
+   * begegnen, kann keine die andere schlagen.
+   *
+   * Und die Richtung wird gerechnet, nicht über `rtl:` gesetzt: so steht immer
+   * genau **eine** Verschiebungsklasse da, statt zweier, die sich wieder über
+   * ihren Vorrang einigen müssten.
+   */
+  const rtl = SCHREIBRICHTUNG[useSprache()] === "rtl";
+  const hinausNav = rtl ? "max-md:translate-x-full" : "max-md:-translate-x-full";
+  const hinausWerkzeuge = rtl ? "max-md:-translate-x-full" : "max-md:translate-x-full";
   const [eingeklappt, setEingeklappt] = useState(anfangsEingeklappt);
   const [offen, setOffen] = useState(false);
   const [werkzeugeEingeklappt, setWerkzeugeEingeklappt] = useState(anfangsWerkzeugeEingeklappt);
@@ -172,7 +193,7 @@ export function Schale({
           className={cn(
             "fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-[var(--border)] bg-[var(--surface)] transition-[transform,width]",
             "md:sticky md:top-0 md:h-screen md:translate-x-0",
-            offen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
+            offen ? "translate-x-0" : hinausNav,
             eingeklappt ? "md:w-16" : "md:w-64",
           )}
         >
@@ -308,7 +329,7 @@ export function Schale({
           className={cn(
             "fixed inset-y-0 end-0 z-40 flex w-72 flex-col border-s border-[var(--border)] bg-[var(--surface)] transition-[transform,width]",
             "md:sticky md:top-0 md:h-screen md:translate-x-0",
-            werkzeugeOffen ? "translate-x-0" : "translate-x-full rtl:-translate-x-full",
+            werkzeugeOffen ? "translate-x-0" : hinausWerkzeuge,
             werkzeugeEingeklappt ? "md:w-16" : "md:w-72",
           )}
         >
