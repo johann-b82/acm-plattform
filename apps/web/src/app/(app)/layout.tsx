@@ -7,6 +7,7 @@ import { logoAdresse } from "@/lib/logo-server";
 import { ladeErscheinung } from "@/lib/erscheinung-server";
 import { navigation, SEITENLEISTE_COOKIE, WERKZEUGLEISTE_COOKIE, type AppZeile } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { oeffentlicheAdresseAusAnfrage } from "@/lib/supabase/oeffentlich";
 import { Providers } from "@/components/providers";
 import { SprachAnbieter } from "@/components/sprache/anbieter";
 import { Schale } from "@/components/sidebar/schale";
@@ -17,7 +18,10 @@ import { MassnahmenKnopf } from "@/components/kpi/massnahmen-knopf";
 /**
  * Shell für alle angemeldeten Seiten. Läuft immer pro Anfrage (die Sitzung
  * kommt aus Cookies), deshalb werden hier die Laufzeitwerte für den
- * Supabase-Client im Browser gelesen und an die Provider gereicht.
+ * Supabase-Client im Browser gelesen und an die Provider gereicht. Die Adresse
+ * kommt dabei aus der Anfrage selbst (`oeffentlicheAdresseAusAnfrage`) — sonst
+ * bekäme ein Browser auf einem anderen Rechner `localhost` und erreichte
+ * nichts.
  *
  * Die Navigation steht in der Seitenleiste (`Schale`); welche Apps und
  * Unterseiten dort stehen, rechnet `navigation` aus der Tabelle `apps` und dem
@@ -42,7 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const darfMassnahmen = hasLevel(session.apps, "settings", "editor");
   return (
     <Providers
-      supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL!}
+      supabaseUrl={await oeffentlicheAdresseAusAnfrage()}
       supabaseAnonKey={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}
     >
       <SprachAnbieter sprache={gewaehlt}>

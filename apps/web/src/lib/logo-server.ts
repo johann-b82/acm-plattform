@@ -1,4 +1,5 @@
 import { LOGO_EIMER } from "@/lib/logo-gemeinsam";
+import { oeffentlicheAdresseAusAnfrage } from "@/lib/supabase/oeffentlich";
 import { createClient, supabaseInternalUrl } from "@/lib/supabase/server";
 
 /**
@@ -33,7 +34,9 @@ export async function logoAdresse(sekunden = 3600): Promise<string | null> {
   // löste im Browser nicht auf. Der Token bleibt gültig — signiert ist der
   // Pfad, nicht der Host.
   const intern = supabaseInternalUrl();
-  const oeffentlich = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Aus der Anfrage, nicht aus der Umgebung: sonst zeigte das Logo für jeden
+  // anderen Rechner im Netz auf dessen eigenen `localhost`.
+  const oeffentlich = await oeffentlicheAdresseAusAnfrage();
   if (oeffentlich && data.signedUrl.startsWith(intern)) {
     return oeffentlich + data.signedUrl.slice(intern.length);
   }

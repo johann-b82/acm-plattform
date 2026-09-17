@@ -15,7 +15,9 @@ bash scripts/bootstrap-admin.sh admin@example.com '<sicheres Passwort>'       # 
 
 Danach: http://localhost → Login → Launcher. Der Admin sieht alle Apps; alles Einstellbare liegt unter `/einstellungen`, nach Bereich gruppiert — die Seite gehört der Plattform-Verwaltung.
 
-`SITE_URL`, `SUPABASE_PUBLIC_URL` und `API_EXTERNAL_URL` in `.env` auf den echten Hostnamen setzen, bevor der Stack auf dem Host läuft. `API_EXTERNAL_URL` ist der JWT-Issuer; `compute` prüft ihn.
+`SITE_URL` und `API_EXTERNAL_URL` in `.env` auf den echten Hostnamen setzen, bevor der Stack auf dem Host läuft. `API_EXTERNAL_URL` ist der JWT-Issuer; `compute` prüft ihn, und ein späterer Wechsel macht alle ausgegebenen Token ungültig.
+
+Von `SUPABASE_PUBLIC_URL` zählt dagegen nur der **Pfad** (`/supabase`): den Host nimmt die Oberfläche aus der Anfrage (`lib/supabase/oeffentlich.ts`). Sonst bekäme jeder Browser `localhost` gesagt — die Seite lädt dann, aber keine Abfrage kommt an, weil `localhost` auf dem fremden Rechner er selbst ist.
 
 ## Was läuft wo
 
