@@ -12,6 +12,7 @@ PostgREST — auch das Pflegen einzelner Teile.
     POST /api/atr/lieferschein   Lieferschein einlesen, abgleichen, als Entwurf ablegen
     POST /api/atr/lieferungen/{id}/erzeugen   Mappe, PDF und Etikett erzeugen
     POST /api/atr/lieferungen/{id}/ablegen    Mappe und PDF in die festen Ordner auf dem Dateiserver
+    GET  /api/atr/naechste-nummer  Vorschlag für die laufende ATR-Nummer
     POST /api/atr/container-etikett   Containernummer zuweisen, Beschriftung holen
     POST /api/atr/scan/probe     Verbindung zum Dateiserver pruefen
     POST /api/atr/scan           Eingangsordner von Hand durchsehen
@@ -51,7 +52,7 @@ from app.parsing.atr_lieferschein import (
     TextNichtLesbar,
     lies_pdf,
 )
-from app.atr import dateiserver, scan as scan_modul, ziele as ziele_modul
+from app.atr import dateiserver, nummer as nummer_modul, scan as scan_modul, ziele as ziele_modul
 from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
 from app.atr.format import dateiname_basis, programmfamilie
@@ -396,6 +397,20 @@ class ErzeugtErgebnis(BaseModel):
     pdf_hinweis: str | None
 
 
+class NaechsteNummer(BaseModel):
+    nummer: str | None
+
+
+@router.get("/naechste-nummer", response_model=NaechsteNummer)
+async def naechste_nummer(programm: str | None = None) -> NaechsteNummer:
+    """Die höchste vergebene Nummer dieser Programmfamilie plus eins.
+
+    Nur ein Vorschlag für die Maske; vergeben wird beim Erzeugen. `null` heißt:
+    es gibt noch keine numerische Nummer, die erste setzt jemand von Hand.
+    """
+    return NaechsteNummer(nummer=await nummer_modul.naechste(programm))
+
+
 @router.post("/lieferungen/{lieferung_id}/erzeugen", response_model=ErzeugtErgebnis)
 async def erzeugen(lieferung_id: str = Path(...)) -> ErzeugtErgebnis:
     ergebnis, _ = await _erzeuge(lieferung_id)
@@ -561,6 +576,12 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
     gerüst = await _hole_geruest(vorlage["geruest_pfad"])
 
     daten = dict(lieferung)
+    # Wie im Altprojekt (`generate_and_deliver`): ist das Feld leer, bekommt die
+    # Lieferung jetzt die nächste laufende Nummer. Eine von Hand eingetragene
+    # gewinnt immer. Auch der unbeaufsichtigte Scan geht hier durch — er hat
+    # keine Maske, in der jemand eine Nummer setzen könnte.
+    if not (daten.get("atr_nummer") or "").strip():
+        daten["atr_nummer"] = await nummer_modul.naechste(daten.get("programm"))
     try:
         mappe = await run_in_threadpool(baue_atr, gerüst, daten, positionen)
     except VorlageUnbrauchbar as fehler:
@@ -594,6 +615,7 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
                 atr_lieferungen.update()
                 .where(atr_lieferungen.c.id == lieferung_id)
                 .values(
+                    atr_nummer=daten["atr_nummer"],
                     mappe_pfad=mappe_pfad,
                     pdf_pfad=pdf_pfad,
                     etikett_pfad=etikett_pfad,

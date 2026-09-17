@@ -1434,6 +1434,7 @@ export const pl: Texte = {
     dokumenteErzeugen: "Utwórz dokumenty",
     kopfdaten: "Dane nagłówka",
     atrNummer: "Numer ATR",
+    nummerAutomatisch: (n: string) => `automatycznie: ${n}`,
     containernummer: "Numer kontenera",
     satzTitel: "Nazwa zestawu",
     programm: "Program",

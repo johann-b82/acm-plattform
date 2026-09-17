@@ -486,6 +486,17 @@ function Kopfdaten({ lieferung: l, darfSchreiben }: { lieferung: Lieferung; darf
     KOPFFELDER.map(({ feld }) => [feld, ((l[feld] as string | null) ?? "").trim()]),
   );
   const [entwurf, setEntwurf] = useState<Record<string, string>>(anfang);
+
+  // Wie im Altsystem: ist die ATR-Nummer leer, steht der Vorschlag als
+  // Platzhalter im Feld. Vergeben wird er erst beim Erzeugen — bis dahin kann
+  // sich die höchste Nummer noch ändern, und eine hier eingetragene gewinnt.
+  const offen = !entwurf.atr_nummer.trim();
+  const vorschlag = useQuery({
+    queryKey: lieferungKeys.naechsteNummer(l.programm),
+    queryFn: () => lieferungApi.naechsteNummer(l.programm),
+    enabled: offen && darfSchreiben,
+  });
+
   const geaendert = KOPFFELDER.filter(({ feld }) => entwurf[feld].trim() !== anfang[feld]);
 
   const speichern = useMutation({
@@ -512,7 +523,11 @@ function Kopfdaten({ lieferung: l, darfSchreiben }: { lieferung: Lieferung; darf
               id={feld}
               type={typ}
               value={entwurf[feld]}
-              placeholder="—"
+              placeholder={
+                feld === "atr_nummer" && offen && vorschlag.data
+                  ? worte.durchsicht.nummerAutomatisch(vorschlag.data)
+                  : "—"
+              }
               disabled={!darfSchreiben}
               onChange={(e) => setEntwurf((alt) => ({ ...alt, [feld]: e.target.value }))}
             />

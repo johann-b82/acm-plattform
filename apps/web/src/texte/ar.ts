@@ -1416,6 +1416,7 @@ export const ar: Texte = {
     dokumenteErzeugen: "أنشئ المستندات",
     kopfdaten: "بيانات الرأس",
     atrNummer: "رقم ATR",
+    nummerAutomatisch: (n: string) => `تلقائي: ${n}`,
     containernummer: "رقم الحاوية",
     satzTitel: "وصف المجموعة",
     programm: "البرنامج",

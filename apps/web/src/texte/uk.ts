@@ -1421,6 +1421,7 @@ export const uk: Texte = {
     dokumenteErzeugen: "Створити документи",
     kopfdaten: "Дані шапки",
     atrNummer: "Номер ATR",
+    nummerAutomatisch: (n: string) => `автоматично: ${n}`,
     containernummer: "Номер контейнера",
     satzTitel: "Назва комплекту",
     programm: "Програма",
