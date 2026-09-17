@@ -1900,7 +1900,10 @@ export const pl: Texte = {
     qsUnterschrift: "Podpis QS",
     eingangsordner: "Folder wejściowy",
     eingangHinweis:
-      "Dowód dostawy z folderu wejściowego zostaje wczytany, staje się dostawą i trafia do archiwum. Dozwolone serwery określa ATR_SMB_ERLAUBT. Hasło wpisane tutaj ma pierwszeństwo przed ATR_SMB_PASSWORT ze środowiska.",
+      "Dowód dostawy z folderu wejściowego zostaje wczytany, staje się dostawą i trafia do archiwum.",
+    dateiserver: "Serwer plików",
+    dateiserverHinweis:
+      "Serwer, udział i konto usługi dotyczą folderu wejściowego oraz „Zapisz na serwerze”. Dozwolone serwery określa ATR_SMB_ERLAUBT. Hasło wpisane tutaj ma pierwszeństwo przed ATR_SMB_PASSWORT ze środowiska.",
     laeuft: "działa",
     aus: "wyłączone",
     zuletzt: (zeit: string, text: string) => `Ostatnio ${zeit}: ${text}`,

@@ -1866,7 +1866,10 @@ export const de = {
     qsUnterschrift: "QS-Unterschrift",
     eingangsordner: "Eingangsordner",
     eingangHinweis:
-      "Ein Lieferschein im Eingang wird eingelesen, wird zur Lieferung und wandert ins Archiv. Welche Rechner in Frage kommen, gibt ATR_SMB_ERLAUBT vor. Ein hier eingetragenes Passwort geht ATR_SMB_PASSWORT aus der Umgebung vor.",
+      "Ein Lieferschein im Eingang wird eingelesen, wird zur Lieferung und wandert ins Archiv.",
+    dateiserver: "Dateiserver",
+    dateiserverHinweis:
+      "Rechner, Freigabe und Dienstkonto gelten für den Eingangsordner und für „Auf Server speichern“. Welche Rechner in Frage kommen, gibt ATR_SMB_ERLAUBT vor. Ein hier eingetragenes Passwort geht ATR_SMB_PASSWORT aus der Umgebung vor.",
     laeuft: "läuft",
     aus: "aus",
     zuletzt: (zeit: string, text: string) => `Zuletzt ${zeit}: ${text}`,
