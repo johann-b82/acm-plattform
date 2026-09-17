@@ -1439,6 +1439,10 @@ export const uk: Texte = {
     poPos: "PO Pos",
     speichern: "Зберегти",
     gespeichert: "Збережено.",
+    aufServerSpeichern: "Зберегти на сервері",
+    wirdAbgelegt: "Збереження …",
+    aufServerGespeichert: "Збережено на сервері.",
+    ablageGescheitert: (ziele: string) => `Не збережено: ${ziele}`,
     seriennummernAbweichung: (anzahl: number, menge: number) =>
       `${anzahl} серійн. номер(ів) при кількості ${menge}`,
     seriennummernFeld: (pos: string) => `Серійні номери позиції ${pos}`,

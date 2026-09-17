@@ -129,7 +129,7 @@ async def durchsehen(einlesen, erzeugen) -> Ergebnis:
                     )
                 # Wie im Altsystem: geschrieben heißt `abgelegt` (delivered) —
                 # vor dem Archivieren, das danach noch scheitern darf.
-                await _abgelegt(lieferung_id)
+                await abgelegt_vermerken(lieferung_id)
                 ergebnis.erzeugt += 1
 
             # Zuletzt: bis hierher ist alles gutgegangen.
@@ -149,7 +149,13 @@ async def durchsehen(einlesen, erzeugen) -> Ergebnis:
     return ergebnis
 
 
-async def _abgelegt(lieferung_id: str) -> None:
+async def abgelegt_vermerken(lieferung_id: str) -> None:
+    """Setzt den Status auf `abgelegt`.
+
+    Zwei Wege führen hierher: der automatische Scan, der die Dokumente in den
+    Ausgangsordner schreibt, und die Ablage von Hand aus der Durchsicht. Beide
+    bedeuten dasselbe — die Dateien liegen auf dem Dateiserver.
+    """
     async with SessionLocal() as sitzung:
         async with sitzung.begin():
             await sitzung.execute(

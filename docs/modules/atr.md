@@ -127,7 +127,8 @@ in der Position stehen bleiben.
 `entwurf` → `erzeugt` → `abgelegt` (Migration `0048_atr_abgleich`, Befund
 ATR-09). Ein Entwurf wartet auf Durchsicht; mit den Dokumenten ist die
 Lieferung `erzeugt` (Altsystem `generated`); legt der automatische Scan sie im
-Ausgangsordner ab, ist sie `abgelegt` (`delivered`). Eine Freigabe gibt es
+Ausgangsordner ab oder gelingt „Auf Server speichern" für alle Ziele, ist sie
+`abgelegt` (`delivered`). Eine Freigabe gibt es
 nicht, und kein Zustand sperrt die Positionen — Seriennummern und Gewichte
 werden auch nach der Erzeugung nachgetragen und die Dokumente dann neu erzeugt.
 So macht es das Altprojekt (`services/atr_deliver.py`).
@@ -234,6 +235,37 @@ Unterscheidung zöge derselbe Schreibvorgang, der `erzeugt_am` setzt, auch
 Die Lieferungen haben dafür eine eigene Triggerfunktion — die gemeinsame hängt
 auch an `atr_positionen`, und plpgsql löst die Feldverweise einer Bedingung
 vorab auf.
+
+## Auf Server speichern
+
+Eine von Hand durchgesehene Lieferung kommt über den Knopf „Auf Server
+speichern" in der Durchsicht auf den Dateiserver (`POST
+/api/atr/lieferungen/{id}/ablegen`). Er erscheint, sobald Mappe **und** PDF
+erzeugt sind — ohne beide weist der Endpunkt mit 400 ab. Im Altprojekt tat das
+`_server_targets` in `backend/app/routers/atr_delivery.py`.
+
+Die drei Ziele stehen in `app/atr/ziele.py`, nicht in den Einstellungen — so
+standen sie auch im Altprojekt, und ein Tippfehler in einer Maske legte ein ATR
+still an einen Ort, an dem niemand nachsieht. Rechner, Freigabe und
+Dienstkonto kommen aus den Scan-Einstellungen.
+
+| Datei | Ordner unter der Freigabe |
+|---|---|
+| Mappe | `1300 - Qualität\1320_QS\132002_WA-Prüfung\132002_02_TR_Spec_QAA\DIEHL\<A350 oder A380>\ATR_Acceptance Test Report\<Jahresordner>` |
+| PDF | ``1200 - Logistik\Versand\ATR`S_Weight Reports_Firma Diehl_Portal`` |
+| PDF | `…\DIEHL\Weight Report für Firma Diehl ( verschicken )\<Jahr>\KW <nn>` |
+
+- **Programmweiche wie im Altprojekt:** enthält das Programm `380`, gilt A380,
+  sonst A350. Der A380-Jahresordner heißt `ACM_ATR_A 380_.....<Jahr>` — mit
+  Leerzeichen, so steht er auf dem Server.
+- **Kalenderwoche zweistellig, ISO-Woche, Jahr aus dem Kalender.** Der
+  1. Januar 2027 landet unter `2027\KW 53`, wie im Altprojekt.
+- **Fehlende Ordner entstehen**, gleiche Dateinamen bekommen `(1)`, `(2)` —
+  derselbe Weg wie beim Ausgang des Scans (`dateiserver.schreibe`).
+- **Jedes Ziel einzeln.** Scheitert eines, laufen die übrigen weiter, und die
+  Meldung nennt das gescheiterte beim Namen. `abgelegt` setzt erst der
+  vollständige Lauf.
+- Rechte wie beim Erzeugen: `atr: editor`.
 
 ## Der Eingangsordner
 
