@@ -6,13 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const { eine, positionen, erzeugen, positionAendern, ablegen } = vi.hoisted(() => ({
-  eine: vi.fn(),
-  positionen: vi.fn(),
-  erzeugen: vi.fn(),
-  positionAendern: vi.fn(),
-  ablegen: vi.fn(),
-}));
+const { eine, positionen, erzeugen, positionAendern, ablegen, naechsteNummer } = vi.hoisted(
+  () => ({
+    eine: vi.fn(),
+    positionen: vi.fn(),
+    erzeugen: vi.fn(),
+    positionAendern: vi.fn(),
+    ablegen: vi.fn(),
+    naechsteNummer: vi.fn(),
+  }),
+);
 
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -27,7 +30,15 @@ vi.mock("@/components/realtime/anwesenheit", () => ({
 }));
 vi.mock("@/lib/atr", async (original) => {
   const echt = await original<typeof import("@/lib/atr")>();
-  return { ...echt, lieferungApi: { ...echt.lieferungApi, eine, positionen, erzeugen, positionAendern, ablegen } };
+  return { ...echt, lieferungApi: {
+      ...echt.lieferungApi,
+      eine,
+      positionen,
+      erzeugen,
+      positionAendern,
+      ablegen,
+      naechsteNummer,
+    } };
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
@@ -93,6 +104,7 @@ beforeEach(() => {
   eine.mockResolvedValue(LIEFERUNG);
   positionen.mockResolvedValue([POSITION]);
   erzeugen.mockResolvedValue({ pdf_hinweis: null });
+  naechsteNummer.mockResolvedValue("4964");
   const neu = () => document.body.appendChild(document.createElement("div"));
   platz = { navigation: neu(), ansicht: neu(), filter: neu(), zeitraum: neu(), aktionen: neu() };
 });
@@ -332,5 +344,38 @@ describe("Durchsicht in der Schale", () => {
     stand = 2;
     await client.invalidateQueries();
     expect(await screen.findByDisplayValue("Von Zoe")).toBeInTheDocument();
+  });
+});
+
+describe("Laufende ATR-Nummer", () => {
+  function zeigeMitSchreibrecht() {
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Durchsicht id="l1" darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("schlägt die nächste Nummer im leeren Feld vor", async () => {
+    zeigeMitSchreibrecht();
+    const feld = await screen.findByLabelText("ATR-Nummer");
+    await waitFor(() => expect(feld).toHaveAttribute("placeholder", "automatisch: 4964"));
+    expect(naechsteNummer).toHaveBeenCalledWith(LIEFERUNG.programm);
+    // Nur ein Vorschlag — der Wert bleibt leer, vergeben wird beim Erzeugen.
+    expect(feld).toHaveValue("");
+  });
+
+  it("fragt nicht, wenn schon eine Nummer eingetragen ist", async () => {
+    eine.mockResolvedValue({ ...LIEFERUNG, atr_nummer: "S-2024/1" });
+    zeigeMitSchreibrecht();
+    const feld = await screen.findByLabelText("ATR-Nummer");
+    expect(feld).toHaveValue("S-2024/1");
+    expect(naechsteNummer).not.toHaveBeenCalled();
   });
 });

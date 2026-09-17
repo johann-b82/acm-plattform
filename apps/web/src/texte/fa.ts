@@ -1419,6 +1419,7 @@ export const fa: Texte = {
     dokumenteErzeugen: "ساخت مدارک",
     kopfdaten: "داده‌های سربرگ",
     atrNummer: "شمارهٔ ATR",
+    nummerAutomatisch: (n: string) => `خودکار: ${n}`,
     containernummer: "شمارهٔ کانتینر",
     satzTitel: "شرح مجموعه",
     programm: "برنامه",

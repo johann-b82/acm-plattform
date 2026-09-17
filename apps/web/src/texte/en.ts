@@ -1430,6 +1430,7 @@ export const en: Texte = {
     dokumenteErzeugen: "Create documents",
     kopfdaten: "Header data",
     atrNummer: "ATR number",
+    nummerAutomatisch: (n: string) => `automatic: ${n}`,
     containernummer: "Container number",
     satzTitel: "Set description",
     programm: "Programme",

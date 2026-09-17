@@ -236,6 +236,26 @@ Die Lieferungen haben dafür eine eigene Triggerfunktion — die gemeinsame hän
 auch an `atr_positionen`, und plpgsql löst die Feldverweise einer Bedingung
 vorab auf.
 
+## Die laufende ATR-Nummer
+
+Wie im Altprojekt (`compute_next_atr_number`): die höchste bereits vergebene
+**numerische** Nummer plus eins, je Programmfamilie getrennt — A350 und A380
+führen eigene Nummernkreise. Nicht numerische Nummern aus dem Altbestand
+(`S-2024/1`) werden übergangen; gibt es noch keine, setzt die erste jemand von
+Hand (`app/atr/nummer.py`).
+
+**Vergeben wird beim Erzeugen, nicht beim Anlegen.** Bis dahin kann sich die
+höchste Nummer ändern, und zwei gleichzeitig offene Durchsichten trügen sonst
+dieselbe. Eine von Hand eingetragene Nummer gewinnt immer. Auch der
+unbeaufsichtigte Scan geht denselben Weg — er hat keine Maske, in der jemand
+eine Nummer setzen könnte.
+
+Die Maske zeigt den Vorschlag nur als **Platzhalter** im leeren Feld
+(`GET /api/atr/naechste-nummer?programm=…`), damit sichtbar ist, was beim
+Erzeugen passiert. Anders als im Altprojekt fragt die Maske dabei mit der
+Programmfamilie der Lieferung — dort war der Vorschlag über alle Programme
+gerechnet und wich damit von der Nummer ab, die die Erzeugung dann vergab.
+
 ## Auf Server speichern
 
 Eine von Hand durchgesehene Lieferung kommt über den Knopf „Auf Server

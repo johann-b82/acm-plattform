@@ -341,12 +341,22 @@ const POSITION_FELDER =
   "teil_id,bezeichnung,zeichnung,kategorie,menge,gewicht_kg,bestellposition,seriennummern,version";
 
 export const lieferungKeys = {
+  naechsteNummer: (programm: string | null) => ["atr", "naechste-nummer", programm] as const,
   liste: () => ["atr", "lieferungen"] as const,
   eine: (id: string) => ["atr", "lieferung", id] as const,
   positionen: (id: string) => ["atr", "positionen", id] as const,
 };
 
 export const lieferungApi = {
+  /** Vorschlag für die laufende ATR-Nummer: höchste dieser Programmfamilie
+   *  plus eins. `null` heißt, dass die erste von Hand zu setzen ist. */
+  naechsteNummer: async (programm: string | null): Promise<string | null> =>
+    (
+      await computeJson<{ nummer: string | null }>(
+        `/api/atr/naechste-nummer${programm ? `?programm=${encodeURIComponent(programm)}` : ""}`,
+      )
+    ).nummer,
+
   liste: async (): Promise<Lieferung[]> =>
     ladeAlle((von, bis) =>
       supabaseBrowser()

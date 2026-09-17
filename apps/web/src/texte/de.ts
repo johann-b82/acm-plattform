@@ -1395,6 +1395,7 @@ export const de = {
     dokumenteErzeugen: "Dokumente erzeugen",
     kopfdaten: "Kopfdaten",
     atrNummer: "ATR-Nummer",
+    nummerAutomatisch: (n: string) => `automatisch: ${n}`,
     containernummer: "Containernummer",
     satzTitel: "Satzbezeichnung",
     programm: "Programm",

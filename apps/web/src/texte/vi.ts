@@ -1430,6 +1430,7 @@ export const vi: Texte = {
     dokumenteErzeugen: "Tạo tài liệu",
     kopfdaten: "Dữ liệu đầu trang",
     atrNummer: "Số ATR",
+    nummerAutomatisch: (n: string) => `tự động: ${n}`,
     containernummer: "Số container",
     satzTitel: "Tên bộ",
     programm: "Chương trình",

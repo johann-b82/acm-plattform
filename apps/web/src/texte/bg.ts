@@ -1435,6 +1435,7 @@ export const bg: Texte = {
     dokumenteErzeugen: "Създай документите",
     kopfdaten: "Заглавни данни",
     atrNummer: "ATR номер",
+    nummerAutomatisch: (n: string) => `автоматично: ${n}`,
     containernummer: "Номер на контейнер",
     satzTitel: "Наименование на комплекта",
     programm: "Програма",
