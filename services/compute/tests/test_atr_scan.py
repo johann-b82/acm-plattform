@@ -305,6 +305,54 @@ class TestEinrichtung:
                 await scan_modul.einstellungen()
 
 
+    # „Auf Server speichern" braucht nur den Zugang. Im Altprojekt
+    # `smb_credentials_from_settings`: Eingang, Ausgang und Archiv sind Sache
+    # des Scans, und wer nur ablegt, soll sie nicht eintragen müssen.
+    ZUGANG = {
+        "rechner": "srv", "freigabe": "S", "benutzer": "u", "domaene": "ACM",
+        "eingang": None, "ausgang": None, "archiv": None, "modus": "entwurf",
+    }
+
+    def _mit(self, zeile, kennwort="geheim"):
+        async def pw():
+            return kennwort
+
+        return patch("app.atr.scan.SessionLocal"), patch.object(scan_modul, "passwort", pw), zeile
+
+    async def test_der_zugang_kommt_ohne_scan_ordner_aus(self):
+        sitzung_p, pw_p, zeile = self._mit(self.ZUGANG)
+        with sitzung_p as sitzung, pw_p:
+            sitzung.return_value.__aenter__.return_value.execute.return_value = _Zeile(zeile)
+            _, ziel = await scan_modul.zugang()
+        assert (ziel.rechner, ziel.freigabe, ziel.benutzer, ziel.passwort) == (
+            "srv", "S", "u", "geheim"
+        )
+
+    @pytest.mark.parametrize("feld", ["rechner", "freigabe", "benutzer"])
+    async def test_ohne_zugangsdaten_kein_zugang(self, feld):
+        sitzung_p, pw_p, zeile = self._mit({**self.ZUGANG, feld: None})
+        with sitzung_p as sitzung, pw_p:
+            sitzung.return_value.__aenter__.return_value.execute.return_value = _Zeile(zeile)
+            with pytest.raises(scan_modul.NichtEingerichtet) as fehler:
+                await scan_modul.zugang()
+        assert str(fehler.value) == f"Es fehlt: {feld}."
+
+    async def test_ohne_passwort_kein_zugang(self):
+        sitzung_p, pw_p, zeile = self._mit(self.ZUGANG, kennwort=None)
+        with sitzung_p as sitzung, pw_p:
+            sitzung.return_value.__aenter__.return_value.execute.return_value = _Zeile(zeile)
+            with pytest.raises(scan_modul.NichtEingerichtet, match="^Es fehlt: Passwort"):
+                await scan_modul.zugang()
+
+    async def test_der_scan_verlangt_eingang_und_archiv_weiter(self):
+        sitzung_p, pw_p, zeile = self._mit(self.ZUGANG)
+        with sitzung_p as sitzung, pw_p:
+            sitzung.return_value.__aenter__.return_value.execute.return_value = _Zeile(zeile)
+            with pytest.raises(scan_modul.NichtEingerichtet) as fehler:
+                await scan_modul.einstellungen()
+        assert str(fehler.value) == "Es fehlt: eingang, archiv."
+
+
 class _Zeile:
     """Antwort-Attrappe für `execute(...).mappings().first()`."""
 
