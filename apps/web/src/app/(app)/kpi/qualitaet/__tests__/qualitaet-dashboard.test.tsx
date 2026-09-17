@@ -11,8 +11,12 @@ vi.mock("@/lib/kpi/qualitaet", async (importOriginal) => {
   return {
     ...echt,
     qualitaetApi: {
-      audits: vi.fn(async () => ({ level_1: 0, level_2: 0, ohne_level: 0 })),
-      verlauf: vi.fn(async () => []),
+      audits: vi.fn(async () => ({ level_1: 3, level_2: 9, ohne_level: 0 })),
+      verlauf: vi.fn(async () => [
+        { bucket: "2026-01-01", art: "BH AUD", level_1: 2, level_2: 5 },
+        { bucket: "2026-01-01", art: "IN AUD", level_1: 1, level_2: 0 },
+        { bucket: "2026-03-01", art: "KU AUD", level_1: 0, level_2: 4 },
+      ]),
       liste: vi.fn(async () => []),
     },
     pruefungApi: {
@@ -154,5 +158,17 @@ describe("Qualität", () => {
     const umschalter = screen.getByRole("radiogroup", { name: "Ansicht" });
     fireEvent.click(within(umschalter).getByRole("radio", { name: "Reklamationen" }));
     expect(screen.queryByRole("button", { name: "Behörde" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Audit-Findings im Zeitverlauf", () => {
+  it("zeigt je Level ein Diagramm mit den Auditarten in der Legende", async () => {
+    zeige();
+    // Zwei Karten statt einer Karte mit Level 1 gegen Level 2.
+    expect(
+      await screen.findByText("Audit-Findings Level 1 im Zeitverlauf"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Audit-Findings Level 2 im Zeitverlauf")).toBeInTheDocument();
+    expect(screen.queryByText("Audit-Findings im Zeitverlauf")).toBeNull();
   });
 });

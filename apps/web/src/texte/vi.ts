@@ -369,6 +369,7 @@ export const vi: Texte = {
     ohneLevelHinweis: "không tính vào ô nào",
     hoechstens: (ziel: number) => `Tối đa ${ziel}`,
     auditVerlauf: "Phát hiện audit theo thời gian",
+    auditVerlaufLevel: (level: number) => `Phát hiện đánh giá mức ${level} theo thời gian`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) =>
       `Tỷ lệ sản lượng không bị khiếu nại. Cơ sở quy chiếu: ${bezug}.`,

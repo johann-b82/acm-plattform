@@ -369,6 +369,7 @@ export const pl: Texte = {
     ohneLevelHinweis: "nie liczy się w żadnym kafelku",
     hoechstens: (ziel: number) => `Najwyżej ${ziel}`,
     auditVerlauf: "Ustalenia auditów w czasie",
+    auditVerlaufLevel: (level: number) => `Ustalenia audytu poziom ${level} w czasie`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) => `Udział ilości bez zastrzeżeń. Odniesienie: ${bezug}.`,
     fehlerquote: (quote: string) => `Wskaźnik błędów: ${quote}`,

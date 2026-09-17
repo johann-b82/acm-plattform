@@ -367,6 +367,7 @@ export const fa: Texte = {
     ohneLevelHinweis: "در هیچ کارتی شمرده نمی‌شود",
     hoechstens: (ziel: number) => `حداکثر ${ziel}`,
     auditVerlauf: "روند یافته‌های ممیزی",
+    auditVerlaufLevel: (level: number) => `یافته‌های ممیزی سطح ${level} در طول زمان`,
     onQuality: "On Quality",
     onQualityHinweis: (bezug: string) => `سهم مقدار بدون شکایت. مبنا: ${bezug}.`,
     fehlerquote: (quote: string) => `نرخ خطا: ${quote}`,
