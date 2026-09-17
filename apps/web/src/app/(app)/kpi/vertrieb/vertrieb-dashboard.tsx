@@ -16,9 +16,7 @@ import {
 } from "recharts";
 
 import {
-  takt,
-} from "@/lib/kpi/gemeinsam";
-import {
+  UMSATZ_TAKT,
   kundenfarben,
   vergleichsart,
   verlaufMitVergleich,
@@ -57,7 +55,10 @@ export function VertriebDashboard() {
   const worte = useTexte();
   const fmt = useFormate();
   const sprachTag = ZAHL_TAG[useSprache()];
-  const t = takt(von, bis);
+  // Der Umsatzverlauf rechnet immer in Monaten (UMSATZ_TAKT), wie im
+  // Altprojekt. Achsenbeschriftung, Vergleichsreihe und Tooltip folgen
+  // demselben Takt — sonst zeigte die Achse Tage und die Reihe Monate.
+  const t = UMSATZ_TAKT;
   const [diagrammart, setDiagrammart] = useDiagrammart();
 
   const summe = useQuery({

@@ -49,8 +49,11 @@ export function fenster(zeitraum: Zeitraum, heute = new Date()): { von: string |
   return { von: iso(new Date(heute.getFullYear(), 0, 1)), bis };
 }
 
+/** Die Breite eines Buckets im Verlauf. */
+export type Takt = "day" | "week" | "month";
+
 /** Bucket-Breite nach Fensterlänge, wie im Altprojekt (`_bucket_windows`). */
-export function takt(von: string | null, bis: string | null): "day" | "week" | "month" {
+export function takt(von: string | null, bis: string | null): Takt {
   if (!von || !bis) return "month";
   const tage = (new Date(bis).getTime() - new Date(von).getTime()) / 86_400_000;
   if (tage <= 31) return "day";
