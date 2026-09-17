@@ -1,33 +1,18 @@
 """Wohin ein fertiger ATR auf dem Dateiserver gehört.
 
-Drei feste Ziele, wörtlich aus dem Altprojekt übernommen
-(`backend/app/routers/atr_delivery.py`, `_server_targets`). Sie stehen im
-Code und nicht in den Einstellungen, weil sie es dort auch standen: es sind
-die Ordner, in denen QS und Logistik ihre Unterlagen suchen, und ein Tippfehler
-in einer Maske legte ein ATR still an einen Ort, an dem niemand nachsieht.
+Drei Ziele wie im Altprojekt (`backend/app/routers/atr_delivery.py`,
+`_server_targets`). Die Ordner selbst stehen in den Einstellungen (`atr_scan`,
+Migration `0058_atr_ablageziele`) und sind dort mit den Pfaden des Altprojekts
+vorbelegt; hier steht nur, welche Datei in welches Ziel gehört.
 
 Nur das Mappen-Ziel ist programmabhängig — A350 und A380 haben eigene
-Unterordner **und** eigene Jahresordner. Die beiden PDF-Ziele tragen keine
-Programmkennung und gelten für beide.
-
-Ein weiteres Ziel ist ein weiterer Eintrag in der Liste, sonst nichts.
+Unterordner **und** eigene Jahresordner, deshalb zwei Einstellungen. Die beiden
+PDF-Ziele tragen keine Programmkennung und gelten für beide.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-
-#: Der Jahresordner des A380 trägt ein Leerzeichen hinter dem „A" und fünf
-#: Punkte vor der Jahreszahl. Das ist kein Vertipper hier, sondern der Name
-#: des Ordners auf dem Server; er stand so schon im Altprojekt.
-_JAHRESORDNER = {
-    "A380": "ACM_ATR_A 380_.....{jahr}",
-    "A350": "ACM_ATR_A350_.....{jahr}",
-}
-
-_QS_DIEHL = (
-    "1300 - Qualität\\1320_QS\\132002_WA-Prüfung\\132002_02_TR_Spec_QAA\\DIEHL"
-)
 
 
 @dataclass(frozen=True)
@@ -53,29 +38,26 @@ def ist_a380(programm: str | None) -> bool:
     return "380" in (programm or "")
 
 
-def ziele(programm: str | None) -> list[ServerZiel]:
-    """Die Ablageorte für eine Lieferung dieses Programms."""
+def ziele(programm: str | None, einstellung: dict) -> list[ServerZiel]:
+    """Die Ablageorte für eine Lieferung dieses Programms.
+
+    `einstellung` ist die Zeile aus `atr_scan`.
+    """
     prog = "A380" if ist_a380(programm) else "A350"
     return [
         ServerZiel(
             art="mappe",
-            vorlage=(
-                f"{_QS_DIEHL}\\{prog}\\ATR_Acceptance Test Report"
-                f"\\{_JAHRESORDNER[prog]}"
-            ),
+            vorlage=einstellung[f"ziel_mappe_{prog.lower()}"],
             bezeichnung=f"QS – Acceptance Test Report ({prog})",
         ),
         ServerZiel(
             art="pdf",
-            vorlage="1200 - Logistik\\Versand\\ATR`S_Weight Reports_Firma Diehl_Portal",
+            vorlage=einstellung["ziel_logistik"],
             bezeichnung="Logistik – Versand",
         ),
         ServerZiel(
             art="pdf",
-            vorlage=(
-                f"{_QS_DIEHL}\\Weight Report für Firma Diehl ( verschicken )"
-                "\\{jahr}\\KW {kw}"
-            ),
+            vorlage=einstellung["ziel_weight_report"],
             bezeichnung="QS – Weight Report (verschicken)",
         ),
     ]
@@ -84,10 +66,15 @@ def ziele(programm: str | None) -> list[ServerZiel]:
 def pfad(ziel: ServerZiel, tag: date) -> str:
     """Setzt Jahr und Kalenderwoche ein.
 
+    Ersetzt wird wörtlich statt mit `str.format`: ein Pfad aus der Maske ist
+    kein Formatstring, und andere Klammern weist die Datenbank ohnehin ab.
+
     Die Kalenderwoche ist **zweistellig** (`KW 07`), wie die Ordner auf dem
     Server heißen. Und es ist die ISO-Woche: der Januar kann in die Woche 52
     des Vorjahres fallen — dann steht der Ordner unter dem Jahr, das der
     Kalender nennt, nicht unter dem der ISO-Woche. So macht es das Altprojekt,
     und die Ordner dort sind entsprechend abgelegt.
     """
-    return ziel.vorlage.format(jahr=tag.year, kw=f"{tag.isocalendar()[1]:02d}")
+    return ziel.vorlage.replace("{jahr}", str(tag.year)).replace(
+        "{kw}", f"{tag.isocalendar()[1]:02d}"
+    )

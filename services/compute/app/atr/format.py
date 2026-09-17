@@ -1,7 +1,61 @@
 """Gemeinsame Formatierung für die ATR-Ausgaben."""
 from __future__ import annotations
 
+import re
 from datetime import date
+
+#: In Windows- und SMB-Dateinamen unzulässig. Leerzeichen, Komma, Punkt,
+#: Binde- und Unterstrich bleiben.
+_UNZULAESSIG = re.compile(r'[\\/:*?"<>|\x00-\x1f]+')
+
+#: Grenze für Name samt Positionsliste. Wie im Altprojekt: so bleibt der ganze
+#: Pfad in den tief verschachtelten QS-Ordnern unter der Windows-Grenze.
+_NAME_HOECHSTENS = 130
+
+
+def dateiname_basis(lieferung: dict, positionen: list[dict]) -> str:
+    """Der beschreibende Dateiname eines ATR, ohne Endung.
+
+    Wörtlich nach `delivery_filename_base` im Altprojekt — QS und Logistik
+    suchen die Dateien unter diesem Namen, z. B.
+    ``ACM_ATR_WR_COC_A350_ATR-4820-01 BA1024796_FCRC_MSN 844_4501124711 6 BED Head Pos 190, 200``.
+
+    Teile ohne Wert fallen weg. Die Positionsliste am Ende entfällt ganz, wenn
+    der Name damit zu lang würde.
+    """
+
+    def wert(feld: str) -> str:
+        return str(lieferung.get(feld) or "").strip()
+
+    programm = wert("programm") or "A350"
+    atr = wert("atr_nummer")
+    teile = [
+        f"ACM_ATR_WR_COC_{programm}_ATR-{atr}-01" if atr
+        else f"ACM_ATR_WR_COC_{programm}_ATR"
+    ]
+    if wert("ba_auftrag"):
+        teile.append(f" BA{wert('ba_auftrag')}")
+    if wert("bereich"):
+        teile.append(f"_{wert('bereich')}")
+    if wert("msn"):
+        teile.append(f"_MSN {wert('msn')}")
+    if wert("bestellnummer"):
+        teile.append(f"_{wert('bestellnummer')}")
+    if wert("bettvariante"):
+        teile.append(f" {wert('bettvariante')} BED")
+    kategorie = next((p["kategorie"] for p in positionen if p.get("kategorie")), None)
+    if kategorie:
+        teile.append(f" {kategorie.strip().title()}")
+    name = "".join(teile)
+
+    nummern = [
+        b for b in (bestellposition(p.get("bestellposition")) for p in positionen) if b
+    ]
+    if nummern:
+        mit_positionen = f"{name} Pos {', '.join(nummern)}"
+        if len(mit_positionen) <= _NAME_HOECHSTENS:
+            name = mit_positionen
+    return _UNZULAESSIG.sub("", name).strip().rstrip(". ") or "atr"
 
 
 def bestellposition(wert: str | None) -> str | None:

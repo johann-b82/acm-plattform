@@ -472,6 +472,10 @@ atr_scan = sa.Table(
     sa.Column("intervall_s", sa.Integer, nullable=False),
     sa.Column("angestossen_am", sa.DateTime(timezone=True)),
     sa.Column("lauf_seit", sa.DateTime(timezone=True)),
+    sa.Column("ziel_mappe_a350", sa.String(500), nullable=False),
+    sa.Column("ziel_mappe_a380", sa.String(500), nullable=False),
+    sa.Column("ziel_logistik", sa.String(500), nullable=False),
+    sa.Column("ziel_weight_report", sa.String(500), nullable=False),
 )
 
 sensoren = sa.Table(

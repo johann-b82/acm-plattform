@@ -469,6 +469,12 @@ export interface ScanEinstellung {
   eingang: string | null;
   ausgang: string | null;
   archiv: string | null;
+  /** Ablageziele von „Auf Server speichern“ — Ordner unter der Freigabe,
+   *  `{jahr}` und `{kw}` werden beim Ablegen eingesetzt. Nie leer. */
+  ziel_mappe_a350: string;
+  ziel_mappe_a380: string;
+  ziel_logistik: string;
+  ziel_weight_report: string;
   zuletzt_am: string | null;
   zuletzt_text: string | null;
 }
@@ -497,6 +503,7 @@ export interface PasswortStand {
 
 const SCAN_FELDER =
   "intervall_s,modus,rechner,freigabe,domaene,benutzer,eingang,ausgang,archiv," +
+  "ziel_mappe_a350,ziel_mappe_a380,ziel_logistik,ziel_weight_report," +
   "zuletzt_am,zuletzt_text";
 
 export const scanKeys = {

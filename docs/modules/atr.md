@@ -244,16 +244,34 @@ speichern" in der Durchsicht auf den Dateiserver (`POST
 erzeugt sind — ohne beide weist der Endpunkt mit 400 ab. Im Altprojekt tat das
 `_server_targets` in `backend/app/routers/atr_delivery.py`.
 
-Die drei Ziele stehen in `app/atr/ziele.py`, nicht in den Einstellungen — so
-standen sie auch im Altprojekt, und ein Tippfehler in einer Maske legte ein ATR
-still an einen Ort, an dem niemand nachsieht. Rechner, Freigabe und
-Dienstkonto kommen aus den Scan-Einstellungen.
+Die Ordner stehen in den Einstellungen unter `/einstellungen#atr`, bei Rechner,
+Freigabe und Dienstkonto (Spalten `ziel_*` in `atr_scan`, Migration
+`0058_atr_ablageziele`). Im Altprojekt standen sie fest im Code; hier ändert sie
+die Plattform-Verwaltung — dieselbe Grenze wie für das übrige Ziel. Vorbelegt
+sind sie mit den Pfaden des Altprojekts, Zeichen für Zeichen; ein Test
+vergleicht die Vorbelegung mit ihnen.
 
-| Datei | Ordner unter der Freigabe |
-|---|---|
-| Mappe | `1300 - Qualität\1320_QS\132002_WA-Prüfung\132002_02_TR_Spec_QAA\DIEHL\<A350 oder A380>\ATR_Acceptance Test Report\<Jahresordner>` |
-| PDF | ``1200 - Logistik\Versand\ATR`S_Weight Reports_Firma Diehl_Portal`` |
-| PDF | `…\DIEHL\Weight Report für Firma Diehl ( verschicken )\<Jahr>\KW <nn>` |
+| Einstellung | Datei | Vorbelegung (Ordner unter der Freigabe) |
+|---|---|---|
+| Mappe A350 | Mappe | `1300 - Qualität\1320_QS\132002_WA-Prüfung\132002_02_TR_Spec_QAA\DIEHL\A350\ATR_Acceptance Test Report\ACM_ATR_A350_.....{jahr}` |
+| Mappe A380 | Mappe | `…\DIEHL\A380\ATR_Acceptance Test Report\ACM_ATR_A 380_.....{jahr}` |
+| PDF Logistik | PDF | ``1200 - Logistik\Versand\ATR`S_Weight Reports_Firma Diehl_Portal`` |
+| PDF Weight Report | PDF | `…\DIEHL\Weight Report für Firma Diehl ( verschicken )\{jahr}\KW {kw}` |
+
+**Was die Datenbank abweist:** ein leeres Ziel (schriebe in die Wurzel der
+Freigabe), `..` als Pfadbestandteil und andere Platzhalter als `{jahr}` und
+`{kw}` — ein `{jahr` legte sonst einen Ordner mit Klammer im Namen an. Die
+Maske übersetzt die Abweisung in einen Satz.
+
+**Dateiname wie im Altprojekt** (`delivery_filename_base`,
+`app/atr/format.py: dateiname_basis`), z. B.
+`ACM_ATR_WR_COC_A350_ATR-4820-01 BA1024796_FCRC_MSN 844_4501124711 6 BED Head Pos 190, 200`:
+Programm, ATR-Nummer, BA, Bereich, MSN, PO-Nummer, Bettvariante, erste Kategorie
+der Positionen, Bestellpositionen. Leere Teile fallen weg; die Positionsliste
+entfällt ganz, wenn der Name über 130 Zeichen käme. Denselben Namen trägt der
+Ausgang des automatischen Scans, das Etikett dort mit `_Container.docx`. Die
+Downloads in der Durchsicht heißen weiter `ATR.xlsx`, `ATR.pdf`,
+`Etikett.docx`.
 
 - **Programmweiche wie im Altprojekt:** enthält das Programm `380`, gilt A380,
   sonst A350. Der A380-Jahresordner heißt `ACM_ATR_A 380_.....<Jahr>` — mit

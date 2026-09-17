@@ -54,7 +54,7 @@ from app.parsing.atr_lieferschein import (
 from app.atr import dateiserver, scan as scan_modul, ziele as ziele_modul
 from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
-from app.atr.format import programmfamilie
+from app.atr.format import dateiname_basis, programmfamilie
 from app.atr.etikett import baue_container_etikett, baue_etikett
 from app.dokumente.pdf import PdfFehlgeschlagen, nach_pdf
 from app.atr.speicher import SpeicherFehler, ablegen
@@ -443,6 +443,16 @@ async def auf_server_ablegen(lieferung_id: str = Path(...)) -> AblageErgebnis:
                 sa.select(atr_lieferungen).where(atr_lieferungen.c.id == lieferung_id)
             )
         ).mappings().first()
+        positionen = [
+            dict(z)
+            for z in (
+                await sitzung.execute(
+                    sa.select(atr_positionen)
+                    .where(atr_positionen.c.lieferung_id == lieferung_id)
+                    .order_by(atr_positionen.c.reihenfolge)
+                )
+            ).mappings()
+        ]
     if lieferung is None:
         raise HTTPException(404, "Lieferung nicht gefunden.")
     if not lieferung["mappe_pfad"] or not lieferung["pdf_pfad"]:
@@ -454,20 +464,21 @@ async def auf_server_ablegen(lieferung_id: str = Path(...)) -> AblageErgebnis:
         )
 
     try:
-        _, ziel = await scan_modul.einstellungen()
+        einstellung, ziel = await scan_modul.einstellungen()
     except scan_modul.NichtEingerichtet as fehler:
         raise HTTPException(503, str(fehler)) from fehler
 
-    stamm = lieferung["lieferschein_nr"] or lieferung["quelle_dateiname"]
+    # Derselbe Name wie im Altprojekt — QS und Logistik suchen danach.
+    stamm = dateiname_basis(dict(lieferung), positionen)
     inhalt = {
-        "mappe": (f"{stamm}_ATR.xlsx", await _hole_datei(lieferung["mappe_pfad"])),
-        "pdf": (f"{stamm}_ATR.pdf", await _hole_datei(lieferung["pdf_pfad"])),
+        "mappe": (f"{stamm}.xlsx", await _hole_datei(lieferung["mappe_pfad"])),
+        "pdf": (f"{stamm}.pdf", await _hole_datei(lieferung["pdf_pfad"])),
     }
 
     heute = date.today()
     abgelegt: list[AbgelegtesZiel] = []
     gescheitert: list[GescheitertesZiel] = []
-    for serverziel in ziele_modul.ziele(lieferung["programm"]):
+    for serverziel in ziele_modul.ziele(lieferung["programm"], einstellung):
         name, daten = inhalt[serverziel.art]
         pfad = ziele_modul.pfad(serverziel, heute)
         try:
@@ -594,13 +605,15 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
 
     # Die Bytes kommen mit zurueck: der Scan legt sie zusaetzlich in den
     # Ausgangsordner auf dem Dateiserver.
-    stamm_name = lieferung["lieferschein_nr"] or lieferung["quelle_dateiname"]
+    # Die Namen des Altprojekts (`generate_and_deliver`): das Etikett trägt
+    # `_Container`, Mappe und PDF nur die Endung.
+    stamm_name = dateiname_basis(daten, positionen)
     dateien: list[tuple[str, bytes]] = [
-        (f"{stamm_name}_ATR.xlsx", mappe),
-        (f"{stamm_name}_Etikett.docx", etikett),
+        (f"{stamm_name}.xlsx", mappe),
+        (f"{stamm_name}_Container.docx", etikett),
     ]
     if pdf_pfad is not None:
-        dateien.insert(1, (f"{stamm_name}_ATR.pdf", pdf))
+        dateien.insert(1, (f"{stamm_name}.pdf", pdf))
 
     return (
         ErzeugtErgebnis(
