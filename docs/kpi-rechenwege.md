@@ -118,6 +118,16 @@ Deutsches Zahlenformat wird beim Parsen umgewandelt (`.` Tausender weg, `,` → 
 ### Kundenanteil (Aufträge) / Kundenanteil (Rechnungen)
 
 - **Anzeige**: zwei Wasserfall-Karten „Kundenanteil (Aufträge)" und „Kundenanteil (Rechnungen)". `GET /api/data/sales/customer-share?source=auftraege|revenues&top_n=14`.
+- **Anzeige neu**: liegende Balken, ein Kunde je Zeile, Name und Anteil in der
+  Zeile, Betrag am Balken — wie im Altprojekt der Wasserfall, wo der Name
+  ebenfalls an seiner Zeile steht. Zuerst die drei größten, aufklappbar bis 14,
+  dahinter eine Zeile „Restkunden (n)".
+  **Warum keine Legende neben Säulen:** Farbe trägt hier keine Kennung. Es gibt
+  acht unterscheidbare Kategorienfarben; eine neunte fällt im Palettenprüfer
+  durch (`ΔE 1,0` gegen eine vorhandene). Bei vierzehn aufgeklappten Kunden
+  trugen ab dem neunten alle denselben Grauton, und die Legende war der Reihe
+  nach nicht mehr zuzuordnen. Die acht Farben bleiben für die Wiedererkennung
+  desselben Kunden in beiden Karten.
 - **Daten**: je nach `source` `auftraege` oder `revenues`: `customer_name`, `wert_eur`, `datum`.
 - **Rechenweg**:
   1. `SUM(wert_eur)` je `customer_name` im Fenster, absteigend sortiert.
