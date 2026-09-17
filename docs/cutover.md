@@ -66,6 +66,26 @@ Ohne diesen Schritt gibt es keinen Weg zurück. Erst danach weitermachen.
 
 ---
 
+## 0b. Vorher: Wohin zeigen die Pis?
+
+**ungeprüft** — braucht einen Pi.
+
+Schritt 1 schließt `:8000` am Altprojekt. Zeigen die Pis heute direkt auf die API (`http://192.9.201.9:8000`), sind ab diesem Moment alle Bildschirme schwarz — lange bevor der Signage-Stack läuft. Auf einem Pi nachsehen:
+
+```bash
+grep -h 'SIGNAGE_API_BASE\|--app=' /home/signage/.config/systemd/user/signage-sidecar.service \
+                                    /home/signage/.config/systemd/user/signage-player.service
+```
+
+| Adresse enthält | Folge |
+|---|---|
+| `:8000` | Signage zuerst umziehen: Schritt 3 (nur `acm-signage`), 4d und 5, **dann** Schritt 1. Die Übernahme läuft dann noch gegen `lumeapps_default` und `lumeapps-db-1` — die Namen stimmen vor 1c ohne Weiteres. |
+| `:80` oder keinen Port | Reihenfolge wie unten. Das gehärtete Altprojekt liefert `/player/*` und `/api/signage/*` weiter über Caddy aus. |
+
+Alle Pis prüfen, nicht nur einen — sie wurden nicht zwingend mit derselben Adresse eingerichtet.
+
+---
+
 ## 1. Altprojekt härten
 
 **geprüft** — lokal gegen den vollständigen Stack: keine Host-Ports außer `:80`, API als `uid 10001`, kein `--reload`, gebaute Oberfläche unter `/`, Anmeldung mit echtem Directus-Token erfolgreich.
@@ -91,8 +111,15 @@ cd /home/acm
 git clone https://github.com/johann-b82/lumeapps.git lumeapps-neu
 cd lumeapps-neu
 cp ../lumeapps/.env ../lumeapps/docker-compose.override.yml .
+grep -q '^COMPOSE_PROJECT_NAME=' .env || echo 'COMPOSE_PROJECT_NAME=lumeapps' >> .env
 git rev-parse --short HEAD > DEPLOYED_COMMIT
 ```
+
+Die `COMPOSE_PROJECT_NAME`-Zeile ist keine Kosmetik. Compose leitet den
+Projektnamen aus dem Verzeichnis ab, und das Altprojekt setzt keinen eigenen.
+Ohne die Zeile hießen nach 1c Netz und Datenbank `lumeapps-neu_default` und
+`lumeapps-neu-db-1` — und jeder Übernahme-Befehl in Schritt 4, der
+`lumeapps_default` und `lumeapps-db-1` nennt, ginge ins Leere.
 
 Die Datenverzeichnisse (`postgres_data`, `directus_*`, `caddy_*`, `backups`,
 `certs`, `frontend_node_modules`) bleiben vorerst im alten Verzeichnis — sie
@@ -157,6 +184,11 @@ for d in postgres_data directus_database directus_extensions directus_uploads \
          caddy_data caddy_config backups certs frontend_node_modules; do
   [ -e "/home/acm/lumeapps/$d" ] && mv "/home/acm/lumeapps/$d" /home/acm/lumeapps-neu/
 done
+# die PPTX-Folien liegen im alten Quellbaum (gitignored) und fehlen im Klon;
+# docker-compose.prod.yml mountet ./backend/media — ohne sie zeigen die
+# Bildschirme bei jeder PPTX-Folie ein leeres Bild
+[ -e /home/acm/lumeapps/backend/media ] && [ ! -e /home/acm/lumeapps-neu/backend/media ] \
+  && mv /home/acm/lumeapps/backend/media /home/acm/lumeapps-neu/backend/
 
 # 3) neuen Stack hochfahren
 cd /home/acm/lumeapps-neu
@@ -174,6 +206,8 @@ $C exec api python -c 'import pytest'              # ModuleNotFoundError
 $C exec api python -c 'import socket; print(socket.gethostbyname("api.personio.de"))'
 curl -sI http://127.0.0.1/ | grep -i x-content-type # nosniff
 curl -s http://127.0.0.1/api/hr/embed/birthdays/this-week | head -c 200
+$C exec api ls /app/media/slides | head -3            # PPTX-Folien sind da
+docker network ls --format '{{.Name}}' | grep lumeapps  # lumeapps_default, nicht lumeapps-neu_default
 ```
 
 Die DNS-Zeile ist die wichtigste: löst sie nicht auf, fehlt die Override-Datei im
@@ -204,6 +238,8 @@ for d in postgres_data directus_database directus_extensions directus_uploads \
          caddy_data caddy_config backups certs frontend_node_modules; do
   [ -e "/home/acm/lumeapps-neu/$d" ] && mv "/home/acm/lumeapps-neu/$d" /home/acm/lumeapps/
 done
+[ -e /home/acm/lumeapps-neu/backend/media ] && [ ! -e /home/acm/lumeapps/backend/media ] \
+  && mv /home/acm/lumeapps-neu/backend/media /home/acm/lumeapps/backend/
 cd /home/acm/lumeapps && docker compose up -d
 ```
 
@@ -241,14 +277,26 @@ nicht gleichzeitig haben. Beide Compose-Dateien sind dafür vorbereitet:
 | `acm-signage` | `SIGNAGE_HTTP_PORT` | 8080 | 8080, kollidiert mit nichts |
 
 Vor dem ersten Start in `.env` auf die Adresse setzen, unter der der Browser den
-Stack **jetzt** erreicht — also mit Port: `SITE_URL`, `SUPABASE_PUBLIC_URL`,
-`API_EXTERNAL_URL` auf `http://192.9.201.9:8081`.
+Stack **jetzt** erreicht — also mit Port und mit den Pfaden aus `.env.example`:
 
-**`API_EXTERNAL_URL` ist der Aussteller im Token**; `compute` prüft ihn. Wenn die
+```bash
+SITE_URL=http://192.9.201.9:8081
+SUPABASE_PUBLIC_URL=http://192.9.201.9:8081/supabase
+API_EXTERNAL_URL=http://192.9.201.9:8081/supabase/auth/v1
+```
+
+**`API_EXTERNAL_URL` ist der Aussteller im Token**; `compute` prüft ihn, und der
+Signage-Stack auch (`PLATFORM_JWT_ISSUER`, siehe 4d). Wenn die
 Plattform später auf Port 80 umzieht, ändert sich der Aussteller und alle
 ausgegebenen Token werden ungültig — jede angemeldete Person muss sich einmal neu
 anmelden. Das ist verkraftbar, aber es soll niemanden überraschen. Wer es vermeiden
 will, schaltet das Altprojekt in einem Zug ab und startet die Plattform gleich auf 80.
+
+Beim Umzug auf 80 **im selben Zug** `PLATFORM_JWT_ISSUER` in
+`/home/acm/acm-signage/.env` nachziehen und `docker compose up -d signage-api`
+dort ausführen. Sonst antwortet die Signage-Verwaltung mit 401 — die Bildschirme
+laufen davon unberührt weiter. Dasselbe gilt, falls `JWT_SECRET` der Plattform je
+wechselt (`PLATFORM_JWT_SECRET`).
 
 ```bash
 docker compose up -d --build
@@ -377,9 +425,65 @@ docker compose exec db psql -U supabase_admin -d postgres \
  Erst „Verbindung
 prüfen", dann den Schalter umlegen.
 
-### 4b. Signage
+### 4d. Signage
 
-Ablauf in `acm-signage/docs/setup.md`. Vorher die alten Verzeichnisse in den Medienspeicher kopieren, danach `SIGNAGE_DEVICE_JWT_SECRET` aus der alten `.env` übernehmen — ohne das zeigt jeder Bildschirm wieder einen Kopplungscode.
+**teilweise geprüft** — Übernahme lokal gegen eine echte Alt-Datenbank gefahren (`acm-signage/docs/setup.md`), die Adressen am Host nicht.
+
+Hintergrund und Einzelheiten in `acm-signage/docs/setup.md`. Die Pfade unten gelten nach Schritt 1c; wer Signage nach 0b vor Schritt 1 umzieht, liest `lumeapps` statt `lumeapps-neu`.
+
+**Stack aufsetzen.** Das Geräte-Secret gehört vor dem ersten Start in die `.env` — `init-env.sh` erzeugt ein neues, und mit dem neuen wäre jedes bestehende Gerätetoken ungültig: jeder Bildschirm zeigte wieder einen Kopplungscode.
+
+```bash
+cd /home/acm
+git clone https://github.com/johann-b82/acm-signage.git
+cd acm-signage
+bash scripts/init-env.sh /home/acm/acm-plattform/.env   # übernimmt JWT_SECRET und API_EXTERNAL_URL
+
+ALT=$(grep -E '^SIGNAGE_DEVICE_JWT_SECRET=' /home/acm/lumeapps-neu/.env | cut -d= -f2-)
+[ -n "$ALT" ] && sed -i "s|^SIGNAGE_DEVICE_JWT_SECRET=.*|SIGNAGE_DEVICE_JWT_SECRET=${ALT}|" .env
+grep -E '^(SIGNAGE_DEVICE_JWT_SECRET|PLATFORM_JWT_ISSUER|SIGNAGE_HTTP_PORT|SIGNAGE_DATA_DIR)=' .env
+
+docker compose up -d --build
+curl -s http://127.0.0.1:8080/health                    # {"status":"ok"}
+```
+
+`SIGNAGE_DATA_DIR` bleibt auf `./data`, also `/home/acm/acm-signage/data` — `/srv` ist nicht beschreibbar (siehe oben). Der Bau erzeugt auch das Player-Bundle; auf dem knappen Speicher des Hosts nicht während der Betriebszeit bauen.
+
+`PLATFORM_JWT_ISSUER` muss Zeichen für Zeichen `API_EXTERNAL_URL` der Plattform sein (Schritt 3). Stimmt er nicht, geht die Verwaltung mit 401 ab, die Bildschirme nicht.
+
+**Daten übernehmen.** Alte Medien und Folien in den Medienspeicher legen, dann trocken, dann echt:
+
+```bash
+mkdir -p data/media/uebernahme
+cp -r /home/acm/lumeapps-neu/directus_uploads      data/media/uebernahme/uploads
+cp -r /home/acm/lumeapps-neu/backend/media/slides  data/media/uebernahme/slides
+
+docker network connect lumeapps_default $(docker compose ps -q signage-api)
+QUELLE="postgresql://<user>:<passwort>@lumeapps-db-1:5432/<datenbank>"
+
+docker compose exec signage-api python -m app.uebernahme --quelle "$QUELLE" \
+  --alte-medien /app/media/uebernahme/uploads --alte-folien /app/media/uebernahme/slides \
+  --plattform-url http://192.9.201.9:8081 --trocken
+# dasselbe ohne --trocken; Rückgabewert 1 heißt: eine Datei fehlte, sie steht namentlich in der Ausgabe
+
+docker network disconnect lumeapps_default $(docker compose ps -q signage-api)
+rm -rf data/media/uebernahme
+```
+
+`--plattform-url` ist die Adresse, unter der der **Pi** die Plattform erreicht — sie steht danach vor jeder eingebetteten Seite. Zieht die Plattform später auf Port 80 um, den Lauf mit der neuen Adresse wiederholen oder die Einträge in der Verwaltung anpassen.
+
+**Einbettung erlauben.** Der Player läuft auf `http://192.9.201.9:8080`, einem anderen Ursprung als die Plattform. `EMBED_FRAME_ANCESTORS` in der Plattform-`.env` muss ihn zulassen — die Vorgabe `*` tut das; wer einschränkt, nimmt ihn auf:
+
+```bash
+EMBED_FRAME_ANCESTORS='self' http://192.9.201.9:8080
+```
+
+**Verwaltung prüfen.** In der Plattform die Kachel „Signage" öffnen: Geräte, Playlists und Medien müssen erscheinen. Kommt ein Fehler, zuerst `SIGNAGE_API_URL` der Plattform (Vorgabe `http://host.docker.internal:8080`) und den Aussteller prüfen:
+
+```bash
+docker compose -f /home/acm/acm-plattform/docker-compose.yml exec web \
+  wget -qO- http://host.docker.internal:8080/health
+```
 
 **Die Playlist-Einträge der HR-Tafeln müssen neu gesetzt werden.** Die alten Adressen `/embed/birthdays` und `/embed/joiners` waren offen; die neuen verlangen einen signierten Token je Eintrag. Erzeugen unter `/einstellungen#anzeigen` der Plattform, je einen für „Geburtstage der Woche" und „Neu im Team", und die fertige Adresse in den Playlist-Eintrag vom Typ „Adresse" eintragen. Dazu muss `EMBED_SECRET` in der `.env` der Plattform gesetzt sein — sonst lässt sich keine Adresse erzeugen. Hintergrund: `docs/modules/anzeigen.md`.
 
@@ -389,9 +493,30 @@ Ablauf in `acm-signage/docs/setup.md`. Vorher die alten Verzeichnisse in den Med
 
 **ungeprüft** — braucht die Geräte.
 
-`SIGNAGE_API_URL` in den Units auf den Signage-Stack zeigen lassen, Sidecar und Player neu starten. Runbook § 9. Das Pairing bleibt erhalten, wenn Schritt 4b gelaufen ist und das Geräte-Secret übernommen wurde.
+Das Pairing bleibt erhalten, wenn Schritt 4d gelaufen ist und das Geräte-Secret übernommen wurde. Sonst zeigt der Bildschirm einen Kopplungscode — dann unter `/signage/pair` neu koppeln.
 
-Ein Gerät zuerst, dann den Rest.
+Ein Gerät zuerst, dann den Rest. Auf dem Pi (Runbook `acm-signage/docs/operator-runbook-lumeapps.md` § 9.5):
+
+```bash
+sudo SIGNAGE_API_URL=http://192.9.201.9:8080 /opt/signage/scripts/provision-pi.sh
+
+SIGNAGE_UID=$(id -u signage)
+sudo -u signage XDG_RUNTIME_DIR=/run/user/${SIGNAGE_UID} systemctl --user daemon-reload
+sudo -u signage XDG_RUNTIME_DIR=/run/user/${SIGNAGE_UID} systemctl --user restart signage-sidecar signage-player
+```
+
+`SIGNAGE_API_URL` braucht Schema und Port. Das Skript überschreibt die Units jedes Mal — das ist gewollt und der Weg, die Adresse zu ändern.
+
+Prüfen:
+
+```bash
+grep -h 'SIGNAGE_API_BASE\|--app=' /home/signage/.config/systemd/user/signage-*.service   # :8080
+curl -s http://localhost:8080/health                                                      # Sidecar
+```
+
+Der Port 8080 im zweiten Befehl ist der Sidecar **auf dem Pi**, nicht der Signage-Stack. In der Verwaltung muss das Gerät nach spätestens 30 Sekunden als online erscheinen.
+
+Zurück: dasselbe mit der alten Adresse aus 0b. Das Geräte-Secret ist auf beiden Seiten dasselbe, die Kopplung hält also auch rückwärts.
 
 ---
 
@@ -407,7 +532,8 @@ Ein Gerät zuerst, dann den Rest.
 
 | Prüfung | Erwartung |
 |---|---|
-| Bildschirme | zeigen Inhalt, kein Kopplungscode |
+| Bildschirme | zeigen Inhalt, kein Kopplungscode, PPTX-Folien und HR-Tafeln nicht leer |
+| Kachel „Signage" in der Plattform | Geräte online, Medien mit Vorschau |
 | `docker compose ps` in beiden Projekten | alles `healthy` |
 | Anmeldung einer übernommenen Person | funktioniert, Kacheln passen zur Gruppe |
 | Kennzahlen Vertrieb | Zahlen wie im Altprojekt |

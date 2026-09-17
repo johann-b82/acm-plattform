@@ -51,7 +51,7 @@ Anwendung nur auf dem Linux-App-Host, mit Freigabe (Entscheidung F). macOS-Entwi
 ```bash
 df -h /
 sudo du -sh /var/lib/docker/containers/*/*-json.log | sort -h | tail
-du -sh /srv/acm/* /srv/signage/*
+du -sh /home/acm/acm-plattform/* /home/acm/acm-signage/data/*
 docker container prune -f
 docker image prune -af
 ```
