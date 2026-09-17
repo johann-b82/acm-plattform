@@ -48,6 +48,14 @@ Diese Regeln gelten für alle Dashboards, sofern die KPI-Notiz nichts anderes sa
 
 Übersteuerbar per `granularity=daily|weekly|monthly|quarterly|yearly`. Bucket-Ränder werden auf das Fenster geklemmt. Pro Bucket wird exakt dieselbe Formel wie für die Kachel gerechnet.
 
+**Ausnahme Umsatzverlauf: immer monatlich** (`UMSATZ_TAKT` in
+`apps/web/src/lib/kpi/vertrieb.ts`). So macht es auch das Altprojekt
+(`RevenueChart.tsx`: `const GRANULARITY = "monthly"`). Umsatz wird nicht
+täglich gebucht — im Tagestakt stand in der Monatsansicht für jeden Tag ein
+Punkt und die Fläche riss an jedem Tag ohne Buchung auf, obwohl keine Zahl
+fehlte. Die Monatsansicht zeigt damit einen Punkt, daneben den Vormonat als
+Vergleich.
+
 ### Zielwerte
 
 Zielwerte stehen in `app_settings` (`backend/app/models/_base.py`) und werden über `PATCH /api/settings` gepflegt. Quoten sind als **Bruch** gespeichert (0.02 = 2 %), das Settings-UI zeigt und nimmt Prozent. Der PATCH-Handler überspringt `None`-Werte, ein Zielwert lässt sich über diesen Weg **nicht auf leer zurücksetzen** (siehe Auffälligkeiten).

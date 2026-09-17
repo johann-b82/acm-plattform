@@ -1,4 +1,4 @@
-import { rpc, takt, type Zeitraum } from "@/lib/kpi/gemeinsam";
+import { rpc, type Takt, type Zeitraum } from "@/lib/kpi/gemeinsam";
 import type { Fenster, Vergleichsworte } from "@/lib/kpi/vergleich";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
@@ -64,6 +64,17 @@ export interface Einzelauftrag {
 /** Mehr liefert PostgREST in einer Antwort nicht. */
 const SEITE = 1000;
 
+/**
+ * Der Umsatzverlauf rechnet **immer** in Monaten, unabhängig vom Fenster.
+ *
+ * Wie im Altprojekt (`RevenueChart.tsx`: `const GRANULARITY = "monthly"`). Der
+ * fensterabhängige Takt aus `gemeinsam.ts` passt für Kennzahlen, die täglich
+ * anfallen; Umsatz wird nicht täglich gebucht. In der Monatsansicht standen
+ * damit rund 30 Tagespunkte gegen eine Handvoll Buchungen — die Fläche riss
+ * an jedem gebuchtlosen Tag auf, obwohl nichts fehlte.
+ */
+export const UMSATZ_TAKT: Takt = "month";
+
 export const vertriebApi = {
   summe: async (von: string | null, bis: string | null): Promise<VertriebSumme> => {
     const rows = await rpc<VertriebSumme[]>("kpi_vertrieb_summe", { von, bis });
@@ -72,8 +83,8 @@ export const vertriebApi = {
     );
   },
   /** Verlauf für ein ausdrückliches Fenster — auch das Vergleichsfenster, das
-   *  denselben Takt wie der gewählte Zeitraum braucht. */
-  verlauf: (von: string | null, bis: string | null, t = takt(von, bis)) =>
+   *  denselben Takt braucht wie die laufende Reihe. */
+  verlauf: (von: string | null, bis: string | null, t: Takt = UMSATZ_TAKT) =>
     rpc<VerlaufPunkt[]>("kpi_vertrieb_verlauf", { von, bis, takt: t }),
   /** Ohne `top_n` jeder Kunde, ohne Sammelzeile (Migration 0041). */
   kundenanteil: (
