@@ -29,7 +29,7 @@ import { useDringlichkeit } from "@/lib/tafeln";
 import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 import { Klappbar } from "../klappbar";
 import { Standortfilter, umschalten } from "../standortfilter";
-import { Blaettern, Matrixsuche, useMatrixseiten } from "../matrixseiten";
+import { Matrixsuche, useMatrixseiten } from "../matrixseiten";
 
 /**
  * Register „Stand der Mitarbeiter“.
@@ -254,7 +254,10 @@ function Gesamtmatrix({
   }, [stand]);
 
   const suchwert = useCallback((p: Person) => `${p.name ?? ""} ${p.abteilung ?? ""}`, []);
-  const seiten = useMatrixseiten(personen, suchwert);
+  // Alle Personen auf einmal: die Gesamtmatrix ist der Nachweis „jede Person
+  // gegen jede Pflichtschulung" (Migration 0034). Mit 25 Zeilen je Seite
+  // zeigte sie von 82 Personen ein knappes Drittel.
+  const seiten = useMatrixseiten(personen, suchwert, { alleAufEinmal: true });
   const heuteDate = useMemo(() => new Date(heute), [heute]);
 
   return (
@@ -334,7 +337,6 @@ function Gesamtmatrix({
                 </tbody>
               </table>
             </div>
-            <Blaettern fenster={seiten.fenster} onSeite={seiten.setSeite} beschriftung={worte.schulungenReg.matrixTitel} />
           </>
         )}
       </div>
