@@ -464,7 +464,8 @@ async def auf_server_ablegen(lieferung_id: str = Path(...)) -> AblageErgebnis:
         )
 
     try:
-        einstellung, ziel = await scan_modul.einstellungen()
+        # Nur der Zugang — Eingang und Archiv braucht der Scan, nicht die Ablage.
+        einstellung, ziel = await scan_modul.zugang()
     except scan_modul.NichtEingerichtet as fehler:
         raise HTTPException(503, str(fehler)) from fehler
 

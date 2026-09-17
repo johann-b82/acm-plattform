@@ -79,7 +79,7 @@ async def _datei(pfad: str, was: str = "Die Datei") -> bytes:
 def ablauf(schreibe):
     """Einstellungen, Eimer und Dateiserver als Attrappen."""
     return (
-        patch.object(scan_modul, "einstellungen", _einstellungen),
+        patch.object(scan_modul, "zugang", _einstellungen),
         patch.object(atr_router, "_hole_datei", _datei),
         patch.object(atr_router.dateiserver, "schreibe", schreibe),
     )

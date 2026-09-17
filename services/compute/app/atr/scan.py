@@ -54,12 +54,33 @@ class Ergebnis:
         return ", ".join(teile)
 
 
+#: Was jede Verbindung zum Dateiserver braucht.
+_ZUGANG = ("rechner", "freigabe", "benutzer")
+#: Was der Scan zusätzlich braucht. Der Ausgang ist frei: ohne ihn legt der
+#: Scan nur Entwürfe an.
+_SCAN_ORDNER = ("eingang", "archiv")
+
+
 async def einstellungen() -> tuple[dict, Ziel]:
-    """Liest die Einstellungen und baut daraus ein Ziel.
+    """Liest die Einstellungen und baut daraus ein Ziel für den Scan.
 
     Fehlt ein Stück — auch das Passwort —, ist der Scan nicht eingerichtet
     und läuft gar nicht erst an.
     """
+    return await _lies(_ZUGANG + _SCAN_ORDNER)
+
+
+async def zugang() -> tuple[dict, Ziel]:
+    """Wie `einstellungen`, aber ohne Eingang und Archiv.
+
+    Für „Auf Server speichern": die Ablage bringt ihre Ordner selbst mit
+    (`ziel_*`). Im Altprojekt ebenso getrennt —
+    `smb_credentials_from_settings` neben `smb_config_from_settings`.
+    """
+    return await _lies(_ZUGANG)
+
+
+async def _lies(pflicht: tuple[str, ...]) -> tuple[dict, Ziel]:
     async with SessionLocal() as sitzung:
         zeile = (
             await sitzung.execute(sa.select(atr_scan).where(atr_scan.c.id))
@@ -68,11 +89,7 @@ async def einstellungen() -> tuple[dict, Ziel]:
     if zeile is None:
         raise NichtEingerichtet("Es gibt keine Scan-Einstellungen.")
 
-    fehlt = [
-        name
-        for name in ("rechner", "freigabe", "benutzer", "eingang", "archiv")
-        if not zeile[name]
-    ]
+    fehlt = [name for name in pflicht if not zeile[name]]
     kennwort = await passwort()
     if not kennwort:
         fehlt.append("Passwort des Dienstkontos")
@@ -85,9 +102,9 @@ async def einstellungen() -> tuple[dict, Ziel]:
         domaene=zeile["domaene"],
         benutzer=zeile["benutzer"],
         passwort=kennwort,
-        eingang=zeile["eingang"],
+        eingang=zeile["eingang"] or "",
         ausgang=zeile["ausgang"] or "",
-        archiv=zeile["archiv"],
+        archiv=zeile["archiv"] or "",
     )
 
 

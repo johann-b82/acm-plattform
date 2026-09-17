@@ -283,6 +283,9 @@ Downloads in der Durchsicht heißen weiter `ATR.xlsx`, `ATR.pdf`,
 - **Jedes Ziel einzeln.** Scheitert eines, laufen die übrigen weiter, und die
   Meldung nennt das gescheiterte beim Namen. `abgelegt` setzt erst der
   vollständige Lauf.
+- **Nur der Zugang ist Pflicht.** Die Ablage braucht Rechner, Freigabe,
+  Benutzer und Passwort (`scan.zugang()`); Eingang und Archiv verlangt nur der
+  Scan. Im Altprojekt ebenso (`smb_credentials_from_settings`).
 - Rechte wie beim Erzeugen: `atr: editor`.
 
 ## Der Eingangsordner
