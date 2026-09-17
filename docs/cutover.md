@@ -10,6 +10,30 @@ Was hier steht, ist entweder lokal nachgestellt oder ausdrücklich als ungeprüf
 | **am Host geprüft** | auf `acm@192.9.201.9` selbst nachgesehen |
 | **ungeprüft** | braucht den Host, ist hier nur beschrieben |
 
+## Automatisiert
+
+`scripts/cutover/cutover.sh` fährt die Schritte unten vom Mac aus, per ssh auf den Host und die Pis:
+
+```bash
+cp scripts/cutover/cutover.conf.example scripts/cutover/cutover.conf   # Host, Pis, Klone eintragen
+bash scripts/cutover/cutover.sh schritt vorab   # nur lesen: Werkzeuge, Speicher, Altprojekt, Pis
+bash scripts/cutover/cutover.sh plan            # Reihenfolge und was schon erledigt ist
+bash scripts/cutover/cutover.sh lauf            # alles Offene, hält vor jedem Ausfall an
+```
+
+- **Haltepunkte:** vor 1c, vor jedem echten Datenlauf (4a, 4d), vor dem ersten Pi und vor den übrigen. Weiter geht es nur mit ausgeschriebenem `ja`. Schlägt eine Prüfung nach 1c oder an einem Pi fehl, bietet das Skript den Rückweg an; von Hand: `cutover.sh zurueck 1c` bzw. `cutover.sh zurueck 5 [PI]`.
+- **Fortsetzen:** Erledigte Schritte stehen auf dem Host unter `/home/acm/.cutover`. `lauf` überspringt sie; `schritt X` fährt einen Schritt erneut.
+- **Reihenfolge:** 0b liest die Adresse jedes Pis. Zeigt einer auf `:8000`, zieht Signage vor der Härtung um (3, 4d, 5, dann 1).
+- **Code** kommt per `git archive` aus den lokalen Klonen, der Host braucht kein GitHub-Konto. Die Oberfläche des Altprojekts baut der Mac (1b).
+- **Secrets** liest das Skript auf dem Host aus den `.env`-Dateien; sie erscheinen in keiner Ausgabe. Die Passwortliste neuer Zugänge liegt nur auf dem Host (`acm-plattform/zugaenge-*.csv`, 0600).
+- **Pis:** Das Skript tauscht nur die Adresse in den zwei Units und sichert die alten als `*.vor-cutover`, statt `provision-pi.sh` neu zu fahren — kein apt, kein git, Rückweg exakt.
+- **Bleibt von Hand**, das Skript hält dort an und zeigt die Befehle: Zertifikat (2), Firmenlogo und ATR-Eingangsordner (4b), signierte Adressen der HR-Tafeln (4d), Host-Vorlagen mit `sudo` (6), Umzug der Plattform auf Port 80.
+- **Medienverzeichnis:** `signage-api` läuft als uid 10001. Das Skript gibt `acm-signage/data/media` diesem Nutzer (per `docker run`, ohne `sudo`); von Hand angelegt gehört es `acm`, und Uploads wie Übernahme scheitern.
+
+- **Ports:** Schritt 3 legt Kong auf `127.0.0.1:8010` (Vorgabe 8000 ist die alte Dev-API, der Rückweg von 1c startete sonst nicht) und prüft vor dem ersten Start, ob Plattform-, Kong- und Postgres-Port frei sind. `POSTGRES_PORT` lässt sich nicht verlegen; deshalb nimmt 1a der alten Datenbank ihren Host-Port (`docker-compose.cutover.yml`, `!reset`, Compose ab 2.24 — prüft `vorab`).
+
+Unit-Tests: `bash scripts/cutover/tests/unit.sh` (auch in CI). Gesamtlauf gegen einen nachgebauten Linux-Host und Pi: `scripts/cutover/tests/e2e/` — **geprüft** am 2026-09-16 von `vorab` bis `pruefen`, mit Rückwegen für 1c und 5. Nicht nachgestellt: die Reihenfolge für Pis auf `:8000`, echte Pi-Hardware, TLS.
+
 ## Der Host, wie er wirklich aussieht
 
 **am Host geprüft** (2026-09-10, aus dem LAN)
@@ -34,17 +58,17 @@ docker compose -f docker-compose.yml config | grep -c dns:   # 0
 docker compose config | grep -c dns:                          # 1
 ```
 
-Jeder Aufruf mit dem Prod-Overlay nennt die Override-Datei deshalb **mit**:
+Jeder Aufruf mit dem Prod-Overlay nennt die Override-Datei deshalb **mit** — und als letzte die in 1a angelegte `docker-compose.cutover.yml`:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml <befehl>
+docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml <befehl>
 ```
 
 Der Kürze halber steht unten `$C` dafür:
 
 ```bash
-cd /home/acm/lumeapps
-C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+cd /home/acm/lumeapps-neu
+C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml"
 ```
 
 ---
@@ -90,6 +114,8 @@ Alle Pis prüfen, nicht nur einen — sie wurden nicht zwingend mit derselben Ad
 
 **geprüft** — lokal gegen den vollständigen Stack: keine Host-Ports außer `:80`, API als `uid 10001`, kein `--reload`, gebaute Oberfläche unter `/`, Anmeldung mit echtem Directus-Token erfolgreich.
 
+**Nachtrag 2026-09-16, gegen einen nachgebauten Linux-Host** (`scripts/cutover/tests/e2e`): Der lokale Lauf unter macOS hatte eine Lücke. Unter Linux scheitert das `mv` von `postgres_data` als `acm` an den Rechten, die Schleife lief weiter, und der neue Stack startete mit einer leeren Datenbank — alle bisherigen Prüfungen grün. Die Befehle in 1c verschieben deshalb als root per `docker run`, und die Prüfung zählt Personen in der Datenbank.
+
 **Vorher am Host gemessen** (2026-09-10, aus dem LAN), damit hinterher vergleichbar ist, was sich geändert hat:
 
 | Befund | Zustand heute |
@@ -125,8 +151,22 @@ git clone https://github.com/johann-b82/lumeapps.git lumeapps-neu
 cd lumeapps-neu
 cp ../lumeapps/.env ../lumeapps/docker-compose.override.yml .
 grep -q '^COMPOSE_PROJECT_NAME=' .env || echo 'COMPOSE_PROJECT_NAME=lumeapps' >> .env
+cat > docker-compose.cutover.yml <<'YAML'
+services:
+  db:
+    ports: !reset []
+YAML
 git rev-parse --short HEAD > DEPLOYED_COMMIT
 ```
+
+`docker-compose.cutover.yml` nimmt der alten Datenbank den Host-Port. Am Host
+bindet sie `127.0.0.1:5432`; die Plattform braucht in Schritt 3 denselben Port,
+und ihr `POSTGRES_PORT` lässt sich nicht verlegen (Supabase nutzt ihn intern).
+`!reset` leert die Liste, gleich aus welcher Datei die Bindung stammt — die
+Override-Datei mit den DNS-Servern bleibt, wie sie ist. Braucht Docker Compose
+ab 2.24 (`docker compose version`). Zugriff auf die alte Datenbank danach über
+`docker exec lumeapps-db-1 psql …`. Auch der Rückweg in 1c startet das alte
+Projekt mit dieser Datei — nach Schritt 3 hält die Plattform den Port.
 
 Die `COMPOSE_PROJECT_NAME`-Zeile ist keine Kosmetik. Compose leitet den
 Projektnamen aus dem Verzeichnis ab, und das Altprojekt setzt keinen eigenen.
@@ -135,8 +175,13 @@ Ohne die Zeile hießen nach 1c Netz und Datenbank `lumeapps-neu_default` und
 `lumeapps_default` und `lumeapps-db-1` nennt, ginge ins Leere.
 
 Die Datenverzeichnisse (`postgres_data`, `directus_*`, `caddy_*`, `backups`,
-`certs`, `frontend_node_modules`) bleiben vorerst im alten Verzeichnis — sie
+`frontend_node_modules`) bleiben vorerst im alten Verzeichnis — sie
 ziehen erst beim Umschalten um, wenn nichts mehr darauf schreibt.
+
+`certs/` zieht **nicht** mit: Der neue Stand hat es eingecheckt (nur eine
+README), ein `mv` legte das alte als `certs/certs` hinein. Im alten Baum liegt
+dort nur das kompromittierte mkcert-Material, das nirgends eingebunden ist —
+neues Material kommt in Schritt 2 nach `/home/acm/certs`.
 
 > **Nicht per rsync über das laufende Verzeichnis.**
 >
@@ -192,33 +237,42 @@ ist der einzige Moment mit Ausfall — Sekunden bis eine Minute.
 #    die Container um Port 80 und die Netzwerke
 cd /home/acm/lumeapps && docker compose down
 
-# 2) Datenverzeichnisse mitnehmen (jetzt schreibt nichts mehr darauf)
+# 2) Datenverzeichnisse mitnehmen (jetzt schreibt nichts mehr darauf).
+#    Als root in einem Wegwerf-Container: postgres_data gehört dem Postgres-Nutzer
+#    (drwx------), und ein Verzeichnis in einen anderen Ordner zu verschieben
+#    verlangt Schreibrecht auf das Verzeichnis selbst — ein mv als acm scheitert
+#    mit «Permission denied», und der neue Stack legte eine LEERE Datenbank an.
 for d in postgres_data directus_database directus_extensions directus_uploads \
-         caddy_data caddy_config backups certs frontend_node_modules; do
-  [ -e "/home/acm/lumeapps/$d" ] && mv "/home/acm/lumeapps/$d" /home/acm/lumeapps-neu/
+         caddy_data caddy_config backups frontend_node_modules; do
+  [ -e "/home/acm/lumeapps/$d" ] && docker run --rm -v /home/acm:/h alpine mv "/h/lumeapps/$d" /h/lumeapps-neu/
 done
 # die PPTX-Folien liegen im alten Quellbaum (gitignored) und fehlen im Klon;
 # docker-compose.prod.yml mountet ./backend/media — ohne sie zeigen die
 # Bildschirme bei jeder PPTX-Folie ein leeres Bild
 [ -e /home/acm/lumeapps/backend/media ] && [ ! -e /home/acm/lumeapps-neu/backend/media ] \
-  && mv /home/acm/lumeapps/backend/media /home/acm/lumeapps-neu/backend/
+  && docker run --rm -v /home/acm:/h alpine mv /h/lumeapps/backend/media /h/lumeapps-neu/backend/
+
+# Nichts darf liegen geblieben sein — sonst NICHT starten, sondern zurück (unten)
+ls -d /home/acm/lumeapps/postgres_data /home/acm/lumeapps/directus_uploads 2>/dev/null \
+  && echo "NICHT STARTEN: Daten liegen noch im alten Baum"
 
 # 3) neuen Stack hochfahren
 cd /home/acm/lumeapps-neu
-C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml"
+C="docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.prod.yml -f docker-compose.cutover.yml"
 $C up -d --build
 ```
 
 Prüfen:
 
 ```bash
-$C ps --format '{{.Service}}\t{{.Ports}}'          # nur caddy auf :80
+$C ps --format '{{.Service}}\t{{.Ports}}'          # nur caddy auf :80, db ohne Port
 $C exec api id                                     # uid=10001
 $C exec api ls /app/tests                          # darf es nicht geben
 $C exec api python -c 'import pytest'              # ModuleNotFoundError
 $C exec api python -c 'import socket; print(socket.gethostbyname("api.personio.de"))'
 curl -sI http://127.0.0.1/ | grep -i x-content-type # nosniff
 curl -s http://127.0.0.1/api/hr/embed/birthdays/this-week | head -c 200
+$C exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "select count(*) from directus_users"'  # > 0, sonst leere Datenbank
 $C exec api ls /app/media/slides | head -3            # PPTX-Folien sind da
 docker network ls --format '{{.Name}}' | grep lumeapps  # lumeapps_default, nicht lumeapps-neu_default
 ```
@@ -248,12 +302,13 @@ Zurück geht es symmetrisch — der alte Baum ist unangetastet geblieben:
 ```bash
 cd /home/acm/lumeapps-neu && $C down
 for d in postgres_data directus_database directus_extensions directus_uploads \
-         caddy_data caddy_config backups certs frontend_node_modules; do
-  [ -e "/home/acm/lumeapps-neu/$d" ] && mv "/home/acm/lumeapps-neu/$d" /home/acm/lumeapps/
+         caddy_data caddy_config backups frontend_node_modules; do
+  [ -e "/home/acm/lumeapps-neu/$d" ] && docker run --rm -v /home/acm:/h alpine mv "/h/lumeapps-neu/$d" /h/lumeapps/
 done
 [ -e /home/acm/lumeapps-neu/backend/media ] && [ ! -e /home/acm/lumeapps/backend/media ] \
-  && mv /home/acm/lumeapps-neu/backend/media /home/acm/lumeapps/backend/
-cd /home/acm/lumeapps && docker compose up -d
+  && docker run --rm -v /home/acm:/h alpine mv /h/lumeapps-neu/backend/media /h/lumeapps/backend/
+cd /home/acm/lumeapps && docker compose -f docker-compose.yml -f docker-compose.override.yml \
+  -f /home/acm/lumeapps-neu/docker-compose.cutover.yml up -d
 ```
 
 ---

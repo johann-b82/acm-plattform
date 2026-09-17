@@ -1,0 +1,97 @@
+#!/bin/bash
+# Ersatz für `systemctl` auf dem Test-Pi.
+#
+# Jeder Aufruf landet in /tmp/systemctl.log. Nachgebildet ist das Verhalten,
+# auf das es beim Umschalten ankommt:
+#   daemon-reload        liest die Unit-Dateien ein (Kopie nach /tmp/systemd-loaded)
+#   restart|start UNIT   startet mit dem *eingelesenen* Stand — wer vorher kein
+#                        daemon-reload macht, bekommt die alte Adresse, wie bei systemd
+#   stop UNIT, is-active UNIT, cat UNIT, enable/disable (nur protokolliert)
+# signage-sidecar startet einen kleinen Stellvertreter auf 127.0.0.1:8080;
+# signage-player hat keinen Prozess (kein Chromium), nur einen Zustand.
+set -uo pipefail
+
+LOG=/tmp/systemctl.log
+LOADED=/tmp/systemd-loaded
+STATE=/tmp/systemd-state
+UNITS="$HOME/.config/systemd/user"
+
+[ -n "${SYSTEMCTL_NO_LOG:-}" ] || printf '%s %s\n' "$(date -Is)" "$*" >> "$LOG"
+
+args=()
+for a in "$@"; do
+  case "$a" in
+    --user|--no-pager|--quiet|-q|--now|--no-block) ;;
+    *) args+=("$a") ;;
+  esac
+done
+verb="${args[0]:-}"
+set -- "${args[@]:1}"
+
+norm() { case "$1" in *.service) echo "$1" ;; *) echo "$1.service" ;; esac; }
+
+sidecar_stop() {
+  if [ -f "$STATE/sidecar.pid" ]; then
+    kill "$(cat "$STATE/sidecar.pid")" 2>/dev/null || true
+    rm -f "$STATE/sidecar.pid"
+  fi
+  # Port freigeben lassen, bevor neu gestartet wird.
+  for _ in $(seq 20); do
+    curl -s -o /dev/null --max-time 1 http://127.0.0.1:8080/health || break
+    sleep 0.1
+  done
+}
+
+sidecar_start() {
+  local base
+  base=$(sed -n 's/^Environment=SIGNAGE_API_BASE=//p' "$LOADED/signage-sidecar.service" | tail -1)
+  SIGNAGE_API_BASE="$base" setsid nohup python3 /opt/signage/sidecar_standin.py \
+    >> /tmp/sidecar.log 2>&1 < /dev/null &
+  echo $! > "$STATE/sidecar.pid"
+  for _ in $(seq 30); do
+    curl -s -o /dev/null --max-time 1 http://127.0.0.1:8080/health && break
+    sleep 0.1
+  done
+}
+
+mkdir -p "$STATE"
+case "$verb" in
+  daemon-reload)
+    rm -rf "$LOADED"; mkdir -p "$LOADED"
+    cp "$UNITS"/*.service "$LOADED"/ 2>/dev/null
+    ;;
+  start|restart|reload-or-restart|try-restart)
+    for u in "$@"; do
+      u=$(norm "$u")
+      if [ ! -f "$LOADED/$u" ]; then echo "Failed to $verb $u: Unit $u not found." >&2; exit 5; fi
+      if [ "$u" = signage-sidecar.service ]; then
+        [ "$verb" = start ] && [ -f "$STATE/sidecar.pid" ] || { sidecar_stop; sidecar_start; }
+      fi
+      echo active > "$STATE/$u"
+    done
+    ;;
+  stop)
+    for u in "$@"; do
+      u=$(norm "$u")
+      [ "$u" = signage-sidecar.service ] && sidecar_stop
+      echo inactive > "$STATE/$u"
+    done
+    ;;
+  is-active)
+    rc=0
+    for u in "$@"; do
+      s=$(cat "$STATE/$(norm "$u")" 2>/dev/null || echo inactive)
+      echo "$s"; [ "$s" = active ] || rc=3
+    done
+    exit $rc
+    ;;
+  cat)
+    for u in "$@"; do cat "$LOADED/$(norm "$u")"; done
+    ;;
+  enable|disable|status|show|list-units)
+    ;;
+  *)
+    echo "systemctl-Stub: '$verb' ist nicht nachgebildet" >&2
+    exit 1
+    ;;
+esac

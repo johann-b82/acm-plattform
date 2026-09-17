@@ -1,0 +1,32 @@
+# Konfiguration für scripts/cutover/cutover.sh. Nach cutover.conf kopieren
+# (nicht eingecheckt). Keine Secrets hier — die liest das Skript auf dem Host.
+
+# Host, per ssh erreichbar als Benutzer in der Gruppe docker
+HOST=acm@192.9.201.9
+HOST_SSH_OPTS=""
+# Adresse, unter der Browser und Pis den Host erreichen
+HOST_IP=192.9.201.9
+BASIS=/home/acm
+
+# Ports im Parallelbetrieb (docs/cutover.md § 3)
+PLATTFORM_PORT=8081
+SIGNAGE_PORT=8080
+
+# Pis, per ssh als signage (oder mit sudo -n -u signage). Leer: 0b und 5 fragen von Hand.
+PIS=""
+PI_SSH_OPTS=""
+
+# Lokale Klone; das Skript schickt den Stand per git archive, der Host braucht kein GitHub-Konto.
+# Vorher `git fetch` in allen dreien.
+REPO_LUMEAPPS=$HOME/Documents/lumeapps
+REF_LUMEAPPS=origin/main
+REPO_PLATTFORM=$HOME/Documents/acm-plattform
+REF_PLATTFORM=origin/main
+REPO_SIGNAGE=$HOME/Documents/acm-signage
+REF_SIGNAGE=origin/main
+
+# Break-Glass-Admin der Plattform; das Passwort fragt das Skript ab.
+ADMIN_EMAIL=
+
+# Von außen prüfen, dass :5173 und :8000 nach 1c zu sind (braucht nc und LAN-Zugang).
+PORTPRUEFUNG=an
