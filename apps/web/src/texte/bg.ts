@@ -1453,6 +1453,10 @@ export const bg: Texte = {
     poPos: "PO Pos",
     speichern: "Запазване",
     gespeichert: "Запазено.",
+    aufServerSpeichern: "Запиши на сървъра",
+    wirdAbgelegt: "Записване …",
+    aufServerGespeichert: "Записано на сървъра.",
+    ablageGescheitert: (ziele: string) => `Не е записано: ${ziele}`,
     seriennummernAbweichung: (anzahl: number, menge: number) =>
       `${anzahl} серийни номера при количество ${menge}`,
     seriennummernFeld: (pos: string) => `Серийни номера позиция ${pos}`,

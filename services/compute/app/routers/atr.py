@@ -11,6 +11,7 @@ PostgREST — auch das Pflegen einzelner Teile.
     POST /api/atr/referenz       Mappe einlesen und in den Katalog übernehmen
     POST /api/atr/lieferschein   Lieferschein einlesen, abgleichen, als Entwurf ablegen
     POST /api/atr/lieferungen/{id}/erzeugen   Mappe, PDF und Etikett erzeugen
+    POST /api/atr/lieferungen/{id}/ablegen    Mappe und PDF in die festen Ordner auf dem Dateiserver
     POST /api/atr/container-etikett   Containernummer zuweisen, Beschriftung holen
     POST /api/atr/scan/probe     Verbindung zum Dateiserver pruefen
     POST /api/atr/scan           Eingangsordner von Hand durchsehen
@@ -25,6 +26,7 @@ import uuid
 from datetime import date, datetime, timezone
 from urllib.parse import quote
 
+import logging
 import sqlalchemy as sa
 import hmac
 
@@ -49,7 +51,7 @@ from app.parsing.atr_lieferschein import (
     TextNichtLesbar,
     lies_pdf,
 )
-from app.atr import dateiserver, scan as scan_modul
+from app.atr import dateiserver, scan as scan_modul, ziele as ziele_modul
 from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
 from app.atr.format import programmfamilie
@@ -57,6 +59,8 @@ from app.atr.etikett import baue_container_etikett, baue_etikett
 from app.dokumente.pdf import PdfFehlgeschlagen, nach_pdf
 from app.atr.speicher import SpeicherFehler, ablegen
 from app.parsing.atr_referenz import MappeUnbrauchbar, lies_referenzmappe
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/atr",
@@ -398,6 +402,101 @@ async def erzeugen(lieferung_id: str = Path(...)) -> ErzeugtErgebnis:
     return ergebnis
 
 
+class AbgelegtesZiel(BaseModel):
+    bezeichnung: str
+    pfad: str
+    dateiname: str
+
+
+class GescheitertesZiel(BaseModel):
+    bezeichnung: str
+    fehler: str
+
+
+class AblageErgebnis(BaseModel):
+    abgelegt: list[AbgelegtesZiel]
+    gescheitert: list[GescheitertesZiel]
+
+
+@router.post("/lieferungen/{lieferung_id}/ablegen", response_model=AblageErgebnis)
+async def auf_server_ablegen(lieferung_id: str = Path(...)) -> AblageErgebnis:
+    """Legt Mappe und PDF in den festen Ordnern auf dem Dateiserver ab.
+
+    Bis hierher landeten die Dokumente nur im Eimer, und auf den Dateiserver
+    kamen sie ausschließlich über den automatischen Scan. Eine von Hand
+    durchgesehene Lieferung erreichte den Server damit nie — im Altprojekt tat
+    das der Knopf „Auf Server speichern", und den gibt es jetzt wieder.
+
+    **Jedes Ziel wird einzeln versucht.** Scheitert eines, laufen die übrigen
+    weiter und die Antwort nennt das gescheiterte beim Namen. Alles oder nichts
+    wäre hier falsch: die drei Ordner gehören verschiedenen Abteilungen, und
+    ein gesperrter Ordner in der Logistik ist kein Grund, der QS ihr Dokument
+    vorzuenthalten.
+
+    Den Status auf `abgelegt` zieht erst der **vollständige** Lauf. Eine
+    Lieferung, von der ein Ziel fehlt, ist nicht ausgeliefert, und der Status
+    soll nicht mehr behaupten, als auf dem Server liegt.
+    """
+    async with SessionLocal() as sitzung:
+        lieferung = (
+            await sitzung.execute(
+                sa.select(atr_lieferungen).where(atr_lieferungen.c.id == lieferung_id)
+            )
+        ).mappings().first()
+    if lieferung is None:
+        raise HTTPException(404, "Lieferung nicht gefunden.")
+    if not lieferung["mappe_pfad"] or not lieferung["pdf_pfad"]:
+        # Wie im Altprojekt: ohne beide Dokumente gibt es nichts abzulegen.
+        # Das PDF darf beim Erzeugen fehlschlagen, ohne den Rest mitzunehmen —
+        # dann steht es hier, und die Meldung sagt, was zu tun ist.
+        raise HTTPException(
+            400, "Erst die Dokumente erzeugen — Mappe und PDF müssen vorliegen."
+        )
+
+    try:
+        _, ziel = await scan_modul.einstellungen()
+    except scan_modul.NichtEingerichtet as fehler:
+        raise HTTPException(503, str(fehler)) from fehler
+
+    stamm = lieferung["lieferschein_nr"] or lieferung["quelle_dateiname"]
+    inhalt = {
+        "mappe": (f"{stamm}_ATR.xlsx", await _hole_datei(lieferung["mappe_pfad"])),
+        "pdf": (f"{stamm}_ATR.pdf", await _hole_datei(lieferung["pdf_pfad"])),
+    }
+
+    heute = date.today()
+    abgelegt: list[AbgelegtesZiel] = []
+    gescheitert: list[GescheitertesZiel] = []
+    for serverziel in ziele_modul.ziele(lieferung["programm"]):
+        name, daten = inhalt[serverziel.art]
+        pfad = ziele_modul.pfad(serverziel, heute)
+        try:
+            geschrieben = await run_in_threadpool(
+                dateiserver.schreibe, ziel, pfad, name, daten
+            )
+            abgelegt.append(
+                AbgelegtesZiel(
+                    bezeichnung=serverziel.bezeichnung,
+                    pfad=pfad,
+                    dateiname=geschrieben,
+                )
+            )
+        except DateiserverFehler as fehler:
+            log.warning(
+                "ATR-Ablage gescheitert [%s] für Lieferung %s: %s",
+                serverziel.bezeichnung,
+                lieferung_id,
+                fehler,
+            )
+            gescheitert.append(
+                GescheitertesZiel(bezeichnung=serverziel.bezeichnung, fehler=str(fehler))
+            )
+
+    if not gescheitert:
+        await scan_modul.abgelegt_vermerken(lieferung_id)
+    return AblageErgebnis(abgelegt=abgelegt, gescheitert=gescheitert)
+
+
 async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, bytes]]]:
     """Erzeugt Mappe, PDF und Etikett und legt sie im Eimer `atr` ab.
 
@@ -514,8 +613,8 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
     )
 
 
-async def _hole_geruest(pfad: str) -> bytes:
-    """Holt die Gerüstdatei mit dem Service-Schlüssel aus dem Eimer."""
+async def _hole_datei(pfad: str, was: str = "Die Datei") -> bytes:
+    """Holt eine Datei mit dem Service-Schlüssel aus dem Eimer."""
     import httpx
 
     from app.atr.speicher import EIMER, _kopfzeilen
@@ -527,9 +626,14 @@ async def _hole_geruest(pfad: str) -> bytes:
         )
     if antwort.status_code >= 400:
         raise HTTPException(
-            502, f"Die Gerüstdatei ließ sich nicht laden ({antwort.status_code})."
+            502, f"{was} ließ sich nicht laden ({antwort.status_code})."
         )
     return antwort.content
+
+
+async def _hole_geruest(pfad: str) -> bytes:
+    """Holt die Gerüstdatei mit dem Service-Schlüssel aus dem Eimer."""
+    return await _hole_datei(pfad, "Die Gerüstdatei")
 
 
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

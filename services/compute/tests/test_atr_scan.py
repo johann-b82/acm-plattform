@@ -228,7 +228,7 @@ class TestAblauf:
 
         with als_dateiserver(server), als_einstellungen("automatisch"):
             with patch.object(scan_modul, "_vermerken", return_value=None):
-                with patch.object(scan_modul, "_abgelegt", abgelegt):
+                with patch.object(scan_modul, "abgelegt_vermerken", abgelegt):
                     ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
 
         assert ergebnis.erzeugt == 1
@@ -257,7 +257,7 @@ class TestAblauf:
 
         with als_dateiserver(server), als_einstellungen("entwurf"):
             with patch.object(scan_modul, "_vermerken", return_value=None):
-                with patch.object(scan_modul, "_abgelegt", abgelegt):
+                with patch.object(scan_modul, "abgelegt_vermerken", abgelegt):
                     ergebnis = await scan_modul.durchsehen(einlesen, erzeugen)
 
         assert (ergebnis.angelegt, ergebnis.erzeugt) == (1, 0)

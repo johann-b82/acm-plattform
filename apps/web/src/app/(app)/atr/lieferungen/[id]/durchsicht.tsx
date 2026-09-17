@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Download, FileCog } from "lucide-react";
+import { ArrowLeft, Download, FileCog, Server } from "lucide-react";
 
 import {
   formatPoPos,
@@ -139,6 +139,32 @@ export function Durchsicht({
         e.pdf_hinweis ? "Mappe und Etikett erzeugt." : "Mappe, PDF und Etikett erzeugt.",
       );
       if (e.pdf_hinweis) toast.error(e.pdf_hinweis);
+      return neuLaden();
+    },
+    onError: (fehler: Error) => melde(fehler),
+  });
+
+  /**
+   * Legt Mappe und PDF auf dem Dateiserver ab.
+   *
+   * Die Antwort nennt jedes der drei Ziele einzeln, weil eine Ablage
+   * **teilweise** gelingen kann: die Ordner gehören verschiedenen Abteilungen,
+   * und ein gesperrter Ordner in der Logistik hält die QS nicht auf. Eine
+   * Erfolgsmeldung über allem wäre hier gelogen — deshalb nennt die
+   * Fehlermeldung die gescheiterten Ziele beim Namen.
+   */
+  const ablegen = useMutation({
+    mutationFn: () => lieferungApi.ablegen(id),
+    onSuccess: (e) => {
+      if (e.gescheitert.length) {
+        toast.error(
+          worte.durchsicht.ablageGescheitert(
+            e.gescheitert.map((z) => z.bezeichnung).join(", "),
+          ),
+        );
+      } else {
+        toast.success(worte.durchsicht.aufServerGespeichert);
+      }
       return neuLaden();
     },
     onError: (fehler: Error) => melde(fehler),
@@ -345,6 +371,24 @@ export function Durchsicht({
             >
               <FileCog className="me-2 h-4 w-4" aria-hidden />
               {erzeugen.isPending ? worte.durchsicht.wirdErzeugt : worte.durchsicht.dokumenteErzeugen}
+            </Button>
+          )}
+
+          {/* Wie im Altprojekt erst sichtbar, wenn es etwas abzulegen gibt:
+              der Knopf erschien dort nach dem Erzeugen, zusammen mit dem
+              Manifest. Ohne Mappe **und** PDF weist der Endpunkt ohnehin ab —
+              das PDF darf beim Erzeugen fehlschlagen, ohne den Rest
+              mitzunehmen. */}
+          {darfSchreiben && l.mappe_pfad && l.pdf_pfad && (
+            <Button
+              variant="outline"
+              onClick={() => ablegen.mutate()}
+              disabled={ablegen.isPending}
+            >
+              <Server className="me-2 h-4 w-4" aria-hidden />
+              {ablegen.isPending
+                ? worte.durchsicht.wirdAbgelegt
+                : worte.durchsicht.aufServerSpeichern}
             </Button>
           )}
 

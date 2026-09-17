@@ -120,15 +120,22 @@ def _freier_name(ziel: Ziel, pfad: str, name: str) -> str:
     return f"{basis} ({nummer}){anhang}"
 
 
-def schreibe_ausgang(ziel: Ziel, name: str, daten: bytes) -> str:
-    """Legt eine Datei im Ausgangsordner ab und gibt den benutzten Namen zurück."""
+def schreibe(ziel: Ziel, pfad: str, name: str, daten: bytes) -> str:
+    """Legt eine Datei unter `pfad` ab und gibt den benutzten Namen zurück.
+
+    Fehlende Ordner entstehen dabei — die Ablage läuft in Jahres- und
+    Kalenderwochenordner, und die gibt es beim ersten ATR einer Woche noch
+    nicht. `makedirs` legt die ganze Kette an, nicht nur die letzte Stufe.
+
+    `pfad` kommt aus `app.atr.ziele` oder aus den Einstellungen; `unc` weist
+    `..` darin ab, bevor eine Verbindung entsteht (Befund 17).
+    """
     try:
         _anmelden(ziel)
-        ordner = unc(ziel.rechner, ziel.freigabe, ziel.ausgang)
-        smbclient.makedirs(ordner, exist_ok=True)
-        endgueltig = _freier_name(ziel, ziel.ausgang, name)
+        smbclient.makedirs(unc(ziel.rechner, ziel.freigabe, pfad), exist_ok=True)
+        endgueltig = _freier_name(ziel, pfad, name)
         with smbclient.open_file(
-            unc(ziel.rechner, ziel.freigabe, ziel.ausgang, endgueltig), mode="wb"
+            unc(ziel.rechner, ziel.freigabe, pfad, endgueltig), mode="wb"
         ) as datei:
             datei.write(daten)
         return endgueltig
@@ -136,6 +143,11 @@ def schreibe_ausgang(ziel: Ziel, name: str, daten: bytes) -> str:
         raise
     except Exception as fehler:  # noqa: BLE001
         raise DateiserverFehler(f'„{name}“ nicht schreibbar: {fehler}') from fehler
+
+
+def schreibe_ausgang(ziel: Ziel, name: str, daten: bytes) -> str:
+    """Legt eine Datei im Ausgangsordner ab und gibt den benutzten Namen zurück."""
+    return schreibe(ziel, ziel.ausgang, name, daten)
 
 
 def ins_archiv(ziel: Ziel, name: str) -> str:

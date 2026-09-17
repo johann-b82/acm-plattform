@@ -1413,6 +1413,11 @@ export const de = {
     poPos: "PO Pos",
     speichern: "Speichern",
     gespeichert: "Gespeichert.",
+    aufServerSpeichern: "Auf Server speichern",
+    wirdAbgelegt: "Wird abgelegt …",
+    aufServerGespeichert: "Auf dem Server abgelegt.",
+    ablageGescheitert: (ziele: string) =>
+      `Nicht abgelegt: ${ziele}`,
     seriennummernAbweichung: (anzahl: number, menge: number) =>
       `${anzahl} Seriennummer(n) bei Stückzahl ${menge}`,
     seriennummernFeld: (pos: string) => `Seriennummern Position ${pos}`,

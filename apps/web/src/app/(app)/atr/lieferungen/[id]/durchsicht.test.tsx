@@ -6,11 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const { eine, positionen, erzeugen, positionAendern } = vi.hoisted(() => ({
+const { eine, positionen, erzeugen, positionAendern, ablegen } = vi.hoisted(() => ({
   eine: vi.fn(),
   positionen: vi.fn(),
   erzeugen: vi.fn(),
   positionAendern: vi.fn(),
+  ablegen: vi.fn(),
 }));
 
 vi.mock("@/lib/plattform-einstellungen", () => ({ useSeitengroesse: () => 25 }));
@@ -26,7 +27,7 @@ vi.mock("@/components/realtime/anwesenheit", () => ({
 }));
 vi.mock("@/lib/atr", async (original) => {
   const echt = await original<typeof import("@/lib/atr")>();
-  return { ...echt, lieferungApi: { ...echt.lieferungApi, eine, positionen, erzeugen, positionAendern } };
+  return { ...echt, lieferungApi: { ...echt.lieferungApi, eine, positionen, erzeugen, positionAendern, ablegen } };
 });
 
 import { SprachAnbieter } from "@/components/sprache/anbieter";
@@ -86,6 +87,9 @@ const POSITION = {
 let platz: Record<Kategorie, HTMLElement>;
 
 beforeEach(() => {
+  // Die Toast-Attrappe ist modulweit: ohne Zurücksetzen sähe ein Test die
+  // Erfolgsmeldung des vorigen und hielte einen Teilerfolg für gelungen.
+  vi.clearAllMocks();
   eine.mockResolvedValue(LIEFERUNG);
   positionen.mockResolvedValue([POSITION]);
   erzeugen.mockResolvedValue({ pdf_hinweis: null });
@@ -135,6 +139,101 @@ describe("Durchsicht in der Schale", () => {
     );
     fireEvent.click(erzeugenKnopf);
     await waitFor(() => expect(erzeugen).toHaveBeenCalledWith("l1"));
+  });
+
+  describe("Auf Server speichern", () => {
+    const ERZEUGT = {
+      ...LIEFERUNG,
+      mappe_pfad: "l1/ATR.xlsx",
+      pdf_pfad: "l1/ATR.pdf",
+      etikett_pfad: "l1/Etikett.docx",
+      erzeugt_am: "2026-09-02T00:00:00Z",
+    };
+
+    function zeige() {
+      render(
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <SprachAnbieter sprache="de">
+            <Werkzeugplatz.Provider value={platz}>
+              <Durchsicht id="l1" darfSchreiben />
+            </Werkzeugplatz.Provider>
+          </SprachAnbieter>
+        </QueryClientProvider>,
+      );
+    }
+
+    it("bleibt unsichtbar, solange es nichts abzulegen gibt", async () => {
+      // LIEFERUNG trägt weder Mappe noch PDF.
+      zeige();
+      await screen.findByText("Lieferschein LS-1");
+      expect(
+        within(platz.aktionen).queryByRole("button", { name: "Auf Server speichern" }),
+      ).toBeNull();
+    });
+
+    it("bleibt unsichtbar, wenn das PDF beim Erzeugen gescheitert ist", async () => {
+      // Das PDF darf fehlschlagen, ohne Mappe und Etikett mitzunehmen — dann
+      // ist aber nichts abzulegen, und der Endpunkt wiese es ohnehin ab.
+      eine.mockResolvedValue({ ...ERZEUGT, pdf_pfad: null });
+      zeige();
+      await screen.findByText("Lieferschein LS-1");
+      expect(
+        within(platz.aktionen).queryByRole("button", { name: "Auf Server speichern" }),
+      ).toBeNull();
+    });
+
+    it("legt ab und meldet Erfolg, wenn alle drei Ziele stehen", async () => {
+      const { toast } = await import("sonner");
+      eine.mockResolvedValue(ERZEUGT);
+      ablegen.mockResolvedValue({
+        abgelegt: [
+          { bezeichnung: "QS – Acceptance Test Report (A350)", pfad: "…", dateiname: "a.xlsx" },
+          { bezeichnung: "Logistik – Versand", pfad: "…", dateiname: "a.pdf" },
+          { bezeichnung: "QS – Weight Report (verschicken)", pfad: "…", dateiname: "a.pdf" },
+        ],
+        gescheitert: [],
+      });
+      zeige();
+      await screen.findByText("Lieferschein LS-1");
+      const knopf = within(platz.aktionen).getByRole("button", {
+        name: "Auf Server speichern",
+      });
+      fireEvent.click(knopf);
+      await waitFor(() => expect(ablegen).toHaveBeenCalledWith("l1"));
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith("Auf dem Server abgelegt."),
+      );
+    });
+
+    it("nennt die gescheiterten Ziele beim Namen, statt Erfolg zu melden", async () => {
+      // Die drei Ordner gehören verschiedenen Abteilungen. Gelingt nur ein
+      // Teil, wäre eine Erfolgsmeldung gelogen — und niemand wüsste, welches
+      // Dokument nachzureichen ist.
+      const { toast } = await import("sonner");
+      eine.mockResolvedValue(ERZEUGT);
+      ablegen.mockResolvedValue({
+        abgelegt: [
+          { bezeichnung: "QS – Acceptance Test Report (A350)", pfad: "…", dateiname: "a.xlsx" },
+        ],
+        gescheitert: [
+          { bezeichnung: "Logistik – Versand", fehler: "kein Zugriff" },
+          { bezeichnung: "QS – Weight Report (verschicken)", fehler: "kein Zugriff" },
+        ],
+      });
+      zeige();
+      await screen.findByText("Lieferschein LS-1");
+      fireEvent.click(
+        within(platz.aktionen).getByRole("button", { name: "Auf Server speichern" }),
+      );
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith(
+          "Nicht abgelegt: Logistik – Versand, QS – Weight Report (verschicken)",
+        ),
+      );
+      expect(toast.success).not.toHaveBeenCalled();
+    });
   });
 
   it("hält Lieferung und Positionen live und zeigt, wer die Lieferung noch offen hat", async () => {

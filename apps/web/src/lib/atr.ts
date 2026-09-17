@@ -302,6 +302,23 @@ export interface ErzeugtErgebnis {
   pdf_hinweis: string | null;
 }
 
+export interface AbgelegtesZiel {
+  bezeichnung: string;
+  pfad: string;
+  dateiname: string;
+}
+
+export interface GescheitertesZiel {
+  bezeichnung: string;
+  fehler: string;
+}
+
+/** Je Ziel ein Ergebnis — eine Ablage kann teilweise gelingen. */
+export interface AblageErgebnis {
+  abgelegt: AbgelegtesZiel[];
+  gescheitert: GescheitertesZiel[];
+}
+
 export interface LieferscheinErgebnis {
   lieferung_id: string;
   dateiname: string;
@@ -411,6 +428,13 @@ export const lieferungApi = {
    *  LibreOffice sitzen. */
   erzeugen: async (id: string): Promise<ErzeugtErgebnis> =>
     computeJson<ErzeugtErgebnis>(`/api/atr/lieferungen/${id}/erzeugen`, {
+      method: "POST",
+    }),
+
+  /** Legt Mappe und PDF in den festen Ordnern auf dem Dateiserver ab. Die
+   *  Antwort nennt jedes Ziel einzeln — eine Ablage kann teilweise gelingen. */
+  ablegen: async (id: string): Promise<AblageErgebnis> =>
+    computeJson<AblageErgebnis>(`/api/atr/lieferungen/${id}/ablegen`, {
       method: "POST",
     }),
 
