@@ -7,6 +7,13 @@ Anforderungslevel 0–4 und Erfüllungsgrad 0–100 %.
 Unter `/hr/kompetenzen`, mit dem Recht `hr` — es sind personenbezogene
 Leistungsbewertungen.
 
+## Der Bereich gilt für Liste und Einlesen
+
+Die Bereichswahl in der rechten Leiste filtert die angezeigten Matrizen **und**
+bestimmt, wohin eine eingelesene Datei geht. Bis dahin tat sie nur das Zweite:
+Sie sah aus wie ein Filter und wirkte nicht auf die Liste. Im Altprojekt wählen
+die Bereichs-Reiter ebenso die angezeigte Matrix.
+
 ## Die Excel ist die Herkunft, nicht die Heimat
 
 Die vier Bereichsdateien (Produktion, Verwaltung, Safety, Quality) werden

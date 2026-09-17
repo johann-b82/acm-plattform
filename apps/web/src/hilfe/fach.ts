@@ -107,7 +107,7 @@ wird nicht gesetzt — ein Newsletter ist ein Text, kein Baukasten.
     {
       slug: "sensoren",
       titel: "Sensoren",
-      kurz: "Temperatur und Luftfeuchte aus dem Netz, alle fünf Minuten.",
+      kurz: "Temperatur und Luftfeuchtigkeit aus dem Netz, alle fünf Minuten.",
       text: `
 # Sensoren
 

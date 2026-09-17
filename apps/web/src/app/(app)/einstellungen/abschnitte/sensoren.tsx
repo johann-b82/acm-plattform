@@ -108,7 +108,7 @@ export function Sensoren() {
         e.erreichbar
           ? `Gerät antwortet: ${[
               e.temperatur !== null ? `${e.temperatur} (Temperatur)` : null,
-              e.feuchte !== null ? `${e.feuchte} (Luftfeuchte)` : null,
+              e.feuchte !== null ? `${e.feuchte} (Luftfeuchtigkeit)` : null,
             ]
               .filter(Boolean)
               .join(", ")} — noch ohne Faktor.`

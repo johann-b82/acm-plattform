@@ -34,7 +34,11 @@ import { useKompetenzbereich } from "@/lib/tafeln";
 
 
 /**
- * Die Qualifikationsmatrizen.
+ * Die Qualifikationsmatrizen eines Bereichs.
+ *
+ * Der Bereich steht in der rechten Leiste und gilt für die Liste **und** für
+ * das Einlesen — eine Wahl, zwei Wirkungen, wie die Bereichs-Reiter im
+ * Altprojekt.
  *
  * Der Import zeigt erst, was er täte. Das ist hier keine Höflichkeit: er
  * ersetzt ein Blatt vollständig, und wer danach in der Oberfläche gepflegt
@@ -76,7 +80,11 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     onError: (fehler: Error) => toast.error(fehler.message),
   });
 
-  const liste = matrizen.data ?? [];
+  // Der Bereich wählt **beides**: welche Matrizen die Liste zeigt und wohin
+  // eine eingelesene Datei geht. Vorher filterte er nichts — er sah aus wie
+  // ein Filter, war aber nur das Ziel des Einlesens. Im Altprojekt wählen
+  // Bereichs-Reiter ebenso die angezeigte Matrix (`KompetenzenPage.tsx`).
+  const liste = (matrizen.data ?? []).filter((m) => m.bereich === bereich);
 
   return (
     <div className="space-y-6">
@@ -86,8 +94,9 @@ export function Matrixliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       {darfSchreiben && (
         <Seitenwerkzeuge kategorie="aktionen">
           <div className="flex flex-col items-stretch gap-2">
-            {/* Der Bereich gehört zum Einlesen, nicht zur Liste: er filtert nichts.
-                In der Leiste trägt der Werkzeug-Titel die Beschriftung. */}
+            {/* Der Bereich filtert die Liste und ist zugleich das Ziel des
+                Einlesens. In der Leiste trägt der Werkzeug-Titel die
+                Beschriftung. */}
             <Werkzeug titel={worte.kompetenzen.bereich}>
             <div className="flex flex-col gap-1">
               {!inSchale && <Label htmlFor="bereich">{worte.kompetenzen.bereich}</Label>}

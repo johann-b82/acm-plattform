@@ -74,6 +74,12 @@ könnte.
 Dafür gibt es `schulung_belegschaft`: eine Sicht über die drei Arten von
 Person, die in der Matrix eine Zeile bekommen.
 
+**Die Gesamtmatrix blättert nicht.** Sie steht im Rahmen mit festem Kopf und
+fester ersten Spalte und zeigt jede Person auf einmal. Mit der üblichen
+Seitengröße (25) waren von 82 Personen knapp ein Drittel zu sehen, und was
+fehlte, sah aus wie nicht vorhanden — das ist bei einer Nachweistabelle der
+falsche Eindruck. Gesucht wird weiter über das Suchfeld.
+
 | Schlüssel | wer | woher |
 |---|---|---|
 | `e:<id>` | aktive Personio-Personen und Eintritte | `personio_employees` |

@@ -18,8 +18,16 @@ import { seitenfenster, suchfeldSichtbar, type Fenster } from "@/lib/tabelle";
  * `Datentabelle` (TAB-01/03); eine Sortierung über Spaltenköpfe gibt es nicht,
  * weil sie die Reihenfolge der Gruppen zerreißen würde.
  */
-export function useMatrixseiten<T>(zeilen: readonly T[], suchwert: (zeile: T) => string) {
-  const groesse = useSeitengroesse();
+export function useMatrixseiten<T>(
+  zeilen: readonly T[],
+  suchwert: (zeile: T) => string,
+  { alleAufEinmal = false }: { alleAufEinmal?: boolean } = {},
+) {
+  // `alleAufEinmal` für Matrizen, deren Zweck die Vollständigkeit ist (die
+  // Gesamtmatrix der Schulungen im Audit): dort ist Blättern kein Komfort,
+  // sondern verdeckt genau das, was gezeigt werden soll. Gescrollt wird im
+  // Rahmen, Kopf und erste Spalte bleiben stehen.
+  const seitengroesse = useSeitengroesse();
   const [suchtext, setSuchtext] = useState("");
   const [seite, setSeite] = useState(1);
   const [vorherige, setVorherige] = useState(zeilen);
@@ -34,6 +42,8 @@ export function useMatrixseiten<T>(zeilen: readonly T[], suchwert: (zeile: T) =>
       ? zeilen.filter((z) => suchwert(z).toLocaleLowerCase("de").includes(gesucht))
       : zeilen;
   }, [zeilen, suchtext, suchwert]);
+
+  const groesse = alleAufEinmal ? Math.max(gefunden.length, 1) : seitengroesse;
 
   return {
     fenster: seitenfenster(gefunden, groesse, seite),
