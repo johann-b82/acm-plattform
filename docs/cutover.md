@@ -78,7 +78,20 @@ Ohne diesen Schritt gibt es keinen Weg zurück. Erst danach weitermachen.
 | 2 API direkt im LAN | `:8000` offen, `/docs` gibt die vollständige Routenliste her |
 | 4 Personaldaten | `/api/hr/embed/birthdays/this-week` liefert ohne Anmeldung Name, Abteilung, **Geburtsdatum mit Jahrgang** und Alter |
 
-Richtig gebunden sind schon jetzt Directus (`:8055`) und Postgres (`:5432`) — beide nur auf 127.0.0.1.
+Richtig gebunden ist schon jetzt Directus (`127.0.0.1:8055`). Postgres hat **gar kein**
+Host-Mapping — `docker ps` zeigt für `lumeapps-db-1` nur `5432/tcp`, die Datenbank ist also
+ausschließlich im Docker-Netz erreichbar. (Hier stand vorher „beide nur auf 127.0.0.1"; am
+Host nachgemessen am 2026-09-17, als der Tunnel für § 4 darauf auflief.) Wer von außen
+lesend heran will, tunnelt deshalb nicht auf `127.0.0.1`, sondern auf die Container-Adresse:
+
+```bash
+IP=$(ssh acm@192.9.201.9 'docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" lumeapps-db-1')
+ssh -f -N -L 5433:"$IP":5432 acm@192.9.201.9
+```
+
+Die Container-Adresse gilt nur, solange der Container läuft; nach einem Neustart auf dem Host
+zeigt der Tunnel ins Leere und muss mit der neuen Adresse neu aufgebaut werden. Vom `compute`-
+Container aus ist das lokale Ende als `host.docker.internal:5433` erreichbar.
 
 ### 1a. Neuen Stand holen
 
@@ -256,6 +269,92 @@ bash scripts/bootstrap-admin.sh <ihre-adresse> '<sicheres Passwort>'
 ```
 
 Prüfen: `http://<host>/` → Anmeldung → Kacheln.
+
+### 3a. Active-Directory-Anmeldung einschalten
+
+**am Host geprüft** (2026-09-17) — gegen das echte AD `acm.local` gefahren: Anmeldung,
+Provisionierung des GoTrue-Nutzers, Spiegelung der Gruppen und das Rechte-Mapping.
+Damit ist die in ADR-0004 offene „Verifikation gegen ein echtes AD" erledigt, bis auf
+die Zertifikate (siehe unten).
+
+Die Werte stehen nicht in der `.env`, sondern in der Tabelle `ad_konfiguration`
+(Migration 0055) — ein frisch migrierter Stack bringt sie also **nicht** mit, auch nicht
+über die Datenübernahme aus § 4: das Altprojekt hatte keine AD-Anbindung. Einzutragen
+sind sie unter `/einstellungen`, Abschnitt „Active Directory", oder direkt:
+
+```bash
+docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "
+update public.ad_konfiguration set
+  aktiv = true, host = 'acm.local', port = 636,
+  upn_suffix = 'acm.local', basis_dn = 'DC=acm,DC=local',
+  dienst_konto_dn = null, gruppen_basis_dn = null,
+  tls_pruefen = false, geaendert_am = now()
+where id;"
+```
+
+Vier dieser Werte sind nicht selbsterklärend:
+
+| Feld | Warum so |
+|---|---|
+| `host = acm.local` | löst auf **beide** DCs auf (`192.9.200.1` = `acm_dc01`, `192.9.200.2` = `acm_dc02`), beide antworten auf 636. Ein einzelner DC-Name wäre ein Einzelpunktausfall |
+| `dienst_konto_dn` leer | ohne Dienstkonto bindet `compute` direkt als die anmeldende Person (`<benutzer>@<upn_suffix>`) und sucht über deren Verbindung. Es wird also **kein** Dienstkonto und kein Passwort in `geheimnisse` gebraucht |
+| `gruppen_basis_dn` leer | die Gruppen liegen in **zwei** OUs: `grp_IT` und `grp_Marketing` unter `OU=Gruppen,OU=ACM`, die Abteilungsgruppen (`grp_QS`, `grp_Vertrieb`, `grp_Einkauf`, `grp_Produktion`, `grp_Personalabteilung`, `grp_Konstruktion`, `grp_Logistik`) unter `OU=ACM Abteilungen`. Der Filter vergleicht nur *ein* DN-Ende — jede Wahl verschluckt die andere Hälfte lautlos, im schlimmsten Fall `grp_IT` und damit `platform:admin`. Leer heißt: alles spiegeln, Rechte vergibt ohnehin nur das Mapping |
+| `tls_pruefen = false` | **Übergangslösung**, siehe unten |
+
+Prüfen, dass der Dienst das Verzeichnis erreicht — noch ohne echtes Konto:
+
+```bash
+curl -s http://<host>/api/anmeldung/ad/status                    # {"aktiv":true}
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://<host>/api/anmeldung/ad \
+  -H 'Content-Type: application/json' -d '{"benutzer":"gibtesnicht","passwort":"falsch"}'
+```
+
+Die zweite Zeile muss **401** liefern, nicht 503. 503 (`AdNichtErreichbar`) hieße, der
+DC ist nicht erreichbar; 401 beweist, dass der LDAPS-Handschlag steht und nur die
+erfundenen Angaben abgelehnt wurden.
+
+#### Rechte: zwei Läufe, in dieser Reihenfolge
+
+Die AD-Gruppen entstehen erst, wenn sich ein Mitglied anmeldet. Vorher hat das Mapping
+nichts zuzuordnen. Also:
+
+1. Eine Person aus `grp_IT` meldet sich an (Benutzername ohne Suffix, z. B. `bechtold`).
+2. `docker compose exec -T db psql -U postgres -d postgres < scripts/ad-rechte-mapping.sql`
+3. **Dieselbe Person meldet sich ab und neu an.**
+
+Schritt 3 ist keine Förmlichkeit: der Claim `apps` steckt im JWT und wird beim Login
+gebildet. Wer zwischen Schritt 1 und 2 angemeldet bleibt, trägt ein Token ohne Rechte
+und wird von der Oberfläche nicht als Admin erkannt, obwohl in der Datenbank alles
+stimmt. Nachsehen lässt sich das vorab:
+
+```bash
+docker compose exec -T db psql -U postgres -d postgres -t -c \
+  "select public.custom_access_token_hook(jsonb_build_object(
+     'user_id', (select id from auth.users where email='<adresse>'),
+     'claims', '{}'::jsonb)) -> 'claims' -> 'apps';"
+```
+
+Das Skript ist wiederholbar und überspringt noch nicht gespiegelte Gruppen — es läuft
+also sinnvollerweise mehrfach, während sich die Belegschaft nach und nach anmeldet.
+
+#### Zwei offene Punkte
+
+**Die LDAPS-Zertifikate sind abgelaufen.** `acm_dc01` und `acm_dc02` präsentieren beide
+ein Zertifikat der internen CA `acm-SERVERDC1-CA`, ausgestellt am 8. November 2016 mit
+einem Jahr Laufzeit — **abgelaufen am 8. November 2017**. Mit `tls_pruefen = true`
+scheitert deshalb jeder Bind. Die Prüfung abzuschalten hält den Verkehr verschlüsselt,
+aber nicht mehr überprüfbar: wer sich im Netz dazwischenhängt, sieht die Passwörter
+aller Anmeldenden. ADR-0004 nennt TLS am DC „in Produktion Pflicht", und das bleibt
+richtig. Entschieden am 2026-09-17: die Zertifikate werden später erneuert, bis dahin
+läuft die Anmeldung mit `tls_pruefen = false`. **Nach der Erneuerung am DC gehört das
+Feld zurück auf `true`** — ein Einzeiler, siehe Befehl oben.
+
+**Knapp die Hälfte der AD-Konten hat kein `mail`-Attribut** (Stand 2026-09-17: 101 von
+249). Für die fällt der Dienst auf den UPN zurück, die Person bekommt also
+`name@acm.local` als Adresse statt der Firmenadresse. Das funktioniert, sieht aber
+falsch aus und passt zu keiner übernommenen Zeile. Wer das sauber haben will, pflegt
+`mail` im AD, **bevor** diese Personen sich zum ersten Mal anmelden — hinterher ist es
+ein zweites Konto.
 
 ---
 
