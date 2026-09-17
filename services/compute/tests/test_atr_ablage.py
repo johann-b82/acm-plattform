@@ -1,8 +1,9 @@
 """Das Ablegen eines fertigen ATR auf dem Dateiserver.
 
-Geprüft wird das, was bei einem Fehler niemandem auffiele: die drei Pfade
-stimmen wörtlich mit dem Altprojekt überein, die Programmweiche trifft das
-richtige Verzeichnis, und Jahres- wie Kalenderwochenordner werden eingesetzt.
+Geprüft wird das, was bei einem Fehler niemandem auffiele: die Programmweiche
+trifft das richtige Verzeichnis, und Jahres- wie Kalenderwochenordner werden
+eingesetzt. Dass die Vorbelegung in der Datenbank wörtlich den Pfaden des
+Altprojekts entspricht, prüft `test_atr_ablage_db.py`.
 
 Ein falscher Pfad legt das Dokument still an einen Ort, an dem niemand
 nachsieht — der Lauf meldet Erfolg, und die QS wartet.
@@ -16,6 +17,24 @@ import pytest
 
 from app.atr import ziele as z
 from app.atr.dateiserver import DateiserverFehler, Ziel
+
+
+#: Die Pfade des Altprojekts, so wie `0058_atr_ablageziele` sie vorbelegt.
+VORGABEN = {
+    "ziel_mappe_a350": (
+        r"1300 - Qualität\1320_QS\132002_WA-Prüfung\132002_02_TR_Spec_QAA"
+        r"\DIEHL\A350\ATR_Acceptance Test Report\ACM_ATR_A350_.....{jahr}"
+    ),
+    "ziel_mappe_a380": (
+        r"1300 - Qualität\1320_QS\132002_WA-Prüfung\132002_02_TR_Spec_QAA"
+        r"\DIEHL\A380\ATR_Acceptance Test Report\ACM_ATR_A 380_.....{jahr}"
+    ),
+    "ziel_logistik": r"1200 - Logistik\Versand\ATR`S_Weight Reports_Firma Diehl_Portal",
+    "ziel_weight_report": (
+        r"1300 - Qualität\1320_QS\132002_WA-Prüfung\132002_02_TR_Spec_QAA"
+        r"\DIEHL\Weight Report für Firma Diehl ( verschicken )\{jahr}\KW {kw}"
+    ),
+}
 
 
 def ziel() -> Ziel:
@@ -45,20 +64,20 @@ class TestZiele:
     """Drei Ziele, und nur das erste hängt am Programm."""
 
     def test_immer_drei_ziele(self):
-        assert len(z.ziele("A350")) == 3
-        assert len(z.ziele("A380")) == 3
+        assert len(z.ziele("A350", VORGABEN)) == 3
+        assert len(z.ziele("A380", VORGABEN)) == 3
 
     def test_eine_mappe_und_zwei_pdf(self):
-        arten = [zz.art for zz in z.ziele("A350")]
+        arten = [zz.art for zz in z.ziele("A350", VORGABEN)]
         assert arten == ["mappe", "pdf", "pdf"]
 
     def test_die_pdf_ziele_kennen_kein_programm(self):
-        a350 = [zz.vorlage for zz in z.ziele("A350") if zz.art == "pdf"]
-        a380 = [zz.vorlage for zz in z.ziele("A380") if zz.art == "pdf"]
+        a350 = [zz.vorlage for zz in z.ziele("A350", VORGABEN) if zz.art == "pdf"]
+        a380 = [zz.vorlage for zz in z.ziele("A380", VORGABEN) if zz.art == "pdf"]
         assert a350 == a380
 
     def test_pfad_der_mappe_a350(self):
-        mappe = z.ziele("A350")[0]
+        mappe = z.ziele("A350", VORGABEN)[0]
         assert z.pfad(mappe, date(2026, 9, 17)) == (
             "1300 - Qualität\\1320_QS\\132002_WA-Prüfung\\132002_02_TR_Spec_QAA"
             "\\DIEHL\\A350\\ATR_Acceptance Test Report\\ACM_ATR_A350_.....2026"
@@ -67,36 +86,48 @@ class TestZiele:
     def test_pfad_der_mappe_a380_hat_das_leerzeichen(self):
         """Der A380-Jahresordner heißt „ACM_ATR_A 380_....." — mit Leerzeichen.
         Ohne es landet die Mappe in einem neuen, leeren Ordner daneben."""
-        mappe = z.ziele("A380")[0]
+        mappe = z.ziele("A380", VORGABEN)[0]
         assert z.pfad(mappe, date(2026, 9, 17)) == (
             "1300 - Qualität\\1320_QS\\132002_WA-Prüfung\\132002_02_TR_Spec_QAA"
             "\\DIEHL\\A380\\ATR_Acceptance Test Report\\ACM_ATR_A 380_.....2026"
         )
 
     def test_pfad_logistik(self):
-        logistik = z.ziele("A350")[1]
+        logistik = z.ziele("A350", VORGABEN)[1]
         # Der Backtick im Ordnernamen steht so auf dem Server.
         assert z.pfad(logistik, date(2026, 9, 17)) == (
             "1200 - Logistik\\Versand\\ATR`S_Weight Reports_Firma Diehl_Portal"
         )
 
     def test_pfad_weight_report_mit_jahr_und_kw(self):
-        wr = z.ziele("A350")[2]
+        wr = z.ziele("A350", VORGABEN)[2]
         assert z.pfad(wr, date(2026, 9, 17)) == (
             "1300 - Qualität\\1320_QS\\132002_WA-Prüfung\\132002_02_TR_Spec_QAA"
             "\\DIEHL\\Weight Report für Firma Diehl ( verschicken )\\2026\\KW 38"
         )
 
+    def test_die_ordner_kommen_aus_der_einstellung(self):
+        eigene = {**VORGABEN, "ziel_mappe_a380": r"QS\A380\{jahr}", "ziel_logistik": "L"}
+        assert [zz.vorlage for zz in z.ziele("A380", eigene)] == [
+            r"QS\A380\{jahr}", "L", VORGABEN["ziel_weight_report"],
+        ]
+
+    def test_andere_klammern_bleiben_stehen(self):
+        """Ersetzt wird wörtlich — ein Pfad ist kein Formatstring und darf
+        nicht mit `KeyError` scheitern."""
+        eigen = z.ServerZiel(art="pdf", vorlage=r"A\{x}\{jahr}", bezeichnung="t")
+        assert z.pfad(eigen, date(2026, 9, 17)) == r"A\{x}\2026"
+
     def test_kalenderwoche_ist_zweistellig(self):
         """`KW 7` und `KW 07` sind zwei verschiedene Ordner."""
-        wr = z.ziele("A350")[2]
+        wr = z.ziele("A350", VORGABEN)[2]
         assert z.pfad(wr, date(2026, 2, 10)).endswith("\\2026\\KW 07")
 
     def test_jahr_kommt_aus_dem_kalender_nicht_aus_der_iso_woche(self):
         """Der 1. Januar 2027 liegt in der ISO-Woche 53 des Jahres 2026. Der
         Ordner steht trotzdem unter 2027 — so macht es das Altprojekt, und so
         sind die Ordner auf dem Server abgelegt."""
-        wr = z.ziele("A350")[2]
+        wr = z.ziele("A350", VORGABEN)[2]
         assert z.pfad(wr, date(2027, 1, 1)).endswith("\\2027\\KW 53")
 
 

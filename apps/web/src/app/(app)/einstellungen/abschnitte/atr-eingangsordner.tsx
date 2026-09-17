@@ -32,6 +32,18 @@ const FELDER: {
   { feld: "archiv", wort: "archiv" },
 ];
 
+/** Wohin „Auf Server speichern“ ablegt. Die Mappe je Programm, die beiden
+ *  PDF-Ziele für beide. Vorbelegt mit den Pfaden des Altprojekts. */
+const ZIELE: {
+  feld: "ziel_mappe_a350" | "ziel_mappe_a380" | "ziel_logistik" | "ziel_weight_report";
+  wort: keyof Texte["atrEinstellungen"];
+}[] = [
+  { feld: "ziel_mappe_a350", wort: "zielMappeA350" },
+  { feld: "ziel_mappe_a380", wort: "zielMappeA380" },
+  { feld: "ziel_logistik", wort: "zielLogistik" },
+  { feld: "ziel_weight_report", wort: "zielWeightReport" },
+];
+
 /**
  * Der Eingangsordner auf dem Dateiserver.
  *
@@ -132,7 +144,12 @@ export function Eingangsordner() {
       {/* Neu aufgesetzt, sobald sich die gespeicherte Einstellung ändert —
           nicht bei jedem Lauf, der nur „zuletzt“ fortschreibt. */}
       <Formular
-        key={[s.intervall_s, s.modus, ...FELDER.map(({ feld }) => s[feld])].join("|")}
+        key={[
+          s.intervall_s,
+          s.modus,
+          ...FELDER.map(({ feld }) => s[feld]),
+          ...ZIELE.map(({ feld }) => s[feld]),
+        ].join("|")}
         einstellung={s}
         passwort={passwort.data}
       />
@@ -153,6 +170,10 @@ function Formular({
     FELDER.map(({ feld }) => [feld, s[feld] ?? ""]),
   );
   const [entwurf, setEntwurf] = useState(anfang);
+  const zielAnfang: Record<string, string> = Object.fromEntries(
+    ZIELE.map(({ feld }) => [feld, s[feld]]),
+  );
+  const [ziele, setZiele] = useState(zielAnfang);
   const [intervall, setIntervall] = useState(String(s.intervall_s));
   const [modus, setModus] = useState(s.modus);
   const [kennwort, setKennwort] = useState("");
@@ -166,6 +187,11 @@ function Formular({
       for (const { feld } of FELDER) {
         if (entwurf[feld].trim() !== anfang[feld]) felder[feld] = entwurf[feld].trim() || null;
       }
+      // Ein Ziel wird nie geleert: leer schriebe in die Wurzel der Freigabe,
+      // und die Datenbank weist es ab.
+      for (const { feld } of ZIELE) {
+        if (ziele[feld].trim() !== zielAnfang[feld]) felder[feld] = ziele[feld].trim();
+      }
       if (sekunden !== s.intervall_s) felder.intervall_s = sekunden;
       if (modus !== s.modus) felder.modus = modus;
       if (Object.keys(felder).length > 0) await scanApi.aendern(felder);
@@ -178,7 +204,10 @@ function Formular({
       toast.success(worte.atrEinstellungen.gespeichert);
       return queryClient.invalidateQueries({ queryKey: ["atr"] });
     },
-    onError: (f: Error) => setFehler(f.message),
+    // Die Prüfung der Zielordner sitzt in der Datenbank; ihre Meldung nennt
+    // nur den Namen der Bedingung.
+    onError: (f: Error) =>
+      setFehler(/_gueltig/.test(f.message) ? worte.atrEinstellungen.zielUngueltig : f.message),
   });
 
   const passwortText = !passwort
@@ -255,6 +284,27 @@ function Formular({
           </Select>
         </div>
       </div>
+
+      <fieldset className="space-y-3">
+        <legend className="flex items-center gap-1.5 text-sm font-medium">
+          {worte.atrEinstellungen.ablageziele}
+          <Hinweis text={worte.atrEinstellungen.ablagezieleHinweis} />
+        </legend>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {ZIELE.map(({ feld, wort }) => (
+            <div key={feld} className="flex flex-col gap-1">
+              <Label htmlFor={feld}>{worte.atrEinstellungen[wort] as string}</Label>
+              <Input
+                id={feld}
+                dir="ltr"
+                className="font-mono text-xs"
+                value={ziele[feld]}
+                onChange={(e) => setZiele((alt) => ({ ...alt, [feld]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+      </fieldset>
 
       <div className="flex flex-wrap items-center justify-end gap-3">
         {fehler && (
