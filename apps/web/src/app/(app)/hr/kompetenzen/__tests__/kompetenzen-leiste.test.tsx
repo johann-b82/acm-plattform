@@ -24,6 +24,15 @@ vi.mock("@/lib/kompetenzen", async (importOriginal) => {
           dateiname: "a.xlsx",
           importiert_am: "2026-09-01T00:00:00Z",
         },
+        {
+          id: "m2",
+          bereich: "quality",
+          blatt: "Blatt Q",
+          titel: "Prüfung",
+          stand: null,
+          dateiname: "q.xlsx",
+          importiert_am: "2026-09-02T00:00:00Z",
+        },
       ],
       qualifikationen: leer,
       personen: leer,
@@ -109,5 +118,18 @@ describe("Kompetenzen in der rechten Leiste", () => {
     expect(within(orte.ansicht).getByRole("button", { name: "Bearbeiten" })).toBeTruthy();
     expect(within(orte.navigation).getByRole("link", { name: "Zur Übersicht" })).toBeTruthy();
     expect(within(orte.navigation).queryByRole("button")).toBeNull();
+  });
+});
+
+describe("Bereich in der Kompetenzübersicht", () => {
+  it("filtert die Liste und ist zugleich das Ziel des Einlesens", async () => {
+    zeige(<Matrixliste darfSchreiben />);
+    // Vorgabe „Produktion": nur deren Blatt steht in der Liste.
+    expect(await screen.findByText("Blatt A")).toBeInTheDocument();
+    expect(screen.queryByText("Blatt Q")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Bereich"), { target: { value: "quality" } });
+    expect(await screen.findByText("Blatt Q")).toBeInTheDocument();
+    expect(screen.queryByText("Blatt A")).toBeNull();
   });
 });
