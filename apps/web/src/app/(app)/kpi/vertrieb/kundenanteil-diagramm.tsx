@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { kundensaeulen, type KundenAnteil, type Kundensaeule } from "@/lib/kpi/vertrieb";
@@ -15,8 +14,11 @@ const HOECHSTENS = 14;
 
 /**
  * Kategorienpalette, auf den Flächen der Plattform geprüft (hell #ffffff,
- * dunkel #171c21). Drei helle Töne liegen unter 3:1 zur Fläche — deshalb
- * trägt jede Säule ihre Nummer und ihren Anteil als Text.
+ * dunkel #171c21). Acht Farben, mehr nicht: eine neunte wäre von einer der
+ * acht nicht mehr sicher zu unterscheiden (geprüft mit dem Palettenprüfer,
+ * 14 Farben fallen mit ΔE 1,0 durch). Weil der Name an jeder Zeile steht,
+ * trägt die Farbe hier ohnehin nur die Wiedererkennung zwischen den beiden
+ * Diagrammen.
  */
 const FARBEN = `
 .kundenfarben{--kf-1:#2a78d6;--kf-2:#eb6834;--kf-3:#1baf7a;--kf-4:#eda100;--kf-5:#e87ba4;--kf-6:#008300;--kf-7:#4a3aa7;--kf-8:#e34948}
@@ -25,17 +27,18 @@ const FARBEN = `
 `;
 
 /**
- * Kundenanteil als senkrechte Säulen (VER-03B).
+ * Kundenanteil als liegende Balken, ein Kunde je Zeile (VER-03B).
  *
- * Absteigend von links, gemeinsame Nulllinie, Prozent über jeder Säule.
- * Die Namen stehen in der Legende rechts — lange Kundennamen passen nicht
- * unter eine Säule —, bei wenig Platz darunter. Die Legende trägt nur Farbe
- * und Namen, in derselben Reihenfolge wie die Säulen; der Betrag steht im
- * Tooltip. Die Farbe ist je Kunde in beiden Diagrammen gleich
- * (`kundenfarben`).
+ * Wie im Altprojekt (`CustomerShareCard.tsx`): der **Name steht an seinem
+ * Balken**, nicht in einer Legende daneben. Vorher waren es senkrechte Säulen
+ * mit Nummern und einer Legende — bei aufgeklappten vierzehn Kunden trugen
+ * ab dem neunten alle denselben Grauton, weil es nur acht unterscheidbare
+ * Farben gibt, und die Legende war der Reihe nach nicht mehr zuzuordnen.
+ * Steht der Name in der Zeile, ist die Zuordnung unabhängig von der Farbe.
  *
- * Der Wasserfall der Referenz ist bewusst ersetzt; Rechnung, Top 3/14 und
- * Rest sind dieselben.
+ * Der Anteil steht rechts, der Betrag am Balken; der breiteste Balken füllt
+ * die Zeile, die übrigen im Verhältnis dazu — so bleiben auch kleine Anteile
+ * sichtbar.
  */
 export function KundenanteilDiagramm({
   titel,
@@ -59,7 +62,7 @@ export function KundenanteilDiagramm({
     () => kundensaeulen(kunden ?? [], offen ? HOECHSTENS : OBEN),
     [kunden, offen],
   );
-  const daten = saeulen.map((s) => ({ ...s, achse: s.platz === null ? worte.vertrieb.rest : String(s.platz) }));
+  const groesster = saeulen.reduce((m, s) => Math.max(m, s.wert), 0);
 
   const farbe = (s: Kundensaeule) => {
     if (s.platz === null) return "color-mix(in oklab, var(--fg-muted) 45%, var(--surface))";
@@ -80,62 +83,36 @@ export function KundenanteilDiagramm({
         </div>
       ) : (
         <>
-          <div className="mt-3 flex flex-col gap-4 md:flex-row">
-            <div className="h-56 min-w-0 flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={daten} margin={{ top: 20, right: 8, bottom: 0, left: 8 }}>
-                  <XAxis
-                    dataKey="achse"
-                    stroke="var(--fg-muted)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={{ stroke: "var(--border)" }}
-                    interval={0}
-                  />
-                  <YAxis hide />
-                  <ReferenceLine y={0} stroke="var(--border)" />
-                  <Tooltip
-                    cursor={{ fill: "var(--muted)" }}
-                    contentStyle={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      color: "var(--fg)",
-                    }}
-                    labelFormatter={(_label, nutzlast) => {
-                      const s = nutzlast?.[0]?.payload as Kundensaeule | undefined;
-                      return s ? name(s) : "";
-                    }}
-                    formatter={(wert, _name, eintrag) => {
-                      const s = eintrag?.payload as Kundensaeule;
-                      return [`${fmt.eur(Number(wert))} · ${fmt.prozent(s.anteil)}`, titel] as [string, string];
+          <ol className="mt-3 space-y-2">
+            {saeulen.map((s) => (
+              <li key={s.platz ?? "rest"} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3">
+                <span className="min-w-0 truncate text-xs" title={name(s)}>
+                  {name(s)}
+                </span>
+                {/* Nur der Anteil steht in der Zeile; der Betrag hängt am
+                    Balken (Titel), wie vorher im Tooltip. */}
+                <span className="text-xs tabular-nums text-[var(--fg-muted)]">
+                  {fmt.prozent(s.anteil)}
+                </span>
+                {/* Der Balken steht unter dem Namen und über die ganze Breite:
+                    so bleibt der Name lesbar, auch auf dem Telefon. */}
+                <span
+                  // Eckig, wie alle Balken der Plattform (#107).
+                  className="col-span-2 mt-1 block h-2 bg-[var(--muted)]"
+                  data-balken
+                  title={`${name(s)}: ${fmt.eur(s.wert)}`}
+                >
+                  <span
+                    className="block h-full"
+                    style={{
+                      background: farbe(s),
+                      width: `${groesster > 0 ? Math.max((s.wert / groesster) * 100, 1) : 0}%`,
                     }}
                   />
-                  <Bar dataKey="wert" maxBarSize={48} isAnimationActive={false}>
-                    {daten.map((s) => (
-                      <Cell key={s.achse} fill={farbe(s)} />
-                    ))}
-                    <LabelList
-                      dataKey="anteil"
-                      position="top"
-                      fontSize={10}
-                      fill="var(--fg)"
-                      formatter={(v: unknown) => fmt.prozent(Number(v))}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <ol className="space-y-1 text-xs md:w-72 md:shrink-0">
-              {saeulen.map((s) => (
-                <li key={s.platz ?? "rest"} className="flex items-baseline gap-2">
-                  <span aria-hidden className="h-2.5 w-2.5 shrink-0 self-center" style={{ background: farbe(s) }} />
-                  <span className="min-w-0 flex-1 break-words">{name(s)}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+                </span>
+              </li>
+            ))}
+          </ol>
 
           {alle.length > OBEN && (
             <div className="mt-3 flex justify-center">

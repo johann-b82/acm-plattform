@@ -55,29 +55,56 @@ describe("Vertriebsaktivität", () => {
   });
 });
 
-describe("Kundenanteil, Legende", () => {
-  it("zeigt nur die Namen, ohne Nummer und Betrag", () => {
-    const { container } = mitAnbietern(
+describe("Kundenanteil, Zeilen", () => {
+  const KUNDEN = [
+    { kunde: "Diehl Aviation", wert: 3_389_006, anteil: 69.1 },
+    { kunde: "Ethiopian Airlines", wert: 416_272, anteil: 8.5 },
+    { kunde: "B/E Aerospace", wert: 364_516, anteil: 7.4 },
+    { kunde: "Rest A", wert: 500_000, anteil: 10 },
+    { kunde: "Rest B", wert: 236_491, anteil: 5 },
+  ];
+
+  function zeige() {
+    return mitAnbietern(
       <KundenanteilDiagramm
         titel="Kundenanteil Aufträge"
         hinweis="Auftragswerte je Kunde"
-        kunden={[
-          { kunde: "Diehl Aviation", wert: 3_389_006, anteil: 69.1 },
-          { kunde: "Ethiopian Airlines", wert: 416_272, anteil: 8.5 },
-          { kunde: "B/E Aerospace", wert: 364_516, anteil: 7.4 },
-          { kunde: "Rest A", wert: 500_000, anteil: 10 },
-          { kunde: "Rest B", wert: 236_491, anteil: 5 },
-        ]}
+        kunden={KUNDEN}
         laedt={false}
         farben={new Map([["Diehl Aviation", 0], ["Ethiopian Airlines", 1], ["B/E Aerospace", 2]])}
       />,
     );
-    const legende = within(container.querySelector("ol")!);
-    const eintraege = legende.getAllByRole("listitem").map((li) => li.textContent);
-    expect(eintraege).toEqual(["Diehl Aviation", "Ethiopian Airlines", "B/E Aerospace", "Restkunden (2)"]);
-    // Die Farbfelder sind eckig wie die Säulen.
-    for (const feld of container.querySelectorAll("ol li > span[aria-hidden]")) {
-      expect(feld.className).not.toMatch(/\brounded/);
-    }
+  }
+
+  it("stellt den Namen in die Zeile, nicht in eine Legende", () => {
+    // Bei vierzehn Kunden trügen ab dem neunten alle denselben Grauton — mehr
+    // als acht Farben sind nicht sicher unterscheidbar. Der Name in der Zeile
+    // macht die Zuordnung unabhängig von der Farbe.
+    const { container } = zeige();
+    const zeilen = within(container.querySelector("ol")!).getAllByRole("listitem");
+    // `Intl` setzt ein geschütztes Leerzeichen vor das Prozentzeichen.
+    expect(zeilen.map((li) => li.textContent?.replace(/ /g, " "))).toEqual([
+      "Diehl Aviation69,1 %",
+      "Ethiopian Airlines8,5 %",
+      "B/E Aerospace7,4 %",
+      "Restkunden (2)15 %",
+    ]);
+  });
+
+  it("zeichnet die Balken eckig und im Verhältnis zum größten", () => {
+    const { container } = zeige();
+    const balken = container.querySelectorAll("ol li > span[data-balken] > span");
+    expect(balken).toHaveLength(4);
+    expect((balken[0] as HTMLElement).style.width).toBe("100%");
+    // 416.272 von 3.389.006
+    expect((balken[1] as HTMLElement).style.width).toMatch(/^12\./);
+    for (const b of balken) expect((b as HTMLElement).className).not.toMatch(/rounded/);
+  });
+
+  it("hängt den Betrag an den Balken", () => {
+    const { container } = zeige();
+    const erster = container.querySelector("ol li > span[data-balken]") as HTMLElement;
+    expect(erster.title).toContain("Diehl Aviation");
+    expect(erster.title).toMatch(/3\.389\.006|3,4|3.389/);
   });
 });
