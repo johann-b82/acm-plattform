@@ -25,6 +25,7 @@ import { Seitenkopf } from "@/components/seitenkopf";
 import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 import { Schale } from "../schale";
 import type { NavEintrag } from "@/lib/navigation";
+import type { Sprache } from "@/lib/sprache";
 
 const EINTRAEGE: NavEintrag[] = [
   {
@@ -49,11 +50,17 @@ function zeige(
     werkzeugeEingeklappt = false,
     inhalt = <p>Inhalt</p>,
     feedback,
-  }: { werkzeugeEingeklappt?: boolean; inhalt?: ReactNode; feedback?: ReactNode } = {},
+    sprache = "de",
+  }: {
+    werkzeugeEingeklappt?: boolean;
+    inhalt?: ReactNode;
+    feedback?: ReactNode;
+    sprache?: Sprache;
+  } = {},
 ) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
-      <SprachAnbieter sprache="de">
+      <SprachAnbieter sprache={sprache}>
         <Schale
           eintraege={EINTRAEGE}
           eingeklappt={eingeklappt}
@@ -80,6 +87,31 @@ beforeEach(() => {
 });
 
 describe("Seitenleiste", () => {
+  /**
+   * Beide Leisten stehen geschlossen außerhalb des Bildes und kommen auf dem
+   * Breitbild zurück. Der Rückweg lief über `md:translate-x-0` — und damit
+   * über den Vorrang zweier Varianten. In einer Rechts-nach-links-Sprache
+   * gewann `rtl:` und schob die Navigationsleiste auch auf dem Breitbild
+   * hinaus: die Navigation war schlicht weg.
+   *
+   * Geprüft wird deshalb die Eigenschaft, die davor schützt: die Verschiebung
+   * trägt immer `max-md:`. `max-md:` und `md:` sind sich ausschließende
+   * Media-Queries — wo sie sich nie begegnen, kann auch keine die andere
+   * schlagen, unabhängig davon, wie Tailwind die Varianten sortiert.
+   */
+  it.each(["fa", "ar", "de"] as const)(
+    "verschiebt die Leisten (%s) nur auf schmalen Bildschirmen aus dem Bild",
+    (sprache) => {
+      zeige(false, { sprache });
+      for (const kennung of ["seitenleiste", "werkzeugleiste"]) {
+        const klassen = screen.getByTestId(kennung).className.split(/\s+/);
+        const hinaus = klassen.filter((k) => k.includes("translate-x-full"));
+        expect(hinaus.length).toBeGreaterThan(0);
+        for (const k of hinaus) expect(k).toMatch(/^max-md:/);
+      }
+    },
+  );
+
   it("führt Start und die Apps, dazu Kopf und Inhalt; die Hilfe steht nur oben rechts", () => {
     zeige();
     for (const name of ["Start", "KPI-Dashboard", "Uploads"]) {
