@@ -31,7 +31,8 @@ Auf Nutzerwunsch ist der dritte Weg gebaut: `compute` prüft Benutzer+Passwort p
 - Konfiguration: `ad_konfiguration` (Migration 0055) + Dienstkonto-Passwort in `geheimnisse`; Einstellungssektion „Active Directory".
 - Anmeldung: `POST /api/anmeldung/ad` (öffentlich, ratenbegrenzt), Login-Maske mit lokaler Rückfallanmeldung für den Break-Glass-Admin.
 - Getestet gegen eine LDAP-Attrappe (Provisionierung, Gruppen-Sync, Entfernen verwaister AD-Mitgliedschaften, Schutz handgepflegter Gruppen).
-- **Offen:** Verifikation gegen ein echtes AD (LDAPS erreichbar, Dienstkonto). Kein SSO — dafür bleibt SAML/AD FS oder Keycloak (Weg 1/2) eine spätere Option. HTTPS/TLS am DC in Produktion Pflicht (`tls_pruefen`).
+- **Verifiziert gegen das echte AD** (2026-09-17, Domäne `acm.local`): Anmeldung, Provisionierung des GoTrue-Nutzers, Spiegelung von 65 Gruppen und das Rechte-Mapping bis zum `platform:admin` im Token. Ein Dienstkonto ist dafür **nicht** nötig — ohne `dienst_konto_dn` bindet `compute` als die anmeldende Person selbst. Einrichtung und Fallstricke in `docs/cutover.md` § 3a.
+- **Offen:** Kein SSO — dafür bleibt SAML/AD FS oder Keycloak (Weg 1/2) eine spätere Option. HTTPS/TLS am DC in Produktion Pflicht (`tls_pruefen`) — derzeit **nicht erfüllt**: beide DCs tragen ein 2017 abgelaufenes Zertifikat, der Betrieb läuft übergangsweise mit `tls_pruefen = false`. Nach Erneuerung am DC zurück auf `true`.
 
 ### Rechte-Mapping (freigegeben 2026-09-13): AD-Gruppen → App-Rechte
 
