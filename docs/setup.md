@@ -190,6 +190,46 @@ docker compose down -v
 rm -rf infra/supabase/upstream/volumes/db/data
 ```
 
+## Platz zurückgewinnen
+
+Jeder Build lässt die vorigen Layer als verwaiste Images und als Build-Cache liegen. Beides wird nie von selbst frei. Deshalb baut `scripts/build.sh` statt eines nackten `docker compose up -d --build`: es räumt nach einem **erfolgreichen** Build auf und lässt den Cache des aktuellen Standes stehen.
+
+```bash
+bash scripts/build.sh                      # baut und räumt ab
+BUILD_CACHE_TTL=24h bash scripts/build.sh  # aggressiver abräumen (Vorgabe: 168h)
+```
+
+`docker system prune --volumes` bleibt tabu — es träfe die anonymen Volumes des Supabase-Stacks. Siehe `docs/logging.md`.
+
+### Windows: die virtuelle Platte schrumpft nicht
+
+Auf einem Entwicklungsrechner mit WSL2-Backend gibt das Aufräumen den Platz nur *innerhalb* der virtuellen Platte frei. Die Datei `%LOCALAPPDATA%\Docker\wsl\disk\docker_data.vhdx` wächst dynamisch mit, behält aber ihren Höchststand und **schrumpft nie von selbst**. `docker system prune` ändert an ihrer Größe nichts.
+
+Das ist der eigentliche Grund, warum dort die Systemplatte volläuft: gemessen 30,7 GB Datei bei 11,8 GB tatsächlicher Belegung — 18,9 GB Totraum.
+
+Zwei Gegenmaßnahmen, beide nötig:
+
+1. **Größe begrenzen.** Docker Desktop → Settings → Resources → Advanced → *Disk usage limit*. Die Voreinstellung liegt bei rund 1 TB, also weit über jeder Systemplatte. Ein Wert um 64 GB reicht für diesen Stack und sorgt dafür, dass im Zweifel Docker volläuft statt `C:`.
+
+2. **Periodisch kompaktieren.** Verlangt Administratorrechte, weil `diskpart` sie verlangt. Die Container tragen `restart: unless-stopped`; es wird deshalb die Engine gestoppt und nicht jeder Container einzeln, damit sie danach von selbst wieder hochfahren.
+
+   ```powershell
+   docker desktop stop
+   wsl --shutdown
+   # in einer PowerShell mit Administratorrechten:
+   @"
+   select vdisk file="$env:LOCALAPPDATA\Docker\wsl\disk\docker_data.vhdx"
+   attach vdisk readonly
+   compact vdisk
+   detach vdisk
+   exit
+   "@ | Out-File -Encoding ascii "$env:TEMP\compact.txt"
+   diskpart /s "$env:TEMP\compact.txt"
+   docker desktop start
+   ```
+
+Auf dem Linux-App-Host entfällt beides: dort liegen die Layer direkt im Dateisystem, und `docker image prune` gibt den Platz sofort zurück.
+
 ## Signage-Verwaltung
 
 Die Oberfläche für Digital Signage liegt unter `/signage` (App-Kachel `signage`, verlangt `signage: admin`). Sie spricht **nicht** direkt mit dem Signage-Stack, sondern über einen Route Handler der Web-App:
