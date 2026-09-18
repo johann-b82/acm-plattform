@@ -27,6 +27,7 @@ import type { SignageMedia, SignagePlaylist, SignagePlaylistItem, SignageTag } f
 import { Button, ButtonLink, Card, Input, Label, Select } from "@/components/ui/primitives";
 import { Dialog } from "@/components/ui/dialog";
 import { TagPicker } from "@/components/signage/tag-picker";
+import { uuid } from "@/lib/uuid";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenwerkzeuge } from "@/components/sidebar/werkzeugplatz";
 
@@ -45,12 +46,6 @@ interface EditorData {
   playlistItems: SignagePlaylistItem[];
   media: SignageMedia[];
   allTags: SignageTag[];
-}
-
-function newKey(): string {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `k-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function Thumb({ media }: { media: SignageMedia | undefined }) {
@@ -188,7 +183,7 @@ function EditorForm({ data }: { data: EditorData }) {
   );
   const [items, setItems] = useState<ItemDraft[]>(() =>
     data.playlistItems.map((it) => ({
-      key: newKey(),
+      key: uuid(),
       media_id: it.media_id,
       duration_s: it.duration_s,
       transition: it.transition === "cut" ? "cut" : "fade",
@@ -256,7 +251,7 @@ function EditorForm({ data }: { data: EditorData }) {
     );
     setItems(
       data.playlistItems.map((it) => ({
-        key: newKey(),
+        key: uuid(),
         media_id: it.media_id,
         duration_s: it.duration_s,
         transition: it.transition === "cut" ? "cut" : "fade",
@@ -392,7 +387,7 @@ function EditorForm({ data }: { data: EditorData }) {
                     onClick={() => {
                       update([
                         ...items,
-                        { key: newKey(), media_id: m.id, duration_s: 10, transition: "fade" },
+                        { key: uuid(), media_id: m.id, duration_s: 10, transition: "fade" },
                       ]);
                       setPickerOpen(false);
                     }}

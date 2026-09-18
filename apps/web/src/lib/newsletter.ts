@@ -1,3 +1,4 @@
+import { uuid } from "@/lib/uuid";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
@@ -113,7 +114,7 @@ async function hochladen(datei: File): Promise<string> {
   const kennung = sitzung.user?.id;
   if (!kennung) throw new Error("Keine Sitzung.");
   const endung = datei.name.split(".").pop()?.toLowerCase() || "jpg";
-  const pfad = `${kennung}/${crypto.randomUUID()}.${endung}`;
+  const pfad = `${kennung}/${uuid()}.${endung}`;
   const { error } = await sb.storage
     .from(EIMER)
     .upload(pfad, datei, { contentType: datei.type });

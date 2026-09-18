@@ -493,6 +493,7 @@ export const fa: Texte = {
     ladeFehler: (meldung: string) => `نیروی انسانی بارگذاری نشد: ${meldung}`,
     beschaeftigte: "شاغلان",
     beschaeftigteHinweis: "بر پایهٔ وضعیت «فعال» در Personio",
+    stichtagHinweis: "وضعیت امروز — Personio تاریخچه‌ای نگه نمی‌دارد؛ پس مقایسهٔ سالانه وجود ندارد.",
     neuImQuartal: "تازه‌واردان این فصل",
     bestand: "تعداد کل",
     kompetenzen: "صلاحیت‌های ثبت‌شده",

@@ -494,6 +494,7 @@ export const uk: Texte = {
     ladeFehler: (meldung: string) => `Не вдалося завантажити дані про штат: ${meldung}`,
     beschaeftigte: "Працівники",
     beschaeftigteHinweis: "за статусом Personio «активний»",
+    stichtagHinweis: "Стан на сьогодні — Personio не веде історію, тому річного порівняння немає.",
     neuImQuartal: "Нових у кварталі",
     bestand: "Чисельність",
     kompetenzen: "Компетенції заповнено",
