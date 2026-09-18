@@ -496,6 +496,7 @@ export const pl: Texte = {
     ladeFehler: (meldung: string) => `Nie udało się wczytać załogi: ${meldung}`,
     beschaeftigte: "Zatrudnieni",
     beschaeftigteHinweis: "wg statusu „aktywny” w Personio",
+    stichtagHinweis: "Stan na dziś — Personio nie prowadzi historii, dlatego nie ma porównania rocznego.",
     neuImQuartal: "Nowi w kwartale",
     bestand: "Stan",
     kompetenzen: "Kompetencje uzupełnione",

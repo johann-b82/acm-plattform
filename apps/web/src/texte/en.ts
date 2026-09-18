@@ -497,6 +497,7 @@ export const en: Texte = {
     ladeFehler: (meldung: string) => `The workforce data could not be loaded: ${meldung}`,
     beschaeftigte: "Employees",
     beschaeftigteHinweis: "by Personio status “active”",
+    stichtagHinweis: "Today’s snapshot — Personio keeps no history, so there is no year comparison.",
     neuImQuartal: "New this quarter",
     bestand: "Headcount",
     kompetenzen: "Skills recorded",

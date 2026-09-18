@@ -104,6 +104,7 @@ export function Belegschaft() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">{worte.belegschaft.titel}</h2>
       </div>
+      <p className="text-sm text-[var(--fg-muted)]">{worte.belegschaft.stichtagHinweis}</p>
 
       {fehler && (
         <Card className="p-4 text-sm text-[var(--danger)]">
