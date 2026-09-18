@@ -1,3 +1,4 @@
+import { uuid } from "@/lib/uuid";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { loescheVersioniert, pruefeVersion, speichereVersioniert } from "@/lib/versioniert";
 
@@ -99,7 +100,7 @@ export const feedbackKeys = {
  *  die Regel auf `storage.objects` den Upload ab. */
 function bildPfad(kennung: string, typ: string): string {
   const endung = typ === "image/png" ? "png" : typ === "image/webp" ? "webp" : "jpg";
-  return `${kennung}/${crypto.randomUUID()}.${endung}`;
+  return `${kennung}/${uuid()}.${endung}`;
 }
 
 export const feedbackApi = {

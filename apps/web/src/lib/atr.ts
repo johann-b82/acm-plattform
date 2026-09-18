@@ -1,3 +1,4 @@
+import { uuid } from "@/lib/uuid";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { loescheVersioniert, speichereVersioniert } from "@/lib/versioniert";
 import { computeFetch, computeJson } from "@/lib/compute";
@@ -218,7 +219,7 @@ export const atrApi = {
     const { data: sitzung } = await sb.auth.getUser();
     const kennung = sitzung.user?.id;
     if (!kennung) throw new Error("Keine Sitzung.");
-    const pfad = `${kennung}/${crypto.randomUUID()}.xlsx`;
+    const pfad = `${kennung}/${uuid()}.xlsx`;
     const { error: speicherFehler } = await sb.storage
       .from(EIMER)
       .upload(pfad, datei, { contentType: datei.type });
