@@ -1,3 +1,4 @@
+import { uuid } from "@/lib/uuid";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 /**
@@ -136,7 +137,7 @@ export const fairApi = {
     if (!kennung) throw new Error("Keine Sitzung.");
 
     const endung = datei.name.split(".").pop()?.toLowerCase() || "bin";
-    const pfad = `${kennung}/${crypto.randomUUID()}.${endung}`;
+    const pfad = `${kennung}/${uuid()}.${endung}`;
     const { error: speicherFehler } = await sb.storage
       .from(EIMER)
       .upload(pfad, datei, { contentType: datei.type });
