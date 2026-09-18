@@ -7,7 +7,7 @@ on:
 
 jobs:
   guards:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Supabase-Upstream holen (gepinnt)
@@ -25,14 +25,14 @@ jobs:
           docker compose config --quiet
 
   compute:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Tests (Migrationen, RLS und KPI-Funktionen gegen Wegwerf-Postgres)
         run: docker compose -f docker-compose.test.yml run --rm --build compute-test
 
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: apps/web
