@@ -416,10 +416,10 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                   />
                 )}
                 {artQuoten === "balken" && (
-                  <Bar dataKey="ueberstunden" fill="var(--ring)" isAnimationActive={false} />
+                  <Bar dataKey="ueberstunden" fill="var(--ring)" />
                 )}
                 {artQuoten === "balken" && (
-                  <Bar dataKey="krankheit" fill="var(--danger)" isAnimationActive={false} />
+                  <Bar dataKey="krankheit" fill="var(--danger)" />
                 )}
                 {/* Übereinander, nicht gestapelt: die Quoten sind keine Summe. */}
                 {artQuoten === "flaeche" && (
@@ -431,7 +431,6 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     fillOpacity={0.25}
                     strokeWidth={2}
                     connectNulls={false}
-                    isAnimationActive={false}
                   />
                 )}
                 {artQuoten === "flaeche" && (
@@ -443,7 +442,6 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     fillOpacity={0.25}
                     strokeWidth={2}
                     connectNulls={false}
-                    isAnimationActive={false}
                   />
                 )}
               </ComposedChart>
@@ -508,7 +506,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     }}
                   />
                 )}
-                {artKopf === "balken" && <Bar dataKey="wert" fill="var(--ring)" isAnimationActive={false} />}
+                {artKopf === "balken" && <Bar dataKey="wert" fill="var(--ring)" />}
                 {artKopf === "flaeche" && (
                   <Area
                     type="monotone"
@@ -518,7 +516,6 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     fillOpacity={0.25}
                     strokeWidth={2}
                     connectNulls={false}
-                    isAnimationActive={false}
                   />
                 )}
               </ComposedChart>

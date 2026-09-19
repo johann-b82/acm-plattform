@@ -397,7 +397,6 @@ export function VertriebDashboard() {
                     dataKey="umsatz"
                     name={nameAktuell}
                     fill="var(--ring)"
-                    isAnimationActive={false}
                     maxBarSize={mitVergleich ? 40 : 64}
                   />
                 ) : (
@@ -410,7 +409,6 @@ export function VertriebDashboard() {
                     fill="var(--ring)"
                     fillOpacity={0.15}
                     connectNulls={false}
-                    isAnimationActive={false}
                   />
                 )}
                 {mitVergleich &&
@@ -420,7 +418,6 @@ export function VertriebDashboard() {
                       name={nameVorher}
                       fill="var(--fg-muted)"
                       fillOpacity={0.55}
-                      isAnimationActive={false}
                       maxBarSize={40}
                     />
                   ) : (
@@ -434,7 +431,6 @@ export function VertriebDashboard() {
                       fill="var(--fg-muted)"
                       fillOpacity={0.08}
                       connectNulls={false}
-                      isAnimationActive={false}
                     />
                   ))}
               </ComposedChart>

@@ -518,7 +518,6 @@ function Verlaufsdiagramm({
                   // Linie ohne Punkte unsichtbar.
                   dot={daten.length <= 2 ? { r: 3 } : false}
                   connectNulls={false}
-                  isAnimationActive={false}
                 />
               ))}
             </LineChart>

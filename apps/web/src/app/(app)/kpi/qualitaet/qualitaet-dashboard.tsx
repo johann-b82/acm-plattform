@@ -192,20 +192,18 @@ function AuditartWahl({
   }
 
   const knoepfe = AUDIT_ARTEN.map((art) => (
-    <button
+    <label
       key={art}
-      type="button"
-      onClick={() => umschalten(art)}
-      aria-pressed={arten.includes(art)}
-      className={cn(
-        "rounded-full border px-3 py-1 text-sm transition-colors",
-        arten.includes(art)
-          ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
-          : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
-      )}
+      className="flex cursor-pointer items-center gap-1.5 text-sm text-[var(--fg)]"
     >
+      <input
+        type="checkbox"
+        checked={arten.includes(art)}
+        onChange={() => umschalten(art)}
+        className="h-4 w-4 accent-[var(--ring)]"
+      />
       {auditLabel[art]}
-    </button>
+    </label>
   ));
 
   // In der Schale trägt der Titel der Leiste die Beschriftung, ohne Doppelpunkt.
@@ -1097,7 +1095,6 @@ function Zeitverlauf({
                 name={r.name}
                 fill={r.farbe}
                 stackId={r.stapel}
-                isAnimationActive={false}
                 maxBarSize={48}
               />
             ) : (
@@ -1112,7 +1109,6 @@ function Zeitverlauf({
                 fillOpacity={0.2}
                 strokeWidth={2}
                 connectNulls={false}
-                isAnimationActive={false}
               />
             ),
           )}

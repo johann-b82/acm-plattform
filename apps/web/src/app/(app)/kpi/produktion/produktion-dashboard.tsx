@@ -316,7 +316,7 @@ export function ProduktionDashboard() {
                   }}
                 />
                 {art === "balken" ? (
-                  <Bar dataKey="quote" fill="var(--accent, #2f6f8f)" isAnimationActive={false} />
+                  <Bar dataKey="quote" fill="var(--accent, #2f6f8f)" />
                 ) : (
                   <Area
                     type="monotone"
@@ -327,7 +327,6 @@ export function ProduktionDashboard() {
                     fillOpacity={0.2}
                     dot={{ r: 3 }}
                     connectNulls={false}
-                    isAnimationActive={false}
                   />
                 )}
                 {ziel != null && (
