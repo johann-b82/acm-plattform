@@ -79,4 +79,25 @@ describe("Zeichnungsliste in der Schale", () => {
     expect(screen.queryByText("Halter")).not.toBeInTheDocument();
     expect(screen.getByText("Winkel")).toBeInTheDocument();
   });
+
+  it("gruppiert die Zeichnungen nach Kunde mit Überschrift", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Zeichnungsliste darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Halter");
+    // Jede Kundengruppe ist ein eigener Abschnitt mit dem Kundennamen als Titel.
+    const airbus = screen.getByRole("region", { name: "Airbus" });
+    const pilatus = screen.getByRole("region", { name: "Pilatus" });
+    expect(within(airbus).getByText("Winkel")).toBeInTheDocument();
+    expect(within(pilatus).getByText("Halter")).toBeInTheDocument();
+    // Airbus steht vor Pilatus (alphabetisch).
+    expect(airbus.compareDocumentPosition(pilatus) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

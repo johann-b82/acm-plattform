@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileUp, FolderSearch, Tag } from "lucide-react";
+import { FileUp, FolderSearch, Tag, Trash2 } from "lucide-react";
 
 import {
   lieferungApi,
@@ -50,6 +50,7 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const [bericht, setBericht] = useState<LieferscheinErgebnis | null>(null);
   const [auswahl, setAuswahl] = useState<ReadonlySet<string>>(new Set());
   const [frage, setFrage] = useState(false);
+  const [loeschFrage, setLoeschFrage] = useState(false);
   const [nummer, setNummer] = useState("");
   const melde = useKonfliktMeldung();
   useLiveTabellen(LIVE_TABELLEN);
@@ -93,6 +94,31 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     mutationFn: (l: Lieferung) => lieferungApi.loeschen(l),
     onSuccess: neuLaden,
     onError: (fehler: Error) => melde(fehler),
+  });
+
+  const sammelLoeschen = useMutation({
+    // Jede Lieferung einzeln, damit ein Versionskonflikt (jemand hat sie
+    // inzwischen geändert) nur diese eine überspringt statt alle zu stoppen.
+    mutationFn: async (ziele: Lieferung[]) => {
+      let weg = 0;
+      for (const l of ziele) {
+        try {
+          await lieferungApi.loeschen(l);
+          weg += 1;
+        } catch {
+          // Konflikt oder schon weg — am Ende als „nicht gelöscht" gezählt.
+        }
+      }
+      return { weg, gesamt: ziele.length };
+    },
+    onSuccess: ({ weg, gesamt }) => {
+      if (weg === gesamt) toast.success(worte.lieferungen.geloescht(weg));
+      else toast.warning(worte.lieferungen.loeschenTeilweise(weg, gesamt - weg));
+      setAuswahl(new Set());
+      setLoeschFrage(false);
+      return neuLaden();
+    },
+    onError: (fehler: Error) => toast.error(fehler.message),
   });
 
   const container = useMutation({
@@ -308,6 +334,15 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                 {worte.lieferungen.containerbeschriftung}
                 {gewaehlt.length > 0 && ` (${gewaehlt.length})`}
               </Button>
+              <Button
+                variant="outline"
+                disabled={gewaehlt.length === 0 || sammelLoeschen.isPending}
+                onClick={() => setLoeschFrage(true)}
+              >
+                <Trash2 className="me-2 h-4 w-4 text-[var(--danger)]" aria-hidden />
+                {worte.lieferungen.ausgewaehlteLoeschen}
+                {gewaehlt.length > 0 && ` (${gewaehlt.length})`}
+              </Button>
               {gewaehlt.length > 0 && (
                 <Button variant="ghost" size="sm" onClick={() => setAuswahl(new Set())}>
                   {worte.lieferungen.auswahlAufheben}
@@ -350,6 +385,31 @@ export function Lieferungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
             {worte.lieferungen.ausgewaehlt(gewaehlt.length)}: {gewaehlt.map(name).join(", ")}
           </p>
         </div>
+      </Dialog>
+
+      <Dialog
+        open={loeschFrage}
+        onOpenChange={(offen) => !sammelLoeschen.isPending && setLoeschFrage(offen)}
+        title={worte.lieferungen.loeschenFrage(gewaehlt.length)}
+        description={worte.lieferungen.loeschenHinweis}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setLoeschFrage(false)} disabled={sammelLoeschen.isPending}>
+              {worte.allgemein.abbrechen}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={gewaehlt.length === 0 || sammelLoeschen.isPending}
+              onClick={() => sammelLoeschen.mutate(gewaehlt)}
+            >
+              {worte.lieferungen.loeschenBestaetigen}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-xs text-[var(--fg-muted)]">
+          {worte.lieferungen.ausgewaehlt(gewaehlt.length)}: {gewaehlt.map(name).join(", ")}
+        </p>
       </Dialog>
     </div>
   );

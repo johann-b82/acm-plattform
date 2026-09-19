@@ -1415,6 +1415,12 @@ export const uk: Texte = {
     containerHinweis: "Етикетка показує всі поставки цього контейнера — також ті, що були в ньому раніше.",
     containerErstellt: (nr: string) => `Призначено контейнер ${nr} – етикетка завантажується`,
     erstellen: "Створити",
+    ausgewaehlteLoeschen: "Видалити вибрані",
+    loeschenFrage: (anzahl: number) => `Видалити ${anzahl} ${anzahl === 1 ? "постачання" : "постачань"}?`,
+    loeschenHinweis: "Вибрані постачання видаляються разом зі створеними ними файлами. Це не можна скасувати.",
+    loeschenBestaetigen: "Видалити",
+    geloescht: (anzahl: number) => `${anzahl} видалено.`,
+    loeschenTeilweise: (weg: number, offen: number) => `${weg} видалено, ${offen} ні — змінені тим часом або вже відсутні.`,
   },
   durchsicht: {
     nichtGefunden: "Поставку не знайдено.",

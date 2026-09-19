@@ -1424,6 +1424,12 @@ export const en: Texte = {
     containerHinweis: "The label lists every delivery assigned to this container — including ones that were already in it.",
     containerErstellt: (nr: string) => `Assigned to container ${nr} – downloading the label`,
     erstellen: "Create",
+    ausgewaehlteLoeschen: "Delete selected",
+    loeschenFrage: (anzahl: number) => `Delete ${anzahl} ${anzahl === 1 ? "delivery" : "deliveries"}?`,
+    loeschenHinweis: "The selected deliveries are removed together with the files they generated. This cannot be undone.",
+    loeschenBestaetigen: "Delete",
+    geloescht: (anzahl: number) => `${anzahl} deleted.`,
+    loeschenTeilweise: (weg: number, offen: number) => `${weg} deleted, ${offen} not — changed meanwhile or already gone.`,
   },
   durchsicht: {
     nichtGefunden: "Delivery not found.",

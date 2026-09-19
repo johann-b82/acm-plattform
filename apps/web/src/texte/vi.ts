@@ -1424,6 +1424,12 @@ export const vi: Texte = {
     containerHinweis: "Nhãn liệt kê mọi lô giao thuộc container này — kể cả những lô đã có trong đó từ trước.",
     containerErstellt: (nr: string) => `Đã gán container ${nr} – đang tải nhãn`,
     erstellen: "Tạo",
+    ausgewaehlteLoeschen: "Xóa mục đã chọn",
+    loeschenFrage: (anzahl: number) => `Xóa ${anzahl} lô giao?`,
+    loeschenHinweis: "Các lô giao đã chọn sẽ bị xóa cùng với các tệp do chúng tạo ra. Không thể hoàn tác.",
+    loeschenBestaetigen: "Xóa",
+    geloescht: (anzahl: number) => `Đã xóa ${anzahl}.`,
+    loeschenTeilweise: (weg: number, offen: number) => `Đã xóa ${weg}, ${offen} thì không — đã thay đổi hoặc không còn.`,
   },
   durchsicht: {
     nichtGefunden: "Không tìm thấy lô giao.",

@@ -1389,6 +1389,12 @@ export const de = {
     containerHinweis: "Das Etikett zeigt alle Lieferungen, die diesem Container zugeordnet sind — auch solche, die schon vorher darin lagen.",
     containerErstellt: (nr: string) => `Container ${nr} zugeordnet – Beschriftung wird heruntergeladen`,
     erstellen: "Erstellen",
+    ausgewaehlteLoeschen: "Ausgewählte löschen",
+    loeschenFrage: (anzahl: number) => `${anzahl} ${anzahl === 1 ? "Lieferung" : "Lieferungen"} löschen?`,
+    loeschenHinweis: "Die ausgewählten Lieferungen werden mit ihren erzeugten Dateien entfernt. Das lässt sich nicht rückgängig machen.",
+    loeschenBestaetigen: "Löschen",
+    geloescht: (anzahl: number) => `${anzahl} gelöscht.`,
+    loeschenTeilweise: (weg: number, offen: number) => `${weg} gelöscht, ${offen} nicht — inzwischen geändert oder schon weg.`,
   },
   durchsicht: {
     nichtGefunden: "Lieferung nicht gefunden.",

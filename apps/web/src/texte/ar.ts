@@ -1410,6 +1410,12 @@ export const ar: Texte = {
     containerHinweis: "يعرض الملصق كل التوريدات المخصصة لهذه الحاوية، بما فيها ما كان فيها من قبل.",
     containerErstellt: (nr: string) => `تم التخصيص للحاوية ${nr} – جارٍ تنزيل الملصق`,
     erstellen: "إنشاء",
+    ausgewaehlteLoeschen: "حذف المحدد",
+    loeschenFrage: (anzahl: number) => `حذف ${anzahl} ${anzahl === 1 ? "تسليم" : "عمليات تسليم"}؟`,
+    loeschenHinweis: "تُحذف عمليات التسليم المحددة مع الملفات التي أنشأتها. لا يمكن التراجع عن ذلك.",
+    loeschenBestaetigen: "حذف",
+    geloescht: (anzahl: number) => `تم حذف ${anzahl}.`,
+    loeschenTeilweise: (weg: number, offen: number) => `تم حذف ${weg}، وتعذّر ${offen} — تغيّرت أو لم تعد موجودة.`,
   },
   durchsicht: {
     nichtGefunden: "لم يُعثر على التوريد.",

@@ -1428,6 +1428,12 @@ export const pl: Texte = {
     containerHinweis: "Etykieta pokazuje wszystkie dostawy przypisane do tego kontenera — także te, które już w nim były.",
     containerErstellt: (nr: string) => `Przypisano kontener ${nr} – etykieta jest pobierana`,
     erstellen: "Utwórz",
+    ausgewaehlteLoeschen: "Usuń zaznaczone",
+    loeschenFrage: (anzahl: number) => `Usunąć ${anzahl} ${anzahl === 1 ? "dostawę" : "dostaw"}?`,
+    loeschenHinweis: "Zaznaczone dostawy są usuwane wraz z wygenerowanymi plikami. Tego nie można cofnąć.",
+    loeschenBestaetigen: "Usuń",
+    geloescht: (anzahl: number) => `Usunięto ${anzahl}.`,
+    loeschenTeilweise: (weg: number, offen: number) => `Usunięto ${weg}, ${offen} nie — w międzyczasie zmienione lub już usunięte.`,
   },
   durchsicht: {
     nichtGefunden: "Nie znaleziono dostawy.",
