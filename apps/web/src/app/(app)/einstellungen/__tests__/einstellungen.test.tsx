@@ -1,9 +1,10 @@
 /**
- * Die Sprungliste der Einstellungen steht in der Schale in der rechten Leiste,
- * die Gruppen selbst bleiben im Inhalt.
+ * Die Einstellungen wählen ihren Bereich über ein Auswahlmenü; darunter steht
+ * nur der gewählte Abschnitt. In der Schale steht das Menü in der rechten
+ * Leiste.
  */
-import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 vi.mock("../abschnitte/kennzahlen", () => ({ Kennzahlen: () => null }));
 vi.mock("../abschnitte/personal", () => ({ Personal: () => null }));
@@ -27,30 +28,60 @@ import { Werkzeugplatz } from "@/components/sidebar/werkzeugplatz";
 import { texteFuer } from "@/texte";
 import { Einstellungen } from "../einstellungen";
 
-describe("Einstellungen in der Schale", () => {
-  it("stellt die Sprungliste senkrecht in die rechte Leiste", () => {
-    const plaetze = Object.fromEntries(
-      ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
-        k,
-        document.body.appendChild(document.createElement("div")),
-      ]),
+const worte = texteFuer("de");
+const gruppen = worte.einstellungen.gruppen as Record<string, string>;
+
+afterEach(() => {
+  history.replaceState(null, "", " ");
+});
+
+function zeigeInSchale() {
+  const plaetze = Object.fromEntries(
+    ["navigation", "ansicht", "filter", "zeitraum", "aktionen"].map((k) => [
+      k,
+      document.body.appendChild(document.createElement("div")),
+    ]),
+  );
+  const ergebnis = render(
+    <SprachAnbieter sprache="de">
+      <Werkzeugplatz.Provider value={plaetze}>
+        <Einstellungen eigeneId="u1" />
+      </Werkzeugplatz.Provider>
+    </SprachAnbieter>,
+  );
+  return { ...ergebnis, plaetze };
+}
+
+describe("Einstellungen in Kategorien", () => {
+  it("stellt das Bereichsmenü in der Schale in die rechte Leiste, mit allen Kategorien", () => {
+    const { plaetze } = zeigeInSchale();
+    const menu = screen.getByRole("combobox", { name: "Bereiche" });
+    expect(plaetze.navigation).toContainElement(menu);
+    expect(within(menu).getAllByRole("option").map((o) => o.textContent)).toEqual(
+      GRUPPEN.map((g) => gruppen[g.id]),
     );
-    const { container } = render(
-      <SprachAnbieter sprache="de">
-        <Werkzeugplatz.Provider value={plaetze}>
-          <Einstellungen eigeneId="u1" />
-        </Werkzeugplatz.Provider>
-      </SprachAnbieter>,
-    );
-    const worte = texteFuer("de");
-    const nav = screen.getByRole("navigation", { name: worte.einstellungen.bereiche });
-    expect(plaetze.navigation).toContainElement(nav);
-    expect(nav.querySelector("ul")!.className).toContain("flex-col");
-    expect(within(nav).getAllByRole("link").map((a) => a.getAttribute("href"))).toEqual(
-      GRUPPEN.map((g) => `#${g.id}`),
-    );
-    // Die Abschnitte bleiben im Inhalt.
-    for (const g of GRUPPEN) expect(container.querySelector(`section#${g.id}`)).not.toBeNull();
+    Object.values(plaetze).forEach((div) => div.remove());
+  });
+
+  it("zeigt nur den gewählten Bereich, nicht alle auf einmal", () => {
+    const { container, plaetze } = zeigeInSchale();
+    // Voreinstellung ist der erste Bereich.
+    expect(container.querySelector(`section#${GRUPPEN[0].id}`)).not.toBeNull();
+    expect(container.querySelector("section#sensoren")).toBeNull();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Bereiche" }), {
+      target: { value: "sensoren" },
+    });
+    expect(container.querySelector("section#sensoren")).not.toBeNull();
+    expect(container.querySelector(`section#${GRUPPEN[0].id}`)).toBeNull();
+    Object.values(plaetze).forEach((div) => div.remove());
+  });
+
+  it("nimmt die Kategorie aus der Adresse (etwa die Weiterleitung von /platform)", () => {
+    history.replaceState(null, "", "#zugaenge");
+    const { container, plaetze } = zeigeInSchale();
+    expect(container.querySelector("section#zugaenge")).not.toBeNull();
+    expect(screen.getByRole("combobox", { name: "Bereiche" })).toHaveValue("zugaenge");
     Object.values(plaetze).forEach((div) => div.remove());
   });
 });

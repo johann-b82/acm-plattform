@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { GRUPPEN, type Gruppe } from "@/lib/einstellungen";
 import { Hinweis } from "@/components/ui/hinweis";
+import { Label, Select } from "@/components/ui/primitives";
 
 import { Kennzahlen } from "./abschnitte/kennzahlen";
 import { Personal } from "./abschnitte/personal";
@@ -20,60 +23,88 @@ import { Zugaenge } from "./abschnitte/zugaenge";
 import { ActiveDirectory } from "./abschnitte/ad";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { useTexte } from "@/components/sprache/anbieter";
-import { Seitenwerkzeuge, useInSchale } from "@/components/sidebar/werkzeugplatz";
+import { Seitenwerkzeuge, Werkzeug, useInSchale } from "@/components/sidebar/werkzeugplatz";
+
+/** Die Gruppen-Kennung aus der Adresse (`/einstellungen#sensoren`), falls es
+ *  sie gibt — sonst nichts. So landet die Weiterleitung von `/platform` auf
+ *  „Zugänge" und geteilte Links auf ihrem Bereich. */
+function ausHash(): string | null {
+  if (typeof window === "undefined") return null;
+  const id = window.location.hash.replace(/^#/, "");
+  return GRUPPEN.some((g) => g.id === id) ? id : null;
+}
 
 /**
- * Alle Einstellungen an einer Stelle, nach Bereich gruppiert.
+ * Alle Einstellungen an einer Stelle, in Kategorien.
  *
  * Vorher lag jede Einstellung dort, wo sie fachlich hingehörte — die
  * ATR-Vorlagen im Teilekatalog, der Eingangsordner unter den Lieferungen, die
  * Konten in einer eigenen Verwaltung. Wer etwas einstellen wollte, musste
  * wissen, wo. Jetzt gibt es einen Ort und eine Gliederung.
  *
+ * Die Kategorie wird über ein Auswahlmenü gewählt; darunter steht nur der
+ * gewählte Bereich. Die Wahl steht in der Adresse (`#sensoren`), damit
+ * Weiterleitungen und geteilte Links ihren Bereich treffen.
+ *
  * Die Seite gehört der Plattform-Verwaltung; das Tor sitzt in `page.tsx`.
  * Deshalb steht hier keine Rechteprüfung mehr je Abschnitt: was hier steht,
  * gilt ohnehin für alle.
- *
- * Die Sprungliste zu den Gruppen steht in der Schale senkrecht in der rechten
- * Leiste; ohne Schale links neben den Gruppen.
  */
 export function Einstellungen({ eigeneId }: { eigeneId: string }) {
   const worte = useTexte();
   const gruppen = worte.einstellungen.gruppen as Record<string, string>;
   const inSchale = useInSchale();
 
-  const inhalt = (
-    <div className="space-y-10">
+  const [gewaehlt, setGewaehlt] = useState<string>(() => ausHash() ?? GRUPPEN[0].id);
+
+  // Sprünge über die Adresse (etwa die Weiterleitung von `/platform`) mitnehmen.
+  useEffect(() => {
+    const auf = () => {
+      const id = ausHash();
+      if (id) setGewaehlt(id);
+    };
+    window.addEventListener("hashchange", auf);
+    return () => window.removeEventListener("hashchange", auf);
+  }, []);
+
+  function waehle(id: string) {
+    setGewaehlt(id);
+    // Die Adresse teilbar halten, ohne die Historie vollzuschreiben.
+    history.replaceState(null, "", `#${id}`);
+  }
+
+  const gruppe = GRUPPEN.find((g) => g.id === gewaehlt) ?? GRUPPEN[0];
+
+  const auswahl = (
+    <Select
+      id="einstellungsbereich"
+      aria-label={worte.einstellungen.bereiche}
+      value={gruppe.id}
+      onChange={(e) => waehle(e.target.value)}
+    >
       {GRUPPEN.map((g) => (
-        <section key={g.id} id={g.id} className="scroll-mt-6 space-y-3">
-          <h2 className="flex items-center gap-1.5 text-lg font-medium tracking-tight">
-            {gruppen[g.id]}
-            <Hinweis text={gruppen[`${g.id}Text`]} />
-          </h2>
-          <Inhalt gruppe={g} eigeneId={eigeneId} />
-        </section>
+        <option key={g.id} value={g.id}>
+          {gruppen[g.id]}
+        </option>
       ))}
-    </div>
+    </Select>
+  );
+
+  const inhalt = (
+    <section id={gruppe.id} className="space-y-3">
+      <h2 className="flex items-center gap-1.5 text-lg font-medium tracking-tight">
+        {gruppen[gruppe.id]}
+        <Hinweis text={gruppen[`${gruppe.id}Text`]} />
+      </h2>
+      <Inhalt gruppe={gruppe} eigeneId={eigeneId} />
+    </section>
   );
 
   if (inSchale) {
     return (
       <div className="space-y-6">
         <Seitenwerkzeuge kategorie="navigation">
-          <nav aria-label={worte.einstellungen.bereiche} className="border-s border-[var(--border)]">
-            <ul className="flex flex-col text-sm">
-              {GRUPPEN.map((g) => (
-                <li key={g.id}>
-                  <a
-                    href={`#${g.id}`}
-                    className="-ms-px block border-s border-transparent py-1 ps-3 text-[var(--fg-muted)] underline-offset-4 hover:border-[var(--fg-muted)] hover:text-[var(--fg)] hover:underline"
-                  >
-                    {gruppen[g.id]}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <Werkzeug titel={worte.einstellungen.bereiche}>{auswahl}</Werkzeug>
         </Seitenwerkzeuge>
         {inhalt}
       </div>
@@ -82,30 +113,12 @@ export function Einstellungen({ eigeneId }: { eigeneId: string }) {
 
   return (
     <div className="space-y-6">
-      <Seitenkopf
-      />
-
-      <div className="grid gap-8 lg:grid-cols-[11rem_minmax(0,1fr)]">
-        <nav
-          aria-label={worte.einstellungen.bereiche}
-          className="self-start lg:sticky lg:top-6 lg:border-s lg:border-[var(--border)]"
-        >
-          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:flex-col lg:gap-0">
-            {GRUPPEN.map((g) => (
-              <li key={g.id}>
-                <a
-                  href={`#${g.id}`}
-                  className="block py-1 text-[var(--fg-muted)] underline-offset-4 hover:text-[var(--fg)] hover:underline lg:-ms-px lg:border-s lg:border-transparent lg:ps-3 lg:hover:border-[var(--fg-muted)]"
-                >
-                  {gruppen[g.id]}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {inhalt}
+      <Seitenkopf />
+      <div className="flex flex-col gap-1 sm:max-w-xs">
+        <Label htmlFor="einstellungsbereich">{worte.einstellungen.bereiche}</Label>
+        {auswahl}
       </div>
+      {inhalt}
     </div>
   );
 }
