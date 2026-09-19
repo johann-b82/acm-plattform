@@ -333,7 +333,7 @@ function Diagramm({
                   strokeWidth={2}
                   fill={FARBE[feld]}
                   fillOpacity={0.3}
-                  connectNulls={false}
+                  connectNulls
                 />
               ),
             )}

@@ -537,7 +537,7 @@ function QuotenVerlauf({
                 strokeWidth={2}
                 fill={farbe}
                 fillOpacity={0.2}
-                connectNulls={false}
+                connectNulls
               />
             )}
           </ComposedChart>

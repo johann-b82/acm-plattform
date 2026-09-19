@@ -430,7 +430,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     fill="var(--ring)"
                     fillOpacity={0.25}
                     strokeWidth={2}
-                    connectNulls={false}
+                    connectNulls
                   />
                 )}
                 {artQuoten === "flaeche" && (
@@ -441,7 +441,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     fill="var(--danger)"
                     fillOpacity={0.25}
                     strokeWidth={2}
-                    connectNulls={false}
+                    connectNulls
                   />
                 )}
               </ComposedChart>
@@ -515,7 +515,7 @@ export function PersonalDashboard({ darfAbgleichen }: { darfAbgleichen: boolean 
                     fill="var(--ring)"
                     fillOpacity={0.25}
                     strokeWidth={2}
-                    connectNulls={false}
+                    connectNulls
                   />
                 )}
               </ComposedChart>

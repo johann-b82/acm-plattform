@@ -326,7 +326,7 @@ export function ProduktionDashboard() {
                     fill="var(--accent, #2f6f8f)"
                     fillOpacity={0.2}
                     dot={{ r: 3 }}
-                    connectNulls={false}
+                    connectNulls
                   />
                 )}
                 {ziel != null && (

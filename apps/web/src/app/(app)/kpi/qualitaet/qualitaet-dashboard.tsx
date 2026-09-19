@@ -17,7 +17,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { takt } from "@/lib/kpi/gemeinsam";
+import { dichteBuckets, takt } from "@/lib/kpi/gemeinsam";
 import {
   AUDIT_ARTEN,
   PRUEFKLASSEN,
@@ -28,6 +28,7 @@ import {
   qualitaetApi,
   reklamationApi,
   verlaufJeArt,
+  type VerlaufBucket,
   type Artikelart,
   type AuditFinding,
   type BuchungsZeile,
@@ -272,12 +273,17 @@ function Audits({
   );
   const chartDaten = useMemo(
     () =>
-      ([1, 2] as const).map((level) =>
-        verlaufJeArt(verlaufDaten ?? [], level, gewaehlteArten).map((p) => ({
+      ([1, 2] as const).map((level) => {
+        const roh = verlaufJeArt(verlaufDaten ?? [], level, gewaehlteArten);
+        // Leere Monate als Null einsetzen, damit die Fläche nicht in Inseln
+        // zerfällt (VER-04B). Ein leerer Monat trägt für jede Art eine Null.
+        const leer = (bucket: string) =>
+          ({ bucket, ...Object.fromEntries(gewaehlteArten.map((a) => [a, 0])) }) as VerlaufBucket;
+        return dichteBuckets(roh, t, leer).map((p) => ({
           ...p,
           label: fmt.bucket(String(p.bucket), t),
-        })),
-      ),
+        }));
+      }),
     [verlaufDaten, gewaehlteArten, t, fmt],
   );
   const auditReihen = gewaehlteArten.map((art, i) => ({
@@ -1024,9 +1030,11 @@ function DiagrammKopf({
 
 /**
  * Ein Zeitverlauf als Balken oder Fläche (VER-04B). Mehrere Reihen stehen
- * nebeneinander, es sei denn, sie teilen sich einen `stapel`; fehlende Werte
- * werden nicht überbrückt. Eine Ziellinie
- * weitet die Achse, damit sie auch über den Werten sichtbar bleibt.
+ * nebeneinander, es sei denn, sie teilen sich einen `stapel`. Lücken werden
+ * geschlossen (`connectNulls`), damit die Fläche über einen langen Zeitraum
+ * nicht in Inseln zerfällt; die Zählreihen sind zuvor mit Nullen verdichtet.
+ * Eine Ziellinie weitet die Achse, damit sie auch über den Werten sichtbar
+ * bleibt.
  */
 function Zeitverlauf({
   daten,
@@ -1108,7 +1116,7 @@ function Zeitverlauf({
                 fill={r.farbe}
                 fillOpacity={0.2}
                 strokeWidth={2}
-                connectNulls={false}
+                connectNulls
               />
             ),
           )}

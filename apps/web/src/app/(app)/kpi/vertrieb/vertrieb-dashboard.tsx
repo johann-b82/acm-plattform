@@ -408,7 +408,7 @@ export function VertriebDashboard() {
                     strokeWidth={2}
                     fill="var(--ring)"
                     fillOpacity={0.15}
-                    connectNulls={false}
+                    connectNulls
                   />
                 )}
                 {mitVergleich &&
@@ -430,7 +430,7 @@ export function VertriebDashboard() {
                       strokeDasharray="5 4"
                       fill="var(--fg-muted)"
                       fillOpacity={0.08}
-                      connectNulls={false}
+                      connectNulls
                     />
                   ))}
               </ComposedChart>

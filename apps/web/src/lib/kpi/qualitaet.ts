@@ -75,20 +75,20 @@ export function ohneLevel(liste: readonly AuditFinding[]): AuditFinding[] {
  * auf 0, damit der Stapel nicht springt. Ein Bucket ohne jede Zeile kommt gar
  * nicht erst vor — das bleibt eine Lücke, keine erfundene Null.
  */
+/** Ein Verlaufspunkt: der Bucket als ISO-Datum plus je Art eine Zahl. */
+export type VerlaufBucket = { bucket: string } & Record<string, number | string>;
+
 export function verlaufJeArt(
   zeilen: readonly AuditVerlaufZeile[],
   level: 1 | 2,
   arten: readonly string[],
-): Record<string, number | string>[] {
-  const nach = new Map<string, Record<string, number | string>>();
+): VerlaufBucket[] {
+  const nach = new Map<string, VerlaufBucket>();
   for (const z of zeilen) {
     if (!arten.includes(z.art)) continue;
     const eintrag =
       nach.get(z.bucket) ??
-      ({ bucket: z.bucket, ...Object.fromEntries(arten.map((a) => [a, 0])) } as Record<
-        string,
-        number | string
-      >);
+      ({ bucket: z.bucket, ...Object.fromEntries(arten.map((a) => [a, 0])) } as VerlaufBucket);
     eintrag[z.art] = Number(eintrag[z.art] ?? 0) + Number(level === 1 ? z.level_1 : z.level_2);
     nach.set(z.bucket, eintrag);
   }
