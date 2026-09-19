@@ -1414,6 +1414,12 @@ export const fa: Texte = {
     containerHinweis: "برچسب همه محموله‌های این کانتینر را نشان می‌دهد، از جمله آن‌هایی که از قبل در آن بودند.",
     containerErstellt: (nr: string) => `به کانتینر ${nr} اختصاص یافت – برچسب در حال دانلود است`,
     erstellen: "ایجاد",
+    ausgewaehlteLoeschen: "حذف انتخاب‌شده‌ها",
+    loeschenFrage: (anzahl: number) => `${anzahl} ${anzahl === 1 ? "تحویل" : "تحویل"} حذف شود؟`,
+    loeschenHinweis: "تحویل‌های انتخاب‌شده همراه با فایل‌هایی که ساخته‌اند حذف می‌شوند. این کار برگشت‌پذیر نیست.",
+    loeschenBestaetigen: "حذف",
+    geloescht: (anzahl: number) => `${anzahl} حذف شد.`,
+    loeschenTeilweise: (weg: number, offen: number) => `${weg} حذف شد، ${offen} نشد — در این میان تغییر کرده یا دیگر موجود نیست.`,
   },
   durchsicht: {
     nichtGefunden: "محموله یافت نشد.",

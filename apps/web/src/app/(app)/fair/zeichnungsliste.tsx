@@ -12,9 +12,8 @@ import {
   fairKeys,
   type Zeichnung,
 } from "@/lib/fair";
-import { kundenAuswahl, nachKunde, OHNE_KUNDE } from "@/lib/fair/kunden";
+import { gruppiereNachKunde, kundenAuswahl, nachKunde, OHNE_KUNDE } from "@/lib/fair/kunden";
 import { EmptyState, Input, Label, Select } from "@/components/ui/primitives";
-import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -40,6 +39,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const [kunde, setKunde] = useState("");
   const auswahl = useMemo(() => kundenAuswahl(liste), [liste]);
   const gefiltert = useMemo(() => nachKunde(liste, kunde), [liste, kunde]);
+  const gruppen = useMemo(() => gruppiereNachKunde(gefiltert), [gefiltert]);
 
   const neuLaden = () =>
     queryClient.invalidateQueries({ queryKey: fairKeys.zeichnungen() });
@@ -62,46 +62,6 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
     },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
-
-  const spalten: Tabellenspalte<Zeichnung>[] = [
-    {
-      schluessel: "name",
-      titel: worte.fair.bezeichnung,
-      typ: "text",
-      wert: (z) => z.name,
-      zelle: (z) => (
-        <Link href={`/fair/${z.id}`} className="font-medium underline-offset-4 hover:underline">
-          {z.name}
-        </Link>
-      ),
-    },
-    { schluessel: "teilenummer", titel: worte.fair.teilenummer, typ: "text", wert: (z) => z.teilenummer },
-    { schluessel: "kunde", titel: worte.fair.kunde, typ: "text", wert: (z) => z.kunde?.trim() },
-    {
-      schluessel: "erstellt_am",
-      titel: worte.fair.hochgeladen,
-      typ: "datum",
-      wert: (z) => z.erstellt_am,
-      zelle: (z) => DATUM.format(new Date(z.erstellt_am)),
-      suchtext: (z) => DATUM.format(new Date(z.erstellt_am)),
-    },
-    {
-      schluessel: "aktion",
-      titel: "",
-      typ: "text",
-      wert: () => null,
-      sortierbar: false,
-      suchtext: false,
-      ausrichtung: "end",
-      zelle: (z) =>
-        darfSchreiben && (
-          <ConfirmDeleteButton
-            itemLabel={z.name}
-            onConfirm={() => loeschen.mutateAsync(z).then(() => undefined)}
-          />
-        ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -184,12 +144,59 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {liste.length > 0 && (
-        <Datentabelle
-          zeilen={gefiltert}
-          spalten={spalten}
-          zeilenSchluessel={(z) => z.id}
-          beschriftung={worte.pfad.seiten["/fair"]}
-        />
+        <div className="space-y-6">
+          {gruppen.map((gruppe) => (
+            <section key={gruppe.kunde ?? "__ohne"} aria-label={gruppe.kunde ?? worte.fair.ohneKunde}>
+              <h3 className="mb-2 flex items-baseline gap-2 text-sm font-semibold">
+                <span>{gruppe.kunde ?? worte.fair.ohneKunde}</span>
+                <span className="rounded-full bg-[var(--muted)] px-2 py-0.5 text-xs font-normal tabular-nums text-[var(--fg-muted)]">
+                  {gruppe.zeichnungen.length}
+                </span>
+              </h3>
+              <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr>
+                      <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-start font-medium">
+                        {worte.fair.bezeichnung}
+                      </th>
+                      <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-start font-medium">
+                        {worte.fair.teilenummer}
+                      </th>
+                      <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-start font-medium">
+                        {worte.fair.hochgeladen}
+                      </th>
+                      {darfSchreiben && <th className="border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2" />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gruppe.zeichnungen.map((z) => (
+                      <tr key={z.id} className="border-t border-[var(--border)]">
+                        <td className="px-3 py-2">
+                          <Link href={`/fair/${z.id}`} className="font-medium underline-offset-4 hover:underline">
+                            {z.name}
+                          </Link>
+                        </td>
+                        <td className="px-3 py-2">{z.teilenummer?.trim() || "—"}</td>
+                        <td className="px-3 py-2 text-[var(--fg-muted)]">
+                          {DATUM.format(new Date(z.erstellt_am))}
+                        </td>
+                        {darfSchreiben && (
+                          <td className="px-3 py-2 text-end">
+                            <ConfirmDeleteButton
+                              itemLabel={z.name}
+                              onConfirm={() => loeschen.mutateAsync(z).then(() => undefined)}
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -1430,6 +1430,12 @@ export const bg: Texte = {
     containerHinweis: "Етикетът показва всички доставки към този контейнер — и тези, които вече са били в него.",
     containerErstellt: (nr: string) => `Зададен контейнер ${nr} – етикетът се изтегля`,
     erstellen: "Създаване",
+    ausgewaehlteLoeschen: "Изтриване на избраните",
+    loeschenFrage: (anzahl: number) => `Да се изтрият ли ${anzahl} ${anzahl === 1 ? "доставка" : "доставки"}?`,
+    loeschenHinweis: "Избраните доставки се премахват заедно с генерираните от тях файлове. Това не може да се отмени.",
+    loeschenBestaetigen: "Изтриване",
+    geloescht: (anzahl: number) => `${anzahl} изтрити.`,
+    loeschenTeilweise: (weg: number, offen: number) => `${weg} изтрити, ${offen} не — променени междувременно или вече ги няма.`,
   },
   durchsicht: {
     nichtGefunden: "Доставката не е намерена.",
