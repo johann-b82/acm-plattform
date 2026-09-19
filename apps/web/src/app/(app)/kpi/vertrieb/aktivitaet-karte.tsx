@@ -320,7 +320,6 @@ function Diagramm({
                   name={reihenname(feld)}
                   stackId={gestapelt ? "summe" : undefined}
                   fill={FARBE[feld]}
-                  isAnimationActive={false}
                   maxBarSize={28}
                 />
               ) : (
@@ -334,8 +333,7 @@ function Diagramm({
                   strokeWidth={2}
                   fill={FARBE[feld]}
                   fillOpacity={0.3}
-                  connectNulls={false}
-                  isAnimationActive={false}
+                  connectNulls
                 />
               ),
             )}

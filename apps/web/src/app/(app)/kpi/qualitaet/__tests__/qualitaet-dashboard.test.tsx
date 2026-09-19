@@ -59,7 +59,7 @@ describe("Qualität", () => {
     const umschalter = screen.getByRole("radiogroup", { name: "Ansicht" });
     const zeile = umschalter.parentElement!;
     expect(within(zeile).getByText("Auditart:")).toBeInTheDocument();
-    expect(within(zeile).getByRole("button", { name: "Behörde" })).toBeInTheDocument();
+    expect(within(zeile).getByRole("checkbox", { name: "Behörde" })).toBeInTheDocument();
   });
 
   it("stellt bei der Qualitätsprüfung die Artikelart in dieselbe Zeile wie den Umschalter", () => {
@@ -123,11 +123,11 @@ describe("Qualität", () => {
       // unter der Kategorie „Ansicht“.
       expect(within(ansicht).getByRole("combobox", { name: "Ansicht" })).toBeInTheDocument();
       expect(within(ansicht).queryByText("Ansicht")).toBeNull();
-      expect(within(filter).getByRole("button", { name: "Behörde" })).toBeInTheDocument();
+      expect(within(filter).getByRole("checkbox", { name: "Behörde" })).toBeInTheDocument();
       // Titel ohne Doppelpunkt, keine zweite Beschriftung.
       expect(within(filter).getByText("Auditart")).toBeInTheDocument();
       expect(within(filter).queryByText("Auditart:")).toBeNull();
-      expect(within(ansicht).queryByRole("button", { name: "Behörde" })).toBeNull();
+      expect(within(ansicht).queryByRole("checkbox", { name: "Behörde" })).toBeNull();
     });
 
     it("stellt die Artikelart mit Titel in die Filter", () => {
@@ -157,7 +157,7 @@ describe("Qualität", () => {
     zeige();
     const umschalter = screen.getByRole("radiogroup", { name: "Ansicht" });
     fireEvent.click(within(umschalter).getByRole("radio", { name: "Reklamationen" }));
-    expect(screen.queryByRole("button", { name: "Behörde" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Behörde" })).not.toBeInTheDocument();
   });
 });
 
