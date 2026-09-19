@@ -17,7 +17,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { takt } from "@/lib/kpi/gemeinsam";
+import { dichteBuckets, takt } from "@/lib/kpi/gemeinsam";
 import {
   AUDIT_ARTEN,
   PRUEFKLASSEN,
@@ -28,6 +28,7 @@ import {
   qualitaetApi,
   reklamationApi,
   verlaufJeArt,
+  type VerlaufBucket,
   type Artikelart,
   type AuditFinding,
   type BuchungsZeile,
@@ -192,20 +193,18 @@ function AuditartWahl({
   }
 
   const knoepfe = AUDIT_ARTEN.map((art) => (
-    <button
+    <label
       key={art}
-      type="button"
-      onClick={() => umschalten(art)}
-      aria-pressed={arten.includes(art)}
-      className={cn(
-        "rounded-full border px-3 py-1 text-sm transition-colors",
-        arten.includes(art)
-          ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]"
-          : "border-[var(--border)] text-[var(--fg-muted)] hover:text-[var(--fg)]",
-      )}
+      className="flex cursor-pointer items-center gap-1.5 text-sm text-[var(--fg)]"
     >
+      <input
+        type="checkbox"
+        checked={arten.includes(art)}
+        onChange={() => umschalten(art)}
+        className="h-4 w-4 accent-[var(--ring)]"
+      />
       {auditLabel[art]}
-    </button>
+    </label>
   ));
 
   // In der Schale trägt der Titel der Leiste die Beschriftung, ohne Doppelpunkt.
@@ -274,12 +273,17 @@ function Audits({
   );
   const chartDaten = useMemo(
     () =>
-      ([1, 2] as const).map((level) =>
-        verlaufJeArt(verlaufDaten ?? [], level, gewaehlteArten).map((p) => ({
+      ([1, 2] as const).map((level) => {
+        const roh = verlaufJeArt(verlaufDaten ?? [], level, gewaehlteArten);
+        // Leere Monate als Null einsetzen, damit die Fläche nicht in Inseln
+        // zerfällt (VER-04B). Ein leerer Monat trägt für jede Art eine Null.
+        const leer = (bucket: string) =>
+          ({ bucket, ...Object.fromEntries(gewaehlteArten.map((a) => [a, 0])) }) as VerlaufBucket;
+        return dichteBuckets(roh, t, leer).map((p) => ({
           ...p,
           label: fmt.bucket(String(p.bucket), t),
-        })),
-      ),
+        }));
+      }),
     [verlaufDaten, gewaehlteArten, t, fmt],
   );
   const auditReihen = gewaehlteArten.map((art, i) => ({
@@ -1026,9 +1030,11 @@ function DiagrammKopf({
 
 /**
  * Ein Zeitverlauf als Balken oder Fläche (VER-04B). Mehrere Reihen stehen
- * nebeneinander, es sei denn, sie teilen sich einen `stapel`; fehlende Werte
- * werden nicht überbrückt. Eine Ziellinie
- * weitet die Achse, damit sie auch über den Werten sichtbar bleibt.
+ * nebeneinander, es sei denn, sie teilen sich einen `stapel`. Lücken werden
+ * geschlossen (`connectNulls`), damit die Fläche über einen langen Zeitraum
+ * nicht in Inseln zerfällt; die Zählreihen sind zuvor mit Nullen verdichtet.
+ * Eine Ziellinie weitet die Achse, damit sie auch über den Werten sichtbar
+ * bleibt.
  */
 function Zeitverlauf({
   daten,
@@ -1097,7 +1103,6 @@ function Zeitverlauf({
                 name={r.name}
                 fill={r.farbe}
                 stackId={r.stapel}
-                isAnimationActive={false}
                 maxBarSize={48}
               />
             ) : (
@@ -1111,8 +1116,7 @@ function Zeitverlauf({
                 fill={r.farbe}
                 fillOpacity={0.2}
                 strokeWidth={2}
-                connectNulls={false}
-                isAnimationActive={false}
+                connectNulls
               />
             ),
           )}

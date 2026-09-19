@@ -528,7 +528,7 @@ function QuotenVerlauf({
               />
             )}
             {art === "balken" ? (
-              <Bar dataKey="quote" fill={farbe} isAnimationActive={false} />
+              <Bar dataKey="quote" fill={farbe} />
             ) : (
               <Area
                 type="monotone"
@@ -537,8 +537,7 @@ function QuotenVerlauf({
                 strokeWidth={2}
                 fill={farbe}
                 fillOpacity={0.2}
-                connectNulls={false}
-                isAnimationActive={false}
+                connectNulls
               />
             )}
           </ComposedChart>

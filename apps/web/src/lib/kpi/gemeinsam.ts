@@ -53,6 +53,43 @@ export function fenster(zeitraum: Zeitraum, heute = new Date()): { von: string |
 export type Takt = "day" | "week" | "month";
 
 /** Bucket-Breite nach Fensterlänge, wie im Altprojekt (`_bucket_windows`). */
+/**
+ * Fehlende Buckets mit Null-Zeilen auffüllen, damit ein Verlauf keine Löcher
+ * hat (VER-04B). Die Datenbank liefert nur Buckets mit Daten; über einen
+ * langen Zeitraum (etwa „Alles") fehlen dazwischen ganze Monate, und die
+ * Fläche zerfiele in Inseln. Aufgefüllt wird von der ersten bis zur letzten
+ * vorhandenen Zeile in Schritten des Takts — führende und nachlaufende Leere
+ * bleibt weg, gemeint sind nur die Lücken zwischen Werten.
+ *
+ * `leer` baut die Null-Zeile zu einem Bucket; die Aufrufstelle weiß, welche
+ * Reihen bei null stehen. Bei Kennzahlen wie Temperatur, wo eine fehlende
+ * Messung keine Null ist, wird bewusst nicht aufgefüllt.
+ */
+export function dichteBuckets<T extends { bucket: string }>(
+  reihen: readonly T[],
+  t: Takt,
+  leer: (bucket: string) => T,
+): T[] {
+  if (reihen.length < 2) return [...reihen];
+  const sortiert = [...reihen].sort((a, b) => a.bucket.localeCompare(b.bucket));
+  const vorhanden = new Map(sortiert.map((z) => [z.bucket, z]));
+  const naechster = (iso: string): string => {
+    const [j, m, tag] = iso.split("-").map(Number);
+    const d = new Date(Date.UTC(j, m - 1, tag));
+    if (t === "day") d.setUTCDate(d.getUTCDate() + 1);
+    else if (t === "week") d.setUTCDate(d.getUTCDate() + 7);
+    else d.setUTCMonth(d.getUTCMonth() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+  const ende = sortiert[sortiert.length - 1].bucket;
+  const dicht: T[] = [];
+  // Wächter gegen einen krummen Bucket, der nie genau auf `ende` trifft.
+  for (let b = sortiert[0].bucket, i = 0; b <= ende && i < 100_000; b = naechster(b), i++) {
+    dicht.push(vorhanden.get(b) ?? leer(b));
+  }
+  return dicht;
+}
+
 export function takt(von: string | null, bis: string | null): Takt {
   if (!von || !bis) return "month";
   const tage = (new Date(bis).getTime() - new Date(von).getTime()) / 86_400_000;
