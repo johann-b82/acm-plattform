@@ -495,6 +495,7 @@ export const bg: Texte = {
     ladeFehler: (meldung: string) => `Съставът на персонала не можа да се зареди: ${meldung}`,
     beschaeftigte: "Заети",
     beschaeftigteHinweis: "по статус „активен“ в Personio",
+    stichtagHinweis: "Състояние към днес — Personio не пази история, затова няма годишно сравнение.",
     neuImQuartal: "Нови през тримесечието",
     bestand: "Численост",
     kompetenzen: "Попълнени компетенции",

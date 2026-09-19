@@ -492,6 +492,7 @@ export const ar: Texte = {
     ladeFehler: (meldung: string) => `تعذّر تحميل بيانات القوى العاملة: ${meldung}`,
     beschaeftigte: "الموظفون",
     beschaeftigteHinweis: "حسب حالة Personio «نشط»",
+    stichtagHinweis: "الحالة اليوم — لا يحتفظ Personio بسجل تاريخي، لذلك لا يوجد مقارنة سنوية.",
     neuImQuartal: "جدد في هذا الربع",
     bestand: "العدد",
     kompetenzen: "الكفاءات المسجَّلة",

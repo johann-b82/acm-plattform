@@ -41,6 +41,10 @@ import { Klappbar } from "../../klappbar";
  * sich beim Klappen nicht. Statt eines Seitenzählers ist die Gruppe die
  * Einheit, in der die (bis zu 196) Zeilen der Matrix gebündelt und
  * strukturtreu handhabbar bleiben.
+ *
+ * Alle Gruppen starten offen: war nur die erste offen, wirkten die
+ * eingeklappten Kategorien (Zuschnitt, Handzuschnitt, …) wie fehlend. Wer
+ * eine Gruppe nicht braucht, klappt sie selbst zu.
  */
 export function MatrixAnsicht({ id, darfSchreiben }: { id: string; darfSchreiben: boolean }) {
   const worte = useTexte();
@@ -166,12 +170,12 @@ export function MatrixAnsicht({ id, darfSchreiben }: { id: string; darfSchreiben
       {(qualifikationen.data ?? []).length === 0 ? (
         <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.matrix.keineZeilen}</Card>
       ) : (
-        gruppen.map((gruppe, i) => (
+        gruppen.map((gruppe) => (
           <Klappbar
             key={gruppe.kategorie ?? "__ohne"}
             titel={gruppe.kategorie ?? worte.matrix.ohneKategorie}
             anzahl={gruppe.zeilen.length}
-            offenStart={i === 0}
+            offenStart
           >
             <div className="overflow-x-auto">
               <table className="w-max min-w-full border-collapse text-sm" aria-label={gruppe.kategorie ?? worte.matrix.ohneKategorie}>

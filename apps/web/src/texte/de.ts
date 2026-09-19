@@ -461,6 +461,7 @@ export const de = {
     ladeFehler: (meldung: string) => `Belegschaft konnte nicht geladen werden: ${meldung}`,
     beschaeftigte: "Beschäftigte",
     beschaeftigteHinweis: "nach Personio-Status „aktiv“",
+    stichtagHinweis: "Heutiger Stand — Personio führt keine Historie, deshalb kein Jahresvergleich.",
     neuImQuartal: "Neu im Quartal",
     bestand: "Bestand",
     kompetenzen: "Kompetenzen gepflegt",

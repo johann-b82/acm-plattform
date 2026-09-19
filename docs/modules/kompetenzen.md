@@ -63,6 +63,11 @@ Die Matrix ist kein `<Table>`-Baustein, sondern ein eigenes Raster: die
 Kopfspalte bleibt beim seitlichen Scrollen stehen. Bei dreißig Personen weiß
 sonst niemand mehr, welche Zeile er liest.
 
+Die Zeilen sind nach Kategorie klappbar; **alle Gruppen starten offen**. War
+nur die erste offen, wirkten die eingeklappten Kategorien (Zuschnitt,
+Handzuschnitt, Technische Anforderungen …) wie fehlend. Wer eine Gruppe nicht
+braucht, klappt sie selbst zu.
+
 Eine **Lücke** ist eine Zelle mit Anforderung, deren Erfüllungsgrad darunter
 bleibt; sie steht in Warnfarbe. Ohne Anforderung gibt es nichts zu erfüllen —
 eine leere Anforderung ist keine Lücke, sondern eine Nichtzuständigkeit.

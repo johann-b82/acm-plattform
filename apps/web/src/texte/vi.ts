@@ -498,6 +498,7 @@ export const vi: Texte = {
     ladeFehler: (meldung: string) => `Không tải được dữ liệu lực lượng lao động: ${meldung}`,
     beschaeftigte: "Nhân viên",
     beschaeftigteHinweis: "theo trạng thái Personio “hoạt động”",
+    stichtagHinweis: "Trạng thái hôm nay — Personio không lưu lịch sử, nên không có so sánh theo năm.",
     neuImQuartal: "Mới trong quý",
     bestand: "Quân số",
     kompetenzen: "Năng lực đã khai báo",

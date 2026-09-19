@@ -48,4 +48,9 @@ describe("Belegschaft, Verteilungen", () => {
     expect(screen.getByText("9 (90 %)")).toBeInTheDocument();
     expect(screen.getByText("1 (10 %)")).toBeInTheDocument();
   });
+
+  it("weist auf den heutigen Stand hin — Personio führt keine Historie", async () => {
+    zeige();
+    expect(await screen.findByText(/keine Historie/)).toBeInTheDocument();
+  });
 });
