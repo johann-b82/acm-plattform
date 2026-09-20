@@ -688,6 +688,8 @@ export const vi: Texte = {
     imTurnus: "trong chu kỳ",
   },
   schulungsmatrix: {
+    legende: "Chú giải",
+    nichtZugewiesenKurz: "chưa gán",
     einleitung:
       "Mọi người đối chiếu mọi khóa — bảng tổng quan để dán bảng tin và cho audit. Ai chưa " +
       "tham gia gì cả thì có một dòng trống; đó chính là lỗ hổng cần tìm.",

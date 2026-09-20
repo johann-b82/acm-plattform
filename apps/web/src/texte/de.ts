@@ -650,6 +650,8 @@ export const de = {
     imTurnus: "im Turnus",
   },
   schulungsmatrix: {
+    legende: "Legende",
+    nichtZugewiesenKurz: "nicht zugewiesen",
     einleitung:
       "Alle Personen gegen alle Schulungen — die Übersicht für den Aushang und fürs Audit. " +
       "Wer noch gar keine Teilnahme hat, steht mit leerer Zeile darin; genau das ist die Lücke, " +

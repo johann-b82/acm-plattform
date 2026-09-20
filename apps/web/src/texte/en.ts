@@ -686,6 +686,8 @@ export const en: Texte = {
     imTurnus: "within cycle",
   },
   schulungsmatrix: {
+    legende: "Legend",
+    nichtZugewiesenKurz: "not assigned",
     einleitung:
       "Everyone against every course — the overview for the noticeboard and for the audit. " +
       "Anyone who has attended nothing at all appears with an empty row; that is exactly the gap " +

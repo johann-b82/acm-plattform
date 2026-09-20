@@ -689,6 +689,8 @@ export const pl: Texte = {
     imTurnus: "w cyklu",
   },
   schulungsmatrix: {
+    legende: "Legenda",
+    nichtZugewiesenKurz: "nieprzypisane",
     einleitung:
       "Wszystkie osoby wobec wszystkich szkoleń — przegląd na tablicę i na audit. " +
       "Kto nie ma jeszcze żadnego udziału, stoi tam z pustym wierszem; właśnie to jest luka, " +
