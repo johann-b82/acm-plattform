@@ -36,3 +36,27 @@ async def naechste(programm: str | None) -> str | None:
             )
         ).scalar()
     return None if hoechste is None else str(hoechste + 1)
+
+
+async def reservieren(lieferung_id: str, programm: str | None) -> str | None:
+    """Vergibt die nächste Nummer transaktionssicher und schreibt sie sofort.
+
+    Anders als `naechste()` (nur ein Vorschlag für die Maske) ist das die
+    verbindliche Vergabe: ein transaktionsweiter Riegel je Programmfamilie
+    serialisiert gleichzeitige Läufe, sodass keine zwei dieselbe Nummer lesen
+    und keine rückwärts vergeben wird. Eine schon gesetzte Nummer bleibt; ohne
+    numerischen Vorgänger gibt es keine — die erste setzt jemand von Hand.
+
+    Die Nummer steht danach festgeschrieben in der Zeile, noch bevor die
+    schweren Schritte (Gerüst, Excel, PDF, Ablage) laufen — der nächste Lauf
+    sieht sie also schon.
+    """
+    ziffern = "380" if ist_a380(programm) else "350"
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            return (
+                await sitzung.execute(
+                    sa.text("select public.atr_nummer_reservieren(:id, :ziffern)"),
+                    {"id": lieferung_id, "ziffern": ziffern},
+                )
+            ).scalar()

@@ -580,8 +580,14 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
     # Lieferung jetzt die nächste laufende Nummer. Eine von Hand eingetragene
     # gewinnt immer. Auch der unbeaufsichtigte Scan geht hier durch — er hat
     # keine Maske, in der jemand eine Nummer setzen könnte.
+    #
+    # Transaktionssicher: `reservieren` nimmt einen Riegel je Familie, schreibt
+    # höchste + 1 sofort in die Zeile und gibt sie zurück — noch vor Gerüst,
+    # Excel und PDF. Zwei gleichzeitige Läufe lesen so nie dasselbe Maximum.
     if not (daten.get("atr_nummer") or "").strip():
-        daten["atr_nummer"] = await nummer_modul.naechste(daten.get("programm"))
+        daten["atr_nummer"] = await nummer_modul.reservieren(
+            lieferung_id, daten.get("programm")
+        )
     try:
         mappe = await run_in_threadpool(baue_atr, gerüst, daten, positionen)
     except VorlageUnbrauchbar as fehler:
