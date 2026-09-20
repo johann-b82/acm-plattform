@@ -82,8 +82,8 @@ Tests: 757 in `compute`, 97 in `apps/web`. CI prüft Guards, Compute und Web.
 
 - **World Cup und Tippspiel kommen nicht mit** (Entscheidung 2026-09-10). Ein Upstream-Proxy mit Cache und sieben Embed-Seiten für ein einmaliges Turnier — das Turnier ist vorbei, der Code bleibt im Altrepo lesbar.
 - **Datenübernahme aus `lumeapps` — vorbereitet, nicht ausgeführt.** Die Läufe stehen und sind gegen eine echte Alt-Datenbank geprüft: `uebernahme-vertrieb` und `uebernahme-nutzer` hier (siehe `docs/setup.md`), `python -m app.uebernahme` im Signage-Repo. Alle drei sind wiederholbar und zuerst trocken fahrbar. Ausgeführt wird auf dem Host, mit den echten Daten.
-- **AD-Anbindung.** Vorbereitet über `groups.source` und `groups.external_id`, bewertet in ADR-0004, nicht gebaut.
-- **TLS.** Lokal läuft alles über HTTP. Der Header-Block und `request_body max_size` stehen bereits im Caddyfile.
+- **AD-Anbindung — gebaut und live** (#94): Anmeldung gegen das lokale AD über LDAPS. Der Browser schickt Benutzer+Passwort an `compute`, das gegen AD bindet und dem Web-Server ein Einmalpasswort zurückgibt; „Lokal anmelden“ bleibt als Rückfall für lokale Konten. Gruppen-Abbildung über `groups.source`/`groups.external_id`, bewertet in ADR-0004.
+- **TLS — wartet auf eine Subdomain.** Lokal läuft alles über HTTP; scharf geschaltet wird erst, wenn ein fester Hostname steht. Der Header-Block und `request_body max_size` liegen schon im Caddyfile; dann noch `SITE_URL`/`API_EXTERNAL_URL` auf `https://…`.
 
 ## Rezept für das nächste Modul
 

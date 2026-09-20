@@ -75,10 +75,17 @@ eine leere Anforderung ist keine Lücke, sondern eine Nichtzuständigkeit.
 Eine Zelle ohne beide Zahlen wird gelöscht, nicht leer gespeichert; die
 Datenbank lässt sie gar nicht erst zu.
 
-## Was nicht mitkommt
+## Personio-Rückschreiben
 
 Das **Personio-Rückschreiben** (ein Nachweis-PDF in die Personio-Dokumente der
-Person) ist im Altprojekt vorhanden, aber **inert**: es braucht Schreib-Scopes,
-die die hinterlegten Zugangsdaten nicht haben, und eine Dokumentenkategorie,
-die nicht gesetzt ist. Es hat dort nie etwas getan. Toten Code zu portieren
-hätte den Anschein erweckt, dass er etwas tut.
+Person) **ist übernommen** — nicht als toter Code, sondern passend zur
+zustandslosen Architektur umgebaut: ein Trigger (Migration 0051) merkt bei
+einer Änderung einen Auftrag in `personio_nachweise` vor, `pg_cron` stößt alle
+zehn Minuten an, `compute` erzeugt das PDF und lädt es hoch
+(`services/compute/app/personio/nachweise.py`, siehe
+`docs/modules/personio-writeback.md`).
+
+Wie schon im Altprojekt bleibt es **inert, bis die Voraussetzungen stehen**: es
+braucht Personio-Schreib-Scopes, die die hinterlegten Zugangsdaten nicht haben,
+und eine Dokumentenkategorie, die noch nicht gesetzt ist. Ohne Schalter,
+Kategorie und Scopes merkt der Trigger gar nichts erst vor.
