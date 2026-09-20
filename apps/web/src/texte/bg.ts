@@ -470,6 +470,7 @@ export const bg: Texte = {
     umsatzJeKopf: "Оборот / служител в производството",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} поръчки ÷ ${koepfe} души`,
     produktionFehlt: "производствените отдели не са зададени",
+    letzterErfolg: (datum: string, alter: string) => `Последен успех: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Синхронизация с Personio ${datum} (${alter})`,
     abgleichFehler: "с грешки",
     reiheUmsatzJeKopf: "Оборот на служител в производството",

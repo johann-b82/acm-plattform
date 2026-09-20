@@ -436,6 +436,7 @@ export const de = {
     umsatzJeKopf: "Umsatz / Produktions-MA",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} Aufträge ÷ ${koepfe} Köpfe`,
     produktionFehlt: "Produktionsabteilungen nicht hinterlegt",
+    letzterErfolg: (datum: string, alter: string) => `Letzter Erfolg: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Personio-Abgleich ${datum} (${alter})`,
     abgleichFehler: "mit Fehler",
     reiheUmsatzJeKopf: "Umsatz je Produktionskopf",

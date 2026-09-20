@@ -467,6 +467,7 @@ export const ar: Texte = {
     umsatzJeKopf: "الإيراد / موظف إنتاج",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} طلبات ÷ ${koepfe} موظفين`,
     produktionFehlt: "أقسام الإنتاج غير محددة",
+    letzterErfolg: (datum: string, alter: string) => `آخر نجاح: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `مزامنة Personio ${datum} (${alter})`,
     abgleichFehler: "مع أخطاء",
     reiheUmsatzJeKopf: "الإيراد لكل موظف إنتاج",

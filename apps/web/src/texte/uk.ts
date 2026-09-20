@@ -469,6 +469,7 @@ export const uk: Texte = {
     umsatzJeKopf: "Виручка / працівник виробництва",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} замовлень ÷ ${koepfe} осіб`,
     produktionFehlt: "виробничі відділи не задано",
+    letzterErfolg: (datum: string, alter: string) => `Останній успіх: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Синхронізація Personio ${datum} (${alter})`,
     abgleichFehler: "з помилками",
     reiheUmsatzJeKopf: "Виручка на працівника виробництва",

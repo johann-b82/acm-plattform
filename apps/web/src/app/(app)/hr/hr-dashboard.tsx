@@ -69,30 +69,47 @@ function Abgleichstand() {
     queryKey: personalKeys.abgleich(),
     queryFn: personalApi.abgleichstand,
   });
+  // Der letzte geglückte Stand — nur nötig, wenn der jüngste Lauf gescheitert ist.
+  const erfolg = useQuery({
+    queryKey: personalKeys.abgleichErfolg(),
+    queryFn: personalApi.abgleichLetzterErfolg,
+    enabled: stand.data?.status === "fehler",
+  });
 
   if (stand.isLoading) return null;
   const s = stand.data;
+  const zeit = (iso: string) =>
+    new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
   const alter = (tage: number) =>
     tage === 0 ? worte.datenstand.heute : tage === 1 ? worte.datenstand.gestern : worte.datenstand.vorTagen(tage);
 
   return (
     <div className="flex flex-col items-end gap-0.5 text-xs text-[var(--fg-muted)]">
       {s ? (
-        <p
-          className={cn(s.status === "fehler" && "text-[var(--danger)]")}
-          title={[
-            worte.personal.bestand(fmt.zahl(s.mitarbeiter), fmt.zahl(s.anwesenheiten), fmt.zahl(s.abwesenheiten)),
-            s.fehler,
-          ]
-            .filter(Boolean)
-            .join("\n")}
-        >
-          {worte.personal.abgleichStand(
-            new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" }).format(new Date(s.gelaufen_am)),
-            alter(alterInTagen(s.gelaufen_am)),
+        <>
+          <p
+            className={cn(s.status === "fehler" && "text-[var(--danger)]")}
+            title={[
+              worte.personal.bestand(fmt.zahl(s.mitarbeiter), fmt.zahl(s.anwesenheiten), fmt.zahl(s.abwesenheiten)),
+              s.fehler,
+            ]
+              .filter(Boolean)
+              .join("\n")}
+          >
+            {worte.personal.abgleichStand(zeit(s.gelaufen_am), alter(alterInTagen(s.gelaufen_am)))}
+            {s.status === "fehler" && ` · ${worte.personal.abgleichFehler}`}
+          </p>
+          {/* Ist der jüngste Lauf gescheitert, steht hier eindeutig der letzte
+              erfolgreiche Stand — so weiß man, wie alt die Zahlen wirklich sind. */}
+          {s.status === "fehler" && erfolg.data && (
+            <p>
+              {worte.personal.letzterErfolg(
+                zeit(erfolg.data.gelaufen_am),
+                alter(alterInTagen(erfolg.data.gelaufen_am)),
+              )}
+            </p>
           )}
-          {s.status === "fehler" && ` · ${worte.personal.abgleichFehler}`}
-        </p>
+        </>
       ) : (
         <p>{worte.personal.keinAbgleich}</p>
       )}

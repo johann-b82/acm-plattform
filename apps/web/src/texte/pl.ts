@@ -471,6 +471,7 @@ export const pl: Texte = {
     umsatzJeKopf: "Obrót / pracownik produkcji",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} zamówień ÷ ${koepfe} osób`,
     produktionFehlt: "nie ustawiono działów produkcji",
+    letzterErfolg: (datum: string, alter: string) => `Ostatni sukces: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Synchronizacja Personio ${datum} (${alter})`,
     abgleichFehler: "z błędami",
     reiheUmsatzJeKopf: "Obrót na pracownika produkcji",

@@ -40,9 +40,25 @@ from app.personio.client import PersonioFehler
 
 log = logging.getLogger(__name__)
 
-# Wie weit die Anwesenheiten zurückgeholt werden. Die volle Historie ginge
-# über V2 auch, kostet aber viele Seiten und bringt für die Kennzahlen nichts.
+# Wie weit die Anwesenheiten beim **ersten** Lauf zurückgeholt werden. Die volle
+# Historie ginge über V2 auch, kostet aber viele Seiten und bringt für die
+# Kennzahlen nichts.
 FENSTER_TAGE = 400
+
+# Ein Folgelauf holt nur Änderungen seit dem letzten geglückten Abgleich —
+# überlappt ihn aber um ein paar Tage, damit rückwirkend in Personio
+# eingetragene Zeiten nicht durchs Raster fallen.
+DELTA_UEBERLAPP_TAGE = 3
+
+# Fester Schlüssel für den transaktionsübergreifenden Riegel (`pg_advisory_lock`):
+# er verhindert, dass zwei Abgleiche gleichzeitig laufen und einander die
+# Antworten überschreiben oder Personio doppelt drosseln — auch über mehrere
+# `compute`-Worker hinweg, denn der Riegel sitzt in der Datenbank.
+SPERRE_SCHLUESSEL = 815_004  # willkürlich, fest
+
+
+class BereitsInArbeit(RuntimeError):
+    """Ein Abgleich läuft bereits; ein zweiter startet nicht."""
 
 
 @dataclass
@@ -271,9 +287,48 @@ async def _protokollieren(session, e: Ergebnis) -> None:
 # --- Ablauf ------------------------------------------------------------------
 
 
-async def abgleichen() -> Ergebnis:
-    """Einmal alles holen und schreiben. Wirft nur, wenn die Stammdaten
-    scheitern — alles andere landet als Teilfehler im Protokoll."""
+async def abgleichen(voll: bool = False) -> Ergebnis:
+    """Abgleich mit Personio, gegen Doppelläufe gesichert.
+
+    Ein transaktionsübergreifender Riegel (`pg_advisory_lock`) verhindert, dass
+    zwei Abgleiche gleichzeitig laufen — der zweite wirft `BereitsInArbeit`,
+    statt Personio doppelt zu drosseln und einander die Antworten zu
+    überschreiben. Der Riegel sitzt in der Datenbank und wirkt auch über mehrere
+    `compute`-Worker hinweg.
+
+    `voll=True` erzwingt das ganze Fenster; sonst holt ein Folgelauf die
+    Anwesenheiten nur seit dem letzten geglückten Abgleich (mit Überlappung).
+    """
+    async with SessionLocal() as sperre:
+        gesperrt = (
+            await sperre.execute(
+                sa.text("select pg_try_advisory_lock(:k)"), {"k": SPERRE_SCHLUESSEL}
+            )
+        ).scalar()
+        if not gesperrt:
+            raise BereitsInArbeit("Ein Personio-Abgleich läuft bereits")
+        try:
+            return await _abgleichen_gesperrt(sperre, voll)
+        finally:
+            await sperre.execute(
+                sa.text("select pg_advisory_unlock(:k)"), {"k": SPERRE_SCHLUESSEL}
+            )
+
+
+async def letzter_erfolg(session) -> datetime | None:
+    """Zeitpunkt des letzten *geglückten* Abgleichs (Status `ok`), oder `None`."""
+    return (
+        await session.execute(
+            sa.text(
+                "select max(gelaufen_am) from public.personio_sync_meta where status = 'ok'"
+            )
+        )
+    ).scalar()
+
+
+async def _abgleichen_gesperrt(sperre, voll: bool) -> Ergebnis:
+    """Der eigentliche Abgleich, unter gehaltenem Riegel. Wirft nur, wenn die
+    Stammdaten scheitern — alles andere landet als Teilfehler im Protokoll."""
     client = await zugang.klient()
     if client is None:
         raise NichtEingerichtet("Personio-Zugangsdaten sind nicht hinterlegt")
@@ -281,6 +336,14 @@ async def abgleichen() -> Ergebnis:
     begonnen = datetime.now(timezone.utc)
     jetzt = begonnen
     e = Ergebnis()
+
+    # Delta-Fenster für die Anwesenheiten: erster Lauf (oder `voll`) das ganze
+    # Fenster, ein Folgelauf nur seit dem letzten Erfolg minus Überlappung.
+    seit = date.today() - timedelta(days=FENSTER_TAGE)
+    if not voll:
+        erfolg = await letzter_erfolg(sperre)
+        if erfolg is not None:
+            seit = max(seit, erfolg.date() - timedelta(days=DELTA_UEBERLAPP_TAGE))
 
     try:
         # 1) Stammdaten — Pflicht, und zuerst: die anderen Tabellen verweisen darauf.
@@ -297,7 +360,7 @@ async def abgleichen() -> Ergebnis:
 
         # 2) Anwesenheiten — nur WORK-Segmente.
         try:
-            roh = await client.anwesenheiten(seit=date.today() - timedelta(days=FENSTER_TAGE))
+            roh = await client.anwesenheiten(seit=seit)
             zeilen = [_anwesenheit_zeile(r, jetzt) for r in roh if r.get("type") == "WORK"]
             async with SessionLocal() as session:
                 async with session.begin():

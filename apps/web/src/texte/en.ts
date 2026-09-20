@@ -472,6 +472,7 @@ export const en: Texte = {
     umsatzJeKopf: "Revenue / prod. employee",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} orders ÷ ${koepfe} heads`,
     produktionFehlt: "production departments not configured",
+    letzterErfolg: (datum: string, alter: string) => `Last success: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Personio sync ${datum} (${alter})`,
     abgleichFehler: "with errors",
     reiheUmsatzJeKopf: "Revenue per production employee",

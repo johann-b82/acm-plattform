@@ -473,6 +473,7 @@ export const vi: Texte = {
     umsatzJeKopf: "Doanh thu / NV sản xuất",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} đơn hàng ÷ ${koepfe} người`,
     produktionFehlt: "chưa đặt bộ phận sản xuất",
+    letzterErfolg: (datum: string, alter: string) => `Lần thành công gần nhất: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Đồng bộ Personio ${datum} (${alter})`,
     abgleichFehler: "có lỗi",
     reiheUmsatzJeKopf: "Doanh thu trên mỗi NV sản xuất",

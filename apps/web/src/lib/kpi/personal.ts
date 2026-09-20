@@ -256,6 +256,19 @@ export const personalApi = {
     return (data?.[0] as Abgleichstand | undefined) ?? null;
   },
 
+  /** Der letzte *geglückte* Lauf (Status `ok`). Zeigt, wie alt der Stand ist,
+   *  wenn der jüngste Lauf gescheitert ist. `null`, wenn nie einer glückte. */
+  abgleichLetzterErfolg: async (): Promise<Abgleichstand | null> => {
+    const { data, error } = await supabaseBrowser()
+      .from("personio_sync_meta")
+      .select("gelaufen_am,status,fehler,mitarbeiter,anwesenheiten,abwesenheiten,dauer_sekunden")
+      .eq("status", "ok")
+      .order("gelaufen_am", { ascending: false })
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return (data?.[0] as Abgleichstand | undefined) ?? null;
+  },
+
   belegschaft: async (jahr?: number, quartal?: number): Promise<Belegschaft> => {
     const rows = await rpc<Belegschaft[]>("kpi_hr_belegschaft", {
       p_jahr: jahr ?? null,
@@ -374,6 +387,7 @@ export const personalKeys = {
   alle: () => ["kpi", "personal"] as const,
   fenster: (von: string, bis: string) => ["kpi", "personal", von, bis] as const,
   abgleich: () => ["kpi", "personal", "abgleich"] as const,
+  abgleichErfolg: () => ["kpi", "personal", "abgleich", "erfolg"] as const,
   wochen: () => ["kpi", "personal", "wochen"] as const,
   woche: (jahr: number, w: number) => ["kpi", "personal", "woche", jahr, w] as const,
   belegschaft: () => ["kpi", "personal", "belegschaft"] as const,

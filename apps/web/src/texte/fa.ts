@@ -468,6 +468,7 @@ export const fa: Texte = {
     umsatzJeKopf: "درآمد / کارمند تولید",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} سفارش ÷ ${koepfe} نفر`,
     produktionFehlt: "بخش‌های تولید تعیین نشده‌اند",
+    letzterErfolg: (datum: string, alter: string) => `آخرین موفقیت: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `همگام‌سازی Personio ${datum} (${alter})`,
     abgleichFehler: "با خطا",
     reiheUmsatzJeKopf: "درآمد برای هر کارمند تولید",
