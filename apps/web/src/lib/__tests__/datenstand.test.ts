@@ -42,6 +42,18 @@ describe("staende", () => {
   it("schweigt zu einem Bereich, den es nicht gibt", () => {
     expect(staende("gibtesnicht", ZEILEN)).toEqual([]);
   });
+
+  it("kennzeichnet eine Quelle, deren jüngster Lauf nur teilweise glückte", () => {
+    const zeilen: Standzeile[] = [
+      { art: "umsatz", zuletzt: "2026-09-09T11:46:44Z", laeufe: 2, stand: "partial" },
+      { art: "auftraege", zuletzt: "2026-09-10T09:54:22Z", laeufe: 2, stand: "success" },
+    ];
+    const s = staende("vertrieb", zeilen);
+    expect(s.find((z) => z.art === "umsatz")!.teilweise).toBe(true);
+    expect(s.find((z) => z.art === "auftraege")!.teilweise).toBe(false);
+    // Eine nie geladene Art ist nicht „teilweise".
+    expect(s.find((z) => z.art === "kontakte")!.teilweise).toBe(false);
+  });
 });
 
 describe("aeltester", () => {

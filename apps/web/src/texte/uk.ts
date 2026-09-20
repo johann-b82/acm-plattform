@@ -161,6 +161,7 @@ export const uk: Texte = {
     gespeichert: "Розмір сторінки збережено.",
   },
   datenstand: {
+    teilweise: "частково імпортовано",
     stand: (datum: string, alter: string) => `Дані станом на ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Дані неповні — ${fehlend} ${anzahl === 1 ? "відсутній" : "відсутні"}`,
@@ -490,11 +491,15 @@ export const uk: Texte = {
     dankeOhneBild: "Дякуємо — відгук надійшов, без зображення сторінки.",
   },
   belegschaft: {
+    zeitpunkt: "Станом на",
+    aktuell: "Поточний",
+    quartal: "Квартал",
     titel: "Штат",
     ladeFehler: (meldung: string) => `Не вдалося завантажити дані про штат: ${meldung}`,
     beschaeftigte: "Працівники",
     beschaeftigteHinweis: "за статусом Personio «активний»",
-    stichtagHinweis: "Стан на сьогодні — Personio не веде історію, тому річного порівняння немає.",
+    stichtagHinweis:
+      "Кількість та нові/наявні точні станом на дату; розподіли використовують сьогоднішні дані Personio (без повної історії).",
     neuImQuartal: "Нових у кварталі",
     bestand: "Чисельність",
     kompetenzen: "Компетенції заповнено",

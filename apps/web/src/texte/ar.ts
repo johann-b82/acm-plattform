@@ -159,6 +159,7 @@ export const ar: Texte = {
     gespeichert: "تم حفظ حجم الصفحة.",
   },
   datenstand: {
+    teilweise: "مُدخل جزئيًا",
     stand: (datum: string, alter: string) => `حالة البيانات ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `حالة البيانات ناقصة — ${fehlend} ${anzahl === 1 ? "غير متوفر" : "غير متوفرة"}`,
@@ -488,11 +489,15 @@ export const ar: Texte = {
     dankeOhneBild: "شكراً — وصلت الملاحظات، بلا صورة للصفحة.",
   },
   belegschaft: {
+    zeitpunkt: "التاريخ المرجعي",
+    aktuell: "الحالي",
+    quartal: "الربع",
     titel: "القوى العاملة",
     ladeFehler: (meldung: string) => `تعذّر تحميل بيانات القوى العاملة: ${meldung}`,
     beschaeftigte: "الموظفون",
     beschaeftigteHinweis: "حسب حالة Personio «نشط»",
-    stichtagHinweis: "الحالة اليوم — لا يحتفظ Personio بسجل تاريخي، لذلك لا يوجد مقارنة سنوية.",
+    stichtagHinweis:
+      "عدد الموظفين والجديد/القائم دقيق حتى التاريخ المرجعي؛ أما التوزيعات فتستخدم بيانات Personio الحالية (لا سجل كامل).",
     neuImQuartal: "جدد في هذا الربع",
     bestand: "العدد",
     kompetenzen: "الكفاءات المسجَّلة",

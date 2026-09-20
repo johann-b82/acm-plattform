@@ -160,6 +160,7 @@ export const fa: Texte = {
     gespeichert: "اندازه صفحه ذخیره شد.",
   },
   datenstand: {
+    teilweise: "به‌طور جزئی وارد شده",
     stand: (datum: string, alter: string) => `داده‌ها تا ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `داده‌ها ناقص است — ${anzahl} مورد موجود نیست: ${fehlend}`,
@@ -489,11 +490,15 @@ export const fa: Texte = {
     dankeOhneBild: "سپاسگزاریم — بازخورد رسید، بدون تصویر صفحه.",
   },
   belegschaft: {
+    zeitpunkt: "تاریخ مرجع",
+    aktuell: "کنونی",
+    quartal: "سه‌ماهه",
     titel: "نیروی انسانی",
     ladeFehler: (meldung: string) => `نیروی انسانی بارگذاری نشد: ${meldung}`,
     beschaeftigte: "شاغلان",
     beschaeftigteHinweis: "بر پایهٔ وضعیت «فعال» در Personio",
-    stichtagHinweis: "وضعیت امروز — Personio تاریخچه‌ای نگه نمی‌دارد؛ پس مقایسهٔ سالانه وجود ندارد.",
+    stichtagHinweis:
+      "شمار کارکنان و جدید/موجود تا تاریخ مرجع دقیق است؛ توزیع‌ها از داده‌های امروز Personio استفاده می‌کنند (بدون تاریخچهٔ کامل).",
     neuImQuartal: "تازه‌واردان این فصل",
     bestand: "تعداد کل",
     kompetenzen: "صلاحیت‌های ثبت‌شده",

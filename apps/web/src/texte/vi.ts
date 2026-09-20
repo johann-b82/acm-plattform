@@ -160,6 +160,7 @@ export const vi: Texte = {
     gespeichert: "Đã lưu số dòng mỗi trang.",
   },
   datenstand: {
+    teilweise: "nhập một phần",
     stand: (datum: string, alter: string) => `Dữ liệu đến ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Dữ liệu chưa đầy đủ — thiếu ${anzahl} mục: ${fehlend}`,
@@ -494,11 +495,15 @@ export const vi: Texte = {
     dankeOhneBild: "Cảm ơn — phản hồi đã đến nơi, không kèm ảnh trang.",
   },
   belegschaft: {
+    zeitpunkt: "Tính đến",
+    aktuell: "Hiện tại",
+    quartal: "Quý",
     titel: "Lực lượng lao động",
     ladeFehler: (meldung: string) => `Không tải được dữ liệu lực lượng lao động: ${meldung}`,
     beschaeftigte: "Nhân viên",
     beschaeftigteHinweis: "theo trạng thái Personio “hoạt động”",
-    stichtagHinweis: "Trạng thái hôm nay — Personio không lưu lịch sử, nên không có so sánh theo năm.",
+    stichtagHinweis:
+      "Số nhân sự và mới/hiện có chính xác theo ngày; các phân bố dùng dữ liệu Personio hôm nay (không có lịch sử đầy đủ).",
     neuImQuartal: "Mới trong quý",
     bestand: "Quân số",
     kompetenzen: "Năng lực đã khai báo",

@@ -160,6 +160,7 @@ export const bg: Texte = {
     gespeichert: "Размерът на страницата е запазен.",
   },
   datenstand: {
+    teilweise: "частично внесено",
     stand: (datum: string, alter: string) => `Данни към ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Непълни данни — ${fehlend} ${anzahl === 1 ? "липсва" : "липсват"}`,
@@ -491,11 +492,15 @@ export const bg: Texte = {
     dankeOhneBild: "Благодарим — обратната връзка е получена, без изображение на страницата.",
   },
   belegschaft: {
+    zeitpunkt: "Към дата",
+    aktuell: "Текущо",
+    quartal: "Тримесечие",
     titel: "Състав на персонала",
     ladeFehler: (meldung: string) => `Съставът на персонала не можа да се зареди: ${meldung}`,
     beschaeftigte: "Заети",
     beschaeftigteHinweis: "по статус „активен“ в Personio",
-    stichtagHinweis: "Състояние към днес — Personio не пази история, затова няма годишно сравнение.",
+    stichtagHinweis:
+      "Числеността и нови/налични са точни към датата; разпределенията ползват днешните данни от Personio (без пълна история).",
     neuImQuartal: "Нови през тримесечието",
     bestand: "Численост",
     kompetenzen: "Попълнени компетенции",

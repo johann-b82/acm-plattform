@@ -127,6 +127,7 @@ export const de = {
     gespeichert: "Seitengröße gespeichert.",
   },
   datenstand: {
+    teilweise: "teilweise eingespielt",
     stand: (datum: string, alter: string) => `Datenstand ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Datenstand unvollständig — ${fehlend} ${anzahl === 1 ? "fehlt" : "fehlen"}`,
@@ -457,11 +458,15 @@ export const de = {
     dankeOhneBild: "Danke — das Feedback ist angekommen, ohne Bild der Seite.",
   },
   belegschaft: {
+    zeitpunkt: "Stichtag",
+    aktuell: "Aktuell",
+    quartal: "Quartal",
     titel: "Belegschaft",
     ladeFehler: (meldung: string) => `Belegschaft konnte nicht geladen werden: ${meldung}`,
     beschaeftigte: "Beschäftigte",
     beschaeftigteHinweis: "nach Personio-Status „aktiv“",
-    stichtagHinweis: "Heutiger Stand — Personio führt keine Historie, deshalb kein Jahresvergleich.",
+    stichtagHinweis:
+      "Kopfzahl und Neu/Bestand sind stichtagsgenau; die Verteilungen nutzen die heutigen Personio-Stammdaten (keine volle Historie).",
     neuImQuartal: "Neu im Quartal",
     bestand: "Bestand",
     kompetenzen: "Kompetenzen gepflegt",

@@ -17,6 +17,8 @@ export interface Standzeile {
   art: string;
   zuletzt: string;
   laeufe: number;
+  /** Status des jüngsten nicht fehlgeschlagenen Laufs: `success` oder `partial`. */
+  stand?: string | null;
 }
 
 /**
@@ -38,6 +40,8 @@ export interface Stand {
   label: string;
   /** ISO-Zeitpunkt des letzten geglückten Uploads, `null` wenn nie einer kam. */
   zuletzt: string | null;
+  /** Der jüngste Lauf war nur teilweise erfolgreich (einzelne Zeilen scheiterten). */
+  teilweise: boolean;
 }
 
 /**
@@ -49,12 +53,13 @@ export function staende(
   zeilen: Standzeile[] | undefined,
   label: Record<string, string> = {},
 ): Stand[] {
-  const nach = new Map((zeilen ?? []).map((z) => [z.art, z.zuletzt]));
+  const nach = new Map((zeilen ?? []).map((z) => [z.art, z]));
   return (QUELLEN[bereich] ?? [])
     .map((art) => ({
       art,
       label: label[art] ?? art,
-      zuletzt: nach.get(art) ?? null,
+      zuletzt: nach.get(art)?.zuletzt ?? null,
+      teilweise: nach.get(art)?.stand === "partial",
     }))
     .sort((a, b) => {
       if (a.zuletzt === b.zuletzt) return a.label.localeCompare(b.label, "de");
@@ -96,7 +101,7 @@ export const datenstandKeys = {
 export async function datenstand(): Promise<Standzeile[]> {
   const { data, error } = await supabaseBrowser()
     .from("datenstand")
-    .select("art,zuletzt,laeufe");
+    .select("art,zuletzt,laeufe,stand");
   if (error) throw new Error(error.message);
   return (data ?? []) as Standzeile[];
 }

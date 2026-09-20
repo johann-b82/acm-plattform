@@ -160,6 +160,7 @@ export const pl: Texte = {
     gespeichert: "Zapisano rozmiar strony.",
   },
   datenstand: {
+    teilweise: "częściowo wczytane",
     stand: (datum: string, alter: string) => `Dane z ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Dane niekompletne — ${fehlend} ${anzahl === 1 ? "nie został wczytany" : "nie zostały wczytane"}`,
@@ -492,11 +493,15 @@ export const pl: Texte = {
     dankeOhneBild: "Dziękujemy — feedback dotarł, bez zrzutu strony.",
   },
   belegschaft: {
+    zeitpunkt: "Na dzień",
+    aktuell: "Bieżący",
+    quartal: "Kwartał",
     titel: "Załoga",
     ladeFehler: (meldung: string) => `Nie udało się wczytać załogi: ${meldung}`,
     beschaeftigte: "Zatrudnieni",
     beschaeftigteHinweis: "wg statusu „aktywny” w Personio",
-    stichtagHinweis: "Stan na dziś — Personio nie prowadzi historii, dlatego nie ma porównania rocznego.",
+    stichtagHinweis:
+      "Liczba osób oraz nowi/obecni są dokładne na dzień; rozkłady korzystają z dzisiejszych danych Personio (bez pełnej historii).",
     neuImQuartal: "Nowi w kwartale",
     bestand: "Stan",
     kompetenzen: "Kompetencje uzupełnione",

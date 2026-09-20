@@ -163,6 +163,7 @@ export const en: Texte = {
     gespeichert: "Page size saved.",
   },
   datenstand: {
+    teilweise: "partially imported",
     stand: (datum: string, alter: string) => `Data as of ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Data incomplete — ${fehlend} ${anzahl === 1 ? "is missing" : "are missing"}`,
@@ -493,11 +494,15 @@ export const en: Texte = {
     dankeOhneBild: "Thank you — the feedback has arrived, without an image of the page.",
   },
   belegschaft: {
+    zeitpunkt: "As of",
+    aktuell: "Current",
+    quartal: "Quarter",
     titel: "Workforce",
     ladeFehler: (meldung: string) => `The workforce data could not be loaded: ${meldung}`,
     beschaeftigte: "Employees",
     beschaeftigteHinweis: "by Personio status “active”",
-    stichtagHinweis: "Today’s snapshot — Personio keeps no history, so there is no year comparison.",
+    stichtagHinweis:
+      "Headcount and new/existing are as-of-date exact; the distributions use today’s Personio master data (no full history).",
     neuImQuartal: "New this quarter",
     bestand: "Headcount",
     kompetenzen: "Skills recorded",
