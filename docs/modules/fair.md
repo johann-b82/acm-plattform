@@ -91,10 +91,16 @@ es nur Admin und Viewer gab. Mit App-Rechten entfällt sie.
 
 ## Zeichnungsliste
 
-Eine flache Tabelle (FAI-01) — die aufklappbaren Kundengruppen des Altsystems
-sind bewusst nicht übernommen. Über der Tabelle wählt man einen Kunden, alle
-oder „ohne Kunde“; Kunden werden dafür getrimmt verglichen (`lib/fair/kunden.ts`).
+Nach Kunde gruppiert (FAI-01), wie im Altsystem: je Kunde ein Block, alphabetisch,
+„ohne Kunde“ am Ende (`lib/fair/kunden.ts`). Jeder Block ist einzeln auf- und
+zuklappbar — dieselbe `Klappbar` wie in der Personalabteilung, mit Anzahl im Kopf,
+`aria-expanded` und nativem Umschalter (per Tastatur bedienbar); zugeklappt wird
+der Inhalt versteckt, nicht abgebaut. Über der Liste wählt man zusätzlich einen
+Kunden, alle oder „ohne Kunde“; Kunden werden dafür getrimmt verglichen.
 Sortieren, Suchen und Blättern macht die gemeinsame `Datentabelle`.
+
+(Die frühere flache Tabelle ist mit der Abnahme-Entscheidung vom 20.09.2026
+aufgehoben — die Referenz zeigt einzeln klappbare Kundengruppen.)
 
 ## Editor
 

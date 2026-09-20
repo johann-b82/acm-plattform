@@ -114,7 +114,7 @@ Prüfstand: Web 571 Tests, Compute 1200 Tests, CI-Riegel (Logging, service_role)
 | ATR-08 | Seriennummern je Position bearbeiten | Register | umgesetzt | offen | kommagetrenntes Feld, Warnung bei Anzahl ≠ Menge; `durchsicht.tsx` |
 | ATR-09 | Statusmodell wie Altsystem | Register | umgesetzt | offen | entwurf→erzeugt→abgelegt, Migration 0048 korrigiert aus erzeugt_am; Übernahme-Mapping belegt |
 | ATR-10 | Einstieg Lieferungen, Dropdown | Register | umgesetzt | offen | `/atr`=Lieferungen, `/atr/teilekatalog`=Katalog, Dropdown, `/atr/lieferungen`→`/atr` |
-| FAI-01 | Kundenfilter/-sortierung, flach | Fortsetzung | offen | offen | |
+| FAI-01 | Kundenfilter/-sortierung, nach Kunde gruppiert und einzeln klappbar | Fortsetzung | offen | offen | flache Tabelle mit Abnahme 20.09.2026 aufgehoben |
 | FAI-02 | PDF, Tabelle rechts neben Zeichnung | Register | offen | offen | |
 | FAI-03 | Kopf Kunde/Artikelnr./P/N | Register | offen | offen | |
 | FAI-04 | Bubblegröße separat | Register | offen | offen | |

@@ -15,6 +15,7 @@ import {
 import { gruppiereNachKunde, kundenAuswahl, nachKunde, OHNE_KUNDE } from "@/lib/fair/kunden";
 import { EmptyState, Input, Label, Select } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Klappbar } from "../hr/klappbar";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
@@ -144,16 +145,18 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {liste.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Jeder Kundenblock ist einzeln auf- und zuklappbar, wie im Altsystem.
+              Die Klappkomponente trägt Rahmen, Überschrift und Anzahl und hält
+              den Inhalt versteckt statt abgebaut. */}
           {gruppen.map((gruppe) => (
-            <section key={gruppe.kunde ?? "__ohne"} aria-label={gruppe.kunde ?? worte.fair.ohneKunde}>
-              <h3 className="mb-2 flex items-baseline gap-2 text-sm font-semibold">
-                <span>{gruppe.kunde ?? worte.fair.ohneKunde}</span>
-                <span className="rounded-full bg-[var(--muted)] px-2 py-0.5 text-xs font-normal tabular-nums text-[var(--fg-muted)]">
-                  {gruppe.zeichnungen.length}
-                </span>
-              </h3>
-              <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+            <Klappbar
+              key={gruppe.kunde ?? "__ohne"}
+              titel={gruppe.kunde ?? worte.fair.ohneKunde}
+              anzahl={gruppe.zeichnungen.length}
+              ebene="h3"
+            >
+              <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr>
@@ -194,7 +197,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </Klappbar>
           ))}
         </div>
       )}

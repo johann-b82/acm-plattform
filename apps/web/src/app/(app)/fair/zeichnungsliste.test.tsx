@@ -80,7 +80,7 @@ describe("Zeichnungsliste in der Schale", () => {
     expect(screen.getByText("Winkel")).toBeInTheDocument();
   });
 
-  it("gruppiert die Zeichnungen nach Kunde mit Überschrift", async () => {
+  it("macht jede Kundengruppe einzeln auf- und zuklappbar", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -92,12 +92,18 @@ describe("Zeichnungsliste in der Schale", () => {
       </QueryClientProvider>,
     );
     await screen.findByText("Halter");
-    // Jede Kundengruppe ist ein eigener Abschnitt mit dem Kundennamen als Titel.
-    const airbus = screen.getByRole("region", { name: "Airbus" });
-    const pilatus = screen.getByRole("region", { name: "Pilatus" });
-    expect(within(airbus).getByText("Winkel")).toBeInTheDocument();
-    expect(within(pilatus).getByText("Halter")).toBeInTheDocument();
+    // Jede Kundengruppe hat einen eigenen Umschalter (natives <button>, also
+    // per Tastatur bedienbar) mit dem Kundennamen und beginnt offen.
+    const airbus = screen.getByRole("button", { name: /Airbus/ });
+    const pilatus = screen.getByRole("button", { name: /Pilatus/ });
+    expect(airbus).toHaveAttribute("aria-expanded", "true");
+    expect(pilatus).toHaveAttribute("aria-expanded", "true");
     // Airbus steht vor Pilatus (alphabetisch).
     expect(airbus.compareDocumentPosition(pilatus) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Zuklappen verbirgt nur diese Gruppe; die andere bleibt sichtbar.
+    fireEvent.click(airbus);
+    expect(airbus).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("Winkel")).not.toBeVisible();
+    expect(screen.getByText("Halter")).toBeVisible();
   });
 });
