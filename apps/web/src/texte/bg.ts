@@ -1479,6 +1479,8 @@ export const bg: Texte = {
     seriennummernFeld: (pos: string) => `Серийни номера позиция ${pos}`,
   },
   fair: {
+    zuPruefen: "за проверка",
+    zuPruefenHinweis: "Без партиден номер — проверете като FAIR чертеж или изключете.",
     dateiFehlt: (meldung: string) =>
       `Самият чертеж не се зарежда (${meldung}). Размерите въпреки това са по-долу.`,
     bezeichnungFrei: "Наименование (празно = име на файла)",

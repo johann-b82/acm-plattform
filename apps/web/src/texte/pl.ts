@@ -1477,6 +1477,8 @@ export const pl: Texte = {
     seriennummernFeld: (pos: string) => `Numery seryjne pozycji ${pos}`,
   },
   fair: {
+    zuPruefen: "do sprawdzenia",
+    zuPruefenHinweis: "Bez numeru części — sprawdź jako rysunek FAIR lub odrzuć.",
     dateiFehlt: (meldung: string) =>
       `Samego rysunku nie da się wczytać (${meldung}). Wymiary mimo to są poniżej.`,
     bezeichnungFrei: "Nazwa (puste = nazwa pliku)",

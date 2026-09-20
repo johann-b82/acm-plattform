@@ -1473,6 +1473,8 @@ export const vi: Texte = {
     seriennummernFeld: (pos: string) => `Số sê-ri dòng ${pos}`,
   },
   fair: {
+    zuPruefen: "cần kiểm tra",
+    zuPruefenHinweis: "Không có mã linh kiện — kiểm tra như bản vẽ FAIR hoặc loại bỏ.",
     dateiFehlt: (meldung: string) =>
       `Không tải được bản vẽ (${meldung}). Các kích thước vẫn được liệt kê bên dưới.`,
     bezeichnungFrei: "Mô tả (để trống = tên tệp)",

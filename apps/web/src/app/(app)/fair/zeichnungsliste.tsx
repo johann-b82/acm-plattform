@@ -180,7 +180,20 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                             {z.name}
                           </Link>
                         </td>
-                        <td className="px-3 py-2">{z.teilenummer?.trim() || "—"}</td>
+                        <td className="px-3 py-2">
+                          {z.teilenummer?.trim() || (
+                            // Fachliche Validierung: eine FAIR-Zeichnung braucht eine
+                            // Teilenummer. Fehlt sie, fällt der Eintrag auf — zu prüfen
+                            // oder als Nicht-Zeichnung auszusortieren.
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs text-[var(--warn)]"
+                              style={{ background: "color-mix(in oklab, var(--warn) 18%, transparent)" }}
+                              title={worte.fair.zuPruefenHinweis}
+                            >
+                              {worte.fair.zuPruefen}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 text-[var(--fg-muted)]">
                           {DATUM.format(new Date(z.erstellt_am))}
                         </td>

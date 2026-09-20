@@ -1465,6 +1465,8 @@ export const uk: Texte = {
     seriennummernFeld: (pos: string) => `Серійні номери позиції ${pos}`,
   },
   fair: {
+    zuPruefen: "перевірити",
+    zuPruefenHinweis: "Без номера деталі — перевірте як креслення FAIR або вилучіть.",
     dateiFehlt: (meldung: string) =>
       `Саме креслення не завантажується (${meldung}). Розміри все одно наведені нижче.`,
     bezeichnungFrei: "Назва (порожньо = ім’я файлу)",

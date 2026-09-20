@@ -102,6 +102,19 @@ Sortieren, Suchen und Blättern macht die gemeinsame `Datentabelle`.
 (Die frühere flache Tabelle ist mit der Abnahme-Entscheidung vom 20.09.2026
 aufgehoben — die Referenz zeigt einzeln klappbare Kundengruppen.)
 
+**Fachliche Validierung.** Eine FAIR-Zeichnung braucht eine Teilenummer; fehlt
+sie, trägt die Zeile den Hinweis „zu prüfen“. So fällt eine Nicht-Zeichnung
+(etwa ein Logo-PDF) auf, statt unbemerkt als Zeichnung zu erscheinen — der
+Eintrag ist zu prüfen, zu vervollständigen oder auszusortieren.
+
+**Quarantäne statt Löschung.** Eine bestätigte Fehlablage wird nicht gelöscht,
+sondern quarantäniert (`quarantaene_am`, Migration 0063): die Zeile und ihre
+Ballons/Prüfmaße bleiben vollständig erhalten, verschwinden aber aus der Liste
+(`.is("quarantaene_am", null)`). Das ist jederzeit umkehrbar. Die konkrete
+Fehlablage `ACM_Logo_Blue_print.pdf` (ohne Kunde/Teilenummer) nimmt die
+reversible Migration 0064 heraus — treffsicher am Namen und den leeren Feldern,
+idempotent, mit `downgrade`.
+
 ## Editor
 
 **Projektkopf.** Über der Zeichnung stehen Kunde, Artikelnr. und P/N

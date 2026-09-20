@@ -1473,6 +1473,8 @@ export const en: Texte = {
     seriennummernFeld: (pos: string) => `Serial numbers item ${pos}`,
   },
   fair: {
+    zuPruefen: "to review",
+    zuPruefenHinweis: "No part number — review as a FAIR drawing or sort out.",
     dateiFehlt: (meldung: string) =>
       `The drawing itself cannot be loaded (${meldung}). The measures are listed ` +
       "below all the same.",

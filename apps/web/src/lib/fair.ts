@@ -89,7 +89,9 @@ export const fairApi = {
   zeichnungen: async (): Promise<Zeichnung[]> => {
     const { data, error } = await supabaseBrowser()
       .from("fair_zeichnungen")
+      // Quarantänierte Fehlablagen bleiben in der Datenbank, aber aus der Liste.
       .select(ZEICHNUNG_FELDER)
+      .is("quarantaene_am", null)
       .order("erstellt_am", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as Zeichnung[];

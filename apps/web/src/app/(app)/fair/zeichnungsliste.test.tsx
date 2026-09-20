@@ -80,6 +80,27 @@ describe("Zeichnungsliste in der Schale", () => {
     expect(screen.getByText("Winkel")).toBeInTheDocument();
   });
 
+  it("markiert Zeichnungen ohne Teilenummer als „zu prüfen“", async () => {
+    zeichnungen.mockResolvedValueOnce([
+      { ...zeichnung("a", "Ohne Nummer", "Pilatus"), teilenummer: null },
+      { ...zeichnung("b", "Mit Nummer", "Pilatus"), teilenummer: "T-4711" },
+    ]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SprachAnbieter sprache="de">
+          <Werkzeugplatz.Provider value={platz}>
+            <Zeichnungsliste darfSchreiben />
+          </Werkzeugplatz.Provider>
+        </SprachAnbieter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Ohne Nummer");
+    // Die Zeichnung mit Teilenummer zeigt die Nummer, die ohne den Hinweis.
+    expect(screen.getByText("T-4711")).toBeInTheDocument();
+    expect(screen.getAllByText("zu prüfen")).toHaveLength(1);
+  });
+
   it("macht jede Kundengruppe einzeln auf- und zuklappbar", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(

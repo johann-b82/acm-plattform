@@ -1462,6 +1462,8 @@ export const fa: Texte = {
     seriennummernFeld: (pos: string) => `شماره‌های سریال ردیف ${pos}`,
   },
   fair: {
+    zuPruefen: "بررسی شود",
+    zuPruefenHinweis: "بدون شماره قطعه — به‌عنوان نقشهٔ FAIR بررسی یا کنار گذاشته شود.",
     dateiFehlt: (meldung: string) =>
       `خود نقشه بارگذاری نمی‌شود (${meldung}). اندازه‌ها با این حال در پایین آمده‌اند.`,
     bezeichnungFrei: "شرح (خالی = نام فایل)",
