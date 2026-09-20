@@ -370,7 +370,7 @@ function TaktUndGrenzen() {
           <Input
             id="sensor-intervall"
             type="number"
-            min={5}
+            min={0}
             max={86400}
             step={1}
             value={werte.abfrage_sekunden}

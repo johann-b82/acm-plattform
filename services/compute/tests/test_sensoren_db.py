@@ -196,7 +196,7 @@ class TestEinstellungen:
         assert zeilen == [{"abfrage_sekunden": 60, "temperatur_min": 18}]
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("sekunden", [4, 86401])
+    @pytest.mark.parametrize("sekunden", [-1, 86401])
     async def test_der_takt_bleibt_im_bereich(self, db, sekunden):
         with pytest.raises(Exception, match="abfrage_sekunden"):
             await als(
@@ -204,6 +204,19 @@ class TestEinstellungen:
                 "update public.sensor_einstellungen set abfrage_sekunden = :s",
                 s=sekunden,
             )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("sekunden", [0, 1, 30, 3600, 86400])
+    async def test_freie_ganze_sekunden_einschliesslich_null(self, db, sekunden):
+        """0 = aus, sonst jede ganze Sekunde bis 86400 — kein Mindestwert, kein
+        Aufrunden eines Werts unter einer Minute."""
+        zeilen = await als(
+            VERWALTUNG,
+            "update public.sensor_einstellungen set abfrage_sekunden = :s"
+            " returning abfrage_sekunden",
+            s=sekunden,
+        )
+        assert zeilen == [{"abfrage_sekunden": sekunden}]
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -279,6 +292,25 @@ class TestTakt:
         assert (await sql("select public.sensoren_faellig() as f"))[0]["f"] is False
 
     @pytest.mark.asyncio
+    async def test_null_schaltet_den_takt_ab(self, db):
+        """0 = aus: ohne jeden Durchgang wäre es sonst fällig — bei 0 nie."""
+        await sql("update public.sensor_einstellungen set abfrage_sekunden = 0")
+        assert (await sql("select public.sensoren_faellig() as f"))[0]["f"] is False
+
+    @pytest.mark.asyncio
+    async def test_bei_null_ruft_er_niemanden_an(self, db):
+        async with SessionLocal() as s:
+            async with s.begin():
+                await s.execute(sa.text("select set_config('acm.sensor_token', 'x', true)"))
+                await s.execute(
+                    sa.text("update public.sensor_einstellungen set abfrage_sekunden = 0")
+                )
+                ergebnis = (
+                    await s.execute(sa.text("select public.sensoren_messen_anstossen()"))
+                ).scalar()
+        assert ergebnis is None
+
+    @pytest.mark.asyncio
     async def test_nicht_faellig_ruft_er_niemanden_an(self, db):
         async with SessionLocal() as s:
             async with s.begin():
@@ -298,6 +330,48 @@ class TestTakt:
                 async with s.begin():
                     await s.execute(sa.text("select set_config('acm.sensor_token', 'x', true)"))
                     await s.execute(sa.text("select public.sensoren_messen_anstossen()"))
+
+
+class TestAufraeumen:
+    """Die Zeitreihe bleibt für immer; nur das Betriebsprotokoll wird gekürzt."""
+
+    @pytest.mark.asyncio
+    async def test_messwerte_bleiben_auch_nach_jahren(self, db):
+        """Eine fünf Jahre alte Messung überlebt das Aufräumen — Sensormessdaten
+        werden nie automatisch gelöscht."""
+        sid = await sensor_id()
+        await sql(
+            "insert into public.sensor_messungen (sensor_id, gemessen_am, temperatur)"
+            " values (:s, now() - interval '5 years', 20.5)",
+            s=sid,
+        )
+        await sql("select public.sensoren_aufraeumen()")
+        uebrig = (
+            await sql(
+                "select count(*) as n from public.sensor_messungen"
+                " where gemessen_am < now() - interval '4 years'"
+            )
+        )[0]["n"]
+        assert uebrig == 1
+
+    @pytest.mark.asyncio
+    async def test_alte_versuche_werden_gekuerzt(self, db):
+        """Das Betriebsprotokoll darf weiter altern: älter als vierzehn Tage
+        geht es fort."""
+        sid = await sensor_id()
+        await sql(
+            "insert into public.sensor_versuche (sensor_id, versucht_am, erfolg)"
+            " values (:s, now() - interval '30 days', true)",
+            s=sid,
+        )
+        await sql("select public.sensoren_aufraeumen()")
+        alt = (
+            await sql(
+                "select count(*) as n from public.sensor_versuche"
+                " where versucht_am < now() - interval '15 days'"
+            )
+        )[0]["n"]
+        assert alt == 0
 
 
 BIS = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
