@@ -49,7 +49,7 @@ Gesamt Aufträge 4.906.285,15 €, Rechnungen 4.760.703,11 € (= Kachel Umsatz)
 
 **Einzelaufträge — 198 gegen 381.** Die Tabelle der Referenz (`SalesTable.tsx`) liest `sales_records`, den 60-Spalten-Altexport, der seit v1.54 für keine Kennzahl mehr benutzt wird; sie lädt höchstens 500 Zeilen. Die Kachel „Aufträge gesamt“ zählt `auftraege` mit `wert_eur > 0`. Beide Mengen stammen aus verschiedenen Tabellen und Importständen; `sales_records` gibt es in der Plattform nicht. Die neue Tabelle zeigt genau die Menge der Kachel: „Dieses Jahr“ 381 Aufträge (von 417 im Zeitraum; 36 mit 0 € zählen nicht), „Alles“ 1.065 (= Kachel) über zwei PostgREST-Seiten. Projekt und Restwert gibt es nur in `sales_records`; beide Spalten entfallen.
 
-**Umsatzverlauf.** Vergleichsreihe wie `chartComparisonMode.ts` (Monat/Quartal → Vorperiode, Jahr → Vorjahr, Alles → keine), freier Zeitraum → Vorjahr. Anders als `routers/kpis.py:181-193` paart die Plattform Buckets über eine vollständige Achse beider Fenster: fehlt in der Referenz ein Monat ohne Umsatz, verschiebt sich die restliche Vorjahresreihe.
+**Umsatzverlauf.** Im gewählten Monat nach Kalenderwochen, sonst monatlich (`umsatzTakt`). Vergleichsreihe ist die **Vorjahresperiode** für Monat, Quartal, Jahr und freien Zeitraum; „Alles" ohne (Abnahme-Entscheidung 20.09.2026 — die frühere Vorperiode für Monat/Quartal ist aufgehoben). Die Plattform paart Buckets über eine vollständige Achse beider Fenster: fehlt in der Referenz ein Monat ohne Umsatz, verschiebt sich die restliche Vorjahresreihe nicht.
 
 **Besuche.** `sales_contacts`, `status = 1`, `ORT` vor Ort, `ONL` online, gestapelt; Ziel „3 / Woche“ gilt der Summe (`SalesActivityCard.tsx`, `sales_kpi_aggregation.py:57,85-88`).
 

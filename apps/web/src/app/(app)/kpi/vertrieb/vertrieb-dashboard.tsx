@@ -16,7 +16,7 @@ import {
 } from "recharts";
 
 import {
-  UMSATZ_TAKT,
+  umsatzTakt,
   kundenfarben,
   vergleichsart,
   verlaufMitVergleich,
@@ -55,10 +55,10 @@ export function VertriebDashboard() {
   const worte = useTexte();
   const fmt = useFormate();
   const sprachTag = ZAHL_TAG[useSprache()];
-  // Der Umsatzverlauf rechnet immer in Monaten (UMSATZ_TAKT), wie im
-  // Altprojekt. Achsenbeschriftung, Vergleichsreihe und Tooltip folgen
-  // demselben Takt — sonst zeigte die Achse Tage und die Reihe Monate.
-  const t = UMSATZ_TAKT;
+  // Im gewählten Monat nach Kalenderwochen, sonst monatlich (umsatzTakt).
+  // Achsenbeschriftung, Vergleichsreihe, Tooltip und Prozentwerte folgen
+  // demselben Takt — sonst zeigte die Achse Wochen und die Reihe Monate.
+  const t = umsatzTakt(zeitraum);
   const [diagrammart, setDiagrammart] = useDiagrammart();
 
   const summe = useQuery({
@@ -74,8 +74,8 @@ export function VertriebDashboard() {
     vertriebApi.summe,
   );
   const verlauf = useQuery({
-    queryKey: ["kpi", "vertrieb", "verlauf", von, bis],
-    queryFn: () => vertriebApi.verlauf(von, bis),
+    queryKey: ["kpi", "vertrieb", "verlauf", von, bis, t],
+    queryFn: () => vertriebApi.verlauf(von, bis, t),
   });
 
   // Vergleichsreihe im Verlauf (VER-04A): dieselben Fenster wie die Kacheln,
@@ -83,7 +83,7 @@ export function VertriebDashboard() {
   const art = vergleichsart(zeitraum);
   const vorFenster = useMemo(() => {
     const f = vergleichsfenster(zeitraum, von, bis);
-    return art === "vorperiode" ? f.vorperiode : art === "vorjahr" ? f.vorjahr : null;
+    return art === "vorjahr" ? f.vorjahr : null;
   }, [art, zeitraum, von, bis]);
   const verlaufVorher = useQuery({
     queryKey: ["kpi", "vertrieb", "verlauf", "vergleich", vorFenster?.von, vorFenster?.bis, t],
@@ -330,11 +330,7 @@ export function VertriebDashboard() {
             <h2 className="text-base font-semibold">{worte.vertrieb.verlauf}</h2>
             <p className="mt-1 text-xs text-[var(--fg-muted)]">
               {worte.vertrieb.verlaufHinweis(
-                t === "day"
-                  ? worte.dashboard.jeTag
-                  : t === "week"
-                    ? worte.dashboard.jeWoche
-                    : worte.dashboard.jeMonat,
+                t === "week" ? worte.dashboard.jeWoche : worte.dashboard.jeMonat,
               )}
             </p>
           </div>

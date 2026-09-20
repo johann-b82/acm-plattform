@@ -65,15 +65,23 @@ export interface Einzelauftrag {
 const SEITE = 1000;
 
 /**
- * Der Umsatzverlauf rechnet **immer** in Monaten, unabhängig vom Fenster.
+ * Grundtakt des Umsatzverlaufs, wenn kein Monat gewählt ist: Monat.
  *
- * Wie im Altprojekt (`RevenueChart.tsx`: `const GRANULARITY = "monthly"`). Der
- * fensterabhängige Takt aus `gemeinsam.ts` passt für Kennzahlen, die täglich
- * anfallen; Umsatz wird nicht täglich gebucht. In der Monatsansicht standen
- * damit rund 30 Tagespunkte gegen eine Handvoll Buchungen — die Fläche riss
- * an jedem gebuchtlosen Tag auf, obwohl nichts fehlte.
+ * Umsatz wird nicht täglich gebucht; der tagesfeine Takt aus `gemeinsam.ts`
+ * risse die Fläche an jedem gebuchtlosen Tag auf. Für den **gewählten Monat**
+ * ist der Takt jedoch die Kalenderwoche (siehe `umsatzTakt`) — wie in der
+ * Referenz: vier bis fünf Wochenpunkte statt eines einzigen Monatspunkts.
  */
 export const UMSATZ_TAKT: Takt = "month";
+
+/**
+ * Der Takt des Umsatzverlaufs zum gewählten Zeitraum: im Monat nach
+ * Kalenderwochen, sonst monatlich. Achse, Vergleichsreihe, Tooltip und die
+ * Prozentwerte folgen alle diesem einen Takt.
+ */
+export function umsatzTakt(zeitraum: Zeitraum): "week" | "month" {
+  return zeitraum === "monat" ? "week" : "month";
+}
 
 export const vertriebApi = {
   summe: async (von: string | null, bis: string | null): Promise<VertriebSumme> => {
@@ -244,15 +252,17 @@ export function kundenfarben(listen: readonly (readonly string[])[], plaetze = 8
 // ---------------------------------------------------------------------------
 
 /**
- * Welche Reihe neben dem Umsatz läuft — wie `chartComparisonMode.ts`:
- * Monat und Quartal gegen die Vorperiode, Jahr gegen das Vorjahr, „Alles“
- * ohne. Den freien Zeitraum kennt die Referenz nicht mehr; er bekommt das
- * Vorjahr, weil dessen Buckets auf dieselben Kalendertage fallen.
+ * Welche Reihe neben dem Umsatz im Verlauf läuft: die **Vorjahresperiode** —
+ * für Monat, Quartal, Jahr und den freien Zeitraum. Der unmittelbar vorherige
+ * Monat bzw. das Vorquartal wären der falsche Vergleich (Saison, Feiertage);
+ * die Referenz stellt den gewählten Zeitraum dem Vorjahr gegenüber. „Alles“
+ * hat kein Vorjahr und bekommt keine Vergleichsreihe.
+ *
+ * (Die Kacheln oben zeigen davon unabhängig weiterhin Vorperiode *und*
+ * Vorjahr; hier geht es nur um die Reihe im Diagramm.)
  */
 export function vergleichsart(zeitraum: Zeitraum): "vorperiode" | "vorjahr" | null {
-  if (zeitraum === "monat" || zeitraum === "quartal") return "vorperiode";
-  if (zeitraum === "jahr" || zeitraum === "frei") return "vorjahr";
-  return null;
+  return zeitraum === "alles" ? null : "vorjahr";
 }
 
 /** Die Buckets eines Fensters, so wie `date_trunc` sie in SQL bildet. */
