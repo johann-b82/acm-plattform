@@ -129,9 +129,11 @@ verfälschen.
 
 ## Umsatzverlauf
 
-Der Verlauf über den gewählten Zeitraum, zusammengefasst wie unter *So lesen
-sich die Kennzahlen* beschrieben. Ist ein Zielwert hinterlegt, läuft er als
-Linie mit.
+Der Verlauf über den gewählten Zeitraum: im **Monat nach Kalenderwochen**,
+größere Zeiträume monatsweise. Als Vergleich läuft die **Vorjahresperiode**
+daneben (bei Monat, Quartal, Jahr und freiem Zeitraum) — nicht der Vormonat.
+
+![Der Umsatzverlauf in der Monatsansicht: Wochenbalken mit der Vorjahresreihe daneben.](/hilfe/vertrieb-umsatzverlauf.png)
 
 ## Kundenanteil
 
@@ -242,7 +244,10 @@ angezeigt.
 ## Audits
 
 Die Auditplanung liegt auf derselben Seite, ist aber etwas anderes als die
-Kennzahlen — siehe *Audits*.
+Kennzahlen — siehe *Audits*. Die Audit-Findings lassen sich nach **Auditart**
+filtern: Behörde, Unterlieferant, Intern und Kunde.
+
+![Der Auditart-Filter: Behörde, Unterlieferant, Intern, Kunde.](/hilfe/qualitaet-auditart.png)
 `.trim(),
     },
     {
@@ -291,7 +296,9 @@ Unter **Personal**. Grundlage ist der nächtliche Abgleich mit Personio.
 
 Die erste Zeile der Seite sagt, **wann der Abgleich zuletzt lief** und ob er
 Fehler meldete. Das steht bewusst oben: eine Personalkennzahl ohne frischen
-Abgleich ist eine Aussage über vorgestern.
+Abgleich ist eine Aussage über vorgestern. Ist der jüngste Lauf gescheitert,
+steht darunter der **letzte erfolgreiche Stand** — so ist klar, wie alt die
+Zahlen wirklich sind. Ein zweiter Abgleich startet nicht, solange einer läuft.
 
 Wer das Recht *Verwalten* auf Personal hat, kann den Abgleich von Hand
 anstoßen. Je nach Fenster dauert er ein bis mehrere Minuten.
@@ -306,14 +313,15 @@ anstoßen. Je nach Fenster dauert er ein bis mehrere Minuten.
 
 ## Belegschaft und Kompetenzentwicklung
 
-Kopfzahl, Eintritte und Austritte im Zeitraum. Die Kompetenzentwicklung zeigt,
-bei wie vielen aktiven Personen mindestens eines der dafür festgelegten
-Personio-Felder gepflegt ist. Welche Felder das sind, steht ebenfalls in den
-Einstellungen.
+Kopfzahl, Eintritte und Austritte — wahlweise zum heutigen Stand oder zu einem
+**vergangenen Stichtag** (Jahr und Quartal über der Belegschaft). Kopfzahl sowie
+Neu und Bestand sind dabei stichtagsgenau; die Verteilungen (Geschlecht,
+Beschäftigungsart, Abteilungen) nutzen die **heutigen** Personio-Stammdaten,
+weil Personio keine volle Historie führt. Die Kompetenzentwicklung zeigt, bei
+wie vielen aktiven Personen mindestens eines der dafür festgelegten
+Personio-Felder gepflegt ist; welche das sind, steht in den Einstellungen.
 
-Diese Kennzahl ist ein **Stichtagswert**, kein Verlauf: sie rechnet auf den
-heutigen Stammdaten. Einen ehrlichen Verlauf gäbe es nur mit historischen
-Ständen, und die gibt es nicht — deshalb steht dort auch kein Diagramm.
+![Die Belegschaft zu einem historischen Stichtag (31. Dezember 2024): Kopfzahl und Verteilungen.](/hilfe/belegschaft-stichtag.png)
 
 ## Mitarbeitertabelle und Wochenbericht
 

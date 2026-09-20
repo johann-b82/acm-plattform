@@ -68,6 +68,15 @@ Eine Zeichnung wird hochgeladen, und auf ihr werden die zu prüfenden Maße mit
 nummerierten Ballons markiert. Aus den Ballons entsteht die Prüfliste — die
 Nummerierung auf der Zeichnung und in der Liste ist dieselbe.
 
+## Die Zeichnungsliste
+
+Die Zeichnungen sind nach Kunde gruppiert; jeder Block lässt sich einzeln auf-
+und zuklappen. Eine Zeichnung ohne Teilenummer trägt den Hinweis **„zu prüfen"**
+— so fällt eine versehentlich abgelegte Nicht-Zeichnung auf, statt unbemerkt als
+Zeichnung zu laufen.
+
+![Die FAIR-Zeichnungsliste: nach Kunde gruppiert und klappbar, mit „zu prüfen" bei fehlender Teilenummer.](/hilfe/fair-kundengruppen.png)
+
 ## Arbeiten mit Ballons
 
 Ein Ballon wird gesetzt, verschoben und nummeriert. Die Nummern bleiben stabil:
@@ -121,6 +130,8 @@ gemeinsam und steht unter **Einstellungen → Sensoren** (Vorgabe: stündlich). 
 ist frei in ganzen Sekunden wählbar; **0 schaltet die selbsttätige Abfrage ab**
 — von Hand messen bleibt möglich. Feiner als eine Minute wird der Takt nicht,
 weil die Datenbank nur zur vollen Minute anstößt.
+
+![Die Sensor-Einstellungen: globales Abfrage-Intervall (0 = aus) und globale Grenzwerte für alle Geräte.](/hilfe/sensoren-einstellungen.png)
 
 ## Messung und Versuch sind zweierlei
 
