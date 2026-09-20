@@ -58,20 +58,25 @@ im Altprojekt trägt ein Admin in der Maske ein Ziel ein, und der Dienst meldet
 sich dort mit einem Geheimnis an. Geprüft wird vor dem Anlegen, vor dem Ändern
 des Rechners und vor jeder Abfrage.
 
-## Grenzwerte je Gerät
+## Grenzwerte gelten global
 
-Im Altprojekt stehen sie als vier Spalten im Einstellungs-Singleton und gelten
-für alle Geräte gleich. Ein Serverraum und ein Lager haben aber nicht dieselbe
-Vorstellung von „zu warm". Hier hängen `temperatur_min`/`_max` und
-`feuchte_min`/`_max` am Gerät; die Kachel färbt den Wert, das Diagramm zieht
-zwei gestrichelte Linien.
+Ein Takt und vier Grenzen für alle Geräte, im Singleton `sensor_einstellungen`
+(SET-11, Migration 0047): `temperatur_min`/`_max` und `feuchte_min`/`_max`. Eine
+Ausnahme je Gerät wurde ausdrücklich verworfen. Die Kachel färbt den Wert, das
+Diagramm zieht zwei gestrichelte Linien. (Die gleichnamigen Spalten am Gerät aus
+0026 sind Altbestand und ohne Wirkung.)
 
 ## Der Takt kommt aus der Datenbank
 
-`pg_cron` stößt alle fünf Minuten über `pg_net` `/api/sensoren/geplant` an,
-abgesichert mit `SENSOR_TOKEN` (verglichen mit `hmac.compare_digest`). Im
-Altprojekt hält ein Thread in der API den Zeitplan — das ist der Grund, warum
-der dortige Dienst auf `--workers 1` festgenagelt ist.
+`pg_cron` stößt **jede Minute** über `pg_net` `/api/sensoren/geplant` an,
+abgesichert mit `SENSOR_TOKEN` (verglichen mit `hmac.compare_digest`). Ob wirk­
+lich gemessen wird, entscheidet `sensoren_faellig()` am **globalen Abfrage­
+intervall** (`sensor_einstellungen.abfrage_sekunden`, Vorgabe 3600 = stündlich).
+Das Intervall ist frei in ganzen Sekunden wählbar, **`0` schaltet die selbst­
+tätige Abfrage ab** (Migration 0060); ein Wert unter 60 Sekunden wird nicht
+aufgerundet, feiner als minütlich wird es durch das Anklopfen gleichwohl nicht.
+Im Altprojekt hält ein Thread in der API den Zeitplan — der Grund, warum der
+dortige Dienst auf `--workers 1` festgenagelt ist.
 
 Das Token muss zusätzlich in der Datenbank stehen, und zwar als
 **`supabase_admin`** — `postgres` darf den Parameter nicht setzen:
@@ -81,10 +86,10 @@ docker compose exec db psql -U supabase_admin -d postgres \
   -c "alter database postgres set acm.sensor_token = '<derselbe Wert>';"
 ```
 
-Fünf Minuten statt einer Minute wie im Altprojekt: für Raumtemperatur ist das
-feiner, als irgendjemand ablesen kann, und macht die Zeitreihe fünfmal so
-groß. Aufgeräumt wird nachts — Messwerte nach drei Jahren, Versuche nach
-vierzehn Tagen. Die Versuchsliste ist Betriebsprotokoll, kein Messwert.
+**Messwerte bleiben dauerhaft.** Der nächtliche Aufräum-Job (`sensoren_aufraeumen`)
+kürzt nur noch die **Versuchsliste** nach vierzehn Tagen — sie ist Betriebs­
+protokoll, kein Messwert. Die Zeitreihe `sensor_messungen` wird **nie**
+automatisch gelöscht (Migration 0059).
 
 ## Was ein Durchgang aushält
 

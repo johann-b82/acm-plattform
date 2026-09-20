@@ -107,7 +107,7 @@ wird nicht gesetzt — ein Newsletter ist ein Text, kein Baukasten.
     {
       slug: "sensoren",
       titel: "Sensoren",
-      kurz: "Temperatur und Luftfeuchtigkeit aus dem Netz, alle fünf Minuten.",
+      kurz: "Temperatur und Luftfeuchtigkeit aus dem Netz, in einem einstellbaren Takt.",
       text: `
 # Sensoren
 
@@ -115,8 +115,12 @@ Ansicht unter **Sensoren**, eingerichtet unter **Einstellungen → Sensoren**.
 
 ## Was passiert
 
-Alle fünf Minuten werden die eingetragenen Geräte gefragt. Was sie liefern,
-wird zur Zeitreihe und zur Kachel.
+In einem **globalen Takt** werden alle eingetragenen Geräte gefragt. Was sie
+liefern, wird zur Zeitreihe und zur Kachel. Der Takt gilt für alle Geräte
+gemeinsam und steht unter **Einstellungen → Sensoren** (Vorgabe: stündlich). Er
+ist frei in ganzen Sekunden wählbar; **0 schaltet die selbsttätige Abfrage ab**
+— von Hand messen bleibt möglich. Feiner als eine Minute wird der Takt nicht,
+weil die Datenbank nur zur vollen Minute anstößt.
 
 ## Messung und Versuch sind zweierlei
 
@@ -129,8 +133,9 @@ Die Kachel zeigt deshalb beides: den letzten **Messwert** und den letzten
 
 ## Grenzwerte
 
-Je Gerät lässt sich festlegen, ab wann ein Wert als zu hoch oder zu niedrig
-gilt. Die Kachel färbt sich entsprechend.
+Die Grenzwerte gelten **global für alle Geräte** (unter **Einstellungen →
+Sensoren**): ab wann Temperatur oder Luftfeuchte als zu hoch oder zu niedrig
+gelten. Die Kachel färbt sich entsprechend.
 
 ## Einrichten
 
