@@ -30,7 +30,7 @@ import {
   kleiner,
   useBallonGroesse,
 } from "@/lib/fair/ballon-groesse";
-import { beendeOcr, liesFeld, type OcrModus } from "@/lib/fair/ocr";
+import { beendeOcr, liesFeld, normalisiereMass, type OcrModus } from "@/lib/fair/ocr";
 import { Button, ButtonLink, Card, Select } from "@/components/ui/primitives";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
@@ -247,13 +247,14 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   const ocr = useCallback(
     async (b: Ballon): Promise<string> => {
       if (!z || !datei.data) throw new Error(worte.fair.ladefehler);
-      const { feldAlsLeinwand } = await import("./raster");
-      const feld = await feldAlsLeinwand(datei.data, z.art, b.seite, {
-        x: b.bereich_x,
-        y: b.bereich_y,
-        b: b.bereich_b,
-        h: b.bereich_h,
-      });
+      const bereich = { x: b.bereich_x, y: b.bereich_y, b: b.bereich_b, h: b.bereich_h };
+      const { feldAlsLeinwand, textImBereich } = await import("./raster");
+      // Echter PDF-Text schlägt OCR — exakt statt geraten.
+      if (z.art === "pdf") {
+        const t = await textImBereich(datei.data, b.seite, bereich);
+        if (t) return normalisiereMass(t);
+      }
+      const feld = await feldAlsLeinwand(datei.data, z.art, b.seite, bereich);
       return liesFeld(feld);
     },
     [z, datei.data, worte],
@@ -266,10 +267,17 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
       let wert = "";
       try {
         if (z && datei.data) {
-          const { feldAlsLeinwand } = await import("./raster");
+          const { feldAlsLeinwand, textImBereich } = await import("./raster");
+          // Trägt die PDF-Zeichnung echten Text im Feld, gilt der — ohne OCR.
+          if (z.art === "pdf") {
+            const t = await textImBereich(datei.data, seite, bereich);
+            if (t) wert = normalisiereMass(t);
+          }
+          // Den Ausschnitt trotzdem rastern und behalten: für „Maß"/„Text" und
+          // als Rückfall, wenn kein Text da war (Scan).
           const feld = await feldAlsLeinwand(datei.data, z.art, seite, bereich);
           ocrFeld.current = { leinwand: feld, bevorzugt };
-          wert = await liesFeld(feld, bevorzugt, "auto");
+          if (!wert) wert = await liesFeld(feld, bevorzugt, "auto");
         }
       } catch {
         // Eine misslungene Lesung ist kein Grund zu scheitern — Feld bleibt leer.

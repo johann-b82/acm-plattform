@@ -76,3 +76,50 @@ export async function feldAlsLeinwand(
     await pdf.destroy();
   }
 }
+
+/**
+ * Der echte Text eines markierten PDF-Bereichs — oder `null`, wenn dort keine
+ * Textschicht liegt (ein Scan). Trägt die Zeichnung durchsuchbaren Text, spart
+ * das die OCR und liefert das Maß exakt statt geraten.
+ *
+ * Die Textstücke stehen im unrotierten PDF-Raum; `convertToViewportPoint` bringt
+ * sie in denselben (drehungsbewussten) Rahmen, in dem die Ballons normiert sind.
+ */
+export async function textImBereich(
+  url: string,
+  seite: number,
+  bereich: Rechteck,
+): Promise<string | null> {
+  const pdf = await pdfjs.getDocument({ url }).promise;
+  try {
+    const page = await pdf.getPage(seite);
+    const vp = page.getViewport({ scale: 1 });
+    const inhalt = await page.getTextContent();
+    const treffer: { x: number; y: number; text: string }[] = [];
+    for (const el of inhalt.items) {
+      if (!("str" in el) || !el.str.trim()) continue;
+      const [vx, vy] = vp.convertToViewportPoint(el.transform[4], el.transform[5]);
+      const nx = vx / vp.width;
+      const ny = vy / vp.height;
+      if (
+        nx >= bereich.x &&
+        nx <= bereich.x + bereich.b &&
+        ny >= bereich.y &&
+        ny <= bereich.y + bereich.h
+      ) {
+        treffer.push({ x: nx, y: ny, text: el.str });
+      }
+    }
+    if (treffer.length === 0) return null;
+    // In Lesereihenfolge zusammensetzen: erst Zeilen (y), dann Spalten (x).
+    treffer.sort((a, b) => (Math.abs(a.y - b.y) > 0.01 ? a.y - b.y : a.x - b.x));
+    const text = treffer
+      .map((t) => t.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return text || null;
+  } finally {
+    await pdf.destroy();
+  }
+}

@@ -46,6 +46,18 @@ export function bereinigeLesung(text: string): string {
 }
 
 /**
+ * Behutsame Vereinheitlichung von Maßangaben: eindeutige Durchmesser- und
+ * Toleranzschreibweisen zusammenführen, ohne den Wert zu verfälschen. Gilt für
+ * OCR- wie für Textschicht-Lesungen.
+ */
+export function normalisiereMass(text: string): string {
+  return text
+    .replace(/[⌀∅]/g, "Ø") // ⌀ (U+2300) / ∅ (U+2205) → Ø
+    .replace(/\+\s*\/\s*-/g, "±") // +/- → ±
+    .trim();
+}
+
+/**
  * Buchstaben und Ziffern zählen, Rauschzeichen (`< > | = ~ ^`), wie sie bei
  * einer falsch gedrehten Lesung entstehen, schwer bestrafen — so schlägt die
  * richtige Lage eine selbstsichere, aber sinnlose.
@@ -78,7 +90,7 @@ export async function besteLesung(
     if (b.punkte > beste.punkte) beste = { text, punkte: b.punkte };
     if (b.sauber && roh.konfidenz >= SICHER) break;
   }
-  return beste.text;
+  return normalisiereMass(beste.text);
 }
 
 /**

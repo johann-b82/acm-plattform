@@ -6,13 +6,29 @@ Prüfbericht neben den gemessenen Werten.
 
 ## Wie ein Ballon entsteht
 
-Ein Feld über das Maß ziehen, dann klicken, wo die Blase sitzen soll. Die
-Pfeilspitze wird nicht gespeichert — sie ergibt sich aus der Mitte des Felds
-und liegt knapp außerhalb, damit sie den Wert nicht verdeckt.
+Ein Feld über das Maß ziehen, dann klicken, wo die Blase sitzen soll. Beim
+Aufziehen wird der Zeiger gefangen, damit die Markierung am Zeichnungsrand nicht
+abreißt; Escape bricht ab. Die Pfeilspitze wird nicht gespeichert — sie ergibt
+sich aus der Mitte des Felds und liegt knapp außerhalb, damit sie den Wert nicht
+verdeckt.
+
+**Das Maß liest die Plattform beim Aufziehen gleich mit** (wie im Altsystem):
+sobald das Feld steht, erscheint der erkannte Wert editierbar in einer
+schwebenden Box mit „Maß“/„Text“-Neulesung, und der zweite Klick setzt die Blase
+**samt Wert** — kein leerer Ballon, den man Zeile für Zeile nachlesen müsste.
+Die bevorzugte Leselage kommt aus der Ziehrichtung (oben-links → unten-rechts ist
+aufrecht).
 
 Ein Klick ohne Ziehen erzeugt nichts: unterhalb einer Mindestgröße bricht der
 Vorgang ab, sonst entstünde bei jedem versehentlichen Klick ein Ballon mit
 unsichtbarem Feld.
+
+Eine gesetzte Blase ist zugleich ihr Ziehgriff: Ziehen verschiebt sie (der Pfeil
+zielt von selbst nach), Loslassen speichert; ein reiner Klick wählt nur aus. Das
+Ballon-Overlay nimmt sonst keine Zeiger an, damit ein Klick zum Setzen der
+nächsten Blase die Fläche auch über einem bestehenden Ballon erreicht.
+
+Ein Upload öffnet die Zeichnung direkt im Editor, statt in der Liste zu bleiben.
 
 ## Die Nummerierung gehört der Datenbank
 
@@ -75,6 +91,15 @@ Meldung sagt nur „ließ sich nicht laden":
 
 Genau darüber ist dieser Port gestolpert: mit `pdfjs-dist@6` installiert lud
 keine Zeichnung, ohne dass ein Fehler gesagt hätte, warum.
+
+**Nur im Browser laden.** `react-pdf`/`pdfjs` fasst schon beim Modulstart das
+Browser-Global `DOMMatrix` an. In Next 16 wird der Client-Baum auch beim
+Serverrendern ausgewertet — dabei warf `/fair/[id]` jedes Mal `HTTP 500`
+(digest `2684385280`); die Seite kam nur über die Client-Hydration wieder hoch.
+Deshalb lädt die PDF-Leinwand über `next/dynamic` mit `ssr:false`, und die
+Rasterhelfer (`[id]/raster.ts`) werden erst in den Handlern nachgeladen — so
+läuft pdfjs nie am Server. Das Altprojekt war eine Vite-SPA ohne SSR; dort
+konnte das nicht auftreten.
 
 ## Rechte
 
@@ -148,13 +173,23 @@ unsichtbar verändert. Griffe und Pfeile sind dann gesperrt, ein Hinweis sagt
 warum. Gezogen wird innerhalb der sichtbaren Seite; über Seitengrenzen tragen
 die Pfeile.
 
-## OCR je Zeile
+## Maß lesen — beim Markieren und je Zeile
 
-Der Kreis-Pfeil in jeder Zeile („OCR für diese Zeile neu starten“) liest das
-gespeicherte Feld des Ballons neu, wie `reocrBalloon` im Altsystem: frisch aus
-der Originaldatei gerastert, lange Kante 1400 px, unabhängig vom Zoom; mit
-weißem Rand in allen vier Lagen, die beste Lesung gewinnt
-(`lib/fair/ocr.ts`, `[id]/raster.ts`).
+Gelesen wird an zwei Stellen: **beim Aufziehen eines Felds** (der Wert kommt mit
+der Blase) und über den **Kreis-Pfeil in jeder Zeile** („OCR für diese Zeile neu
+starten“, wie `reocrBalloon` im Altsystem). Beide rastern das Feld frisch aus der
+Originaldatei, lange Kante 1400 px, unabhängig vom Zoom; mit weißem Rand in allen
+vier Lagen, die beste Lesung gewinnt (`lib/fair/ocr.ts`, `[id]/raster.ts`).
+
+**Echter PDF-Text schlägt OCR.** Trägt die Zeichnung eine Textschicht, wird der
+Text im Feld direkt aus `getTextContent` gelesen (`textImBereich`) — exakt statt
+geraten, ohne den OCR-Arbeiter zu bemühen. Nur ein Scan ohne Textschicht (oder
+ein Bild) fällt auf die OCR zurück. Das ist neu gegenüber beiden Systemen.
+
+**Maß-Modus.** Die schwebende Box liest wahlweise als „Maß“ (eine Zeile, nur
+Ziffern und Maß-Zeichen per Whitelist — so wird „20“ nicht als „ZU“ gelesen)
+oder als „Text“. Durchmesser- und Toleranzzeichen werden behutsam vereinheitlicht
+(⌀/∅ → Ø, +/- → ±), ohne den Wert zu verfälschen (`normalisiereMass`).
 
 Das Ergebnis geht nur in diese Zeile. Ein leeres Feld wird direkt gefüllt;
 steht schon ein **anderer** Wert darin, fragt ein Dialog vor dem Ersetzen —
@@ -170,10 +205,9 @@ sonst von jsdelivr. Hier gelten feste Pfade unter `/tesseract`:
 | `worker.min.js`, `tesseract-core-*-lstm.wasm.js` | `scripts/tesseract-dateien.mjs` kopiert sie vor `dev` und `build` aus `node_modules` (nicht eingecheckt) |
 | `lang/deu.traineddata.gz`, `lang/eng.traineddata.gz` | eingecheckt (tessdata 4.0.0, dieselben Dateien wie im Altsystem) — es gibt sie in keinem installierten Paket, und ein Abruf beim Bauen bräuchte Internet |
 
-Der Arbeiter startet erst beim ersten OCR-Klick, nicht beim Öffnen: wer nur
-ansieht, lädt die rund 18 MB Sprachdaten nicht. Beim Setzen eines neuen Ballons
-liest die Plattform — anders als das Altsystem — noch nicht automatisch vor;
-nach dem Setzen füllt der Knopf in der Zeile das leere Feld.
+Der Arbeiter startet erst beim ersten Lesen, nicht beim Öffnen: wer nur ansieht
+(oder eine Zeichnung mit Textschicht ballonisiert), lädt die rund 18 MB
+Sprachdaten nicht.
 
 ## Ausgabe
 
@@ -182,9 +216,15 @@ einfügbar) oder als CSV mit Semikolon und BOM — was deutsches Excel beim
 Doppelklick erwartet.
 
 **PDF.** Wie „PDF exportieren“ im Altsystem: jede Seite der Zeichnung in ihrer
-Größe und in der Drehung der Ansicht, die Ballons als Vektoren darauf. Die
-Nummern stehen aufrecht. Dazu kommt eine Prüfliste mit Projektkopf, damit das
-PDF allein als Prüfbericht taugt. Anders als im Altsystem (`pdf-lib`, Vektorseite
-eingebettet) wird die Zeichnung mit lange Kante 3000 px gerastert — `jspdf` kann
-keine PDF-Seiten einbetten, und eine zweite PDF-Bibliothek nur dafür lohnt
-nicht. Die Erzeugung ist eine reine Funktion (`lib/fair/pdf.ts`) mit Prüfungen.
+Größe und in der Drehung der Ansicht, die Ballons als Vektoren darauf, die
+Nummern aufrecht. Dazu kommt eine Prüfliste mit Projektkopf, damit das PDF allein
+als Prüfbericht taugt.
+
+Die Zeichnung entsteht **vektortreu** mit `pdf-lib` (`lib/fair/ballon-pdf.ts`,
+wie im Altsystem): die PDF-Seite wird als Vektor-XObject aufrecht eingebettet
+(die Quell-`/Rotate` wird rückgängig gemacht), ein Bild kommt mit seinen
+Originalbytes in nativer Auflösung hinein — keine Neurasterung, kein Verkleinern.
+Der frühere Weg über `jspdf` rasterte jede Seite zu 3000-px-JPEG; bei feinen
+Maßlinien einer CAD-Zeichnung war das ein Präzisions- und Lesbarkeitsverlust. Die
+Prüfliste bleibt eine reine `jspdf`-Funktion (`lib/fair/pdf.ts`) mit Prüfungen
+und wird hinten angefügt (`haengePdfAn`).
