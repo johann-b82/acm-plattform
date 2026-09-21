@@ -99,6 +99,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     // Die signierte URL gilt eine Stunde; sie vorher neu zu holen hiesse, die
     // Zeichnung mitten in der Arbeit neu zu laden.
     staleTime: 50 * 60 * 1000,
+    // Fehlt das Objekt im Speicher (Sign-Aufruf → 400), ist das kein flüchtiger
+    // Fehler: nicht wiederholen, sondern sofort „Datei fehlt" zeigen statt einer
+    // weißen Fläche, die wie ein Ladehänger aussieht.
+    retry: false,
   });
 
   const ballonAbfrage = useQuery({
