@@ -323,13 +323,19 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     if (!z || !datei.data) return;
     setPdfLaeuft(true);
     try {
-      // jsPDF und die pdfjs-Rasterung erst laden, wenn jemand ein PDF will.
-      const [{ pruefberichtPdf }, { seitenAlsBilder }] = await Promise.all([
-        import("@/lib/fair/pdf"),
-        import("./raster"),
-      ]);
-      const bilder = await seitenAlsBilder(datei.data, z.art, drehung);
-      pruefberichtPdf({
+      // Die schweren Bausteine erst laden, wenn jemand ein PDF will.
+      const [{ ballonierteZeichnung, haengePdfAn, speicherePdf }, { prueflistePdf }] =
+        await Promise.all([import("@/lib/fair/ballon-pdf"), import("@/lib/fair/pdf")]);
+      // Die Originalbytes: die PDF-Seite kommt vektortreu hinein, ein Bild nativ.
+      const quelle = await (await fetch(datei.data)).arrayBuffer();
+      const doc = await ballonierteZeichnung({
+        quelle,
+        art: z.art,
+        ballons: alleBallons,
+        drehung,
+        groesse,
+      });
+      const liste = prueflistePdf({
         name: z.name,
         kopf: [
           [worte.fair.kunde, z.kunde],
@@ -338,11 +344,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         ],
         spalten: { nr: worte.fair.nr, seite: worte.fair.seite, wert: worte.fair.wert },
         pruefliste: worte.fair.pruefliste,
-        seiten: bilder,
         ballons: alleBallons,
-        drehung,
-        groesse,
-      }).save(`${dateiname(z.teilenummer || z.name)}_balloniert.pdf`);
+      });
+      await haengePdfAn(doc, liste.output("arraybuffer"));
+      await speicherePdf(doc, `${dateiname(z.teilenummer || z.name)}_balloniert.pdf`);
     } catch (fehler) {
       toast.error(worte.fair.pdfFehler(fehler instanceof Error ? fehler.message : String(fehler)));
     } finally {

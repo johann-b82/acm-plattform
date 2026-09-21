@@ -3,21 +3,17 @@
 import { pdfjs } from "react-pdf";
 
 import "@/app/(app)/fair/pdf-arbeiter";
-import type { Drehung, ZeichnungsArt } from "@/lib/fair";
+import type { ZeichnungsArt } from "@/lib/fair";
 import type { Rechteck } from "@/lib/fair/geometrie";
-import { drehe } from "@/lib/fair/leinwand";
 
 /**
- * Die Zeichnung als Pixel — für OCR ein einzelnes Feld, für das PDF ganze
- * Seiten. Immer aus der Originaldatei, nie von der Leinwand am Bildschirm:
- * deren Schärfe hinge am Zoom.
+ * Die Zeichnung als Pixel — ein einzelnes markiertes Feld für die OCR. Immer aus
+ * der Originaldatei, nie von der Leinwand am Bildschirm: deren Schärfe hinge am
+ * Zoom. Die ballonierte Ausgabe entsteht dagegen vektortreu in `ballon-pdf.ts`.
  */
 
 /** Lange Kante eines OCR-Ausschnitts in Pixeln (wie im Altsystem). */
 const OCR_KANTE = 1400;
-/** Lange Kante einer Seite im PDF — scharf genug für Maßtext, klein genug für
- *  den Speicher. */
-const PDF_KANTE = 3000;
 
 function ladeBild(url: string): Promise<HTMLImageElement> {
   return new Promise((fertig, fehler) => {
@@ -76,41 +72,6 @@ export async function feldAlsLeinwand(
     });
     await page.render({ canvas: c, canvasContext: ctx, viewport }).promise;
     return c;
-  } finally {
-    await pdf.destroy();
-  }
-}
-
-/** Alle Seiten als JPEG, gedreht wie die Ansicht; Maße kanonisch in
- *  Seiteneinheiten, wie die Ballons sie brauchen. */
-export async function seitenAlsBilder(
-  url: string,
-  art: ZeichnungsArt,
-  drehung: Drehung,
-): Promise<{ bild: string; breite: number; hoehe: number }[]> {
-  const alsBild = (c: HTMLCanvasElement) => drehe(c, drehung).toDataURL("image/jpeg", 0.92);
-
-  if (art === "bild") {
-    const img = await ladeBild(url);
-    const k = Math.min(1, PDF_KANTE / Math.max(img.naturalWidth, img.naturalHeight));
-    const { c, ctx } = leinwand(img.naturalWidth * k, img.naturalHeight * k);
-    ctx.drawImage(img, 0, 0, c.width, c.height);
-    return [{ bild: alsBild(c), breite: img.naturalWidth, hoehe: img.naturalHeight }];
-  }
-
-  const pdf = await pdfjs.getDocument({ url }).promise;
-  try {
-    const seiten = [];
-    for (let nr = 1; nr <= pdf.numPages; nr++) {
-      const page = await pdf.getPage(nr);
-      const basis = page.getViewport({ scale: 1 });
-      const k = PDF_KANTE / Math.max(basis.width, basis.height);
-      const viewport = page.getViewport({ scale: k });
-      const { c, ctx } = leinwand(viewport.width, viewport.height);
-      await page.render({ canvas: c, canvasContext: ctx, viewport }).promise;
-      seiten.push({ bild: alsBild(c), breite: basis.width, hoehe: basis.height });
-    }
-    return seiten;
   } finally {
     await pdf.destroy();
   }
