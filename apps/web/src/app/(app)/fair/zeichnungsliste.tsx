@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileUp } from "lucide-react";
@@ -30,6 +31,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const inSchale = useInSchale();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [name, setName] = useState("");
 
   const zeichnungen = useQuery({
@@ -47,10 +49,13 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   const hochladen = useMutation({
     mutationFn: (datei: File) => fairApi.hochladen(datei, name),
-    onSuccess: () => {
+    onSuccess: (neu) => {
       setName("");
       toast.success("Zeichnung hochgeladen.");
-      return neuLaden();
+      void neuLaden();
+      // Direkt in die Vorschau öffnen — wie im Altsystem, statt in der Liste zu
+      // bleiben. Der erste Schritt der Prüfung ist so gleich sichtbar.
+      router.push(`/fair/${neu.id}`);
     },
     onError: (fehler: Error) => toast.error(fehler.message),
   });

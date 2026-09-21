@@ -187,7 +187,9 @@ export const fairApi = {
     pruefeBetroffen(data);
   },
 
-  /** Die Nummer vergibt die Datenbank; sie steht deshalb nicht im Aufruf. */
+  /** Die Nummer vergibt die Datenbank; sie steht deshalb nicht im Aufruf. Der
+   *  Wert kommt aus der OCR beim Markieren mit — ein Feld entsteht so nicht
+   *  leer, sondern gleich mit dem gelesenen Maß (wie im Altsystem). */
   ballonSetzen: async (
     zeichnungId: string,
     b: {
@@ -198,6 +200,7 @@ export const fairApi = {
       bereich_h: number;
       blase_x: number;
       blase_y: number;
+      wert?: string;
     },
   ): Promise<Ballon> => {
     const { data, error } = await supabaseBrowser()

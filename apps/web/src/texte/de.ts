@@ -1440,6 +1440,9 @@ export const de = {
     seriennummernFeld: (pos: string) => `Seriennummern Position ${pos}`,
   },
   fair: {
+    mass: "Maß",
+    alsText: "Text",
+    liest: "Wird gelesen …",
     zuPruefen: "zu prüfen",
     zuPruefenHinweis: "Ohne Teilenummer — als FAIR-Zeichnung prüfen oder aussortieren.",
     dateiFehlt: (meldung: string) =>

@@ -130,6 +130,20 @@ export function gedrehteMasse(
   return d === 90 || d === 270 ? { b: h, h: b } : { b, h };
 }
 
+/**
+ * Aus der Ziehrichtung die bevorzugte Leselage der OCR: oben-links →
+ * unten-rechts ist 0°. So liest die OCR ein schräg stehendes Maß zuerst richtig
+ * herum. (Aus `lumeapps`, `preferredRotation`.)
+ */
+export function bevorzugteDrehung(von: Punkt, bis: Punkt): Drehung {
+  const dx = bis.x - von.x;
+  const dy = bis.y - von.y;
+  if (dx >= 0 && dy >= 0) return 0;
+  if (dx < 0 && dy < 0) return 180;
+  if (dx >= 0 && dy < 0) return 270;
+  return 90;
+}
+
 /** CSS-Transformation (Ursprung 0 0), die die kanonische Ebene in ihren
  *  gedrehten Kasten legt. */
 export function drehungCss(b: number, h: number, d: Drehung): string {

@@ -1459,6 +1459,9 @@ export const ar: Texte = {
     seriennummernFeld: (pos: string) => `الأرقام التسلسلية للبند ${pos}`,
   },
   fair: {
+    mass: "قياس",
+    alsText: "نص",
+    liest: "جارٍ القراءة …",
     zuPruefen: "للمراجعة",
     zuPruefenHinweis: "بدون رقم صنف — راجعها كرسم FAIR أو استبعدها.",
     dateiFehlt: (meldung: string) =>

@@ -24,6 +24,17 @@ export const OCR_PFADE = {
   langPath: "/tesseract/lang",
 } as const;
 
+/**
+ * Wie ein Feld gelesen wird. "auto" liest einen Block mit allen Zeichen.
+ * "mass" liest eine Zeile und lässt nur Maß-Zeichen zu — so wird „20" nicht
+ * als „ZU" gelesen. "text" ist wie "auto", nur als ausdrückliche Wahl neben
+ * dem Maß-Knopf. (Wie das Altsystem, `useFairOcr.ts`.)
+ */
+export type OcrModus = "auto" | "mass" | "text";
+
+/** Ziffern und die Zeichen, die in Maßangaben vorkommen. */
+const MASS_ZEICHEN = "0123456789.,+-±ØøRrMmXx°/() ";
+
 const LAGEN: Drehung[] = [0, 90, 180, 270];
 const SICHER = 80;
 
@@ -81,27 +92,53 @@ export function ocrEntscheidung(alt: string, neu: string): "leer" | "gleich" | "
   return alt.trim() === neu.trim() ? "gleich" : "rueckfrage";
 }
 
-type Arbeiter = Awaited<ReturnType<(typeof import("tesseract.js"))["createWorker"]>>;
+type Tess = typeof import("tesseract.js");
+type Arbeiter = Awaited<ReturnType<Tess["createWorker"]>>;
 let arbeiter: Promise<Arbeiter> | null = null;
+let tess: Tess | null = null;
+let letzterModus: OcrModus | null = null;
 
 function holeArbeiter(): Promise<Arbeiter> {
   arbeiter ??= import("tesseract.js")
-    .then(async ({ createWorker, OEM, PSM }) => {
-      const w = await createWorker(OCR_SPRACHEN, OEM.LSTM_ONLY, { ...OCR_PFADE });
-      await w.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
-      return w;
+    .then(async (mod) => {
+      tess = mod;
+      // Den Modus setzt `stelleModus` beim ersten Lesen — nicht hier, damit der
+      // Maß-Modus greifen kann, ohne zweimal Parameter zu setzen.
+      return mod.createWorker(OCR_SPRACHEN, mod.OEM.LSTM_ONLY, { ...OCR_PFADE });
     })
     .catch((fehler: unknown) => {
       // Beim nächsten Versuch neu starten, statt den Fehler festzuhalten.
       arbeiter = null;
+      tess = null;
+      letzterModus = null;
       throw fehler;
     });
   return arbeiter;
 }
 
+/**
+ * Den Erkennungsmodus stellen — nur bei Wechsel, denn `setParameters` kostet.
+ * "mass" liest eine Zeile mit Maß-Whitelist, sonst ein Block ohne Beschränkung.
+ */
+async function stelleModus(w: Arbeiter, modus: OcrModus): Promise<void> {
+  if (letzterModus === modus) return;
+  const PSM = tess!.PSM;
+  await w.setParameters(
+    modus === "mass"
+      ? { tessedit_pageseg_mode: PSM.SINGLE_LINE, tessedit_char_whitelist: MASS_ZEICHEN }
+      : { tessedit_pageseg_mode: PSM.SINGLE_BLOCK, tessedit_char_whitelist: "" },
+  );
+  letzterModus = modus;
+}
+
 /** Liest ein gerastertes Feld; leer, wenn nichts Brauchbares erkannt wurde. */
-export async function liesFeld(leinwand: HTMLCanvasElement, bevorzugt: Drehung = 0): Promise<string> {
+export async function liesFeld(
+  leinwand: HTMLCanvasElement,
+  bevorzugt: Drehung = 0,
+  modus: OcrModus = "auto",
+): Promise<string> {
   const w = await holeArbeiter();
+  await stelleModus(w, modus);
   const gerahmt = mitRand(leinwand);
   return besteLesung(async (lage) => {
     const { data } = await w.recognize(drehe(gerahmt, lage));
@@ -113,5 +150,7 @@ export async function liesFeld(leinwand: HTMLCanvasElement, bevorzugt: Drehung =
 export function beendeOcr(): void {
   const laufend = arbeiter;
   arbeiter = null;
+  tess = null;
+  letzterModus = null;
   void laufend?.then((w) => w.terminate()).catch(() => undefined);
 }

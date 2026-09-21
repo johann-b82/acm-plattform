@@ -1479,6 +1479,9 @@ export const bg: Texte = {
     seriennummernFeld: (pos: string) => `Серийни номера позиция ${pos}`,
   },
   fair: {
+    mass: "Мярка",
+    alsText: "Текст",
+    liest: "Разчитане …",
     zuPruefen: "за проверка",
     zuPruefenHinweis: "Без партиден номер — проверете като FAIR чертеж или изключете.",
     dateiFehlt: (meldung: string) =>

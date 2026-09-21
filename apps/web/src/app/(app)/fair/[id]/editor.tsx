@@ -9,9 +9,11 @@ import { ArrowLeft, CircleDot, Maximize, Minus, Plus, RotateCw, ZoomIn, ZoomOut 
 import { fairApi, fairKeys, type Ballon, type Drehung } from "@/lib/fair";
 import {
   begrenze01,
+  bevorzugteDrehung,
   drehungCss,
   einpassen,
   gedrehteMasse,
+  inDrehung,
   naechsteDrehung,
   rechteckAusEcken,
   runde6,
@@ -28,11 +30,12 @@ import {
   kleiner,
   useBallonGroesse,
 } from "@/lib/fair/ballon-groesse";
-import { beendeOcr, liesFeld } from "@/lib/fair/ocr";
+import { beendeOcr, liesFeld, type OcrModus } from "@/lib/fair/ocr";
 import { Button, ButtonLink, Card, Select } from "@/components/ui/primitives";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
 import { Projektkopf, type Kopffeld } from "./projektkopf";
+import { OcrKorrektur } from "./ocr-korrektur";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 
@@ -63,7 +66,10 @@ const Zeichenflaeche = dynamic(
 type Schritt =
   | { art: "ruht" }
   | { art: "zieht"; von: Punkt; bis: Punkt }
-  | { art: "wartet_auf_blase"; bereich: Rechteck };
+  // Das Feld ist gezogen, die OCR läuft. Die Blase kann erst gesetzt werden,
+  // wenn die Vermutung da ist — sie kommt mit dem zweiten Klick mit.
+  | { art: "liest"; bereich: Rechteck; bevorzugt: Drehung }
+  | { art: "wartet_auf_blase"; bereich: Rechteck; wert: string; bevorzugt: Drehung };
 
 /** Nur Zeichen, die jedes Dateisystem als Dateinamen annimmt. */
 function dateiname(text: string): string {
@@ -85,6 +91,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   const [groesse, setGroesse] = useBallonGroesse();
   const [pdfLaeuft, setPdfLaeuft] = useState(false);
   const eingepasst = useRef(false);
+  // Das zuletzt markierte, gerasterte Feld — für erneutes Lesen als „Maß"/„Text"
+  // aus demselben Ausschnitt, ohne ihn neu aus der Datei zu holen.
+  const ocrFeld = useRef<{ leinwand: HTMLCanvasElement; bevorzugt: Drehung } | null>(null);
+  const [prueftNeu, setPrueftNeu] = useState(false);
 
   const zeichnung = useQuery({
     queryKey: fairKeys.zeichnung(id),
@@ -187,6 +197,17 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   // Der OCR-Arbeiter lebt so lange wie der Editor.
   useEffect(() => beendeOcr, []);
 
+  // Escape bricht eine laufende Markierung ab und hebt die Auswahl auf.
+  useEffect(() => {
+    const beiTaste = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setSchritt({ art: "ruht" });
+      setGewaehlt(null);
+    };
+    window.addEventListener("keydown", beiTaste);
+    return () => window.removeEventListener("keydown", beiTaste);
+  }, []);
+
   /** OCR für eine Zeile: das gespeicherte Feld frisch aus der Datei lesen. */
   const ocr = useCallback(
     async (b: Ballon): Promise<string> => {
@@ -202,6 +223,43 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     },
     [z, datei.data, worte],
   );
+
+  /** Nach dem Markieren: die Stelle scharf rastern, lesen und die Vermutung ins
+   *  schwebende Feld stellen. Der zweite Klick übernimmt sie mit der Blase. */
+  const liesBereich = useCallback(
+    async (bereich: Rechteck, bevorzugt: Drehung) => {
+      let wert = "";
+      try {
+        if (z && datei.data) {
+          const { feldAlsLeinwand } = await import("./raster");
+          const feld = await feldAlsLeinwand(datei.data, z.art, seite, bereich);
+          ocrFeld.current = { leinwand: feld, bevorzugt };
+          wert = await liesFeld(feld, bevorzugt, "auto");
+        }
+      } catch {
+        // Eine misslungene Lesung ist kein Grund zu scheitern — Feld bleibt leer.
+        ocrFeld.current = null;
+      }
+      // Nur übernehmen, wenn zwischenzeitlich nicht abgebrochen wurde (Escape).
+      setSchritt((s) =>
+        s.art === "liest" ? { art: "wartet_auf_blase", bereich, wert, bevorzugt } : s,
+      );
+    },
+    [z, datei.data, seite],
+  );
+
+  /** Dieselbe markierte Stelle erneut lesen — als Maß (nur Ziffern) oder Text. */
+  const neuLesen = useCallback(async (modus: OcrModus) => {
+    const feld = ocrFeld.current;
+    if (!feld) return;
+    setPrueftNeu(true);
+    try {
+      const wert = await liesFeld(feld.leinwand, feld.bevorzugt, modus);
+      setSchritt((s) => (s.art === "wartet_auf_blase" ? { ...s, wert } : s));
+    } finally {
+      setPrueftNeu(false);
+    }
+  }, []);
 
   const pdfErstellen = async () => {
     if (!z || !datei.data) return;
@@ -263,9 +321,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   );
 
   const beiDruck = (e: React.PointerEvent) => {
-    // Rechte Taste und mittlere schieben — wie in einem CAD-Betrachter.
+    // Rechte Taste und mittlere schieben — wie in einem CAD-Betrachter. Den
+    // Zeiger fangen, damit das Schieben nicht abreißt, wenn er die Fläche
+    // verlässt.
     if (e.button !== 0) {
       e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
       setSchiebt({ x: e.clientX - ansicht.tx, y: e.clientY - ansicht.ty });
       return;
     }
@@ -283,10 +344,16 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         bereich_h: runde6(b.h),
         blase_x: runde6(p.x),
         blase_y: runde6(p.y),
+        // Der beim Markieren gelesene Wert kommt mit — kein leeres Feld.
+        wert: schritt.wert,
       });
       setSchritt({ art: "ruht" });
       return;
     }
+    // Während die OCR läuft, keinen neuen Zug beginnen.
+    if (schritt.art !== "ruht") return;
+    // Den Zeiger fangen, damit das Aufziehen am Zeichnungsrand nicht abreißt.
+    e.currentTarget.setPointerCapture(e.pointerId);
     setSchritt({ art: "zieht", von: p, bis: p });
   };
 
@@ -300,7 +367,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     if (p) setSchritt({ ...schritt, bis: p });
   };
 
-  const beiLoslassen = () => {
+  const beiLoslassen = (e: React.PointerEvent) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* war nicht gefangen */
+    }
     if (schiebt) {
       setSchiebt(null);
       return;
@@ -313,15 +385,34 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
       setSchritt({ art: "ruht" });
       return;
     }
-    setSchritt({ art: "wartet_auf_blase", bereich });
+    // Das Feld steht — jetzt lesen. Die Blase folgt mit dem nächsten Klick.
+    const bevorzugt = bevorzugteDrehung(schritt.von, schritt.bis);
+    setSchritt({ art: "liest", bereich, bevorzugt });
+    void liesBereich(bereich, bevorzugt);
   };
 
   const vorschau =
     schritt.art === "zieht"
       ? rechteckAusEcken(schritt.von, schritt.bis)
-      : schritt.art === "wartet_auf_blase"
+      : schritt.art === "wartet_auf_blase" || schritt.art === "liest"
         ? schritt.bereich
         : null;
+
+  // Bildschirmanker der schwebenden Korrekturbox: die Mitte des markierten
+  // Felds, kanonisch → gedrehter Kasten → Bildschirm.
+  const ocrAnker = (() => {
+    if (!masse) return null;
+    if (schritt.art !== "liest" && schritt.art !== "wartet_auf_blase") return null;
+    const b = schritt.bereich;
+    const r = inDrehung(
+      (b.x + b.b / 2) * masse.b,
+      (b.y + b.h / 2) * masse.h,
+      masse.b,
+      masse.h,
+      drehung,
+    );
+    return { x: r.x * ansicht.skala + ansicht.tx, y: r.y * ansicht.skala + ansicht.ty };
+  })();
 
   if (zeichnung.isLoading) {
     return <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>;
@@ -429,9 +520,11 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
 
       {darfSchreiben && (
         <p className="text-sm text-[var(--fg-muted)]">
-          {schritt.art === "wartet_auf_blase"
-            ? "Jetzt klicken, wo die Blase sitzen soll."
-            : "Ein Feld über das Maß ziehen, dann klicken, wo die Blase sitzen soll. Rechte Maustaste verschiebt, Mausrad zoomt."}
+          {schritt.art === "liest"
+            ? worte.fair.liest
+            : schritt.art === "wartet_auf_blase"
+              ? "Jetzt klicken, wo die Blase sitzen soll."
+              : "Ein Feld über das Maß ziehen, dann klicken, wo die Blase sitzen soll. Rechte Maustaste verschiebt, Mausrad zoomt."}
         </p>
       )}
 
@@ -442,7 +535,9 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           onPointerDown={beiDruck}
           onPointerMove={beiBewegung}
           onPointerUp={beiLoslassen}
-          onPointerLeave={beiLoslassen}
+          // Kein Abbruch beim Verlassen: der gefangene Zeiger führt die Geste
+          // weiter. Nur ein echter Abbruch (z. B. Systemgeste) beendet sie.
+          onPointerCancel={beiLoslassen}
           onContextMenu={(e) => e.preventDefault()}
           style={{ cursor: schiebt ? "grabbing" : darfSchreiben ? "crosshair" : "default" }}
         >
@@ -489,6 +584,21 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
                 )}
               </div>
             </div>
+          )}
+
+          {ocrAnker && (schritt.art === "liest" || schritt.art === "wartet_auf_blase") && (
+            <OcrKorrektur
+              x={ocrAnker.x}
+              y={ocrAnker.y}
+              wert={schritt.art === "wartet_auf_blase" ? schritt.wert : ""}
+              liest={schritt.art === "liest"}
+              prueftNeu={prueftNeu}
+              onWert={(v) =>
+                setSchritt((s) => (s.art === "wartet_auf_blase" ? { ...s, wert: v } : s))
+              }
+              onNeuLesen={(modus) => void neuLesen(modus)}
+              onAbbrechen={() => setSchritt({ art: "ruht" })}
+            />
           )}
         </Card>
 

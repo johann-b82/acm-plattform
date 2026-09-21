@@ -1462,6 +1462,9 @@ export const fa: Texte = {
     seriennummernFeld: (pos: string) => `شماره‌های سریال ردیف ${pos}`,
   },
   fair: {
+    mass: "اندازه",
+    alsText: "متن",
+    liest: "در حال خواندن …",
     zuPruefen: "بررسی شود",
     zuPruefenHinweis: "بدون شماره قطعه — به‌عنوان نقشهٔ FAIR بررسی یا کنار گذاشته شود.",
     dateiFehlt: (meldung: string) =>

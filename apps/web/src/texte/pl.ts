@@ -1477,6 +1477,9 @@ export const pl: Texte = {
     seriennummernFeld: (pos: string) => `Numery seryjne pozycji ${pos}`,
   },
   fair: {
+    mass: "Wymiar",
+    alsText: "Tekst",
+    liest: "Odczyt …",
     zuPruefen: "do sprawdzenia",
     zuPruefenHinweis: "Bez numeru części — sprawdź jako rysunek FAIR lub odrzuć.",
     dateiFehlt: (meldung: string) =>
