@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, CircleDot, Maximize, Minus, Plus, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
@@ -29,13 +30,20 @@ import {
 } from "@/lib/fair/ballon-groesse";
 import { beendeOcr, liesFeld } from "@/lib/fair/ocr";
 import { Button, ButtonLink, Card, Select } from "@/components/ui/primitives";
-import { Zeichenflaeche } from "./zeichenflaeche";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
 import { Projektkopf, type Kopffeld } from "./projektkopf";
-import { feldAlsLeinwand, seitenAlsBilder } from "./raster";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
+
+// react-pdf/pdfjs fasst schon beim Laden Browser-Globals an (`DOMMatrix`) und
+// würde beim Serverrendern werfen (500 auf der ganzen Route). Deshalb lädt die
+// PDF-Leinwand nur im Browser; die Rasterhelfer (`./raster`) importieren pdfjs
+// ebenso und werden darum erst in den Handlern nachgeladen.
+const Zeichenflaeche = dynamic(
+  () => import("./zeichenflaeche").then((m) => m.Zeichenflaeche),
+  { ssr: false },
+);
 
 /**
  * Der Editor: Zeichnung anzeigen, Bereiche markieren, Ballons setzen.
@@ -179,6 +187,7 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   const ocr = useCallback(
     async (b: Ballon): Promise<string> => {
       if (!z || !datei.data) throw new Error(worte.fair.ladefehler);
+      const { feldAlsLeinwand } = await import("./raster");
       const feld = await feldAlsLeinwand(datei.data, z.art, b.seite, {
         x: b.bereich_x,
         y: b.bereich_y,
@@ -194,11 +203,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     if (!z || !datei.data) return;
     setPdfLaeuft(true);
     try {
-      // jsPDF erst laden, wenn jemand ein PDF will.
-      const [{ pruefberichtPdf }, bilder] = await Promise.all([
+      // jsPDF und die pdfjs-Rasterung erst laden, wenn jemand ein PDF will.
+      const [{ pruefberichtPdf }, { seitenAlsBilder }] = await Promise.all([
         import("@/lib/fair/pdf"),
-        seitenAlsBilder(datei.data, z.art, drehung),
+        import("./raster"),
       ]);
+      const bilder = await seitenAlsBilder(datei.data, z.art, drehung);
       pruefberichtPdf({
         name: z.name,
         kopf: [
