@@ -95,6 +95,9 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   // aus demselben Ausschnitt, ohne ihn neu aus der Datei zu holen.
   const ocrFeld = useRef<{ leinwand: HTMLCanvasElement; bevorzugt: Drehung } | null>(null);
   const [prueftNeu, setPrueftNeu] = useState(false);
+  // Während eine Blase gezogen wird, folgt sie hier lokal, bis das Speichern
+  // zurück ist — sonst spränge sie kurz auf die alte Lage.
+  const [zug, setZug] = useState<Record<string, Punkt>>({});
 
   const zeichnung = useQuery({
     queryKey: fairKeys.zeichnung(id),
@@ -120,7 +123,13 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     queryFn: () => fairApi.ballons(id),
   });
   const alleBallons = ballonAbfrage.data ?? [];
-  const ballons = alleBallons.filter((b) => b.seite === seite);
+  const ballons = alleBallons
+    .filter((b) => b.seite === seite)
+    // Eine gerade gezogene Blase folgt lokal, bis das Speichern zurück ist.
+    .map((b) => {
+      const o = zug[b.id];
+      return o ? { ...b, blase_x: o.x, blase_y: o.y } : b;
+    });
 
   const neuLaden = () =>
     queryClient.invalidateQueries({ queryKey: fairKeys.ballons(id) });
@@ -139,6 +148,23 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     mutationFn: (d: Drehung) => fairApi.zeichnungAendern(id, { drehung: d }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: fairKeys.zeichnung(id) }),
     onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  const blaseAendern = useMutation({
+    mutationFn: ({ id: bid, p }: { id: string; p: Punkt }) =>
+      fairApi.ballonAendern(bid, { blase_x: runde6(p.x), blase_y: runde6(p.y) }),
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  // Die entdeckte Seitenzahl einmal festhalten, damit die Liste nicht ewig
+  // „1 Seite" zeigt. Nur Schreibende dürfen die Zeile ändern.
+  const seitenSpeichern = useMutation({
+    mutationFn: (n: number) => fairApi.zeichnungAendern(id, { seiten: n }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: fairKeys.zeichnung(id) }),
+        queryClient.invalidateQueries({ queryKey: fairKeys.zeichnungen() }),
+      ]),
   });
 
   const kopfAendern = useMutation({
@@ -208,6 +234,15 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     return () => window.removeEventListener("keydown", beiTaste);
   }, []);
 
+  // Sobald die echte Seitenzahl feststeht, in der Zeile festhalten (einmal, die
+  // invalidierte Abfrage bringt danach denselben Wert und der Effekt ruht).
+  useEffect(() => {
+    if (darfSchreiben && z && seiten > 0 && seiten !== z.seiten) {
+      seitenSpeichern.mutate(seiten);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seiten, z?.seiten, darfSchreiben]);
+
   /** OCR für eine Zeile: das gespeicherte Feld frisch aus der Datei lesen. */
   const ocr = useCallback(
     async (b: Ballon): Promise<string> => {
@@ -260,6 +295,29 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
       setPrueftNeu(false);
     }
   }, []);
+
+  /** Eine Blase verschieben: erst nur lokal folgen, beim Loslassen speichern. */
+  const ballonZiehen = useCallback(
+    (bid: string, p: Punkt, speichern: boolean) => {
+      setZug((o) => ({ ...o, [bid]: p }));
+      if (!speichern) return;
+      blaseAendern.mutate(
+        { id: bid, p },
+        {
+          onSuccess: () => neuLaden(),
+          onSettled: () =>
+            setZug((o) => {
+              const n = { ...o };
+              delete n[bid];
+              return n;
+            }),
+        },
+      );
+    },
+    // `neuLaden` ist eine stabile Closure über den Query-Client.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blaseAendern],
+  );
 
   const pdfErstellen = async () => {
     if (!z || !datei.data) return;
@@ -579,7 +637,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
                     groesse={groesse}
                     hervorgehoben={gewaehlt}
                     vorschau={vorschau}
+                    darfSchreiben={darfSchreiben}
                     onWaehlen={setGewaehlt}
+                    zuPunkt={punkt}
+                    onZiehen={ballonZiehen}
                   />
                 )}
               </div>
