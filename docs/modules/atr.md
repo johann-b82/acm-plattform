@@ -122,6 +122,22 @@ später umbenannt oder neu gewogen, bleibt die Lieferung, wie sie freigegeben
 wurde. Ein Test räumt den Katalog ab und prüft, dass Bezeichnung und Gewicht
 in der Position stehen bleiben.
 
+## Anschrift und Logo im erzeugten Dokument
+
+Das ATR nennt ACM als Lieferant mit der **Hamburger** Anschrift (`ACM GmbH -
+Brandstücken 16 - 22549 Hamburg`), geschrieben ins `Supplier:`-Feld
+(`app/atr/excel.py`). Beim Porting aus lumeapps stand dort versehentlich die
+Memminger Adresse — die produktive Referenz (`atr_generate_xlsx._ACM_ADDRESS`)
+trägt Hamburg.
+
+Das **Logo** kommt aus der Gerüst-Vorlage (`xl/media/image1.png`) und steht in
+der Druckkopfzeile der Mappe. LibreOffice übernimmt diese Kopf-Grafik beim
+Umwandeln nach PDF jedoch **nicht** — das Altprojekt setzte sie deshalb per
+UNO-Makro als Kopf-Hintergrundgrafik (`atr_uno_header.py`). Da das
+`python3-uno`-Paket nicht im Abbild ist, stempelt `app/atr/pdf_logo.py` das Logo
+nachträglich links oben auf **jede** PDF-Seite. Fehlt ein Logo, bleibt das PDF
+unverändert.
+
 ## Die Zustände sind die des Altsystems
 
 `entwurf` → `erzeugt` → `abgelegt` (Migration `0048_atr_abgleich`, Befund

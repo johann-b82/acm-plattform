@@ -21,6 +21,9 @@ pysnmp==7.1.23
 cryptography==46.0.7
 # Formblätter: das Logo einbetten. openpyxl braucht Pillow für Bilder.
 pillow==11.3.0
+# ATR: das Logo nachträglich in den PDF-Kopf stempeln (LibreOffice übernimmt die
+# Druckkopf-Grafik beim Umwandeln nicht; das Altprojekt tat es per UNO-Makro).
+pypdf==5.1.0
 # Firmenlogo als SVG: sicher lesen (keine DTD, keine Entitäten) und für die
 # Formblätter als PNG rastern. cairosvg braucht libcairo2 (Dockerfile).
 defusedxml==0.7.1

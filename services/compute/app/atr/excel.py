@@ -36,7 +36,7 @@ SPALTEN = 14  # A..N
 #: Deutsches Dezimalkomma erzwingen, unabhängig davon, in welcher Sprache
 #: LibreOffice beim Umwandeln läuft.
 ZAHLFORMAT = "[$-407]0.00"
-ACM_ANSCHRIFT = "ACM GmbH - Woringer Straße 11 - 87700 Memmingen"
+ACM_ANSCHRIFT = "ACM GmbH - Brandstücken 16 - 22549 Hamburg"
 #: Der Zertifizierungstext bricht auf drei Zeilen um; verbundene Zellen wachsen
 #: nicht von selbst mit.
 ZERTIFIKAT_HOEHE = 48.0
