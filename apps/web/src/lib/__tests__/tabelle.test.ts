@@ -97,6 +97,21 @@ describe("suche", () => {
   it("gibt bei leerem Suchtext alles zurück", () => {
     expect(suche(zeilen, SPALTEN, "  ")).toHaveLength(5);
   });
+
+  it("verträgt numerische Suchwerte — eine numeric-Spalte kommt als Zahl", () => {
+    // Der Typ sagt Text, zur Laufzeit liefert PostgREST eine Zahl. Früher stürzte
+    // die Suche hier beim ersten Buchstaben ab (toLocaleLowerCase auf einer Zahl).
+    const numerisch: Spalte<Zeile>[] = [
+      {
+        schluessel: "betrag",
+        typ: "text",
+        wert: (z) => z.betrag,
+        suchtext: (z) => z.betrag as unknown as string,
+      },
+    ];
+    expect(() => suche(zeilen, numerisch, "1")).not.toThrow();
+    expect(ids(suche(zeilen, numerisch, "100"))).toEqual([3]);
+  });
 });
 
 describe("suchfeldSichtbar", () => {

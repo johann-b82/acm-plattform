@@ -72,21 +72,24 @@ function normiert(text: string): string {
   return text.toLocaleLowerCase("de").normalize("NFKD").replace(/\p{Diacritic}/gu, "");
 }
 
+/** Ein durchsuchbarer Wert wird immer zu Text. Eine Spalte oder ihre
+ *  `suchtext`-Funktion darf auch eine Zahl liefern — etwa ein Gewicht aus einer
+ *  `numeric`-Spalte, das PostgREST als Zahl schickt; ohne dieses Casten riefe
+ *  `normiert` `toLocaleLowerCase` auf einer Zahl auf und die Suche stürzte beim
+ *  ersten Buchstaben ab. */
+function alsSuchtext(v: unknown): string {
+  return leer(v) ? "" : String(v);
+}
+
 /** Findet Zeilen, in deren durchsuchbaren Spalten der Text vorkommt. */
 export function suche<T>(zeilen: readonly T[], spalten: readonly Spalte<T>[], text: string): T[] {
-  const gesucht = normiert(text.trim());
+  const eingabe = text.trim();
+  const gesucht = normiert(eingabe);
   if (!gesucht) return [...zeilen];
   const texte = spalten
     .filter((s) => s.suchtext !== false)
-    .map((s) =>
-      typeof s.suchtext === "function"
-        ? s.suchtext
-        : (z: T) => {
-            const w = s.wert(z);
-            return leer(w) ? "" : String(w);
-          },
-    );
-  return zeilen.filter((z) => texte.some((f) => normiert(f(z, text.trim()) ?? "").includes(gesucht)));
+    .map((s) => (typeof s.suchtext === "function" ? s.suchtext : (z: T) => s.wert(z)));
+  return zeilen.filter((z) => texte.some((f) => normiert(alsSuchtext(f(z, eingabe))).includes(gesucht)));
 }
 
 /** TAB-03: gezählt wird die fachlich gefilterte Menge **vor** der Suche. */
