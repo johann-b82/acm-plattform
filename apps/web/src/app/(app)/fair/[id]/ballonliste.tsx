@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -34,7 +42,7 @@ import { fairApi, fairKeys, type Ballon } from "@/lib/fair";
 import { alsCsv, alsTsv } from "@/lib/fair/geometrie";
 import { ocrEntscheidung } from "@/lib/fair/ocr";
 import { mitNeuenNummern, verschobeneReihenfolge } from "@/lib/fair/reihenfolge";
-import { Button, Card, Input } from "@/components/ui/primitives";
+import { Button, Card } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
@@ -211,19 +219,10 @@ export function Ballonliste({
     typ: "text",
     wert: (b) => b.wert,
     zelle: (b) => (
-      <Input
-        // Nach einer OCR-Übernahme steht der neue Wert im Feld.
-        key={`${b.id}:${b.wert}`}
-        defaultValue={b.wert}
-        aria-label={worte.fair.wertZu(b.nummer)}
-        placeholder={worte.fair.wertBeispiel}
-        disabled={!darfSchreiben}
-        className="min-w-24"
-        onBlur={(e) => {
-          if (e.target.value !== b.wert) {
-            aendern.mutate({ id: b.id, wert: e.target.value });
-          }
-        }}
+      <WertFeld
+        ballon={b}
+        darfSchreiben={darfSchreiben}
+        onSpeichern={(wert) => aendern.mutate({ id: b.id, wert })}
       />
     ),
   });
@@ -343,6 +342,57 @@ export function Ballonliste({
         }
       />
     </Card>
+  );
+}
+
+/** Textklasse eines Wertfelds — wie die `Input`-Primitive, aber als
+ *  mehrzeiliges, mitwachsendes Feld (doppelte Breite). */
+const WERT_FELD =
+  "block w-full min-w-48 resize-none rounded-md border border-[var(--border)] " +
+  "bg-[var(--surface)] px-3 py-1.5 text-sm placeholder:text-[var(--fg-muted)] " +
+  "focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--ring)] " +
+  "disabled:opacity-50";
+
+/**
+ * Das Wertfeld einer Zeile: doppelt so breit wie zuvor und mehrzeilig — bei
+ * langem Text (etwa „SIEHE BLATT 01 SEE SH“) wächst es in der Höhe mit, statt
+ * abzuschneiden. Speichert beim Verlassen; nach einer OCR-Übernahme (neuer
+ * `wert`) setzt der Schlüssel das Feld zurück.
+ */
+function WertFeld({
+  ballon,
+  darfSchreiben,
+  onSpeichern,
+}: {
+  ballon: Ballon;
+  darfSchreiben: boolean;
+  onSpeichern: (wert: string) => void;
+}) {
+  const worte = useTexte();
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const anpassen = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+  // Beim Anzeigen (und nach einer Wertänderung) die Höhe an den Inhalt legen.
+  useLayoutEffect(anpassen, [anpassen, ballon.wert]);
+  return (
+    <textarea
+      ref={ref}
+      key={`${ballon.id}:${ballon.wert}`}
+      defaultValue={ballon.wert}
+      aria-label={worte.fair.wertZu(ballon.nummer)}
+      placeholder={worte.fair.wertBeispiel}
+      disabled={!darfSchreiben}
+      rows={1}
+      className={WERT_FELD}
+      onInput={anpassen}
+      onBlur={(e) => {
+        if (e.target.value !== ballon.wert) onSpeichern(e.target.value);
+      }}
+    />
   );
 }
 
