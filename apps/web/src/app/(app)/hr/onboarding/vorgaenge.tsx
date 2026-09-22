@@ -3,19 +3,17 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, FileDown, FileUp, Plus, ScanLine, X } from "lucide-react";
+import { Check, FileDown, FileUp, ScanLine, X } from "lucide-react";
 
 import {
   WEG,
   dokumentApi,
   dokumentKeys,
   naechste,
-  type Art,
   type Stand,
   type Vorgang,
 } from "@/lib/dokumente";
-import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
-import { Badge, Button, Input, Select } from "@/components/ui/primitives";
+import { Badge, Button, Input } from "@/components/ui/primitives";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
@@ -39,33 +37,13 @@ export function Vorgaenge({ darfSchreiben }: { darfSchreiben: boolean }) {
   const dokumentworte = useDokumentworte();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "short" });
   const queryClient = useQueryClient();
-  const [art, setArt] = useState<Art>("einarbeitung");
-  const [person, setPerson] = useState<string>("");
   const [filter, setFilter] = useState<Stand | "alle">("alle");
   const [offen, setOffen] = useState<string | null>(null);
 
   const vorgaenge = useQuery({ queryKey: dokumentKeys.liste(), queryFn: dokumentApi.liste });
-  const eintritte = useQuery({ queryKey: onboardingKeys.eintritte(), queryFn: onboardingApi.eintritte });
 
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ["dokumente"] });
   const melde = (fehler: Error) => toast.error(fehler.message);
-
-  const anlegen = useMutation({
-    mutationFn: () => {
-      const [wie, wert] = person.split(":");
-      return dokumentApi.anlegen({
-        art,
-        employee_id: wie === "e" ? Number(wert) : null,
-        extern_id: wie === "x" ? wert : null,
-      });
-    },
-    onSuccess: (v) => {
-      toast.success(`Blatt ${v.doc_uid} erzeugt.`);
-      setOffen(v.id);
-      return neuLaden();
-    },
-    onError: melde,
-  });
 
   const weiter = useMutation({
     mutationFn: ({ id, ziel }: { id: string; ziel: Stand }) => dokumentApi.weiter(id, ziel),
@@ -244,44 +222,6 @@ export function Vorgaenge({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   return (
     <div className="space-y-4">
-      {darfSchreiben && (
-        <div className="flex flex-wrap items-end gap-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-          <div className="space-y-1">
-            <label htmlFor="neu-art" className="text-sm font-medium">
-              {worte.dokumentenlauf.formblatt}
-            </label>
-            <Select id="neu-art" value={art} className="w-56" onChange={(e) => setArt(e.target.value as Art)}>
-              {(Object.keys(dokumentworte.art) as Art[]).map((a) => (
-                <option key={a} value={a}>
-                  {dokumentworte.art[a]}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="neu-person" className="text-sm font-medium">
-              {worte.dokumentenlauf.fuerWen}
-            </label>
-            <Select id="neu-person" value={person} className="w-72" onChange={(e) => setPerson(e.target.value)}>
-              <option value="">{worte.dokumentenlauf.personWaehlen}</option>
-              {(eintritte.data ?? []).map((p) => (
-                <option
-                  key={p.employee_id ?? p.extern_id}
-                  value={p.employee_id !== null ? `e:${p.employee_id}` : `x:${p.extern_id}`}
-                >
-                  {p.name}
-                  {p.abteilung ? ` · ${p.abteilung}` : ""}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <Button disabled={!person || anlegen.isPending} onClick={() => anlegen.mutate()}>
-            <Plus className="me-1.5 h-4 w-4" aria-hidden />
-            {anlegen.isPending ? worte.dokumentenlauf.erzeugt : worte.dokumentenlauf.blattErzeugen}
-          </Button>
-        </div>
-      )}
-
       {vorgaenge.error && <p className="text-sm text-[var(--danger)]">{(vorgaenge.error as Error).message}</p>}
 
       <Datentabelle
