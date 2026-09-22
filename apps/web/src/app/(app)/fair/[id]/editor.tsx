@@ -218,7 +218,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     };
     el.addEventListener("wheel", beiRad, { passive: false });
     return () => el.removeEventListener("wheel", beiRad);
-  }, []);
+    // Abhängig von `z`: beim ersten Rendern steht der Editor noch im
+    // Ladezustand, die Fläche (und `fenster.current`) gibt es noch nicht. Sobald
+    // die Zeichnung da ist, rendert die Karte und der Lauscher wird nachgezogen.
+  }, [z]);
 
   // Der OCR-Arbeiter lebt so lange wie der Editor.
   useEffect(() => beendeOcr, []);
