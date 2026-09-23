@@ -411,6 +411,86 @@ async def urteil(vorgang_id: str = Path(...), eingabe: Urteil = ...) -> VorgangR
     return _read(neu)
 
 
+class FeldUrteil(BaseModel):
+    key: str
+    #: "offen" nimmt eine Übersteuerung zurück; sonst von Hand bestätigt oder als
+    #: nicht erforderlich markiert.
+    status: str
+    kommentar: str | None = None
+
+
+@router.post("/{vorgang_id}/feld", response_model=VorgangRead)
+async def feld_urteil(vorgang_id: str = Path(...), eingabe: FeldUrteil = ...) -> VorgangRead:
+    """Ein einzelnes Prüf-Feld von Hand setzen — bestätigen, als nicht
+    erforderlich markieren (mit Kommentar) oder wieder öffnen. Danach werden
+    „fehlend" und „vollständig" neu gerechnet: erkannt **oder** bestätigt
+    **oder** nicht erforderlich zählt als erledigt."""
+    if eingabe.status not in {"offen", "bestaetigt", "nicht_erforderlich"}:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unbekannter Status.")
+    zeile = await _laden(vorgang_id)
+    ergebnis = dict(zeile["pruef_ergebnis"] or {})
+    felder = ergebnis.get("felder")
+    if not felder:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Zu diesem Vorgang gibt es noch keine Prüf-Felder — erst den Scan einlesen.",
+        )
+    getroffen = False
+    neue_felder = []
+    for feld in felder:
+        if feld.get("key") == eingabe.key:
+            getroffen = True
+            feld = {
+                **feld,
+                "bestaetigt": eingabe.status == "bestaetigt",
+                "nicht_erforderlich": eingabe.status == "nicht_erforderlich",
+                "kommentar": eingabe.kommentar if eingabe.status == "nicht_erforderlich" else None,
+            }
+        neue_felder.append(feld)
+    if not getroffen:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dieses Feld gibt es im Prüfergebnis nicht.")
+    ergebnis["felder"] = neue_felder
+    ergebnis = pruefung.neu_bewerten(ergebnis)
+
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            neu = (
+                await sitzung.execute(
+                    dokumentvorgaenge.update()
+                    .where(dokumentvorgaenge.c.id == vorgang_id)
+                    .values(pruef_ergebnis=ergebnis, vollstaendig=ergebnis["vollstaendig"])
+                    .returning(dokumentvorgaenge)
+                )
+            ).mappings().one()
+    return _read(neu)
+
+
+@router.delete("/{vorgang_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def loeschen(vorgang_id: str = Path(...)) -> Response:
+    """Einen Vorgang samt seiner Dateien entfernen.
+
+    Anders als im Altsystem bleiben die Objekte nicht als Waisen liegen: Blatt,
+    Scan und alle Nachweise werden über die Storage-API mitgelöscht, dann die
+    Zeile — die Nachweis-Zeilen hängen per Cascade daran."""
+    zeile = await _laden(vorgang_id)
+    async with SessionLocal() as sitzung:
+        nachweis_pfade = (
+            await sitzung.execute(
+                sa.select(dokument_nachweise.c.pfad).where(
+                    dokument_nachweise.c.vorgang_id == vorgang_id
+                )
+            )
+        ).scalars().all()
+    pfade = [p for p in [zeile["pdf_pfad"], zeile["scan_pfad"], *nachweis_pfade] if p]
+    await speicher.entfernen(pfade)
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            await sitzung.execute(
+                dokumentvorgaenge.delete().where(dokumentvorgaenge.c.id == vorgang_id)
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/{vorgang_id}/nachweis", status_code=status.HTTP_201_CREATED)
 async def nachweis(
     vorgang_id: str = Path(...),
@@ -490,3 +570,43 @@ async def scan_holen(vorgang_id: str = Path(...)) -> Response:
     endung = zeile["scan_pfad"].rsplit(".", 1)[-1]
     typ = {"pdf": "application/pdf", "png": "image/png"}.get(endung, "image/jpeg")
     return _ausliefern(inhalt, f"Scan {zeile['name']}.{endung}", typ)
+
+
+async def _nachweis_laden(nachweis_id: str):
+    async with SessionLocal() as sitzung:
+        zeile = (
+            await sitzung.execute(
+                sa.select(dokument_nachweise).where(dokument_nachweise.c.id == nachweis_id)
+            )
+        ).mappings().one_or_none()
+    if zeile is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Diesen Nachweis gibt es nicht.")
+    return zeile
+
+
+@router.get("/nachweis/{nachweis_id}")
+async def nachweis_holen(nachweis_id: str = Path(...)) -> Response:
+    """Einen einzelnen Nachweis ansehen. Ein Vorgang trägt mehrere; jeder ist so
+    für sich aufrufbar."""
+    zeile = await _nachweis_laden(nachweis_id)
+    try:
+        inhalt = await speicher.holen(zeile["pfad"])
+    except speicher.SpeicherFehler as fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(fehler)) from fehler
+    typ = vorgang.mime_aus(zeile["dateiname"], None) or "application/octet-stream"
+    return _ausliefern(inhalt, zeile["dateiname"], typ)
+
+
+@router.delete("/nachweis/{nachweis_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def nachweis_loeschen(nachweis_id: str = Path(...)) -> Response:
+    """Einen einzelnen Nachweis entfernen — Datei über die Storage-API, dann die
+    Zeile."""
+    zeile = await _nachweis_laden(nachweis_id)
+    if zeile["pfad"]:
+        await speicher.entfernen([zeile["pfad"]])
+    async with SessionLocal() as sitzung:
+        async with sitzung.begin():
+            await sitzung.execute(
+                dokument_nachweise.delete().where(dokument_nachweise.c.id == nachweis_id)
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

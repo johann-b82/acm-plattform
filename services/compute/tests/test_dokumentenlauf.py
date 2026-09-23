@@ -109,11 +109,15 @@ class TestTyp:
 
 class TestFeldliste:
     def test_zwei_pflichtfelder_je_zeile(self):
-        """Wann es stattfand und wer es abgezeichnet hat — das ist der Nachweis."""
+        """Wann es stattfand und wer es abgezeichnet hat — das ist der Nachweis.
+        Dazu das Feld für den Schulungsbedarf-Abschluss (ja/nein)."""
         layout: dict = {}
         baue_xlsx("Dana Neu", "CNC", date(2026, 9, 5), INHALTE,
                   doc_uid="ABC123", layout_raus=layout)
-        assert len(layout["felder"]) == 2 * len(INHALTE)
+        keys = [f["key"] for f in layout["felder"]]
+        zeilenfelder = [k for k in keys if k.startswith(("wann_", "erledigt_"))]
+        assert len(zeilenfelder) == 2 * len(INHALTE)
+        assert "schulungsbedarf" in keys
         assert layout["qr"]["doc_uid"] == "ABC123"
         assert len(layout["marken"]) == 2
 
@@ -145,6 +149,40 @@ class TestFeldliste:
         letzte = max(int(k) for k in blatt.row_dimensions)
         for zeile in range(1, letzte + 1):
             assert blatt.row_dimensions[zeile].height is not None, zeile
+
+
+class TestNeuBewerten:
+    """Ein Feld zählt als erledigt, wenn es erkannt, bestätigt **oder** als nicht
+    erforderlich markiert ist. Daraus ergeben sich fehlend und vollständig neu —
+    das trägt die Pro-Feld-Bestätigung und das „nicht erforderlich"."""
+
+    @staticmethod
+    def _erg(felder):
+        return {"qr_ok": True, "doc_uid": "X", "felder": felder, "vollstaendig": False, "fehlend": []}
+
+    def test_erkannt_zaehlt_als_erledigt(self):
+        e = self._erg([{"key": "a", "label": "A", "erkannt": True}])
+        assert pruefung.neu_bewerten(e)["vollstaendig"] is True
+        assert pruefung.neu_bewerten(e)["fehlend"] == []
+
+    def test_bestaetigt_und_nicht_erforderlich_zaehlen_auch(self):
+        e = pruefung.neu_bewerten(self._erg([
+            {"key": "a", "label": "A", "erkannt": False, "bestaetigt": True},
+            {"key": "b", "label": "B", "erkannt": False, "nicht_erforderlich": True},
+        ]))
+        assert e["vollstaendig"] is True
+        assert e["fehlend"] == []
+
+    def test_offenes_feld_bleibt_fehlend(self):
+        e = pruefung.neu_bewerten(self._erg([
+            {"key": "a", "label": "A", "erkannt": True},
+            {"key": "b", "label": "B", "erkannt": False},
+        ]))
+        assert e["vollstaendig"] is False
+        assert e["fehlend"] == ["B"]
+
+    def test_ohne_felder_nicht_vollstaendig(self):
+        assert pruefung.neu_bewerten(self._erg([]))["vollstaendig"] is False
 
 
 def _beschreiben(blanko, layout, felder):

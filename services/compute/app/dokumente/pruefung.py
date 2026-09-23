@@ -370,3 +370,18 @@ def felder_pruefen(bild: Image.Image, layout: dict, blanko: Image.Image | None =
         "vollstaendig": bool(felder) and not fehlend,
         "fehlend": fehlend,
     }
+
+
+def gilt_als_erledigt(feld: dict) -> bool:
+    """Ein Feld zählt als erledigt, wenn die Automatik Tinte erkannt hat **oder**
+    es von Hand bestätigt bzw. als nicht erforderlich markiert wurde."""
+    return bool(feld.get("erkannt") or feld.get("bestaetigt") or feld.get("nicht_erforderlich"))
+
+
+def neu_bewerten(ergebnis: dict) -> dict:
+    """`fehlend` und `vollstaendig` aus den — womöglich von Hand übersteuerten —
+    Feldern neu rechnen. Für die Pro-Feld-Bestätigung und das „nicht
+    erforderlich" mit Kommentar."""
+    felder = list(ergebnis.get("felder", []))
+    fehlend = [f["label"] for f in felder if not gilt_als_erledigt(f)]
+    return {**ergebnis, "fehlend": fehlend, "vollstaendig": bool(felder) and not fehlend}
