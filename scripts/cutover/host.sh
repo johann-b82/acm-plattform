@@ -333,8 +333,12 @@ h_3_start() {
   fi
   (cd "$p" && docker compose up -d --build)
   warte_auf_stack "$p" 900 || return 1
-  code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PLATTFORM_PORT}/")"
-  case "$code" in 2*|3*) gut "Plattform antwortet auf :${PLATTFORM_PORT} ($code)";; *) abbruch "Plattform antwortet mit $code"; return 1;; esac
+  # Den Port aus der .env nehmen, nicht aus der Konfiguration: nach dem
+  # Portwechsel hört die Plattform auf 80, und eine Prüfung gegen
+  # PLATTFORM_PORT meldete einen Fehlschlag, obwohl alles läuft.
+  local hafen; hafen="$(env_lesen "$p/.env" CADDY_HTTP_PORT)"
+  code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${hafen:-${PLATTFORM_PORT}}/")"
+  case "$code" in 2*|3*) gut "Plattform antwortet auf :${hafen:-${PLATTFORM_PORT}} ($code)";; *) abbruch "Plattform auf :${hafen:-${PLATTFORM_PORT}} antwortet mit $code"; return 1;; esac
 }
 
 h_3_admin() {  # email passwort
