@@ -10,6 +10,7 @@ import {
   GraduationCap,
   LayoutGrid,
   MessageSquareText,
+  MonitorPlay,
   Network,
   Newspaper,
   Ruler,
@@ -58,6 +59,7 @@ const SYMBOLE: Record<string, LucideIcon> = {
   "/produktion": Factory,
   "/qualitaet": ClipboardCheck,
   "/sensoren": Thermometer,
+  "/signage": MonitorPlay,
   "/uploads": Upload,
 };
 

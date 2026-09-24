@@ -22,6 +22,8 @@ jobs:
         run: |
           docker run --rm -v "$PWD/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+      - name: Apps vollständig (Kachel und Rechtestufe)
+        run: bash scripts/ci/check_apps_vollstaendig.sh
       - name: Stichtag-Skript (Unit-Tests)
         run: bash scripts/cutover/tests/unit.sh
       - name: Compose-Modell validieren
