@@ -69,7 +69,10 @@ PAARE: list[Paar] = [
     Paar("Personal", "personio_absences", "personio_absences"),
     Paar("Personal", "personio_sync_meta", "personio_sync_meta"),
     Paar("Personal", "schulung_katalog", "schulung_katalog"),
-    Paar("Personal", "schulung_pflicht", "schulung_pflicht"),
+    Paar("Personal", "schulung_pflicht", "schulung_pflicht",
+         erwartet="das Kürzel-System entfällt: nur die grobe Personio-Ebene "
+         "wandert als Geltung „abteilung“ mit, die feinen Kürzel-Pflichten "
+         "nicht — im Neuen stehen also weniger Zeilen"),
     Paar("Personal", "schulung_rolle", "schulung_rollen"),
     Paar("Personal", "schulung_teilnahme", "schulung_teilnahmen"),
     Paar("Personal", "schulung_import", "schulung_importe"),
