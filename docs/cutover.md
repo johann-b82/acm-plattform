@@ -499,10 +499,13 @@ Sensor mit unlesbarer Community ist schlimmer als kein Sensor. (Für einen
 reinen Vergleichslauf ohne Messbetrieb gibt es
 `UEBERNAHME_COMMUNITY_PLATZHALTER=1`; am Stichtag ist das der falsche Weg.)
 
-**Vier Abweichungen sind gewollt** und stehen im Abgleich mit `~` statt `!`:
+**Fünf Abweichungen sind gewollt** und stehen im Abgleich mit `~` statt `!`:
 das Tippspiel-Protokoll, zwei Formblatt-Vorgänge, deren Dateien nicht in der
-Datenbank liegen, und die eine Einstellungszeile, aus der neunzehn Zielwerte
-und drei Listen werden.
+Datenbank liegen, die eine Einstellungszeile, aus der neunzehn Zielwerte und
+drei Listen werden, und `schulung_pflicht`: das Kürzel-System entfällt, nur die
+grobe Personio-Ebene wandert als Geltung „abteilung“ mit — im Neuen stehen
+deshalb weniger Zeilen. `schulung_rolle` → `schulung_rollen` kommt weiterhin
+mit (die Tabelle bleibt für den Cutover stehen), ihre Oberfläche ist entfernt.
 
 ### 4b. Die Dateien
 
