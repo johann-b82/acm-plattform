@@ -520,13 +520,16 @@ h_port80() {
   sag "gesichert: .env (Plattform, Signage), cutover.yml, $(wc -l < "$(p_medien_sicherung)" | tr -d ' ') Medien-Adressen"
 
   # 2. Das Altprojekt räumt Port 80, bleibt aber erreichbar.
+  # `!reset` löscht einen Wert, `!override` ersetzt ihn. Mit `!reset` und einer
+  # Liste dahinter verschwindet die Bindung ganz: Das Altprojekt läuft dann
+  # zwar, ist aber von außen unsichtbar — und damit als Rückfall wertlos.
   cat > "$(p_alt_cutover)" <<YAML
 # Angelegt von scripts/cutover (Schritt 1a), erweitert beim Umzug auf Port 80.
 services:
   db:
     ports: !reset []
   caddy:
-    ports: !reset
+    ports: !override
       - "${ALT_PORT}:80"
 YAML
   (cd "$alt" && ${C_PROD} up -d caddy) || { abbruch "Altprojekt ließ sich nicht auf ${ALT_PORT} legen"; return 1; }
@@ -574,6 +577,18 @@ antwortet_mit() {  # pfad muster [sekunden]
   done
 }
 
+antwortet_mit_port() {  # port muster [sekunden]
+  local port="$1" muster="$2" frist=$(( $(date +%s) + ${3:-${PORT80_WARTEN:-60}} )) code
+  while :; do
+    code="$(curl -s -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1:${port}/" || echo 000)"
+    case "${code}" in
+      ${muster}) gut "Altprojekt auf :${port} → ${code}"; return 0 ;;
+    esac
+    [ "$(date +%s)" -ge "${frist}" ] && { schlecht "Altprojekt auf :${port} → ${code} (erwartet ${muster})"; return 1; }
+    sleep 3
+  done
+}
+
 h_port80_pruefen() {
   local rc=0
   antwortet_mit /            '30[12378]' || rc=1
@@ -584,6 +599,8 @@ h_port80_pruefen() {
   local rest; rest="$(signage_psql "select count(*) from signage_media where uri like '%:${PLATTFORM_PORT}/%'" | tr -d '\r ')"
   [ "${rest}" = 0 ] && gut "keine Medien-Adresse zeigt mehr auf :${PLATTFORM_PORT}" \
     || { schlecht "${rest} Medien-Adressen zeigen noch auf :${PLATTFORM_PORT}"; rc=1; }
+  # Das Altprojekt ist der Rückweg — es muss erreichbar sein, nicht nur laufen.
+  antwortet_mit_port "${ALT_PORT}" '[23][0-9][0-9]' || rc=1
   # Aussteller identisch — sonst antwortet die Signage-Verwaltung mit 401.
   local a b; a="$(env_lesen "$(p_plattform_env)" API_EXTERNAL_URL)"; b="$(env_lesen "$(p_signage_env)" PLATFORM_JWT_ISSUER)"
   [ "$a" = "$b" ] && gut "Aussteller stimmen überein" || { schlecht "Aussteller weichen ab: '$a' vs '$b'"; rc=1; }
