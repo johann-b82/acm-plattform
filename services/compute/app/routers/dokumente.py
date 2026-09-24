@@ -198,7 +198,6 @@ async def _inhalt_bauen(art: str, employee_id: int | None, abteilung: str | None
                     "select p.bereich, p.name, k.verantwortlicher"
                     " from public.schulungsplan(:i) p"
                     " join public.schulung_katalog k on k.id = p.schulung_id"
-                    " where p.quelle <> 'kuerzel_fehlt'"
                     " order by p.bereich, p.name"
                 ),
                 {"i": employee_id},
