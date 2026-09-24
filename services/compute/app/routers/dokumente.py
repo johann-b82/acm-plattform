@@ -444,7 +444,9 @@ async def feld_urteil(vorgang_id: str = Path(...), eingabe: FeldUrteil = ...) ->
                 **feld,
                 "bestaetigt": eingabe.status == "bestaetigt",
                 "nicht_erforderlich": eingabe.status == "nicht_erforderlich",
-                "kommentar": eingabe.kommentar if eingabe.status == "nicht_erforderlich" else None,
+                # Der Kommentar gehört zur Bestätigung wie zum „nicht erforderlich"
+                # und bleibt sichtbar; beim Öffnen (status „offen") fällt er weg.
+                "kommentar": eingabe.kommentar if eingabe.status != "offen" else None,
             }
         neue_felder.append(feld)
     if not getroffen:

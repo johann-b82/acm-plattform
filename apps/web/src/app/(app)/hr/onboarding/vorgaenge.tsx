@@ -407,16 +407,30 @@ function Details({ vorgang, darfSchreiben }: { vorgang: Vorgang; darfSchreiben: 
             </span>
           </p>
           <ul className="mt-1 grid gap-1 sm:grid-cols-2">
-            {vorgang.pruef_ergebnis.felder.map((f) => (
-              <li key={f.key} className="flex items-center gap-2 text-xs">
-                {f.erkannt ? (
-                  <Check className="h-3.5 w-3.5 text-[var(--ok)]" aria-hidden />
-                ) : (
-                  <X className="h-3.5 w-3.5 text-[var(--danger)]" aria-hidden />
-                )}
-                <span className={f.erkannt ? "" : "text-[var(--fg-muted)]"}>{f.label}</span>
-              </li>
-            ))}
+            {vorgang.pruef_ergebnis.felder.map((f) => {
+              const erledigt = f.erkannt || f.bestaetigt || f.nicht_erforderlich;
+              return (
+                <li key={f.key} className="text-xs">
+                  <span className="flex items-center gap-2">
+                    {erledigt ? (
+                      <Check className="h-3.5 w-3.5 shrink-0 text-[var(--ok)]" aria-hidden />
+                    ) : (
+                      <X className="h-3.5 w-3.5 shrink-0 text-[var(--danger)]" aria-hidden />
+                    )}
+                    <span className={erledigt ? "" : "text-[var(--fg-muted)]"}>{f.label}</span>
+                    {f.bestaetigt && <span className="text-[var(--fg-muted)]">· bestätigt</span>}
+                    {f.nicht_erforderlich && (
+                      <span className="text-[var(--fg-muted)]">· nicht erforderlich</span>
+                    )}
+                  </span>
+                  {(f.bestaetigt || f.nicht_erforderlich) && f.kommentar && (
+                    <span className="ms-[1.375rem] block italic text-[var(--fg-muted)]">
+                      „{f.kommentar}“
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -560,7 +574,12 @@ function PruefDialog({
   );
 }
 
-/** Eine Zeile der Scan-Auswertung mit den Pro-Feld-Aktionen. */
+/**
+ * Eine Zeile der Scan-Auswertung mit den Pro-Feld-Aktionen. „Bestätigen" wie
+ * „nicht erforderlich" öffnen ein Kommentarfeld — bei „Bestätigen" ist der
+ * Kommentar freiwillig, bei „nicht erforderlich" wird ein Grund verlangt. Der
+ * Kommentar wird mit der Bestätigung gespeichert und bleibt sichtbar.
+ */
 function PruefFeld({
   feld,
   darfSchreiben,
@@ -572,9 +591,10 @@ function PruefFeld({
   laeuft: boolean;
   onSetzen: (status: FeldStatus, kommentar?: string | null) => void;
 }) {
-  const [kommentiert, setKommentiert] = useState(false);
-  const [text, setText] = useState(feld.kommentar ?? "");
+  const [editor, setEditor] = useState<FeldStatus | null>(null);
+  const [text, setText] = useState("");
   const erledigt = feld.erkannt || feld.bestaetigt || feld.nicht_erforderlich;
+  const manuell = Boolean(feld.bestaetigt || feld.nicht_erforderlich);
   const zustand = feld.erkannt
     ? "automatisch erkannt"
     : feld.bestaetigt
@@ -582,6 +602,11 @@ function PruefFeld({
       : feld.nicht_erforderlich
         ? "nicht erforderlich"
         : "fehlt";
+
+  const oeffne = (status: FeldStatus) => {
+    setText(feld.kommentar ?? "");
+    setEditor(status);
+  };
 
   return (
     <li className="rounded-md border border-[var(--border)] p-2">
@@ -593,50 +618,65 @@ function PruefFeld({
         )}
         <span className={erledigt ? "text-sm" : "text-sm font-medium"}>{feld.label}</span>
         <span className="text-xs text-[var(--fg-muted)]">· {zustand}</span>
-        {darfSchreiben && !feld.erkannt && (
+        {darfSchreiben && !feld.erkannt && !editor && (
           <div className="ms-auto flex flex-wrap gap-1">
-            {!feld.bestaetigt && !feld.nicht_erforderlich ? (
+            {!manuell ? (
               <>
-                <Button size="sm" variant="outline" disabled={laeuft} onClick={() => onSetzen("bestaetigt")}>
+                <Button size="sm" variant="outline" disabled={laeuft} onClick={() => oeffne("bestaetigt")}>
                   Bestätigen
                 </Button>
-                <Button size="sm" variant="ghost" disabled={laeuft} onClick={() => setKommentiert((k) => !k)}>
+                <Button size="sm" variant="ghost" disabled={laeuft} onClick={() => oeffne("nicht_erforderlich")}>
                   Nicht erforderlich
                 </Button>
               </>
             ) : (
-              <Button size="sm" variant="ghost" disabled={laeuft} onClick={() => onSetzen("offen")}>
-                Zurücksetzen
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={laeuft}
+                  onClick={() => oeffne(feld.bestaetigt ? "bestaetigt" : "nicht_erforderlich")}
+                >
+                  Kommentar
+                </Button>
+                <Button size="sm" variant="ghost" disabled={laeuft} onClick={() => onSetzen("offen")}>
+                  Zurücksetzen
+                </Button>
+              </>
             )}
           </div>
         )}
       </div>
 
-      {feld.nicht_erforderlich && feld.kommentar && (
+      {manuell && feld.kommentar && !editor && (
         <p className="mt-1 ps-6 text-xs italic text-[var(--fg-muted)]">„{feld.kommentar}“</p>
       )}
 
-      {kommentiert && (
+      {editor && (
         <div className="mt-2 flex flex-wrap items-center gap-2 ps-6">
           <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Grund, z. B. entfällt für diesen Vorgang"
-            aria-label="Grund für „nicht erforderlich“"
+            placeholder={
+              editor === "nicht_erforderlich"
+                ? "Grund, z. B. entfällt für diesen Vorgang"
+                : "Kommentar (optional)"
+            }
+            aria-label="Kommentar zur Zeile"
             className="min-w-64 flex-1 text-sm"
           />
           <Button
             size="sm"
-            disabled={laeuft || !text.trim()}
+            disabled={laeuft || (editor === "nicht_erforderlich" && !text.trim())}
             onClick={() => {
-              setKommentiert(false);
-              onSetzen("nicht_erforderlich", text.trim());
+              const status = editor;
+              setEditor(null);
+              onSetzen(status, text.trim() || null);
             }}
           >
-            Abschließen
+            {editor === "bestaetigt" ? "Bestätigen" : "Abschließen"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setKommentiert(false)}>
+          <Button size="sm" variant="ghost" onClick={() => setEditor(null)}>
             Abbrechen
           </Button>
         </div>
