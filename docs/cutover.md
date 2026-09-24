@@ -699,6 +699,34 @@ Zurück: dasselbe mit der alten Adresse aus 0b, oder `cutover.sh zurueck 5`. Das
 
 ---
 
+## port80. Die Plattform übernimmt die Adresse
+
+**geprüft** gegen die Unit-Tests, am Host noch nicht gefahren.
+
+Der Kern des Umzugs ist die **Adresse**, nicht der Dienst. Was heute auf `http://<host>` zeigt, soll morgen dieselbe Adresse benutzen — aus zwei Gründen, die beide teuer wären:
+
+| Wer | Warum die Adresse gleich bleiben muss |
+|---|---|
+| **Die Bildschirme** | Ihr Gerätetoken liegt im `localStorage`, und der hängt am Origin. Ein anderer Port ist ein anderer Origin: leerer Speicher, Kopplungscode auf jeder Tafel (siehe § 5) |
+| **Die angemeldeten Personen** | `API_EXTERNAL_URL` ist der Aussteller im Token. Ändert er sich, sind alle ausgegebenen Token ungültig |
+
+Deshalb wandern in **einem** Zug: die drei Adressen der Plattform, `PLATFORM_JWT_ISSUER` im Signage-Stack und die absoluten `/embed/*`-Adressen in den Medien. Fehlt eine davon, merkt man es erst am dunklen Bildschirm.
+
+```bash
+bash scripts/cutover/cutover.sh schritt port80     # hält vorher an
+bash scripts/cutover/cutover.sh zurueck port80     # nimmt alles zurück
+```
+
+Der Schritt fasst das Altprojekt nicht hart an: Es wird **nicht abgeschaltet**, sondern auf `8082` verschoben (`ALT_PORT`). Es bleibt damit erreichbar, und der Rückweg braucht es. Wer es endgültig abschalten will, tut das später und bewusst — nicht im selben Moment wie den Umzug.
+
+Gesichert wird vor dem ersten Handgriff, jeweils als `*.vor-port80`: die `.env` beider Stacks, die `docker-compose.cutover.yml` des Altprojekts und die Medien-Adressen als Textdatei. Ein zweiter Lauf überschreibt diese Sicherungen nicht — sonst wäre nach dem zweiten Anlauf der Rückweg verloren.
+
+Geprüft wird am Ende selbst: `/`, `/login`, `/api/health` und `/player/` müssen antworten, keine Medien-Adresse darf noch auf den alten Port zeigen, und die beiden Aussteller müssen Zeichen für Zeichen übereinstimmen.
+
+**Vorher erledigen**, sonst ist die Abschlussprüfung rot: die AD-Anmeldung (§ 3a), das Firmenlogo (§ 4b) und die HR-Tafeln unter `/einstellungen#anzeigen`.
+
+---
+
 ## 6. Host-Vorlagen anwenden
 
 **ungeprüft**, und bewusst zuletzt (Entscheidung F: vorbereiten, nicht anwenden).

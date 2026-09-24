@@ -405,6 +405,86 @@ t_pi_zurueck() {
 }
 pruefe "Pi zurück: alte Units wieder aktiv" t_pi_zurueck
 
+# --- Port 80 ------------------------------------------------------------------
+
+port80_lage() {  # Plattform, Signage und gehärtetes Altprojekt vor dem Umzug
+  sandbox; altprojekt_anlegen; neuer_klon_anlegen
+  export HOST_IP=192.9.201.9 PLATTFORM_PORT=8081 SIGNAGE_PORT=8080
+  mkdir -p "${BASIS}/acm-plattform" "${BASIS}/acm-signage"
+  # 1c hat die Daten verschoben: lumeapps-neu ist das aktive Verzeichnis
+  mv "${BASIS}/lumeapps/postgres_data" "${BASIS}/lumeapps-neu/"
+  printf 'services:\n  db:\n    ports: !reset []\n' > "${BASIS}/lumeapps-neu/docker-compose.cutover.yml"
+  printf 'CADDY_HTTP_PORT=8081\nSITE_URL=http://192.9.201.9:8081\nSUPABASE_PUBLIC_URL=http://192.9.201.9:8081/supabase\nAPI_EXTERNAL_URL=http://192.9.201.9:8081/supabase/auth/v1\n' > "${BASIS}/acm-plattform/.env"
+  printf 'PLATFORM_JWT_ISSUER=http://192.9.201.9:8081/supabase/auth/v1\nSIGNAGE_HTTP_PORT=8080\n' > "${BASIS}/acm-signage/.env"
+  # Nicht der Prüfgegenstand: die Medien-Abfrage, das Warten, die Endprüfung.
+  # schreibt ihre Abfragen mit, damit der Test sie prüfen kann
+  signage_psql() {
+    echo "signage_psql $1" >> "${AUFRUFE}"
+    case "$1" in
+      select*) printf '22222222\thttp://192.9.201.9:8081/embed/worldcup\n' ;;
+    esac
+  }
+  warte_auf_stack() { return 0; }
+  h_port80_pruefen() { return 0; }
+}
+
+t_port80_zieht_alle_adressen_mit() {
+  port80_lage
+  h_port80 >/dev/null
+  pe="${BASIS}/acm-plattform/.env"; se="${BASIS}/acm-signage/.env"
+  gleich "$(env_lesen "$pe" CADDY_HTTP_PORT)" 80
+  gleich "$(env_lesen "$pe" SITE_URL)" http://192.9.201.9
+  gleich "$(env_lesen "$pe" SUPABASE_PUBLIC_URL)" http://192.9.201.9/supabase
+  gleich "$(env_lesen "$pe" API_EXTERNAL_URL)" http://192.9.201.9/supabase/auth/v1
+  # Zeichen für Zeichen derselbe Aussteller, sonst antwortet Signage mit 401.
+  gleich "$(env_lesen "$se" PLATFORM_JWT_ISSUER)" "$(env_lesen "$pe" API_EXTERNAL_URL)"
+}
+pruefe "port80: Adressen der Plattform und Aussteller im Signage-Stack wandern gemeinsam" t_port80_zieht_alle_adressen_mit
+
+t_port80_raeumt_port_80_beim_altprojekt() {
+  port80_lage
+  h_port80 >/dev/null
+  c="$(cat "${BASIS}/lumeapps-neu/docker-compose.cutover.yml")"
+  enthaelt "$c" '"8082:80"'
+  enthaelt "$c" 'ports: !reset []'
+}
+pruefe "port80: Altprojekt räumt Port 80, die alte Datenbank bleibt ohne Host-Port" t_port80_raeumt_port_80_beim_altprojekt
+
+t_port80_schreibt_die_eingebetteten_adressen_um() {
+  port80_lage
+  h_port80 >/dev/null
+  enthaelt "$(cat "${AUFRUFE}")" "update signage_media set uri = replace(uri, ':8081/', '/')"
+}
+pruefe "port80: eingebettete Seiten verlieren den alten Port" t_port80_schreibt_die_eingebetteten_adressen_um
+
+t_port80_sichert_einmal_und_ueberschreibt_nicht() {
+  port80_lage
+  h_port80 >/dev/null
+  h_port80 >/dev/null
+  gleich "$(env_lesen "${BASIS}/acm-plattform/.env.vor-port80" CADDY_HTTP_PORT)" 8081
+  gleich "$(env_lesen "${BASIS}/acm-signage/.env.vor-port80" PLATFORM_JWT_ISSUER)" http://192.9.201.9:8081/supabase/auth/v1
+}
+pruefe "port80: zweimal gefahren, die Sicherung bleibt der Stand von vorher" t_port80_sichert_einmal_und_ueberschreibt_nicht
+
+t_port80_zurueck_stellt_alles_her() {
+  port80_lage
+  h_port80 >/dev/null
+  h_port80_zurueck >/dev/null
+  pe="${BASIS}/acm-plattform/.env"; se="${BASIS}/acm-signage/.env"
+  gleich "$(env_lesen "$pe" CADDY_HTTP_PORT)" 8081
+  gleich "$(env_lesen "$pe" API_EXTERNAL_URL)" http://192.9.201.9:8081/supabase/auth/v1
+  gleich "$(env_lesen "$se" PLATFORM_JWT_ISSUER)" http://192.9.201.9:8081/supabase/auth/v1
+  enthaelt_nicht "$(cat "${BASIS}/lumeapps-neu/docker-compose.cutover.yml")" '8082:80'
+  [ ! -e "$pe.vor-port80" ]
+}
+pruefe "port80 zurück: Adressen, Aussteller und Altprojekt-Port wiederhergestellt" t_port80_zurueck_stellt_alles_her
+
+t_port80_zurueck_ohne_sicherung_bricht_ab() {
+  port80_lage
+  ! h_port80_zurueck >/dev/null 2>&1
+}
+pruefe "port80 zurück: ohne Sicherung kein Rückweg" t_port80_zurueck_ohne_sicherung_bricht_ab
+
 # --- Ablauf auf dem Mac ------------------------------------------------------
 
 CUTOVER_NICHT_STARTEN=1 . "${CUTOVER}/cutover.sh"
@@ -420,8 +500,8 @@ t_einstufung_der_pi_adressen() {
 pruefe "0b: Pi-Adressen eingestuft (API direkt, alter Caddy, schon neu)" t_einstufung_der_pi_adressen
 
 t_reihenfolge() {
-  gleich "$(reihenfolge caddy | tr '\n' ' ')" "vorab 0 0b 1a 1b 1c 2 3 4a 4b 4d 5 6 pruefen "
-  gleich "$(reihenfolge api | tr '\n' ' ')" "vorab 0 0b 3 4d 5 1a 1b 1c 2 4a 4b 6 pruefen "
+  gleich "$(reihenfolge caddy | tr '\n' ' ')" "vorab 0 0b 1a 1b 1c 2 3 4a 4b 4d 5 port80 6 pruefen "
+  gleich "$(reihenfolge api | tr '\n' ' ')" "vorab 0 0b 3 4d 5 1a 1b 1c 2 4a 4b port80 6 pruefen "
 }
 pruefe "Reihenfolge: Signage zuerst, wenn ein Pi direkt auf :8000 zeigt" t_reihenfolge
 

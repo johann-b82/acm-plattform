@@ -462,6 +462,145 @@ h_4d_pruefen() {
   return $rc
 }
 
+# --- Port 80: die Plattform übernimmt die Adresse des Altprojekts -------------
+#
+# Der Kern des Umzugs ist die Adresse, nicht der Dienst. Alles, was heute auf
+# `http://<host>` zeigt, soll morgen dieselbe Adresse benutzen:
+#
+#   * die Bildschirme — ihr Gerätetoken liegt im localStorage, und der hängt am
+#     Origin. Ein anderer Port wäre ein anderer Origin, der Speicher wäre leer
+#     und jede Tafel zeigte einen Kopplungscode (siehe § 5).
+#   * die angemeldeten Personen — `API_EXTERNAL_URL` ist der Aussteller im
+#     Token. Ändert er sich, sind alle ausgegebenen Token ungültig.
+#
+# Deshalb wandern in einem Zug: die drei Adressen der Plattform, der Aussteller
+# im Signage-Stack und die absoluten `/embed/*`-Adressen in den Medien. Der
+# Rückweg stellt jede dieser Stellen aus ihrer Sicherung wieder her.
+#
+# Das Altprojekt wird nicht abgeschaltet, sondern auf ALT_PORT verschoben: Es
+# bleibt als Rückfall erreichbar, und der Rückweg braucht es.
+
+ALT_PORT="${ALT_PORT:-8082}"
+PORT80_MARKE="vor-port80"
+
+p_plattform_env()  { echo "${BASIS}/acm-plattform/.env"; }
+p_signage_env()    { echo "${BASIS}/acm-signage/.env"; }
+p_alt_cutover()    { echo "$(alt_verzeichnis)/docker-compose.cutover.yml"; }
+p_medien_sicherung() { echo "${BASIS}/acm-signage/medien-uris.${PORT80_MARKE}"; }
+
+# Die Adresse ohne Port — das Ziel des Umzugs.
+neue_basis() { echo "http://${HOST_IP}"; }
+
+signage_psql() {  # sql → Zeilen
+  (cd "${BASIS}/acm-signage" && docker compose exec -T signage-db sh -c \
+    "psql -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -At -c \"$1\"")
+}
+
+sichern_einmal() {  # datei — legt datei.vor-port80 an, wenn es sie nicht gibt
+  [ -f "$1" ] || return 0
+  [ -e "$1.${PORT80_MARKE}" ] || cp -p "$1" "$1.${PORT80_MARKE}"
+}
+
+h_port80() {
+  local pe se alt basis_neu aussteller_neu
+  pe="$(p_plattform_env)"; se="$(p_signage_env)"; alt="$(alt_verzeichnis)"
+  [ -f "$pe" ] || { abbruch "$pe fehlt — erst Schritt 3"; return 1; }
+  [ -f "$se" ] || { abbruch "$se fehlt — erst Schritt 4d"; return 1; }
+  [ -f "$(p_alt_cutover)" ] || { abbruch "$(p_alt_cutover) fehlt — erst Schritt 1a"; return 1; }
+
+  basis_neu="$(neue_basis)"
+  aussteller_neu="${basis_neu}/supabase/auth/v1"
+
+  # 1. Sichern, bevor irgendetwas wandert.
+  sichern_einmal "$pe"; sichern_einmal "$se"; sichern_einmal "$(p_alt_cutover)"
+  if [ ! -e "$(p_medien_sicherung)" ]; then
+    signage_psql "select id || E'\\t' || uri from signage_media where uri like '%:${PLATTFORM_PORT}/%'" \
+      > "$(p_medien_sicherung)" || { abbruch "Medien-Adressen nicht lesbar"; return 1; }
+  fi
+  sag "gesichert: .env (Plattform, Signage), cutover.yml, $(wc -l < "$(p_medien_sicherung)" | tr -d ' ') Medien-Adressen"
+
+  # 2. Das Altprojekt räumt Port 80, bleibt aber erreichbar.
+  cat > "$(p_alt_cutover)" <<YAML
+# Angelegt von scripts/cutover (Schritt 1a), erweitert beim Umzug auf Port 80.
+services:
+  db:
+    ports: !reset []
+  caddy:
+    ports: !reset
+      - "${ALT_PORT}:80"
+YAML
+  (cd "$alt" && ${C_PROD} up -d caddy) || { abbruch "Altprojekt ließ sich nicht auf ${ALT_PORT} legen"; return 1; }
+  gut "Altprojekt hört auf ${ALT_PORT}, Port 80 ist frei"
+
+  # 3. Die Plattform übernimmt die Adresse.
+  env_setzen "$pe" CADDY_HTTP_PORT 80
+  env_setzen "$pe" SITE_URL "${basis_neu}"
+  env_setzen "$pe" SUPABASE_PUBLIC_URL "${basis_neu}/supabase"
+  env_setzen "$pe" API_EXTERNAL_URL "${aussteller_neu}"
+  (cd "${BASIS}/acm-plattform" && docker compose up -d) || { abbruch "Plattform kam auf Port 80 nicht hoch"; return 1; }
+  warte_auf_stack "${BASIS}/acm-plattform" 300 || return 1
+  gut "Plattform auf Port 80"
+
+  # 4. Der Aussteller im Signage-Stack muss Zeichen für Zeichen derselbe sein.
+  env_setzen "$se" PLATFORM_JWT_ISSUER "${aussteller_neu}"
+  (cd "${BASIS}/acm-signage" && docker compose up -d signage-api) \
+    || { abbruch "signage-api kam nicht hoch"; return 1; }
+  gut "Aussteller im Signage-Stack nachgezogen"
+
+  # 5. Die eingebetteten Seiten zeigen sonst auf einen Port, den es nicht
+  #    mehr gibt — die Tafeln blieben leer.
+  signage_psql "update signage_media set uri = replace(uri, ':${PLATTFORM_PORT}/', '/') where uri like '%:${PLATTFORM_PORT}/%'" >/dev/null \
+    || { abbruch "Medien-Adressen nicht umgeschrieben"; return 1; }
+  gut "$(wc -l < "$(p_medien_sicherung)" | tr -d ' ') Medien-Adressen auf Port 80 gezogen"
+
+  h_port80_pruefen
+}
+
+h_port80_pruefen() {
+  local rc=0 basis code
+  basis="$(neue_basis)"
+  for pfad in / /login /api/health /player/; do
+    code="$(curl -s -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1${pfad}" || echo 000)"
+    case "${pfad}:${code}" in
+      /:30[12378]|/login:200|/api/health:200|/player/:200) gut "${pfad} → ${code}" ;;
+      *) schlecht "${pfad} → ${code}"; rc=1 ;;
+    esac
+  done
+  # Kein :8081 darf in den Medien übrig sein.
+  local rest; rest="$(signage_psql "select count(*) from signage_media where uri like '%:${PLATTFORM_PORT}/%'" | tr -d '\r ')"
+  [ "${rest}" = 0 ] && gut "keine Medien-Adresse zeigt mehr auf :${PLATTFORM_PORT}" \
+    || { schlecht "${rest} Medien-Adressen zeigen noch auf :${PLATTFORM_PORT}"; rc=1; }
+  # Aussteller identisch — sonst antwortet die Signage-Verwaltung mit 401.
+  local a b; a="$(env_lesen "$(p_plattform_env)" API_EXTERNAL_URL)"; b="$(env_lesen "$(p_signage_env)" PLATFORM_JWT_ISSUER)"
+  [ "$a" = "$b" ] && gut "Aussteller stimmen überein" || { schlecht "Aussteller weichen ab: '$a' vs '$b'"; rc=1; }
+  return $rc
+}
+
+h_port80_zurueck() {
+  local pe se ac rc=0
+  pe="$(p_plattform_env)"; se="$(p_signage_env)"; ac="$(p_alt_cutover)"
+  for f in "$pe" "$se" "$ac"; do
+    [ -e "$f.${PORT80_MARKE}" ] || { abbruch "keine Sicherung $f.${PORT80_MARKE}"; return 1; }
+  done
+  # Erst die Plattform von Port 80 herunter, sonst streiten sich beide darum.
+  (cd "${BASIS}/acm-plattform" && docker compose down) || rc=1
+  for f in "$pe" "$se" "$ac"; do mv "$f.${PORT80_MARKE}" "$f"; done
+  (cd "$(alt_verzeichnis)" && ${C_PROD} up -d caddy) || rc=1
+  (cd "${BASIS}/acm-plattform" && docker compose up -d) || rc=1
+  (cd "${BASIS}/acm-signage" && docker compose up -d signage-api) || rc=1
+  if [ -e "$(p_medien_sicherung)" ]; then
+    while IFS="$(printf '\t')" read -r id uri; do
+      [ -n "$id" ] || continue
+      signage_psql "update signage_media set uri = '${uri}' where id = '${id}'" >/dev/null || rc=1
+    done < "$(p_medien_sicherung)"
+    rm -f "$(p_medien_sicherung)"
+    gut "Medien-Adressen zurückgeschrieben"
+  fi
+  warte_auf_stack "${BASIS}/acm-plattform" 300 || rc=1
+  gut "zurück: Altprojekt auf 80, Plattform auf ${PLATTFORM_PORT}"
+  return $rc
+}
+
 # --- Abschluss ----------------------------------------------------------------
 
 h_pruefen() {
