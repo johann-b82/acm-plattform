@@ -5,34 +5,31 @@ Unter `/hr/onboarding`, mit dem Recht `hr`.
 
 ## Die Ableitung steht in der Datenbank
 
-Im Altprojekt rechnet ein Python-Service Anforderungsmatrix, Rollenzuordnung
-und Bestand zusammen. Alle drei sind Tabellen — das ist ein Verbund, kein
-Programm. Hier ist es die Funktion `public.schulungsplan(employee_id)`.
+Im Altprojekt rechnet ein Python-Service Anforderungsmatrix und Bestand
+zusammen. Beide sind Tabellen — das ist ein Verbund, kein Programm. Hier ist es
+die Funktion `public.schulungsplan(employee_id)`.
 
 Das hat zwei praktische Folgen: die Oberfläche kommt ohne eigene Route daran
 (PostgREST ruft die Funktion), und der Plan ist immer aktuell. Er wird nicht
 gespeichert — ändert sich die Matrix, ändert sich der Plan.
 
-## Zwei Ebenen, zwei Wege hinein
+## Vier Geltungen, ein Weg hinein
 
-| Ebene | Weg |
+Die Funktion rechnet die vier Geltungen der Anforderungsmatrix gegen Abteilung
+und Position der Person:
+
+| Geltung | greift, wenn |
 |---|---|
-| `personio` | über die Abteilung der Person |
-| `kuerzel` | über die Zuordnung Position → Abteilungskürzel |
+| `alle` | immer |
+| `abteilung` | die Abteilung der Person passt |
+| `position` | die Position der Person passt |
+| `abteilung_position` | beide passen |
 
-Die zweite ist die unzuverlässigere: Personio schreibt Positionen uneinheitlich
-(„CNC-Fräser", „CNC Fräser  "). Verglichen wird deshalb über
-`public.position_norm()` — kleingeschrieben, Mehrfachleerzeichen zusammengefasst.
-
-## Der Hinweis, wenn die feine Ebene nicht greift
-
-Fehlt für eine Position die Zuordnung, entstünden **zu wenige**
-Pflichtschulungen — und niemand würde es merken. Die Funktion gibt deshalb eine
-eigene Zeile mit `quelle = 'kuerzel_fehlt'` zurück, und die Oberfläche macht
-daraus einen Kasten in Warnfarbe.
-
-Das ist aus dem Altprojekt übernommen; dort steht dieselbe Überlegung im
-Docstring des Services.
+`quelle` in der Rückgabe nennt die Geltung, über die eine Schulung Pflicht
+wurde. Die Position schreibt Personio uneinheitlich („CNC-Fräser",
+„CNC Fräser  "); verglichen wird deshalb über `public.position_norm()` —
+kleingeschrieben, Mehrfachleerzeichen zusammengefasst. Das frühere Kürzel-System
+und der „kuerzel_fehlt"-Hinweis sind mit der Umstellung auf Positionen entfallen.
 
 ## Die Abteilung lässt sich übersteuern
 

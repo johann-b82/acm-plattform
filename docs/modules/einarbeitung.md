@@ -11,8 +11,12 @@ Liste, mit demselben Ansprechpartner und derselben Beschreibung. Der Katalog
 hält den Inhalt, die Matrix sagt, welche Abteilung ihn braucht.
 
 Das Feld `bereich` am Inhalt übersteuert die Abteilung auf dem Bogen. Ist es
-leer, steht dort die Abteilung aus der Matrix — so gibt derselbe Inhalt für
-zwei Abteilungen zwei verschiedene Zeilen, ohne doppelt gepflegt zu werden.
+leer, steht dort die Abteilung der Person.
+
+Die Anforderungsmatrix kennt wie bei den Schulungen vier Geltungen (alle ·
+Abteilung · Position · Abteilung + Position); `einarbeitung_pflicht` trägt sie
+in denselben Spalten. Welche Inhalte auf den Bogen einer Person kommen, rechnet
+der Dienst aus deren Abteilung und Position gegen diese vier Geltungen.
 
 ## Der Bogen
 

@@ -7,6 +7,7 @@ Katalog und Abteilungsmatrix sind gewöhnliches Lesen und Schreiben und gehen
 """
 from __future__ import annotations
 
+import re
 from datetime import date
 
 import sqlalchemy as sa
@@ -31,10 +32,38 @@ router = APIRouter(
 )
 
 
-async def _inhalte(abteilungen: list[str]) -> list[Inhalt]:
-    """Die Inhalte, die für diese Abteilungen nötig sind — in Reihenfolge."""
-    if not abteilungen:
-        return []
+def _position_norm(text: str | None) -> str:
+    """Wie `public.position_norm`: klein, getrimmt, ohne Mehrfachleerzeichen."""
+    return re.sub(r"\s+", " ", text or "").strip().lower()
+
+
+async def _inhalte(abteilung: str | None, position: str | None) -> list[Inhalt]:
+    """Die Inhalte, die für Abteilung und Position dieser Person nötig sind.
+
+    Vier Geltungen wie in der Matrix: alle · Abteilung · Position · beides. Fehlt
+    der Person die Abteilung oder die Position, entfallen die daran hängenden
+    Geltungen — „alle" bleibt immer.
+    """
+    pos_norm = _position_norm(position)
+    geltung = einarbeitung_pflicht.c.geltung
+    bedingungen = [geltung == "alle"]
+    if abteilung:
+        bedingungen.append(
+            sa.and_(geltung == "abteilung", einarbeitung_pflicht.c.abteilung == abteilung)
+        )
+    if pos_norm:
+        bedingungen.append(
+            sa.and_(geltung == "position", einarbeitung_pflicht.c.position_norm == pos_norm)
+        )
+    if abteilung and pos_norm:
+        bedingungen.append(
+            sa.and_(
+                geltung == "abteilung_position",
+                einarbeitung_pflicht.c.abteilung == abteilung,
+                einarbeitung_pflicht.c.position_norm == pos_norm,
+            )
+        )
+
     async with SessionLocal() as sitzung:
         zeilen = (
             await sitzung.execute(
@@ -42,7 +71,6 @@ async def _inhalte(abteilungen: list[str]) -> list[Inhalt]:
                     einarbeitung_katalog.c.inhalt,
                     einarbeitung_katalog.c.ansprechpartner,
                     einarbeitung_katalog.c.bereich,
-                    einarbeitung_pflicht.c.abteilung,
                 )
                 .select_from(
                     einarbeitung_pflicht.join(
@@ -50,7 +78,7 @@ async def _inhalte(abteilungen: list[str]) -> list[Inhalt]:
                         einarbeitung_katalog.c.id == einarbeitung_pflicht.c.einarbeitung_id,
                     )
                 )
-                .where(einarbeitung_pflicht.c.abteilung.in_(abteilungen))
+                .where(sa.or_(*bedingungen))
                 .order_by(
                     einarbeitung_katalog.c.reihenfolge, einarbeitung_katalog.c.inhalt
                 )
@@ -61,12 +89,12 @@ async def _inhalte(abteilungen: list[str]) -> list[Inhalt]:
     inhalte: list[Inhalt] = []
     for zeile in zeilen:
         if zeile["inhalt"] in gesehen:
-            continue  # derselbe Inhalt für zwei Abteilungen steht einmal
+            continue  # derselbe Inhalt aus zwei Geltungen steht einmal
         gesehen.add(zeile["inhalt"])
         inhalte.append(
             Inhalt(
-                # Leerer Bereich heißt: die Abteilung aus der Matrix einsetzen.
-                abteilung=zeile["bereich"] or zeile["abteilung"],
+                # Leerer Bereich heißt: die Abteilung der Person einsetzen.
+                abteilung=zeile["bereich"] or abteilung or "",
                 ansprechpartner=zeile["ansprechpartner"] or "",
                 inhalt=zeile["inhalt"],
             )
@@ -120,7 +148,7 @@ async def bogen(
             "Ohne Person oder Namen lässt sich kein Bogen bauen.",
         )
 
-    inhalte = await _inhalte([abteilung] if abteilung else [])
+    inhalte = await _inhalte(abteilung, stelle)
     logo = await lade_logo()
 
     try:

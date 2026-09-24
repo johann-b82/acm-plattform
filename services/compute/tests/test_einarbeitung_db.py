@@ -77,8 +77,9 @@ class TestRechte:
                 ).scalar()
                 await s.execute(
                     sa.text(
-                        "insert into public.einarbeitung_pflicht (einarbeitung_id, abteilung)"
-                        " values (:i, 'Production')"
+                        "insert into public.einarbeitung_pflicht"
+                        " (einarbeitung_id, geltung, abteilung)"
+                        " values (:i, 'abteilung', 'Production')"
                     ),
                     {"i": inhalt},
                 )
@@ -86,7 +87,8 @@ class TestRechte:
                     await s.execute(
                         sa.text(
                             "insert into public.einarbeitung_pflicht"
-                            " (einarbeitung_id, abteilung) values (:i, 'Production')"
+                            " (einarbeitung_id, geltung, abteilung)"
+                            " values (:i, 'abteilung', 'Production')"
                         ),
                         {"i": inhalt},
                     )

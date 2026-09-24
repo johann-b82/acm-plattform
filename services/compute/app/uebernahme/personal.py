@@ -213,14 +213,20 @@ UMZUEGE: list[Umzug] = [
         id_aus="uuid5",
         spalten={
             "schulung_id": "schulung_id",
-            "ebene": "ebene",
+            # Die alte `ebene` wird zur Geltung: die grobe Personio-Ebene ist
+            # „abteilung" (siehe `wandler`); `position`/`position_norm` bleiben
+            # leer, den Rest rechnet der Trigger.
+            "geltung": "ebene",
             "abteilung": "abteilung",
         },
         # Aus der alten Zahl wird dieselbe UUID gerechnet, die der Katalog oben
         # bekommen hat — der Fremdschlüssel trifft ohne Nachschlagen.
         verweise={"schulung_id": "schulung_katalog"},
-        # `ebene` prüft beidseitig gegen 'kuerzel' | 'personio', und genau diese
-        # zwei Werte kommen in den sechs Zeilen vor.
+        wandler={"geltung": lambda _ebene: "abteilung"},
+        # Die feine Kürzel-Ebene entfällt mit dem Kürzel-System und hat im Abzug
+        # ohnehin keine auflösbare Position (die Brücke `schulung_rolle` ist
+        # leer). Nur die grobe Personio-Ebene kommt mit.
+        auslassen=lambda zeile: zeile.get("ebene") == "kuerzel",
     ),
     Umzug(
         alt="schulung_import",

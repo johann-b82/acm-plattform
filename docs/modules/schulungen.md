@@ -39,12 +39,28 @@ Anders als bei den Kompetenzen: die Excel liefert hier nur Turnus und Termine.
 Frist, Verantwortlicher und Beschreibung werden in der Oberfläche gepflegt und
 bleiben beim Import stehen.
 
-## Zwei Ebenen der Anforderungsmatrix
+## Vier Geltungen der Anforderungsmatrix
 
-Eine Schulung ist Pflicht für eine Abteilung — und „Abteilung" gibt es zweimal:
-als feines Kürzel aus der Excel (NÄH, CUT, WVK) und als grobe Personio-Abteilung
-(Production). Beide Wertelisten kommen aus Fremdsystemen und sind deshalb Text,
-nicht Fremdschlüssel.
+Eine Schulung ist Pflicht für eine von vier Gruppen — die Geltung sagt, für
+welche:
+
+| Geltung | Pflicht für |
+|---|---|
+| `alle` | die gesamte Belegschaft |
+| `abteilung` | alle einer Personio-Abteilung (Production) |
+| `position` | alle mit einer Personio-Position (CNC Fräser) |
+| `abteilung_position` | nur, wo Abteilung und Position zusammentreffen |
+
+Abteilung und Position kommen aus Personio und sind deshalb Text, nicht
+Fremdschlüssel. Positionen schreibt Personio uneinheitlich; verglichen wird
+normiert (`position_norm`: klein, getrimmt, ohne Mehrfachleerzeichen), ein
+Trigger auf `schulung_pflicht` füllt die Spalte.
+
+Die Oberfläche ist eine Kreuztabelle (Schulung × Achsenwert) für die ersten
+drei Geltungen und eine kleine Regelliste je Schulung für die Kombination. Das
+frühere Kürzel-System (NÄH, CUT, WVK) und seine Rollenbrücke Position → Kürzel
+sind entfallen; bestehende Kürzel-Pflichten wurden bei der Umstellung auf
+Positions-Pflichten ausgerollt (Migration `0065`).
 
 ## Dringlichkeit
 

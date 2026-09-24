@@ -1,12 +1,13 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { achse, positionNorm, type Geltung, type PflichtBasis } from "@/lib/pflicht";
 
 /**
- * Einarbeitung: Inhalte, Abteilungsmatrix und der persönliche Bogen.
+ * Einarbeitung: Inhalte, Anforderungsmatrix und der persönliche Bogen.
  *
- * Ein Inhalt gehört einem Ansprechpartner, nicht einer Abteilung — welche
- * Abteilung ihn braucht, sagt die Matrix. Dieselbe Trennung wie bei den
- * Schulungen, und aus demselben Grund: sonst stünde derselbe Inhalt
- * mehrfach da.
+ * Ein Inhalt gehört einem Ansprechpartner, nicht einer Abteilung — für wen er
+ * Pflicht ist, sagt die Matrix. Wie bei den Schulungen gilt eine Pflicht für
+ * alle, eine Abteilung, eine Position oder die Kombination beider; dieselbe
+ * Trennung und aus demselben Grund: sonst stünde derselbe Inhalt mehrfach da.
  */
 
 export interface Inhalt {
@@ -17,10 +18,8 @@ export interface Inhalt {
   reihenfolge: number;
 }
 
-export interface Pflicht {
-  id: string;
+export interface Pflicht extends PflichtBasis {
   einarbeitung_id: string;
-  abteilung: string;
 }
 
 export const einarbeitungKeys = {
@@ -30,21 +29,6 @@ export const einarbeitungKeys = {
 
 function sb() {
   return supabaseBrowser();
-}
-
-/**
- * Die Spalten der Abteilungsmatrix: die Abteilungen der aktiven Belegschaft
- * und die, die schon eine Zuordnung tragen — wie im Altsystem. Ohne die
- * zweite Hälfte verschwände eine Zuordnung aus der Ansicht, sobald die letzte
- * Person der Abteilung ausgetreten ist.
- */
-export function abteilungsachse(
-  personio: readonly (string | null)[],
-  gepflegt: readonly string[],
-): string[] {
-  return [
-    ...new Set([...personio, ...gepflegt].map((a) => (a ?? "").trim()).filter(Boolean)),
-  ].sort((a, b) => a.localeCompare(b, "de"));
 }
 
 export const einarbeitungApi = {
@@ -80,35 +64,60 @@ export const einarbeitungApi = {
     if (error) throw new Error(error.message);
   },
 
-  /** Die Abteilungen der aktiven Belegschaft, für die Matrixspalten. */
-  personioAbteilungen: async (): Promise<(string | null)[]> => {
-    const { data, error } = await sb().from("organigramm").select("department");
+  /**
+   * Die Werte einer Achse (Abteilungen oder Positionen): die der aktiven
+   * Belegschaft aus dem Organigramm plus die, die schon eine Pflicht tragen —
+   * sonst verschwände eine Zuordnung, sobald niemand mehr darin steht.
+   */
+  pflichtAchse: async (
+    feld: "abteilung" | "position",
+    pflichten: readonly Pflicht[],
+  ): Promise<string[]> => {
+    const spalte = feld === "abteilung" ? "department" : "position";
+    const { data, error } = await sb().from("organigramm").select(spalte);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as unknown as { department: string | null }[]).map((z) => z.department);
+    const quelle = ((data ?? []) as unknown as Record<string, string | null>[]).map((z) => z[spalte]);
+    return achse(quelle, pflichten.map((p) => p[feld]));
   },
 
   pflicht: async (): Promise<Pflicht[]> => {
     const { data, error } = await sb()
       .from("einarbeitung_pflicht")
-      .select("id,einarbeitung_id,abteilung")
-      .order("abteilung");
+      .select("id,einarbeitung_id,geltung,abteilung,position,position_norm")
+      .order("geltung");
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as Pflicht[];
   },
 
+  /**
+   * Eine Pflicht setzen oder wegnehmen. Welche Felder gefüllt sind, hängt an
+   * der Geltung — `position_norm` rechnet der Datenbank-Trigger, hier wird nur
+   * zum Löschen normiert verglichen.
+   */
   pflichtSetzen: async (
     einarbeitung_id: string,
-    abteilung: string,
+    geltung: Geltung,
+    ziel: { abteilung?: string | null; position?: string | null },
     an: boolean,
   ): Promise<void> => {
     const client = sb();
-    const { error } = an
-      ? await client.from("einarbeitung_pflicht").insert({ einarbeitung_id, abteilung })
-      : await client
-          .from("einarbeitung_pflicht")
-          .delete()
-          .eq("einarbeitung_id", einarbeitung_id)
-          .eq("abteilung", abteilung);
+    const abteilung = geltung === "abteilung" || geltung === "abteilung_position" ? ziel.abteilung ?? null : null;
+    const position = geltung === "position" || geltung === "abteilung_position" ? ziel.position ?? null : null;
+    if (an) {
+      const { error } = await client
+        .from("einarbeitung_pflicht")
+        .insert({ einarbeitung_id, geltung, abteilung, position });
+      if (error) throw new Error(error.message);
+      return;
+    }
+    let frage = client
+      .from("einarbeitung_pflicht")
+      .delete()
+      .eq("einarbeitung_id", einarbeitung_id)
+      .eq("geltung", geltung);
+    frage = abteilung === null ? frage.is("abteilung", null) : frage.eq("abteilung", abteilung);
+    frage = position === null ? frage.is("position_norm", null) : frage.eq("position_norm", positionNorm(position));
+    const { error } = await frage;
     if (error) throw new Error(error.message);
   },
 

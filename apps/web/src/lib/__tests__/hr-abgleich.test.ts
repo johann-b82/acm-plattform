@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { personenwahl, type Eintritt } from "@/lib/onboarding";
-import { abteilungsachse } from "@/lib/einarbeitung";
+import { achse } from "@/lib/pflicht";
 import {
   abteilungenMitVorgesetzten,
   effektiveFaelligkeit,
@@ -64,9 +64,9 @@ describe("personenwahl", () => {
   });
 });
 
-describe("abteilungsachse", () => {
-  it("vereint Personio und gepflegte Abteilungen, ohne Leerwerte und Doppel", () => {
-    expect(abteilungsachse(["Production", " IT ", null, "", "Production"], ["Altabteilung", "IT"])).toEqual([
+describe("achse", () => {
+  it("vereint Belegschaft und gepflegte Werte, ohne Leerwerte und Doppel", () => {
+    expect(achse(["Production", " IT ", null, "", "Production"], ["Altabteilung", "IT"])).toEqual([
       "Altabteilung",
       "IT",
       "Production",

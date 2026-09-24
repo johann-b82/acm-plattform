@@ -14,6 +14,8 @@ import {
   type Stand,
   type Teilnahme,
 } from "@/lib/schulungen";
+import { positionNorm } from "@/lib/pflicht";
+import { Pflichtmatrix, type PflichtmatrixApi } from "../../pflichtmatrix";
 import {
   Badge,
   Button,
@@ -36,11 +38,6 @@ import { useDringlichkeit } from "@/lib/tafeln";
 
 
 
-const EBENEN: { wert: Pflicht["ebene"]; wort: "kuerzel" | "personioAbteilung" }[] = [
-  { wert: "kuerzel", wort: "kuerzel" },
-  { wert: "personio", wort: "personioAbteilung" },
-];
-
 export function SchulungAnsicht({
   id,
   darfSchreiben,
@@ -53,7 +50,6 @@ export function SchulungAnsicht({
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
   const [neu, setNeu] = useState("");
-  const [neuePflicht, setNeuePflicht] = useState<Record<string, string>>({});
 
   const katalog = useQuery({ queryKey: schulungKeys.katalog(), queryFn: schulungApi.katalog });
   const teilnahmen = useQuery({
@@ -94,16 +90,6 @@ export function SchulungAnsicht({
     onError: melde,
   });
 
-  const pflichtSetzen = useMutation({
-    mutationFn: (w: { ebene: Pflicht["ebene"]; abteilung: string; an: boolean }) =>
-      schulungApi.pflichtSetzen(id, w.ebene, w.abteilung, w.an),
-    onSuccess: (_d, w) => {
-      setNeuePflicht((s) => ({ ...s, [w.ebene]: "" }));
-      return neuLaden();
-    },
-    onError: melde,
-  });
-
   const schulung = (katalog.data ?? []).find((s) => s.id === id);
   const meineTeilnahmen = teilnahmen.data ?? [];
   const standNach = useMemo(() => {
@@ -111,7 +97,26 @@ export function SchulungAnsicht({
     for (const s of stand.data ?? []) m.set(s.teilnahme_id, s);
     return m;
   }, [stand.data]);
-  const meinePflichten = (pflicht.data ?? []).filter((p) => p.schulung_id === id);
+
+  const pflichtApi = useMemo<PflichtmatrixApi<Pflicht>>(
+    () => ({
+      bereich: `schulung-${id}`,
+      pflichten: pflicht.data ?? [],
+      pflichtKey: schulungKeys.pflicht(),
+      zielId: (p) => p.schulung_id,
+      neuePflicht: (schulung_id, geltung, abteilung, position) => ({
+        id: `neu:${schulung_id}:${geltung}:${abteilung ?? ""}:${position ?? ""}`,
+        schulung_id,
+        geltung,
+        abteilung,
+        position,
+        position_norm: position ? positionNorm(position) : null,
+      }),
+      achse: schulungApi.pflichtAchse,
+      setzen: schulungApi.pflichtSetzen,
+    }),
+    [id, pflicht.data],
+  );
 
   if (katalog.isLoading) {
     return <Card className="p-5 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</Card>;
@@ -218,76 +223,21 @@ export function SchulungAnsicht({
         </div>
       </Card>
 
-      <Card className="space-y-4 p-5">
+      <Card className="p-5">
         <h2 className="font-medium">{worte.schulung.fuerWen}</h2>
-        {EBENEN.map((ebene) => {
-          const gesetzt = meinePflichten.filter((p) => p.ebene === ebene.wert);
-          return (
-            <div key={ebene.wert} className="space-y-2">
-              <div>
-                <h3 className="text-sm font-medium">{worte.schulung[ebene.wort]}</h3>
-                <p className="text-xs text-[var(--fg-muted)]">
-                  {ebene.wort === "kuerzel"
-                    ? worte.schulung.kuerzelHinweis
-                    : worte.schulung.personioHinweis}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {gesetzt.map((p) => (
-                  <Badge key={p.id} variant="secondary">
-                    {p.abteilung}
-                    {darfSchreiben && (
-                      <button
-                        type="button"
-                        className="ms-1.5 text-[var(--fg-muted)] hover:text-[var(--danger)]"
-                        aria-label={worte.schulung.entfernen(p.abteilung)}
-                        onClick={() =>
-                          pflichtSetzen.mutate({
-                            ebene: ebene.wert,
-                            abteilung: p.abteilung,
-                            an: false,
-                          })
-                        }
-                      >
-                        ×
-                      </button>
-                    )}
-                  </Badge>
-                ))}
-                {gesetzt.length === 0 && (
-                  <span className="text-sm text-[var(--fg-muted)]">{worte.schulung.keine}</span>
-                )}
-              </div>
-              {darfSchreiben && (
-                <div className="flex flex-wrap items-end gap-2">
-                  <Input
-                    className="w-48"
-                    value={neuePflicht[ebene.wert] ?? ""}
-                    placeholder={ebene.wert === "kuerzel" ? "NÄH" : "Production"}
-                    aria-label={worte.schulung.ergaenzen(worte.schulung[ebene.wort])}
-                    onChange={(e) =>
-                      setNeuePflicht((s) => ({ ...s, [ebene.wert]: e.target.value }))
-                    }
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!(neuePflicht[ebene.wert] ?? "").trim()}
-                    onClick={() =>
-                      pflichtSetzen.mutate({
-                        ebene: ebene.wert,
-                        abteilung: (neuePflicht[ebene.wert] ?? "").trim(),
-                        an: true,
-                      })
-                    }
-                  >
-                    {worte.schulung.hinzufuegen}
-                  </Button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        <Pflichtmatrix
+          api={pflichtApi}
+          zugriff={{
+            zeilen: [schulung],
+            id: (s) => s.id,
+            kopf: (s) => s.name,
+            titel: (s) => s.name,
+            suchwert: (s) => s.name,
+          }}
+          spaltenKopf={worte.schulungen.schulung}
+          beschriftung={worte.schulung.fuerWen}
+          darfSchreiben={darfSchreiben}
+        />
       </Card>
 
       <Card className="space-y-4 p-5">
