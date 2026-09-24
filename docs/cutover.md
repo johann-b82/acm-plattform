@@ -721,6 +721,8 @@ Der Schritt fasst das Altprojekt nicht hart an: Es wird **nicht abgeschaltet**, 
 
 Gesichert wird vor dem ersten Handgriff, jeweils als `*.vor-port80`: die `.env` beider Stacks, die `docker-compose.cutover.yml` des Altprojekts und die Medien-Adressen als Textdatei. Ein zweiter Lauf überschreibt diese Sicherungen nicht — sonst wäre nach dem zweiten Anlauf der Rückweg verloren.
 
+**Neuen Code ausliefern, nachdem der Portwechsel gelaufen ist:** `schritt 3` bleibt dafür der richtige Weg — er erkennt den erledigten Wechsel an der Sicherung `.env.vor-port80` und lässt die vier Adressen dann unangetastet. Ohne diese Erkennung setzte er sie aus der Konfiguration neu, die Plattform sprang zurück auf `:8081`, und jede Tafel lief ins Leere (am 2026-09-24 im Betrieb passiert).
+
 Geprüft wird am Ende selbst: `/`, `/login`, `/api/health` und `/player/` müssen antworten, keine Medien-Adresse darf noch auf den alten Port zeigen, und die beiden Aussteller müssen Zeichen für Zeichen übereinstimmen. Die Prüfung **wiederholt** dabei, bis die Antwort passt (`PORT80_WARTEN`, Vorgabe 60 s): Hinter `/player/` liegt der Signage-Stack, der gerade neu gestartet wurde, und ein einzelner Versuch urteilte sonst über den Anlauf statt über das Ergebnis.
 
 **Vorher erledigen**, sonst ist die Abschlussprüfung rot: die AD-Anmeldung (§ 3a), das Firmenlogo (§ 4b) und die HR-Tafeln unter `/einstellungen#anzeigen`.

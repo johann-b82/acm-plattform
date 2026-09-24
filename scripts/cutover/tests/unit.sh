@@ -559,6 +559,45 @@ YAML
 }
 pruefe "port80: compose löst die Bindung des Altprojekts wirklich auf 8082 auf" t_port80_bindung_wird_von_compose_wirklich_gesetzt
 
+t_schritt3_nach_port80_laesst_die_adressen_stehen() {
+  # Am 2026-09-24 im Betrieb passiert: Nach dem Portwechsel wurde `schritt 3`
+  # gefahren, um neuen Code auszuliefern. h_3_env setzte die Adressen aus der
+  # Konfiguration neu — die Plattform sprang von Port 80 zurück auf 8081, Port
+  # 80 war leer, und alle fünf Tafeln liefen ins Nichts.
+  port80_lage
+  h_port80 >/dev/null
+  pe="${BASIS}/acm-plattform/.env"
+  gleich "$(env_lesen "$pe" CADDY_HTTP_PORT)" 80
+
+  # Jetzt der Auslieferungsschritt, wie er nach einem Merge gefahren wird.
+  mkdir -p "${BASIS}/acm-plattform/infra/supabase/upstream"
+  echo v1 > "${BASIS}/acm-plattform/infra/supabase/UPSTREAM_TAG"
+  echo v1 > "${BASIS}/acm-plattform/infra/supabase/upstream/UPSTREAM_TAG"
+  h_3_env >/dev/null
+
+  # Die Adressen müssen die des Portwechsels geblieben sein.
+  gleich "$(env_lesen "$pe" CADDY_HTTP_PORT)" 80
+  gleich "$(env_lesen "$pe" SITE_URL)" http://192.9.201.9
+  gleich "$(env_lesen "$pe" API_EXTERNAL_URL)" http://192.9.201.9/supabase/auth/v1
+  # Der Aussteller im Signage-Stack darf dadurch nicht auseinanderlaufen.
+  gleich "$(env_lesen "${BASIS}/acm-signage/.env" PLATFORM_JWT_ISSUER)" "$(env_lesen "$pe" API_EXTERNAL_URL)"
+}
+pruefe "Schritt 3 nach dem Portwechsel: Adressen bleiben auf Port 80" t_schritt3_nach_port80_laesst_die_adressen_stehen
+
+t_schritt3_vor_port80_setzt_die_adressen_wie_bisher() {
+  # Ohne vorangegangenen Portwechsel muss Schritt 3 die Adressen weiterhin setzen.
+  port80_lage
+  pe="${BASIS}/acm-plattform/.env"
+  printf 'CADDY_HTTP_PORT=irgendwas\n' > "$pe"
+  mkdir -p "${BASIS}/acm-plattform/infra/supabase/upstream"
+  echo v1 > "${BASIS}/acm-plattform/infra/supabase/UPSTREAM_TAG"
+  echo v1 > "${BASIS}/acm-plattform/infra/supabase/upstream/UPSTREAM_TAG"
+  h_3_env >/dev/null
+  gleich "$(env_lesen "$pe" CADDY_HTTP_PORT)" 8081
+  gleich "$(env_lesen "$pe" SITE_URL)" http://192.9.201.9:8081
+}
+pruefe "Schritt 3 ohne Portwechsel: Adressen werden wie bisher gesetzt" t_schritt3_vor_port80_setzt_die_adressen_wie_bisher
+
 # --- Ablauf auf dem Mac ------------------------------------------------------
 
 CUTOVER_NICHT_STARTEN=1 . "${CUTOVER}/cutover.sh"
