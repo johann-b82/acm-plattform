@@ -647,8 +647,11 @@ schulung_pflicht = sa.Table(
     metadata,
     sa.Column("id", UUID(as_uuid=False), primary_key=True),
     sa.Column("schulung_id", UUID(as_uuid=False), nullable=False),
-    sa.Column("ebene", sa.String(20), nullable=False),
-    sa.Column("abteilung", sa.String(80), nullable=False),
+    # Geltung: 'alle' | 'abteilung' | 'position' | 'abteilung_position'.
+    sa.Column("geltung", sa.String(20), nullable=False),
+    sa.Column("abteilung", sa.String(80)),
+    sa.Column("position", sa.Text),
+    sa.Column("position_norm", sa.String(200)),
 )
 
 schulung_rollen = sa.Table(
@@ -787,7 +790,10 @@ einarbeitung_pflicht = sa.Table(
     metadata,
     sa.Column("id", UUID(as_uuid=False), primary_key=True),
     sa.Column("einarbeitung_id", UUID(as_uuid=False), nullable=False),
-    sa.Column("abteilung", sa.String(120), nullable=False),
+    sa.Column("geltung", sa.String(20), nullable=False),
+    sa.Column("abteilung", sa.String(120)),
+    sa.Column("position", sa.Text),
+    sa.Column("position_norm", sa.String(200)),
 )
 
 plattform_logo = sa.Table(

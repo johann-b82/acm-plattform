@@ -130,6 +130,20 @@ export function gedrehteMasse(
   return d === 90 || d === 270 ? { b: h, h: b } : { b, h };
 }
 
+/**
+ * Aus der Ziehrichtung die bevorzugte Leselage der OCR: oben-links →
+ * unten-rechts ist 0°. So liest die OCR ein schräg stehendes Maß zuerst richtig
+ * herum. (Aus `lumeapps`, `preferredRotation`.)
+ */
+export function bevorzugteDrehung(von: Punkt, bis: Punkt): Drehung {
+  const dx = bis.x - von.x;
+  const dy = bis.y - von.y;
+  if (dx >= 0 && dy >= 0) return 0;
+  if (dx < 0 && dy < 0) return 180;
+  if (dx >= 0 && dy < 0) return 270;
+  return 90;
+}
+
 /** CSS-Transformation (Ursprung 0 0), die die kanonische Ebene in ihren
  *  gedrehten Kasten legt. */
 export function drehungCss(b: number, h: number, d: Drehung): string {
@@ -194,21 +208,30 @@ export const FARBEN = {
   schrift: "#dc2626",
 } as const;
 
-/** Punkte eines gefüllten Pfeilkeils: Spitze bei `spitze`, Fuß an der Blase. */
+/**
+ * Punkte eines gefüllten Pfeilkeils: Spitze bei `spitze`, Basis am Blasenrand.
+ *
+ * Die beiden Basispunkte liegen als Sehne **auf** dem Kreisrand (Abstand `r`
+ * von der Blasenmitte, um ±`WINKEL` um die Achse zur Spitze gedreht). Der
+ * darüberliegende weiße Kreis klippt den Keil dann an seinem Bogen — Pfeil und
+ * Blase bilden ein zusammenhängendes Symbol ohne Lücke, statt Kreis plus
+ * abgesetztem Pfeil.
+ */
+const KEIL_WINKEL = 0.7;
+
 export function keil(blase: Punkt, spitze: Punkt, r: number): string {
   const dx = spitze.x - blase.x;
   const dy = spitze.y - blase.y;
   const laenge = Math.hypot(dx, dy) || 1;
   const ux = dx / laenge;
   const uy = dy / laenge;
-  const fussX = blase.x + ux * r * 0.9;
-  const fussY = blase.y + uy * r * 0.9;
-  const halb = r * 0.8;
-  return (
-    `${spitze.x},${spitze.y} ` +
-    `${fussX - uy * halb},${fussY + ux * halb} ` +
-    `${fussX + uy * halb},${fussY - ux * halb}`
-  );
+  const c = Math.cos(KEIL_WINKEL);
+  const s = Math.sin(KEIL_WINKEL);
+  const b1x = blase.x + r * (ux * c - uy * s);
+  const b1y = blase.y + r * (ux * s + uy * c);
+  const b2x = blase.x + r * (ux * c + uy * s);
+  const b2y = blase.y + r * (uy * c - ux * s);
+  return `${spitze.x},${spitze.y} ${b1x},${b1y} ${b2x},${b2y}`;
 }
 
 /** Wo der Strahl aus der Mitte eines Rechtecks Richtung `ziel` den Rand

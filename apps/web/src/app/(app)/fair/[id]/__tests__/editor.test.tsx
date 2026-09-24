@@ -26,7 +26,7 @@ vi.mock("@/lib/fair", () => ({
   },
 }));
 vi.mock("@/lib/fair/ocr", () => ({ beendeOcr: vi.fn(), liesFeld: vi.fn() }));
-vi.mock("../raster", () => ({ feldAlsLeinwand: vi.fn(), seitenAlsBilder: vi.fn() }));
+vi.mock("../raster", () => ({ feldAlsLeinwand: vi.fn() }));
 vi.mock("../ballonliste", () => ({ Ballonliste: () => null }));
 vi.mock("../zeichenflaeche", () => ({
   Zeichenflaeche: ({ onSeiten }: { onSeiten: (n: number) => void }) => {

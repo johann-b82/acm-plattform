@@ -234,6 +234,34 @@ def _tabelle(blatt, zeile: int, inhalte: list[Inhalt], felder: list | None = Non
     return zeile + 1
 
 
+def _schulungsbedarf(blatt, zeile: int, felder: list | None = None) -> int:
+    """Zum Abschluss, vor der Freigabe: ob weiterer Schulungsbedarf besteht, mit
+    Ankreuzfeld und einer Linie zum Erläutern — wie in der Vorlage. Beim
+    Vorgang wird das Ja/Nein als Feld erfasst, damit der Scan es prüfen kann."""
+    frage = blatt.cell(zeile, SP_ABTEILUNG, "Weiterer Schulungsbedarf notwendig?")
+    frage.font = Font(bold=True, size=10)
+    frage.alignment = _LINKS
+    kasten = blatt.cell(zeile, 6, "☐ ja    ☐ nein")
+    kasten.font = Font(size=10)
+    kasten.alignment = _LINKS
+    blatt.row_dimensions[zeile].height = 16
+    if felder is not None:
+        felder.append(("schulungsbedarf", "Weiterer Schulungsbedarf (ja/nein)", zeile, 6, 8))
+    zeile += 1
+
+    hinweis = blatt.cell(zeile, SP_ABTEILUNG, "Falls ja, bitte Schulungsbedarf erläutern:")
+    hinweis.font = Font(size=10)
+    hinweis.alignment = _LINKS
+    blatt.row_dimensions[zeile].height = 16
+    zeile += 1
+
+    # Eine Schreiblinie über die volle Breite (B..H).
+    for spalte in range(2, 9):
+        blatt.cell(zeile, spalte).border = Border(bottom=_DUENN)
+    blatt.row_dimensions[zeile].height = 18
+    return zeile + 1
+
+
 def _freigabe(blatt, zeile: int) -> int:
     spalten = [(2, 3), (4, 5), (6, 8)]
     for (von, bis), (rolle, wer) in zip(spalten, FREIGABE):
@@ -274,6 +302,7 @@ def fuelle_blatt(
     zeile = _kopf(blatt, zeile, name, stelle, beginn)
     zeile = _einleitung(blatt, zeile)
     zeile = _tabelle(blatt, zeile, inhalte, felder)
+    zeile = _schulungsbedarf(blatt, zeile, felder)
     zeile = _freigabe(blatt, zeile + 1)
     letzte = zeile - 1
 

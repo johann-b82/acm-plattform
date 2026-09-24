@@ -103,9 +103,20 @@ Alle Personen gegen alle Schulungen. Sie beantwortet die andere Frage: **steht
 für jede Person und jede Pflichtschulung ein Datum?** Dafür erscheint auch, wer
 noch gar keine Teilnahme hat — genau das ist die Lücke, die ein Audit sucht.
 
-Die Kopfspalte bleibt beim Rollen stehen. Ein Punkt in der Zelle heißt „nicht
-zugewiesen", ein Feld „offen" heißt „zugewiesen, aber nicht absolviert. Das ist
-nicht dasselbe.
+Die Kopfspalte bleibt beim Rollen stehen. Jede Zelle trägt ein **Symbol**, dazu
+eine Legende über der Matrix:
+
+* **✓ im Turnus** — aktuell, alles in Ordnung.
+* **⚠ wird fällig** — läuft demnächst ab.
+* **✗ überfällig** — die Frist ist vorbei.
+* **○ nie absolviert** — zugewiesen, aber noch nie gemacht.
+* **·** — nicht zugewiesen; die Schulung ist für diese Person keine Pflicht.
+
+„Nie absolviert" und „überfällig" sind zweierlei — darum verschiedene Symbole,
+nicht nur dieselbe Farbe. Das Datum und die genaue Fälligkeit stehen im Tooltip
+der Zelle.
+
+![Die Schulungsmatrix mit Legende und Statussymbolen je Zelle.](/hilfe/schulungsmatrix-legende.png)
 
 ## Import der Übersicht
 

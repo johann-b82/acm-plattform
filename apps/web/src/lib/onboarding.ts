@@ -5,8 +5,8 @@ import { supabaseBrowser } from "@/lib/supabase/client";
  * Onboarding: Eintritte und ihr abgeleiteter Schulungsplan.
  *
  * Alles über PostgREST — auch die Ableitung. Sie ist ein Verbund aus
- * Anforderungsmatrix, Rollenzuordnung und Bestand und steht deshalb als
- * Funktion in der Datenbank, nicht als Rechnung im Dienst.
+ * Anforderungsmatrix und Bestand und steht deshalb als Funktion in der
+ * Datenbank, nicht als Rechnung im Dienst.
  */
 
 export interface Eintritt {
@@ -26,17 +26,10 @@ export interface Planzeile {
   bereich: string | null;
   name: string | null;
   turnus: string | null;
-  /** `personio`, `kuerzel` — oder `kuerzel_fehlt` als Hinweis. */
+  /** Die Geltung: `alle`, `abteilung`, `position` oder `abteilung_position`. */
   quelle: string;
   abteilung: string | null;
   vorhanden: boolean;
-}
-
-export interface Rolle {
-  id: string;
-  position: string;
-  position_norm: string;
-  abteilung_kuerzel: string;
 }
 
 /** Der Schlüssel einer Person für die Formblatt-Routen. */
@@ -49,7 +42,6 @@ function wer(e: Eintritt): string {
 export const onboardingKeys = {
   eintritte: () => ["onboarding", "eintritte"] as const,
   plan: (id: number) => ["onboarding", "plan", id] as const,
-  rollen: () => ["onboarding", "rollen"] as const,
 };
 
 function sb() {
@@ -163,32 +155,6 @@ export const onboardingApi = {
 
   externLoeschen: async (id: string): Promise<void> => {
     const { error } = await sb().from("externe_personen").delete().eq("id", id);
-    if (error) throw new Error(error.message);
-  },
-
-  rollen: async (): Promise<Rolle[]> => {
-    const { data, error } = await sb()
-      .from("schulung_rollen")
-      .select("id,position,position_norm,abteilung_kuerzel")
-      .order("position");
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as Rolle[];
-  },
-
-  rolleSetzen: async (position: string, abteilung_kuerzel: string): Promise<void> => {
-    const { error } = await sb().from("schulung_rollen").upsert(
-      {
-        position,
-        position_norm: position.replace(/\s+/g, " ").trim().toLowerCase(),
-        abteilung_kuerzel,
-      },
-      { onConflict: "position_norm" },
-    );
-    if (error) throw new Error(error.message);
-  },
-
-  rolleLoeschen: async (id: string): Promise<void> => {
-    const { error } = await sb().from("schulung_rollen").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
 

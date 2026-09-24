@@ -163,6 +163,7 @@ export const en: Texte = {
     gespeichert: "Page size saved.",
   },
   datenstand: {
+    teilweise: "partially imported",
     stand: (datum: string, alter: string) => `Data as of ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Data incomplete — ${fehlend} ${anzahl === 1 ? "is missing" : "are missing"}`,
@@ -361,7 +362,7 @@ export const en: Texte = {
     ladeVor: "Upload the 8D export under ",
     ladeNach: ".",
     behoerde: "Authority",
-    extern: "External",
+    extern: "Sub-supplier",
     intern: "Internal",
     kunde: "Customer",
     level1: "Audit findings level 1",
@@ -471,6 +472,7 @@ export const en: Texte = {
     umsatzJeKopf: "Revenue / prod. employee",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} orders ÷ ${koepfe} heads`,
     produktionFehlt: "production departments not configured",
+    letzterErfolg: (datum: string, alter: string) => `Last success: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Personio sync ${datum} (${alter})`,
     abgleichFehler: "with errors",
     reiheUmsatzJeKopf: "Revenue per production employee",
@@ -493,11 +495,15 @@ export const en: Texte = {
     dankeOhneBild: "Thank you — the feedback has arrived, without an image of the page.",
   },
   belegschaft: {
+    zeitpunkt: "As of",
+    aktuell: "Current",
+    quartal: "Quarter",
     titel: "Workforce",
     ladeFehler: (meldung: string) => `The workforce data could not be loaded: ${meldung}`,
     beschaeftigte: "Employees",
     beschaeftigteHinweis: "by Personio status “active”",
-    stichtagHinweis: "Today’s snapshot — Personio keeps no history, so there is no year comparison.",
+    stichtagHinweis:
+      "Headcount and new/existing are as-of-date exact; the distributions use today’s Personio master data (no full history).",
     neuImQuartal: "New this quarter",
     bestand: "Headcount",
     kompetenzen: "Skills recorded",
@@ -686,6 +692,8 @@ export const en: Texte = {
     imTurnus: "within cycle",
   },
   schulungsmatrix: {
+    legende: "Legend",
+    nichtZugewiesenKurz: "not assigned",
     einleitung:
       "Everyone against every course — the overview for the noticeboard and for the audit. " +
       "Anyone who has attended nothing at all appears with an empty row; that is exactly the gap " +
@@ -743,6 +751,24 @@ export const en: Texte = {
     aktivSchalter: (name: string) => `${name} active`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} means: no date for this person is on record. ${bald} means: within the next two months. As of ${datum}.`,
+  },
+  geltung: {
+    titel: "Applies to",
+    alle: "Everyone",
+    abteilung: "Department",
+    position: "Position",
+    abteilung_position: "Dept. + position",
+    alleHinweis: "Mandatory for the entire workforce.",
+    abteilungHinweis: "Mandatory for everyone in a department — as Personio keeps it.",
+    positionHinweis: "Mandatory for everyone with this position from Personio.",
+    kombiHinweis: "Mandatory only where a department and a position meet — one rule per row.",
+    alleSpalte: "applies to all",
+    matrixLeer: "No departments or positions from Personio yet.",
+    regelHinzufuegen: "Add",
+    abteilungWaehlen: "Choose department",
+    positionWaehlen: "Choose position",
+    keineRegeln: "No combination yet.",
+    regelEntfernen: "Remove",
   },
   schulungenReg: {
     tabBearbeiten: "Edit training",
@@ -1465,6 +1491,11 @@ export const en: Texte = {
     seriennummernFeld: (pos: string) => `Serial numbers item ${pos}`,
   },
   fair: {
+    mass: "Measure",
+    alsText: "Text",
+    liest: "Reading …",
+    zuPruefen: "to review",
+    zuPruefenHinweis: "No part number — review as a FAIR drawing or sort out.",
     dateiFehlt: (meldung: string) =>
       `The drawing itself cannot be loaded (${meldung}). The measures are listed ` +
       "below all the same.",
@@ -2060,10 +2091,10 @@ export const en: Texte = {
     sensorGeloescht: "Sensor deleted, together with its time series.",
     zahlEingeben: "Please enter a number.",
     taktTitel: "Polling interval",
-    intervall: "Polling interval (seconds)",
+    intervall: "Polling interval (seconds, 0 = off)",
     intervallHinweis:
-      "Applies to all sensors. Range 5–86400; below 60 seconds polling effectively happens every minute.",
-    intervallFehler: "The interval must be a whole number between 5 and 86400.",
+      "Applies to all sensors. Range 0–86400; 0 turns off automatic polling. Below 60 seconds polling effectively happens every minute.",
+    intervallFehler: "The interval must be a whole number between 0 and 86400 (0 = off).",
     grenzenTitel: "Global limits",
     grenzenHinweis: "Apply to all sensors. An empty field means: no limit.",
     temperaturMin: "Temperature min (°C)",

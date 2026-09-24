@@ -168,3 +168,89 @@ class TestVergabeBeimErzeugen:
         await self._erzeuge(eins)
         await self._erzeuge(zwei)
         assert sorted([await self._nummer(eins), await self._nummer(zwei)]) == ["11", "12"]
+
+
+async def _leere_lieferung(programm: str) -> str:
+    async with SessionLocal() as s:
+        async with s.begin():
+            return str(
+                (
+                    await s.execute(
+                        sa.text(
+                            "insert into public.atr_lieferungen"
+                            " (quelle_dateiname, programm, atr_nummer)"
+                            " values ('ls.pdf', :p, null) returning id"
+                        ),
+                        {"p": programm},
+                    )
+                ).scalar()
+            )
+
+
+async def _nummer(lieferung_id: str) -> str | None:
+    async with SessionLocal() as s:
+        return (
+            await s.execute(
+                sa.text("select atr_nummer from public.atr_lieferungen where id = :i"),
+                {"i": lieferung_id},
+            )
+        ).scalar()
+
+
+class TestNebenlaeufigeVergabe:
+    """Der eigentliche Befund: gleichzeitige Vergaben dürfen nicht kollidieren.
+
+    Ein UI-Lock allein genügt nicht; der Riegel sitzt in der Datenbank
+    (`pg_advisory_xact_lock` in `atr_nummer_reservieren`).
+    """
+
+    async def test_fuenf_gleichzeitige_zaehlen_lueckenlos_hoch(self, db):
+        """Fünf parallele Vergaben derselben Familie bekommen fünf verschiedene,
+        aufeinanderfolgende Nummern — keine doppelt, keine rückwärts."""
+        import asyncio
+
+        await lieferung("A350", "4963")
+        ids = [await _leere_lieferung("A350") for _ in range(5)]
+        nummern = await asyncio.gather(
+            *(nummer_modul.reservieren(i, "A350") for i in ids)
+        )
+        assert sorted(nummern) == ["4964", "4965", "4966", "4967", "4968"]
+        # Und in den Zeilen steht dieselbe Vergabe, ohne Dublette.
+        in_zeilen = sorted([await _nummer(i) for i in ids])
+        assert in_zeilen == ["4964", "4965", "4966", "4967", "4968"]
+
+    async def test_wiederholung_gibt_dieselbe_nummer(self, db):
+        """Ein zweiter Anlauf derselben Lieferung vergibt nicht neu."""
+        await lieferung("A350", "10")
+        eine = await _leere_lieferung("A350")
+        erst = await nummer_modul.reservieren(eine, "A350")
+        nochmal = await nummer_modul.reservieren(eine, "A350")
+        assert erst == "11"
+        assert nochmal == "11"
+
+    async def test_niemals_rueckwaerts(self, db):
+        """Steht 4965 schon, ist die nächste 4966 — nie 4964."""
+        await lieferung("A350", "4965")
+        eine = await _leere_lieferung("A350")
+        assert await nummer_modul.reservieren(eine, "A350") == "4966"
+
+    async def test_ein_handeintrag_bleibt(self, db):
+        await lieferung("A350", "10")
+        eine = await _leere_lieferung("A350")
+        async with SessionLocal() as s:
+            async with s.begin():
+                await s.execute(
+                    sa.text(
+                        "update public.atr_lieferungen set atr_nummer = 'S-2024/9'"
+                        " where id = :i"
+                    ),
+                    {"i": eine},
+                )
+        assert await nummer_modul.reservieren(eine, "A350") == "S-2024/9"
+
+    async def test_der_eindeutige_index_verbietet_dubletten(self, db):
+        """Auf sauberen Daten legt die Migration den Teilindex an — eine zweite
+        4964 derselben Familie wird dann abgewiesen."""
+        await lieferung("A350", "4964")
+        with pytest.raises(Exception, match="atr_nummer_je_familie|duplicate key"):
+            await lieferung("A350", "4964")

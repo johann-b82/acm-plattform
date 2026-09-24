@@ -160,6 +160,7 @@ export const bg: Texte = {
     gespeichert: "Размерът на страницата е запазен.",
   },
   datenstand: {
+    teilweise: "частично внесено",
     stand: (datum: string, alter: string) => `Данни към ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Непълни данни — ${fehlend} ${anzahl === 1 ? "липсва" : "липсват"}`,
@@ -359,7 +360,7 @@ export const bg: Texte = {
     ladeVor: "Качете 8D експорта в ",
     ladeNach: ".",
     behoerde: "Орган",
-    extern: "Външен",
+    extern: "Поддоставчик",
     intern: "Вътрешен",
     kunde: "Клиент",
     level1: "Одитни констатации ниво 1",
@@ -469,6 +470,7 @@ export const bg: Texte = {
     umsatzJeKopf: "Оборот / служител в производството",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} поръчки ÷ ${koepfe} души`,
     produktionFehlt: "производствените отдели не са зададени",
+    letzterErfolg: (datum: string, alter: string) => `Последен успех: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Синхронизация с Personio ${datum} (${alter})`,
     abgleichFehler: "с грешки",
     reiheUmsatzJeKopf: "Оборот на служител в производството",
@@ -491,11 +493,15 @@ export const bg: Texte = {
     dankeOhneBild: "Благодарим — обратната връзка е получена, без изображение на страницата.",
   },
   belegschaft: {
+    zeitpunkt: "Към дата",
+    aktuell: "Текущо",
+    quartal: "Тримесечие",
     titel: "Състав на персонала",
     ladeFehler: (meldung: string) => `Съставът на персонала не можа да се зареди: ${meldung}`,
     beschaeftigte: "Заети",
     beschaeftigteHinweis: "по статус „активен“ в Personio",
-    stichtagHinweis: "Състояние към днес — Personio не пази история, затова няма годишно сравнение.",
+    stichtagHinweis:
+      "Числеността и нови/налични са точни към датата; разпределенията ползват днешните данни от Personio (без пълна история).",
     neuImQuartal: "Нови през тримесечието",
     bestand: "Численост",
     kompetenzen: "Попълнени компетенции",
@@ -687,6 +693,8 @@ export const bg: Texte = {
     imTurnus: "в срок",
   },
   schulungsmatrix: {
+    legende: "Легенда",
+    nichtZugewiesenKurz: "не е възложено",
     einleitung:
       "Всички хора срещу всички обучения — прегледът за таблото и за одита. " +
       "Който няма нито едно участие, стои там с празен ред; точно това е пропускът, " +
@@ -745,6 +753,24 @@ export const bg: Texte = {
     aktivSchalter: (name: string) => `${name} активно`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} значи: за този човек няма дата в историята. ${bald} значи: в следващите два месеца. Към ${datum}.`,
+  },
+  geltung: {
+    titel: "Важи за",
+    alle: "Всички",
+    abteilung: "Отдел",
+    position: "Длъжност",
+    abteilung_position: "Отдел + длъжност",
+    alleHinweis: "Задължително за целия персонал.",
+    abteilungHinweis: "Задължително за всички в отдел — както го води Personio.",
+    positionHinweis: "Задължително за всички с тази длъжност от Personio.",
+    kombiHinweis: "Задължително само там, където се срещат отдел и длъжност — по едно правило на ред.",
+    alleSpalte: "важи за всички",
+    matrixLeer: "Все още няма отдели или длъжности от Personio.",
+    regelHinzufuegen: "Добави",
+    abteilungWaehlen: "Изберете отдел",
+    positionWaehlen: "Изберете длъжност",
+    keineRegeln: "Още няма комбинация.",
+    regelEntfernen: "Премахни",
   },
   schulungenReg: {
     tabBearbeiten: "Редактиране на обучения",
@@ -1471,6 +1497,11 @@ export const bg: Texte = {
     seriennummernFeld: (pos: string) => `Серийни номера позиция ${pos}`,
   },
   fair: {
+    mass: "Мярка",
+    alsText: "Текст",
+    liest: "Разчитане …",
+    zuPruefen: "за проверка",
+    zuPruefenHinweis: "Без партиден номер — проверете като FAIR чертеж или изключете.",
     dateiFehlt: (meldung: string) =>
       `Самият чертеж не се зарежда (${meldung}). Размерите въпреки това са по-долу.`,
     bezeichnungFrei: "Наименование (празно = име на файла)",
@@ -2071,10 +2102,10 @@ export const bg: Texte = {
     sensorGeloescht: "Сензорът е изтрит заедно с времевия си ред.",
     zahlEingeben: "Моля, въведете число.",
     taktTitel: "Интервал на запитване",
-    intervall: "Интервал на запитване (секунди)",
+    intervall: "Интервал на запитване (секунди, 0 = изкл.)",
     intervallHinweis:
-      "Важи за всички сензори. Диапазон 5–86400; под 60 секунди запитването на практика е всяка минута.",
-    intervallFehler: "Интервалът трябва да е цяло число между 5 и 86400.",
+      "Важи за всички сензори. Диапазон 0–86400; 0 изключва автоматичното запитване. Под 60 секунди запитването на практика е всяка минута.",
+    intervallFehler: "Интервалът трябва да е цяло число между 0 и 86400 (0 = изкл.).",
     grenzenTitel: "Глобални гранични стойности",
     grenzenHinweis: "Важат за всички сензори. Празно поле означава: без граница.",
     temperaturMin: "Температура мин (°C)",

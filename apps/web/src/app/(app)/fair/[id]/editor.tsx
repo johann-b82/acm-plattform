@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, CircleDot, Maximize, Minus, Plus, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
@@ -8,9 +9,11 @@ import { ArrowLeft, CircleDot, Maximize, Minus, Plus, RotateCw, ZoomIn, ZoomOut 
 import { fairApi, fairKeys, type Ballon, type Drehung } from "@/lib/fair";
 import {
   begrenze01,
+  bevorzugteDrehung,
   drehungCss,
   einpassen,
   gedrehteMasse,
+  inDrehung,
   naechsteDrehung,
   rechteckAusEcken,
   runde6,
@@ -27,15 +30,23 @@ import {
   kleiner,
   useBallonGroesse,
 } from "@/lib/fair/ballon-groesse";
-import { beendeOcr, liesFeld } from "@/lib/fair/ocr";
+import { beendeOcr, liesFeld, normalisiereMass, type OcrModus } from "@/lib/fair/ocr";
 import { Button, ButtonLink, Card, Select } from "@/components/ui/primitives";
-import { Zeichenflaeche } from "./zeichenflaeche";
 import { BallonEbene } from "./ballon-ebene";
 import { Ballonliste } from "./ballonliste";
 import { Projektkopf, type Kopffeld } from "./projektkopf";
-import { feldAlsLeinwand, seitenAlsBilder } from "./raster";
+import { OcrKorrektur } from "./ocr-korrektur";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
+
+// react-pdf/pdfjs fasst schon beim Laden Browser-Globals an (`DOMMatrix`) und
+// würde beim Serverrendern werfen (500 auf der ganzen Route). Deshalb lädt die
+// PDF-Leinwand nur im Browser; die Rasterhelfer (`./raster`) importieren pdfjs
+// ebenso und werden darum erst in den Handlern nachgeladen.
+const Zeichenflaeche = dynamic(
+  () => import("./zeichenflaeche").then((m) => m.Zeichenflaeche),
+  { ssr: false },
+);
 
 /**
  * Der Editor: Zeichnung anzeigen, Bereiche markieren, Ballons setzen.
@@ -55,7 +66,10 @@ import { Seitenwerkzeuge, Werkzeug } from "@/components/sidebar/werkzeugplatz";
 type Schritt =
   | { art: "ruht" }
   | { art: "zieht"; von: Punkt; bis: Punkt }
-  | { art: "wartet_auf_blase"; bereich: Rechteck };
+  // Das Feld ist gezogen, die OCR läuft. Die Blase kann erst gesetzt werden,
+  // wenn die Vermutung da ist — sie kommt mit dem zweiten Klick mit.
+  | { art: "liest"; bereich: Rechteck; bevorzugt: Drehung }
+  | { art: "wartet_auf_blase"; bereich: Rechteck; wert: string; bevorzugt: Drehung };
 
 /** Nur Zeichen, die jedes Dateisystem als Dateinamen annimmt. */
 function dateiname(text: string): string {
@@ -77,6 +91,13 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   const [groesse, setGroesse] = useBallonGroesse();
   const [pdfLaeuft, setPdfLaeuft] = useState(false);
   const eingepasst = useRef(false);
+  // Das zuletzt markierte, gerasterte Feld — für erneutes Lesen als „Maß"/„Text"
+  // aus demselben Ausschnitt, ohne ihn neu aus der Datei zu holen.
+  const ocrFeld = useRef<{ leinwand: HTMLCanvasElement; bevorzugt: Drehung } | null>(null);
+  const [prueftNeu, setPrueftNeu] = useState(false);
+  // Während eine Blase gezogen wird, folgt sie hier lokal, bis das Speichern
+  // zurück ist — sonst spränge sie kurz auf die alte Lage.
+  const [zug, setZug] = useState<Record<string, Punkt>>({});
 
   const zeichnung = useQuery({
     queryKey: fairKeys.zeichnung(id),
@@ -91,6 +112,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     // Die signierte URL gilt eine Stunde; sie vorher neu zu holen hiesse, die
     // Zeichnung mitten in der Arbeit neu zu laden.
     staleTime: 50 * 60 * 1000,
+    // Fehlt das Objekt im Speicher (Sign-Aufruf → 400), ist das kein flüchtiger
+    // Fehler: nicht wiederholen, sondern sofort „Datei fehlt" zeigen statt einer
+    // weißen Fläche, die wie ein Ladehänger aussieht.
+    retry: false,
   });
 
   const ballonAbfrage = useQuery({
@@ -98,7 +123,13 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     queryFn: () => fairApi.ballons(id),
   });
   const alleBallons = ballonAbfrage.data ?? [];
-  const ballons = alleBallons.filter((b) => b.seite === seite);
+  const ballons = alleBallons
+    .filter((b) => b.seite === seite)
+    // Eine gerade gezogene Blase folgt lokal, bis das Speichern zurück ist.
+    .map((b) => {
+      const o = zug[b.id];
+      return o ? { ...b, blase_x: o.x, blase_y: o.y } : b;
+    });
 
   const neuLaden = () =>
     queryClient.invalidateQueries({ queryKey: fairKeys.ballons(id) });
@@ -117,6 +148,23 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     mutationFn: (d: Drehung) => fairApi.zeichnungAendern(id, { drehung: d }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: fairKeys.zeichnung(id) }),
     onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  const blaseAendern = useMutation({
+    mutationFn: ({ id: bid, p }: { id: string; p: Punkt }) =>
+      fairApi.ballonAendern(bid, { blase_x: runde6(p.x), blase_y: runde6(p.y) }),
+    onError: (fehler: Error) => toast.error(fehler.message),
+  });
+
+  // Die entdeckte Seitenzahl einmal festhalten, damit die Liste nicht ewig
+  // „1 Seite" zeigt. Nur Schreibende dürfen die Zeile ändern.
+  const seitenSpeichern = useMutation({
+    mutationFn: (n: number) => fairApi.zeichnungAendern(id, { seiten: n }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: fairKeys.zeichnung(id) }),
+        queryClient.invalidateQueries({ queryKey: fairKeys.zeichnungen() }),
+      ]),
   });
 
   const kopfAendern = useMutation({
@@ -170,36 +218,135 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     };
     el.addEventListener("wheel", beiRad, { passive: false });
     return () => el.removeEventListener("wheel", beiRad);
-  }, []);
+    // Abhängig von `z`: beim ersten Rendern steht der Editor noch im
+    // Ladezustand, die Fläche (und `fenster.current`) gibt es noch nicht. Sobald
+    // die Zeichnung da ist, rendert die Karte und der Lauscher wird nachgezogen.
+  }, [z]);
 
   // Der OCR-Arbeiter lebt so lange wie der Editor.
   useEffect(() => beendeOcr, []);
+
+  // Escape bricht eine laufende Markierung ab und hebt die Auswahl auf.
+  useEffect(() => {
+    const beiTaste = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setSchritt({ art: "ruht" });
+      setGewaehlt(null);
+    };
+    window.addEventListener("keydown", beiTaste);
+    return () => window.removeEventListener("keydown", beiTaste);
+  }, []);
+
+  // Sobald die echte Seitenzahl feststeht, in der Zeile festhalten (einmal, die
+  // invalidierte Abfrage bringt danach denselben Wert und der Effekt ruht).
+  useEffect(() => {
+    if (darfSchreiben && z && seiten > 0 && seiten !== z.seiten) {
+      seitenSpeichern.mutate(seiten);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seiten, z?.seiten, darfSchreiben]);
 
   /** OCR für eine Zeile: das gespeicherte Feld frisch aus der Datei lesen. */
   const ocr = useCallback(
     async (b: Ballon): Promise<string> => {
       if (!z || !datei.data) throw new Error(worte.fair.ladefehler);
-      const feld = await feldAlsLeinwand(datei.data, z.art, b.seite, {
-        x: b.bereich_x,
-        y: b.bereich_y,
-        b: b.bereich_b,
-        h: b.bereich_h,
-      });
+      const bereich = { x: b.bereich_x, y: b.bereich_y, b: b.bereich_b, h: b.bereich_h };
+      const { feldAlsLeinwand, textImBereich } = await import("./raster");
+      // Echter PDF-Text schlägt OCR — exakt statt geraten.
+      if (z.art === "pdf") {
+        const t = await textImBereich(datei.data, b.seite, bereich);
+        if (t) return normalisiereMass(t);
+      }
+      const feld = await feldAlsLeinwand(datei.data, z.art, b.seite, bereich);
       return liesFeld(feld);
     },
     [z, datei.data, worte],
+  );
+
+  /** Nach dem Markieren: die Stelle scharf rastern, lesen und die Vermutung ins
+   *  schwebende Feld stellen. Der zweite Klick übernimmt sie mit der Blase. */
+  const liesBereich = useCallback(
+    async (bereich: Rechteck, bevorzugt: Drehung) => {
+      let wert = "";
+      try {
+        if (z && datei.data) {
+          const { feldAlsLeinwand, textImBereich } = await import("./raster");
+          // Trägt die PDF-Zeichnung echten Text im Feld, gilt der — ohne OCR.
+          if (z.art === "pdf") {
+            const t = await textImBereich(datei.data, seite, bereich);
+            if (t) wert = normalisiereMass(t);
+          }
+          // Den Ausschnitt trotzdem rastern und behalten: für „Maß"/„Text" und
+          // als Rückfall, wenn kein Text da war (Scan).
+          const feld = await feldAlsLeinwand(datei.data, z.art, seite, bereich);
+          ocrFeld.current = { leinwand: feld, bevorzugt };
+          if (!wert) wert = await liesFeld(feld, bevorzugt, "auto");
+        }
+      } catch {
+        // Eine misslungene Lesung ist kein Grund zu scheitern — Feld bleibt leer.
+        ocrFeld.current = null;
+      }
+      // Nur übernehmen, wenn zwischenzeitlich nicht abgebrochen wurde (Escape).
+      setSchritt((s) =>
+        s.art === "liest" ? { art: "wartet_auf_blase", bereich, wert, bevorzugt } : s,
+      );
+    },
+    [z, datei.data, seite],
+  );
+
+  /** Dieselbe markierte Stelle erneut lesen — als Maß (nur Ziffern) oder Text. */
+  const neuLesen = useCallback(async (modus: OcrModus) => {
+    const feld = ocrFeld.current;
+    if (!feld) return;
+    setPrueftNeu(true);
+    try {
+      const wert = await liesFeld(feld.leinwand, feld.bevorzugt, modus);
+      setSchritt((s) => (s.art === "wartet_auf_blase" ? { ...s, wert } : s));
+    } finally {
+      setPrueftNeu(false);
+    }
+  }, []);
+
+  /** Eine Blase verschieben: erst nur lokal folgen, beim Loslassen speichern. */
+  const ballonZiehen = useCallback(
+    (bid: string, p: Punkt, speichern: boolean) => {
+      setZug((o) => ({ ...o, [bid]: p }));
+      if (!speichern) return;
+      blaseAendern.mutate(
+        { id: bid, p },
+        {
+          onSuccess: () => neuLaden(),
+          onSettled: () =>
+            setZug((o) => {
+              const n = { ...o };
+              delete n[bid];
+              return n;
+            }),
+        },
+      );
+    },
+    // `neuLaden` ist eine stabile Closure über den Query-Client.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blaseAendern],
   );
 
   const pdfErstellen = async () => {
     if (!z || !datei.data) return;
     setPdfLaeuft(true);
     try {
-      // jsPDF erst laden, wenn jemand ein PDF will.
-      const [{ pruefberichtPdf }, bilder] = await Promise.all([
-        import("@/lib/fair/pdf"),
-        seitenAlsBilder(datei.data, z.art, drehung),
-      ]);
-      pruefberichtPdf({
+      // Die schweren Bausteine erst laden, wenn jemand ein PDF will.
+      const [{ ballonierteZeichnung, haengePdfAn, speicherePdf }, { prueflistePdf }] =
+        await Promise.all([import("@/lib/fair/ballon-pdf"), import("@/lib/fair/pdf")]);
+      // Die Originalbytes: die PDF-Seite kommt vektortreu hinein, ein Bild nativ.
+      const quelle = await (await fetch(datei.data)).arrayBuffer();
+      const doc = await ballonierteZeichnung({
+        quelle,
+        art: z.art,
+        ballons: alleBallons,
+        drehung,
+        groesse,
+      });
+      const liste = prueflistePdf({
         name: z.name,
         kopf: [
           [worte.fair.kunde, z.kunde],
@@ -208,11 +355,10 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         ],
         spalten: { nr: worte.fair.nr, seite: worte.fair.seite, wert: worte.fair.wert },
         pruefliste: worte.fair.pruefliste,
-        seiten: bilder,
         ballons: alleBallons,
-        drehung,
-        groesse,
-      }).save(`${dateiname(z.teilenummer || z.name)}_balloniert.pdf`);
+      });
+      await haengePdfAn(doc, liste.output("arraybuffer"));
+      await speicherePdf(doc, `${dateiname(z.teilenummer || z.name)}_balloniert.pdf`);
     } catch (fehler) {
       toast.error(worte.fair.pdfFehler(fehler instanceof Error ? fehler.message : String(fehler)));
     } finally {
@@ -249,9 +395,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
   );
 
   const beiDruck = (e: React.PointerEvent) => {
-    // Rechte Taste und mittlere schieben — wie in einem CAD-Betrachter.
+    // Rechte Taste und mittlere schieben — wie in einem CAD-Betrachter. Den
+    // Zeiger fangen, damit das Schieben nicht abreißt, wenn er die Fläche
+    // verlässt.
     if (e.button !== 0) {
       e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
       setSchiebt({ x: e.clientX - ansicht.tx, y: e.clientY - ansicht.ty });
       return;
     }
@@ -269,10 +418,16 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
         bereich_h: runde6(b.h),
         blase_x: runde6(p.x),
         blase_y: runde6(p.y),
+        // Der beim Markieren gelesene Wert kommt mit — kein leeres Feld.
+        wert: schritt.wert,
       });
       setSchritt({ art: "ruht" });
       return;
     }
+    // Während die OCR läuft, keinen neuen Zug beginnen.
+    if (schritt.art !== "ruht") return;
+    // Den Zeiger fangen, damit das Aufziehen am Zeichnungsrand nicht abreißt.
+    e.currentTarget.setPointerCapture(e.pointerId);
     setSchritt({ art: "zieht", von: p, bis: p });
   };
 
@@ -286,7 +441,12 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
     if (p) setSchritt({ ...schritt, bis: p });
   };
 
-  const beiLoslassen = () => {
+  const beiLoslassen = (e: React.PointerEvent) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* war nicht gefangen */
+    }
     if (schiebt) {
       setSchiebt(null);
       return;
@@ -299,15 +459,34 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
       setSchritt({ art: "ruht" });
       return;
     }
-    setSchritt({ art: "wartet_auf_blase", bereich });
+    // Das Feld steht — jetzt lesen. Die Blase folgt mit dem nächsten Klick.
+    const bevorzugt = bevorzugteDrehung(schritt.von, schritt.bis);
+    setSchritt({ art: "liest", bereich, bevorzugt });
+    void liesBereich(bereich, bevorzugt);
   };
 
   const vorschau =
     schritt.art === "zieht"
       ? rechteckAusEcken(schritt.von, schritt.bis)
-      : schritt.art === "wartet_auf_blase"
+      : schritt.art === "wartet_auf_blase" || schritt.art === "liest"
         ? schritt.bereich
         : null;
+
+  // Bildschirmanker der schwebenden Korrekturbox: die Mitte des markierten
+  // Felds, kanonisch → gedrehter Kasten → Bildschirm.
+  const ocrAnker = (() => {
+    if (!masse) return null;
+    if (schritt.art !== "liest" && schritt.art !== "wartet_auf_blase") return null;
+    const b = schritt.bereich;
+    const r = inDrehung(
+      (b.x + b.b / 2) * masse.b,
+      (b.y + b.h / 2) * masse.h,
+      masse.b,
+      masse.h,
+      drehung,
+    );
+    return { x: r.x * ansicht.skala + ansicht.tx, y: r.y * ansicht.skala + ansicht.ty };
+  })();
 
   if (zeichnung.isLoading) {
     return <p className="text-sm text-[var(--fg-muted)]">Wird geladen …</p>;
@@ -415,9 +594,11 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
 
       {darfSchreiben && (
         <p className="text-sm text-[var(--fg-muted)]">
-          {schritt.art === "wartet_auf_blase"
-            ? "Jetzt klicken, wo die Blase sitzen soll."
-            : "Ein Feld über das Maß ziehen, dann klicken, wo die Blase sitzen soll. Rechte Maustaste verschiebt, Mausrad zoomt."}
+          {schritt.art === "liest"
+            ? worte.fair.liest
+            : schritt.art === "wartet_auf_blase"
+              ? "Jetzt klicken, wo die Blase sitzen soll."
+              : "Ein Feld über das Maß ziehen, dann klicken, wo die Blase sitzen soll. Rechte Maustaste verschiebt, Mausrad zoomt."}
         </p>
       )}
 
@@ -428,7 +609,9 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
           onPointerDown={beiDruck}
           onPointerMove={beiBewegung}
           onPointerUp={beiLoslassen}
-          onPointerLeave={beiLoslassen}
+          // Kein Abbruch beim Verlassen: der gefangene Zeiger führt die Geste
+          // weiter. Nur ein echter Abbruch (z. B. Systemgeste) beendet sie.
+          onPointerCancel={beiLoslassen}
           onContextMenu={(e) => e.preventDefault()}
           style={{ cursor: schiebt ? "grabbing" : darfSchreiben ? "crosshair" : "default" }}
         >
@@ -470,11 +653,29 @@ export function Editor({ id, darfSchreiben }: { id: string; darfSchreiben: boole
                     groesse={groesse}
                     hervorgehoben={gewaehlt}
                     vorschau={vorschau}
+                    darfSchreiben={darfSchreiben}
                     onWaehlen={setGewaehlt}
+                    zuPunkt={punkt}
+                    onZiehen={ballonZiehen}
                   />
                 )}
               </div>
             </div>
+          )}
+
+          {ocrAnker && (schritt.art === "liest" || schritt.art === "wartet_auf_blase") && (
+            <OcrKorrektur
+              x={ocrAnker.x}
+              y={ocrAnker.y}
+              wert={schritt.art === "wartet_auf_blase" ? schritt.wert : ""}
+              liest={schritt.art === "liest"}
+              prueftNeu={prueftNeu}
+              onWert={(v) =>
+                setSchritt((s) => (s.art === "wartet_auf_blase" ? { ...s, wert: v } : s))
+              }
+              onNeuLesen={(modus) => void neuLesen(modus)}
+              onAbbrechen={() => setSchritt({ art: "ruht" })}
+            />
           )}
         </Card>
 

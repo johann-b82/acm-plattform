@@ -126,11 +126,12 @@ describe("einstellungsFehler", () => {
     expect(einstellungsFehler(entwurf())).toEqual([]);
   });
 
-  it("hält den Takt zwischen 5 und 86400 Sekunden, ganzzahlig", () => {
-    expect(einstellungsFehler(entwurf({ abfrage_sekunden: "4" }))).toEqual(["intervall"]);
+  it("hält den Takt zwischen 0 und 86400 Sekunden, ganzzahlig; 0 = aus", () => {
+    expect(einstellungsFehler(entwurf({ abfrage_sekunden: "-1" }))).toEqual(["intervall"]);
     expect(einstellungsFehler(entwurf({ abfrage_sekunden: "86401" }))).toEqual(["intervall"]);
     expect(einstellungsFehler(entwurf({ abfrage_sekunden: "60,5" }))).toEqual(["intervall"]);
     expect(einstellungsFehler(entwurf({ abfrage_sekunden: "" }))).toEqual(["intervall"]);
+    expect(einstellungsFehler(entwurf({ abfrage_sekunden: "0" }))).toEqual([]);
     expect(einstellungsFehler(entwurf({ abfrage_sekunden: "5" }))).toEqual([]);
     expect(einstellungsFehler(entwurf({ abfrage_sekunden: "86400" }))).toEqual([]);
   });

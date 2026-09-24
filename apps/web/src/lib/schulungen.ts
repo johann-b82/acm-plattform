@@ -1,5 +1,6 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { computeJson } from "@/lib/compute";
+import { achse, positionNorm, type Geltung, type PflichtBasis } from "@/lib/pflicht";
 
 /**
  * Schulungen: Katalog, Anforderungsmatrix, Teilnahmen.
@@ -26,11 +27,8 @@ export interface Schulung {
   aktiv: boolean;
 }
 
-export interface Pflicht {
-  id: string;
+export interface Pflicht extends PflichtBasis {
   schulung_id: string;
-  ebene: "kuerzel" | "personio";
-  abteilung: string;
 }
 
 export interface Teilnahme {
@@ -424,27 +422,41 @@ export const schulungApi = {
   pflicht: async (): Promise<Pflicht[]> => {
     const { data, error } = await sb()
       .from("schulung_pflicht")
-      .select("id,schulung_id,ebene,abteilung")
-      .order("abteilung");
+      .select("id,schulung_id,geltung,abteilung,position,position_norm")
+      .order("geltung");
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as Pflicht[];
   },
 
+  /**
+   * Eine Pflicht setzen oder wegnehmen. Welche Felder gefüllt sind, hängt an
+   * der Geltung — `position_norm` rechnet der Datenbank-Trigger, hier wird nur
+   * zum Löschen normiert verglichen.
+   */
   pflichtSetzen: async (
     schulung_id: string,
-    ebene: Pflicht["ebene"],
-    abteilung: string,
+    geltung: Geltung,
+    ziel: { abteilung?: string | null; position?: string | null },
     an: boolean,
   ): Promise<void> => {
     const client = sb();
-    const { error } = an
-      ? await client.from("schulung_pflicht").insert({ schulung_id, ebene, abteilung })
-      : await client
-          .from("schulung_pflicht")
-          .delete()
-          .eq("schulung_id", schulung_id)
-          .eq("ebene", ebene)
-          .eq("abteilung", abteilung);
+    const abteilung = geltung === "abteilung" || geltung === "abteilung_position" ? ziel.abteilung ?? null : null;
+    const position = geltung === "position" || geltung === "abteilung_position" ? ziel.position ?? null : null;
+    if (an) {
+      const { error } = await client
+        .from("schulung_pflicht")
+        .insert({ schulung_id, geltung, abteilung, position });
+      if (error) throw new Error(error.message);
+      return;
+    }
+    let frage = client
+      .from("schulung_pflicht")
+      .delete()
+      .eq("schulung_id", schulung_id)
+      .eq("geltung", geltung);
+    frage = abteilung === null ? frage.is("abteilung", null) : frage.eq("abteilung", abteilung);
+    frage = position === null ? frage.is("position_norm", null) : frage.eq("position_norm", positionNorm(position));
+    const { error } = await frage;
     if (error) throw new Error(error.message);
   },
 
@@ -509,32 +521,22 @@ export const schulungApi = {
     ),
 
   /**
-   * Die Spalten der Anforderungsmatrix je Ebene, wie im Altsystem: die Kürzel
-   * aus der Schulungshistorie beziehungsweise die Abteilungen der aktiven
-   * Belegschaft — jeweils ergänzt um die, die schon eine Pflicht tragen.
+   * Die Werte einer Achse (Abteilungen oder Positionen): die der aktiven
+   * Belegschaft aus dem Organigramm plus die, die schon eine Pflicht tragen —
+   * sonst verschwände eine Zuordnung, sobald niemand mehr darin steht.
    */
-  pflichtAchse: async (ebene: Pflicht["ebene"], pflichten: readonly Pflicht[]): Promise<string[]> => {
-    const werte =
-      ebene === "kuerzel"
-        ? (
-            await vollstaendig<{ abteilung_kuerzel: string | null }>((von, bis) =>
-              sb()
-                .from("schulung_teilnahmen")
-                .select("abteilung_kuerzel")
-                .not("abteilung_kuerzel", "is", null)
-                .order("id")
-                .range(von, bis),
-            )
-          ).map((z) => z.abteilung_kuerzel)
-        : (
-            await vollstaendig<{ department: string | null }>((von, bis) =>
-              sb().from("organigramm").select("department").order("id").range(von, bis),
-            )
-          ).map((z) => z.department);
-    const gepflegt = pflichten.filter((p) => p.ebene === ebene).map((p) => p.abteilung);
-    return [
-      ...new Set([...werte, ...gepflegt].map((w) => (w ?? "").trim()).filter(Boolean)),
-    ].sort((a, b) => a.localeCompare(b, "de"));
+  pflichtAchse: async (
+    feld: "abteilung" | "position",
+    pflichten: readonly Pflicht[],
+  ): Promise<string[]> => {
+    const spalte = feld === "abteilung" ? "department" : "position";
+    const quelle = (
+      await vollstaendig<Record<string, string | null>>((von, bis) =>
+        sb().from("organigramm").select(spalte).order("id").range(von, bis),
+      )
+    ).map((z) => z[spalte]);
+    const gepflegt = pflichten.map((p) => p[feld]);
+    return achse(quelle, gepflegt);
   },
 
   /**

@@ -159,7 +159,8 @@ export function einstellungenAusEntwurf(entwurf: EinstellungsEntwurf): SensorEin
 export function einstellungsFehler(entwurf: EinstellungsEntwurf): EinstellungsFehler[] {
   const fehler: EinstellungsFehler[] = [];
   const sekunden = entwurf.abfrage_sekunden.trim();
-  if (!/^\d+$/.test(sekunden) || Number(sekunden) < 5 || Number(sekunden) > 86400) {
+  // Frei in ganzen Sekunden, einschließlich 0 = aus; kein Mindestwert.
+  if (!/^\d+$/.test(sekunden) || Number(sekunden) < 0 || Number(sekunden) > 86400) {
     fehler.push("intervall");
   }
   const e = einstellungenAusEntwurf(entwurf);

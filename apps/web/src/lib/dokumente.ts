@@ -40,7 +40,15 @@ export interface Feld {
   erkannt: boolean;
   netto_px: number;
   anteil: number;
+  /** Von Hand als i.O. bestätigt (Automatik hat es nicht erkannt). */
+  bestaetigt?: boolean;
+  /** Von Hand als nicht erforderlich abgeschlossen — mit Begründung. */
+  nicht_erforderlich?: boolean;
+  kommentar?: string | null;
 }
+
+/** Der Zustand, in den ein einzelnes Prüf-Feld von Hand gesetzt wird. */
+export type FeldStatus = "offen" | "bestaetigt" | "nicht_erforderlich";
 
 export interface PruefErgebnis {
   qr_ok: boolean;
@@ -142,6 +150,19 @@ export const dokumentApi = {
       body: JSON.stringify({ vollstaendig, kommentar }),
     }),
 
+  /** Ein einzelnes Prüf-Feld von Hand setzen (bestätigen, nicht erforderlich,
+   *  wieder öffnen). „fehlend"/„vollständig" rechnet der Dienst neu. */
+  feld: (id: string, eingabe: { key: string; status: FeldStatus; kommentar?: string | null }) =>
+    computeJson<Vorgang>(`/api/dokumente/${id}/feld`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(eingabe),
+    }),
+
+  /** Den ganzen Vorgang löschen — samt Blatt, Scan und Nachweisen im Speicher. */
+  loeschen: (id: string) =>
+    computeJson<void>(`/api/dokumente/${id}`, { method: "DELETE" }),
+
   scan: async (id: string, datei: File): Promise<Vorgang> => {
     const rumpf = new FormData();
     rumpf.append("datei", datei);
@@ -153,6 +174,21 @@ export const dokumentApi = {
     rumpf.append("datei", datei);
     if (zeile) rumpf.append("zeile", zeile);
     await computeJson(`/api/dokumente/${id}/nachweis`, { method: "POST", body: rumpf });
+  },
+
+  /** Einen einzelnen Nachweis entfernen (Datei im Speicher und Zeile). */
+  nachweisLoeschen: (nachweisId: string) =>
+    computeJson<void>(`/api/dokumente/nachweis/${nachweisId}`, { method: "DELETE" }),
+
+  /** Einen einzelnen Nachweis ansehen. Ein Vorgang trägt mehrere. */
+  nachweisOeffnen: async (nachweisId: string): Promise<void> => {
+    const antwort = await computeFetch(`/api/dokumente/nachweis/${nachweisId}`);
+    if (!antwort.ok) {
+      throw new Error((await antwort.text()).slice(0, 200) || `HTTP ${antwort.status}`);
+    }
+    const url = URL.createObjectURL(await antwort.blob());
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
 
   /**

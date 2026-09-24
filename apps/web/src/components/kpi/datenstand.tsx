@@ -34,6 +34,7 @@ export function Datenstand({ bereich }: { bereich: string }) {
   const liste = staende(bereich, data, t.datenstand.arten);
   if (liste.length === 0) return null;
   const fehlende = liste.filter((s) => s.zuletzt === null);
+  const teil = liste.filter((s) => s.teilweise);
   const aeltest = aeltester(liste);
 
   return (
@@ -41,6 +42,9 @@ export function Datenstand({ bereich }: { bereich: string }) {
       {fehlende.length > 0
         ? t.datenstand.unvollstaendig(nenne(fehlende), fehlende.length)
         : t.datenstand.stand(DATUM.format(new Date(aeltest!)), alter(alterInTagen(aeltest!)))}
+      {teil.length > 0 && (
+        <span className="text-[var(--warn)]"> · {t.datenstand.teilweise} ({nenne(teil)})</span>
+      )}
     </p>
   );
 
@@ -56,7 +60,11 @@ export function Datenstand({ bereich }: { bereich: string }) {
 
   function aufzaehlung(liste: Stand[]): string {
     return liste
-      .map((s) => `${s.label}: ${s.zuletzt ? DATUM.format(new Date(s.zuletzt)) : t.datenstand.nie}`)
+      .map(
+        (s) =>
+          `${s.label}: ${s.zuletzt ? DATUM.format(new Date(s.zuletzt)) : t.datenstand.nie}` +
+          (s.teilweise ? ` (${t.datenstand.teilweise})` : ""),
+      )
       .join("\n");
   }
 }

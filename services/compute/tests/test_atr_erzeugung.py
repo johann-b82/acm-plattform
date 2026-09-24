@@ -210,6 +210,13 @@ class TestInhalt:
         # Die A350-Bestellzeile trägt die MSN links aufgefüllt.
         assert ws.cell(1, 10).value == "0815"
 
+    def test_die_supplier_adresse_ist_hamburg(self):
+        # Beim Porting aus lumeapps stand hier fälschlich Memmingen; die
+        # produktive Referenz (192.9.201.9) trägt die Hamburger Anschrift.
+        ws = blatt(baue_atr(geruest(13), LIEFERUNG, POSITIONEN))
+        z = finde(ws, 1, "Supplier:")
+        assert ws.cell(z, 4).value == "ACM GmbH - Brandstücken 16 - 22549 Hamburg"
+
     def test_satzbezeichnung_steht_ueber_der_wiegezeile(self):
         ws = blatt(baue_atr(geruest(13), LIEFERUNG, POSITIONEN))
         wiegen = finde(ws, 1, "Weighing date")

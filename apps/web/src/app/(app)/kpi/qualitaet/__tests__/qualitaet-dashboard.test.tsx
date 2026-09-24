@@ -62,6 +62,18 @@ describe("Qualität", () => {
     expect(within(zeile).getByRole("checkbox", { name: "Behörde" })).toBeInTheDocument();
   });
 
+  it("nennt die Auditart EX AUD „Unterlieferant“, nicht mehr „Extern“", () => {
+    zeige();
+    const zeile = screen.getByRole("radiogroup", { name: "Ansicht" }).parentElement!;
+    // Die vier Arten stehen als Ankreuzkästchen; nur das Label von EX AUD ändert
+    // sich, der Code bleibt (keine Datenmigration).
+    expect(within(zeile).getByRole("checkbox", { name: "Unterlieferant" })).toBeInTheDocument();
+    expect(within(zeile).queryByRole("checkbox", { name: "Extern" })).toBeNull();
+    for (const art of ["Behörde", "Intern", "Kunde"]) {
+      expect(within(zeile).getByRole("checkbox", { name: art })).toBeInTheDocument();
+    }
+  });
+
   it("stellt bei der Qualitätsprüfung die Artikelart in dieselbe Zeile wie den Umschalter", () => {
     zeige();
     const umschalter = screen.getByRole("radiogroup", { name: "Ansicht" });

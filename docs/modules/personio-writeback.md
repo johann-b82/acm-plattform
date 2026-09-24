@@ -37,6 +37,30 @@ Code: `backend/app/services/personio_writeback.py`, Hooks in `routers/schulungen
 - [ ] Optional: Feldnamen/Endpoint in `_push()` gegen die reale Personio-API
       final bestätigen (aus der Doku übernommen, nie live getestet).
 
+## Abgleich (Lesen aus Personio)
+
+Der Abgleich (`app/personio/sync.py`) holt Stammdaten, Anwesenheiten und
+Abwesenheiten. „Jetzt abgleichen" und die zentralen Zugangsdaten bleiben.
+
+- **Kein Doppellauf.** `abgleichen()` nimmt einen transaktionsübergreifenden
+  Riegel in der Datenbank (`pg_advisory_lock`, Schlüssel `SPERRE_SCHLUESSEL`).
+  Ein zweiter gleichzeitiger Lauf startet nicht, sondern bekommt `409`
+  (`BereitsInArbeit`). Der Riegel wirkt auch über mehrere `compute`-Worker
+  hinweg — der zustandslose Dienst braucht dafür keinen eigenen Zustand.
+- **Delta statt Vollabgleich.** Der erste Lauf holt Anwesenheiten über das volle
+  Fenster (`FENSTER_TAGE`, 400 Tage). Jeder Folgelauf holt nur Änderungen seit
+  dem letzten **geglückten** Abgleich, überlappt um `DELTA_UEBERLAPP_TAGE` (3
+  Tage) — so fallen rückwirkend in Personio eingetragene Zeiten nicht durch.
+  `voll=True` erzwingt das ganze Fenster. Stammdaten und Abwesenheiten sind
+  kleine Mengen und werden weiterhin vollständig geholt und per Upsert
+  angeglichen (fachlich gleichwertig inkrementell: unveränderte Zeilen bleiben,
+  geänderte gewinnen). Die Personio-Schnittstelle bietet für Anwesenheiten ein
+  Zeitfenster; ein feineres „nur geänderte Datensätze" gibt sie für unsere
+  Zugangsdaten nicht her — deshalb dieser Weg.
+- **Letzter erfolgreicher Stand.** Das HR-Dashboard zeigt den jüngsten Lauf; ist
+  er gescheitert, steht darunter eindeutig der letzte **geglückte** Stand
+  (`abgleichLetzterErfolg`), damit klar ist, wie alt die Zahlen wirklich sind.
+
 ## Grenzen
 
 - Der PDF-Inhalt ist bewusst schlicht (Liste der Schulungen bzw. Qualifikationen);

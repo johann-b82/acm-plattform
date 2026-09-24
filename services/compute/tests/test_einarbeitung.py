@@ -80,6 +80,18 @@ class TestInhalte:
         b = blatt(baue_xlsx("Dana Neu", None, None, INHALTE))
         assert finde(b, "Freigegeben durch:") is not None
 
+    def test_der_schulungsbedarf_steht_vor_der_freigabe(self):
+        """Der Abschlussblock der Vorlage: weiterer Schulungsbedarf ja/nein mit
+        Erläuterungslinie, vor der Freigabezeile."""
+        b = blatt(baue_xlsx("Dana Neu", None, None, INHALTE))
+        frage = finde(b, "Weiterer Schulungsbedarf notwendig?")
+        freigabe = finde(b, "Freigegeben durch:")
+        assert frage is not None
+        assert finde(b, "Falls ja, bitte Schulungsbedarf erläutern:") is not None
+        # Ankreuzfeld daneben, Freigabe danach.
+        assert "ja" in (b.cell(frage, 6).value or "")
+        assert freigabe is not None and freigabe > frage
+
     def test_ein_langer_inhalt_bekommt_mehr_hoehe(self):
         """Sonst schneidet der Druck ihn ab."""
         kurz = blatt(baue_xlsx("X", None, None, [Inhalt("A", "B", "Kurz")]))

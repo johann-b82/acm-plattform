@@ -1,24 +1,24 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileDown, Plus } from "lucide-react";
 
 import {
-  abteilungsachse,
   einarbeitungApi,
   einarbeitungKeys,
   type Inhalt,
   type Pflicht,
 } from "@/lib/einarbeitung";
+import { positionNorm } from "@/lib/pflicht";
 import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
 import { computeFetch } from "@/lib/compute";
 import { Button, Input, Label, Select } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useTexte } from "@/components/sprache/anbieter";
-import { Blaettern, Matrixsuche, useMatrixseiten } from "../matrixseiten";
+import { Pflichtmatrix, type PflichtmatrixApi } from "../pflichtmatrix";
 
 /**
  * Die Einarbeitungsinhalte: was eine neue Person lernen muss, wer es ihr
@@ -229,145 +229,55 @@ export function Einarbeitungsinhalte({ darfSchreiben }: { darfSchreiben: boolean
 }
 
 /**
- * Welcher Inhalt für welche Abteilung nötig ist — als Häkchenmatrix wie im
- * Altsystem (ONB-04). Zeilen sind Inhalte, Spalten Abteilungen. Ein Häkchen
- * gilt sofort; die Referenz kennt hier keinen Bearbeitungsmodus. Die
- * Zuordnungen selbst sind dieselben Zeilen in `einarbeitung_pflicht` wie
- * vorher, nur anders dargestellt.
+ * Für wen welcher Inhalt Pflicht ist (ONB-04) — dieselbe Anforderungsmatrix
+ * wie bei den Schulungen: alle, Abteilung, Position oder die Kombination
+ * beider. Die Zuordnungen sind Zeilen in `einarbeitung_pflicht`.
  */
 export function Einarbeitungsmatrix({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
-  const queryClient = useQueryClient();
 
   const katalog = useQuery({ queryKey: einarbeitungKeys.katalog(), queryFn: einarbeitungApi.katalog });
   const pflicht = useQuery({ queryKey: einarbeitungKeys.pflicht(), queryFn: einarbeitungApi.pflicht });
-  const personio = useQuery({
-    queryKey: ["einarbeitung", "abteilungen"],
-    queryFn: einarbeitungApi.personioAbteilungen,
-  });
 
-  const katalogDaten = katalog.data;
-  const inhalte = useMemo(() => katalogDaten ?? [], [katalogDaten]);
-  const achse = useMemo(
-    () => abteilungsachse(personio.data ?? [], (pflicht.data ?? []).map((p) => p.abteilung)),
-    [personio.data, pflicht.data],
-  );
-  const gesetzt = useMemo(
-    () => new Set((pflicht.data ?? []).map((p) => `${p.einarbeitung_id}|${p.abteilung}`)),
+  const inhalte = useMemo(() => katalog.data ?? [], [katalog.data]);
+
+  const api = useMemo<PflichtmatrixApi<Pflicht>>(
+    () => ({
+      bereich: "einarbeitung",
+      pflichten: pflicht.data ?? [],
+      pflichtKey: einarbeitungKeys.pflicht(),
+      zielId: (p) => p.einarbeitung_id,
+      neuePflicht: (einarbeitung_id, geltung, abteilung, position) => ({
+        id: `neu:${einarbeitung_id}:${geltung}:${abteilung ?? ""}:${position ?? ""}`,
+        einarbeitung_id,
+        geltung,
+        abteilung,
+        position,
+        position_norm: position ? positionNorm(position) : null,
+      }),
+      achse: einarbeitungApi.pflichtAchse,
+      setzen: einarbeitungApi.pflichtSetzen,
+    }),
     [pflicht.data],
   );
-
-  const setzen = useMutation({
-    mutationFn: (w: { id: string; abteilung: string; an: boolean }) =>
-      einarbeitungApi.pflichtSetzen(w.id, w.abteilung, w.an),
-    // Das Häkchen soll sofort stehen, nicht erst nach der Antwort.
-    onMutate: async (w) => {
-      const schluessel = einarbeitungKeys.pflicht();
-      await queryClient.cancelQueries({ queryKey: schluessel });
-      const vorher = queryClient.getQueryData<Pflicht[]>(schluessel);
-      queryClient.setQueryData<Pflicht[]>(schluessel, (alt = []) =>
-        w.an
-          ? [...alt, { id: `neu:${w.id}|${w.abteilung}`, einarbeitung_id: w.id, abteilung: w.abteilung }]
-          : alt.filter((p) => !(p.einarbeitung_id === w.id && p.abteilung === w.abteilung)),
-      );
-      return { vorher };
-    },
-    onError: (fehler: Error, _w, kontext) => {
-      if (kontext?.vorher) queryClient.setQueryData(einarbeitungKeys.pflicht(), kontext.vorher);
-      toast.error(fehler.message);
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: einarbeitungKeys.pflicht() }),
-  });
-
-  const suchwert = useCallback((i: Inhalt) => `${i.inhalt} ${i.ansprechpartner ?? ""}`, []);
-  const seiten = useMatrixseiten(inhalte, suchwert);
 
   if (katalog.isPending || pflicht.isPending) {
     return <p className="p-4 text-sm text-[var(--fg-muted)]">{worte.dashboard.laedt}</p>;
   }
 
   return (
-    <div className="space-y-3 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="max-w-prose text-sm text-[var(--fg-muted)]">{worte.onboarding.matrixHinweis}</p>
-        {seiten.zeigeSuche && (
-          <Matrixsuche
-            wert={seiten.suchtext}
-            onChange={seiten.setSuchtext}
-            beschriftung={worte.onboarding.matrixTitel}
-          />
-        )}
-      </div>
-      {inhalte.length === 0 || achse.length === 0 ? (
-        <p className="text-sm text-[var(--fg-muted)]">{worte.onboarding.matrixLeer}</p>
-      ) : (
-        <>
-          <div className="max-h-[70vh] overflow-auto rounded-md border border-[var(--border)]">
-            <table className="border-collapse text-sm" aria-label={worte.onboarding.matrixTitel}>
-              <thead>
-                <tr>
-                  <th
-                    scope="col"
-                    className="sticky start-0 top-0 z-20 min-w-64 border-b border-e border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-start font-medium"
-                  >
-                    {worte.einarbeitung.inhalt}
-                  </th>
-                  {achse.map((a) => (
-                    <th
-                      key={a}
-                      scope="col"
-                      title={a}
-                      className="sticky top-0 z-10 whitespace-nowrap border-b border-[var(--border)] bg-[var(--muted)] px-2 py-2 text-center text-xs font-medium"
-                    >
-                      {a}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {seiten.fenster.zeilen.map((i) => (
-                  <tr key={i.id}>
-                    <th
-                      scope="row"
-                      title={i.inhalt}
-                      className="sticky start-0 z-10 max-w-96 truncate border-b border-e border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-start font-normal"
-                    >
-                      {i.inhalt}
-                    </th>
-                    {achse.map((a) => {
-                      const an = gesetzt.has(`${i.id}|${a}`);
-                      return (
-                        <td key={a} className="border-b border-[var(--border)] px-2 py-1.5 text-center">
-                          <input
-                            type="checkbox"
-                            checked={an}
-                            disabled={!darfSchreiben}
-                            aria-label={worte.onboarding.matrixZelle(i.inhalt, a)}
-                            onChange={() => setzen.mutate({ id: i.id, abteilung: a, an: !an })}
-                            className="h-4 w-4 cursor-pointer accent-[var(--ring)] disabled:cursor-default"
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                {seiten.fenster.gesamt === 0 && (
-                  <tr>
-                    <td colSpan={achse.length + 1} className="px-3 py-2 text-[var(--fg-muted)]">
-                      {worte.tabelle.keineTreffer}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <Blaettern
-            fenster={seiten.fenster}
-            onSeite={seiten.setSeite}
-            beschriftung={worte.onboarding.matrixTitel}
-          />
-        </>
-      )}
-    </div>
+    <Pflichtmatrix
+      api={api}
+      zugriff={{
+        zeilen: inhalte,
+        id: (i) => i.id,
+        kopf: (i) => i.inhalt,
+        titel: (i) => i.inhalt,
+        suchwert: (i) => `${i.inhalt} ${i.ansprechpartner ?? ""}`,
+      }}
+      spaltenKopf={worte.einarbeitung.inhalt}
+      beschriftung={worte.onboarding.matrixTitel}
+      darfSchreiben={darfSchreiben}
+    />
   );
 }

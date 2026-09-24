@@ -160,6 +160,7 @@ export const vi: Texte = {
     gespeichert: "Đã lưu số dòng mỗi trang.",
   },
   datenstand: {
+    teilweise: "nhập một phần",
     stand: (datum: string, alter: string) => `Dữ liệu đến ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Dữ liệu chưa đầy đủ — thiếu ${anzahl} mục: ${fehlend}`,
@@ -360,7 +361,7 @@ export const vi: Texte = {
     ladeVor: "Hãy tải tệp xuất 8D lên tại ",
     ladeNach: ".",
     behoerde: "Cơ quan",
-    extern: "Bên ngoài",
+    extern: "Nhà cung cấp phụ",
     intern: "Nội bộ",
     kunde: "Khách hàng",
     level1: "Phát hiện audit mức 1",
@@ -472,6 +473,7 @@ export const vi: Texte = {
     umsatzJeKopf: "Doanh thu / NV sản xuất",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} đơn hàng ÷ ${koepfe} người`,
     produktionFehlt: "chưa đặt bộ phận sản xuất",
+    letzterErfolg: (datum: string, alter: string) => `Lần thành công gần nhất: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Đồng bộ Personio ${datum} (${alter})`,
     abgleichFehler: "có lỗi",
     reiheUmsatzJeKopf: "Doanh thu trên mỗi NV sản xuất",
@@ -494,11 +496,15 @@ export const vi: Texte = {
     dankeOhneBild: "Cảm ơn — phản hồi đã đến nơi, không kèm ảnh trang.",
   },
   belegschaft: {
+    zeitpunkt: "Tính đến",
+    aktuell: "Hiện tại",
+    quartal: "Quý",
     titel: "Lực lượng lao động",
     ladeFehler: (meldung: string) => `Không tải được dữ liệu lực lượng lao động: ${meldung}`,
     beschaeftigte: "Nhân viên",
     beschaeftigteHinweis: "theo trạng thái Personio “hoạt động”",
-    stichtagHinweis: "Trạng thái hôm nay — Personio không lưu lịch sử, nên không có so sánh theo năm.",
+    stichtagHinweis:
+      "Số nhân sự và mới/hiện có chính xác theo ngày; các phân bố dùng dữ liệu Personio hôm nay (không có lịch sử đầy đủ).",
     neuImQuartal: "Mới trong quý",
     bestand: "Quân số",
     kompetenzen: "Năng lực đã khai báo",
@@ -688,6 +694,8 @@ export const vi: Texte = {
     imTurnus: "trong chu kỳ",
   },
   schulungsmatrix: {
+    legende: "Chú giải",
+    nichtZugewiesenKurz: "chưa gán",
     einleitung:
       "Mọi người đối chiếu mọi khóa — bảng tổng quan để dán bảng tin và cho audit. Ai chưa " +
       "tham gia gì cả thì có một dòng trống; đó chính là lỗ hổng cần tìm.",
@@ -745,6 +753,24 @@ export const vi: Texte = {
     aktivSchalter: (name: string) => `${name} hoạt động`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} nghĩa là: không có mốc thời gian nào của người này trong lịch sử. ${bald} nghĩa là: trong vòng hai tháng tới. Tính đến ${datum}.`,
+  },
+  geltung: {
+    titel: "Áp dụng cho",
+    alle: "Tất cả",
+    abteilung: "Bộ phận",
+    position: "Vị trí",
+    abteilung_position: "Bộ phận + vị trí",
+    alleHinweis: "Bắt buộc cho toàn bộ nhân sự.",
+    abteilungHinweis: "Bắt buộc cho mọi người trong một bộ phận — như Personio ghi nhận.",
+    positionHinweis: "Bắt buộc cho mọi người ở vị trí này từ Personio.",
+    kombiHinweis: "Chỉ bắt buộc khi bộ phận và vị trí trùng nhau — mỗi dòng một quy tắc.",
+    alleSpalte: "áp dụng cho tất cả",
+    matrixLeer: "Chưa có bộ phận hoặc vị trí nào từ Personio.",
+    regelHinzufuegen: "Thêm",
+    abteilungWaehlen: "Chọn bộ phận",
+    positionWaehlen: "Chọn vị trí",
+    keineRegeln: "Chưa có tổ hợp nào.",
+    regelEntfernen: "Xóa",
   },
   schulungenReg: {
     tabBearbeiten: "Chỉnh sửa đào tạo",
@@ -1465,6 +1491,11 @@ export const vi: Texte = {
     seriennummernFeld: (pos: string) => `Số sê-ri dòng ${pos}`,
   },
   fair: {
+    mass: "Kích thước",
+    alsText: "Văn bản",
+    liest: "Đang đọc …",
+    zuPruefen: "cần kiểm tra",
+    zuPruefenHinweis: "Không có mã linh kiện — kiểm tra như bản vẽ FAIR hoặc loại bỏ.",
     dateiFehlt: (meldung: string) =>
       `Không tải được bản vẽ (${meldung}). Các kích thước vẫn được liệt kê bên dưới.`,
     bezeichnungFrei: "Mô tả (để trống = tên tệp)",
@@ -2065,10 +2096,10 @@ export const vi: Texte = {
     sensorGeloescht: "Đã xóa cảm biến cùng chuỗi thời gian của nó.",
     zahlEingeben: "Vui lòng nhập một số.",
     taktTitel: "Chu kỳ truy vấn",
-    intervall: "Chu kỳ truy vấn (giây)",
+    intervall: "Chu kỳ truy vấn (giây, 0 = tắt)",
     intervallHinweis:
-      "Áp dụng cho mọi cảm biến. Phạm vi 5–86400; dưới 60 giây thực tế sẽ truy vấn mỗi phút.",
-    intervallFehler: "Chu kỳ phải là số nguyên từ 5 đến 86400.",
+      "Áp dụng cho mọi cảm biến. Phạm vi 0–86400; 0 tắt việc truy vấn tự động. Dưới 60 giây thực tế sẽ truy vấn mỗi phút.",
+    intervallFehler: "Chu kỳ phải là số nguyên từ 0 đến 86400 (0 = tắt).",
     grenzenTitel: "Giới hạn chung",
     grenzenHinweis: "Áp dụng cho mọi cảm biến. Để trống nghĩa là: không giới hạn.",
     temperaturMin: "Nhiệt độ min (°C)",

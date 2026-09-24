@@ -159,6 +159,7 @@ export const ar: Texte = {
     gespeichert: "تم حفظ حجم الصفحة.",
   },
   datenstand: {
+    teilweise: "مُدخل جزئيًا",
     stand: (datum: string, alter: string) => `حالة البيانات ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `حالة البيانات ناقصة — ${fehlend} ${anzahl === 1 ? "غير متوفر" : "غير متوفرة"}`,
@@ -357,7 +358,7 @@ export const ar: Texte = {
     ladeVor: "ارفع تصدير 8D في ",
     ladeNach: ".",
     behoerde: "جهة رسمية",
-    extern: "خارجي",
+    extern: "مورّد فرعي",
     intern: "داخلي",
     kunde: "العميل",
     level1: "نتائج التدقيق من المستوى 1",
@@ -466,6 +467,7 @@ export const ar: Texte = {
     umsatzJeKopf: "الإيراد / موظف إنتاج",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} طلبات ÷ ${koepfe} موظفين`,
     produktionFehlt: "أقسام الإنتاج غير محددة",
+    letzterErfolg: (datum: string, alter: string) => `آخر نجاح: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `مزامنة Personio ${datum} (${alter})`,
     abgleichFehler: "مع أخطاء",
     reiheUmsatzJeKopf: "الإيراد لكل موظف إنتاج",
@@ -488,11 +490,15 @@ export const ar: Texte = {
     dankeOhneBild: "شكراً — وصلت الملاحظات، بلا صورة للصفحة.",
   },
   belegschaft: {
+    zeitpunkt: "التاريخ المرجعي",
+    aktuell: "الحالي",
+    quartal: "الربع",
     titel: "القوى العاملة",
     ladeFehler: (meldung: string) => `تعذّر تحميل بيانات القوى العاملة: ${meldung}`,
     beschaeftigte: "الموظفون",
     beschaeftigteHinweis: "حسب حالة Personio «نشط»",
-    stichtagHinweis: "الحالة اليوم — لا يحتفظ Personio بسجل تاريخي، لذلك لا يوجد مقارنة سنوية.",
+    stichtagHinweis:
+      "عدد الموظفين والجديد/القائم دقيق حتى التاريخ المرجعي؛ أما التوزيعات فتستخدم بيانات Personio الحالية (لا سجل كامل).",
     neuImQuartal: "جدد في هذا الربع",
     bestand: "العدد",
     kompetenzen: "الكفاءات المسجَّلة",
@@ -679,6 +685,8 @@ export const ar: Texte = {
     imTurnus: "ضمن الدورة",
   },
   schulungsmatrix: {
+    legende: "مفتاح الرموز",
+    nichtZugewiesenKurz: "غير مُسند",
     einleitung:
       "كل الأشخاص مقابل كل التدريبات — النظرة العامة للوحة الإعلانات وللتدقيق. " +
       "ومن لم يشارك في شيء إطلاقاً يظهر بسطر فارغ؛ وهذه بالضبط هي الثغرة " +
@@ -737,6 +745,24 @@ export const ar: Texte = {
     aktivSchalter: (name: string) => `${name} نشط`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} يعني: لا يوجد موعد لهذا الشخص في السجل. ${bald} يعني: خلال الشهرين القادمين. الحالة بتاريخ ${datum}.`,
+  },
+  geltung: {
+    titel: "ينطبق على",
+    alle: "الجميع",
+    abteilung: "القسم",
+    position: "المنصب",
+    abteilung_position: "القسم + المنصب",
+    alleHinweis: "إلزامي لجميع الموظفين.",
+    abteilungHinweis: "إلزامي لكل من في القسم — كما يحفظه Personio.",
+    positionHinweis: "إلزامي لكل من يشغل هذا المنصب من Personio.",
+    kombiHinweis: "إلزامي فقط حيث يلتقي القسم والمنصب — قاعدة واحدة لكل صف.",
+    alleSpalte: "ينطبق على الجميع",
+    matrixLeer: "لا توجد أقسام أو مناصب من Personio بعد.",
+    regelHinzufuegen: "إضافة",
+    abteilungWaehlen: "اختر القسم",
+    positionWaehlen: "اختر المنصب",
+    keineRegeln: "لا توجد تركيبة بعد.",
+    regelEntfernen: "إزالة",
   },
   schulungenReg: {
     tabBearbeiten: "تحرير التدريب",
@@ -1451,6 +1477,11 @@ export const ar: Texte = {
     seriennummernFeld: (pos: string) => `الأرقام التسلسلية للبند ${pos}`,
   },
   fair: {
+    mass: "قياس",
+    alsText: "نص",
+    liest: "جارٍ القراءة …",
+    zuPruefen: "للمراجعة",
+    zuPruefenHinweis: "بدون رقم صنف — راجعها كرسم FAIR أو استبعدها.",
     dateiFehlt: (meldung: string) =>
       `تعذّر تحميل الرسم نفسه (${meldung}). الأبعاد مدرجة أدناه على أي حال.`,
     bezeichnungFrei: "الوصف (فارغ = اسم الملف)",
@@ -2045,10 +2076,10 @@ export const ar: Texte = {
     sensorGeloescht: "حُذف المستشعر بسلسلته الزمنية.",
     zahlEingeben: "أدخل رقماً.",
     taktTitel: "فترة الاستعلام",
-    intervall: "فترة الاستعلام (ثوانٍ)",
+    intervall: "فترة الاستعلام (ثوانٍ، 0 = متوقف)",
     intervallHinweis:
-      "تسري على جميع المستشعرات. النطاق 5–86400؛ أقل من 60 ثانية يعني عمليًا استعلامًا كل دقيقة.",
-    intervallFehler: "يجب أن تكون الفترة عددًا صحيحًا بين 5 و86400.",
+      "تسري على جميع المستشعرات. النطاق 0–86400؛ 0 يوقف الاستعلام التلقائي. أقل من 60 ثانية يعني عمليًا استعلامًا كل دقيقة.",
+    intervallFehler: "يجب أن تكون الفترة عددًا صحيحًا بين 0 و86400 (0 = متوقف).",
     grenzenTitel: "الحدود العامة",
     grenzenHinweis: "تسري على جميع المستشعرات. الحقل الفارغ يعني: بلا حد.",
     temperaturMin: "درجة الحرارة الدنيا (°C)",

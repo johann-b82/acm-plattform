@@ -160,6 +160,7 @@ export const pl: Texte = {
     gespeichert: "Zapisano rozmiar strony.",
   },
   datenstand: {
+    teilweise: "częściowo wczytane",
     stand: (datum: string, alter: string) => `Dane z ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Dane niekompletne — ${fehlend} ${anzahl === 1 ? "nie został wczytany" : "nie zostały wczytane"}`,
@@ -360,7 +361,7 @@ export const pl: Texte = {
     ladeVor: "Wczytaj eksport 8D w ",
     ladeNach: ".",
     behoerde: "Urząd",
-    extern: "Zewnętrzny",
+    extern: "Poddostawca",
     intern: "Wewnętrzny",
     kunde: "Klient",
     level1: "Ustalenia auditu poziom 1",
@@ -470,6 +471,7 @@ export const pl: Texte = {
     umsatzJeKopf: "Obrót / pracownik produkcji",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} zamówień ÷ ${koepfe} osób`,
     produktionFehlt: "nie ustawiono działów produkcji",
+    letzterErfolg: (datum: string, alter: string) => `Ostatni sukces: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Synchronizacja Personio ${datum} (${alter})`,
     abgleichFehler: "z błędami",
     reiheUmsatzJeKopf: "Obrót na pracownika produkcji",
@@ -492,11 +494,15 @@ export const pl: Texte = {
     dankeOhneBild: "Dziękujemy — feedback dotarł, bez zrzutu strony.",
   },
   belegschaft: {
+    zeitpunkt: "Na dzień",
+    aktuell: "Bieżący",
+    quartal: "Kwartał",
     titel: "Załoga",
     ladeFehler: (meldung: string) => `Nie udało się wczytać załogi: ${meldung}`,
     beschaeftigte: "Zatrudnieni",
     beschaeftigteHinweis: "wg statusu „aktywny” w Personio",
-    stichtagHinweis: "Stan na dziś — Personio nie prowadzi historii, dlatego nie ma porównania rocznego.",
+    stichtagHinweis:
+      "Liczba osób oraz nowi/obecni są dokładne na dzień; rozkłady korzystają z dzisiejszych danych Personio (bez pełnej historii).",
     neuImQuartal: "Nowi w kwartale",
     bestand: "Stan",
     kompetenzen: "Kompetencje uzupełnione",
@@ -689,6 +695,8 @@ export const pl: Texte = {
     imTurnus: "w cyklu",
   },
   schulungsmatrix: {
+    legende: "Legenda",
+    nichtZugewiesenKurz: "nieprzypisane",
     einleitung:
       "Wszystkie osoby wobec wszystkich szkoleń — przegląd na tablicę i na audit. " +
       "Kto nie ma jeszcze żadnego udziału, stoi tam z pustym wierszem; właśnie to jest luka, " +
@@ -747,6 +755,24 @@ export const pl: Texte = {
     aktivSchalter: (name: string) => `${name} aktywne`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} znaczy: dla tej osoby nie ma w historii żadnej daty. ${bald} znaczy: w ciągu najbliższych dwóch miesięcy. Stan z ${datum}.`,
+  },
+  geltung: {
+    titel: "Obowiązuje",
+    alle: "Wszyscy",
+    abteilung: "Dział",
+    position: "Stanowisko",
+    abteilung_position: "Dział + stanowisko",
+    alleHinweis: "Obowiązkowe dla całej załogi.",
+    abteilungHinweis: "Obowiązkowe dla wszystkich w dziale — tak jak prowadzi go Personio.",
+    positionHinweis: "Obowiązkowe dla wszystkich z tym stanowiskiem z Personio.",
+    kombiHinweis: "Obowiązkowe tylko tam, gdzie spotykają się dział i stanowisko — jedna reguła na wiersz.",
+    alleSpalte: "dotyczy wszystkich",
+    matrixLeer: "Brak działów lub stanowisk z Personio.",
+    regelHinzufuegen: "Dodaj",
+    abteilungWaehlen: "Wybierz dział",
+    positionWaehlen: "Wybierz stanowisko",
+    keineRegeln: "Brak kombinacji.",
+    regelEntfernen: "Usuń",
   },
   schulungenReg: {
     tabBearbeiten: "Edytuj szkolenia",
@@ -1469,6 +1495,11 @@ export const pl: Texte = {
     seriennummernFeld: (pos: string) => `Numery seryjne pozycji ${pos}`,
   },
   fair: {
+    mass: "Wymiar",
+    alsText: "Tekst",
+    liest: "Odczyt …",
+    zuPruefen: "do sprawdzenia",
+    zuPruefenHinweis: "Bez numeru części — sprawdź jako rysunek FAIR lub odrzuć.",
     dateiFehlt: (meldung: string) =>
       `Samego rysunku nie da się wczytać (${meldung}). Wymiary mimo to są poniżej.`,
     bezeichnungFrei: "Nazwa (puste = nazwa pliku)",
@@ -2068,10 +2099,10 @@ export const pl: Texte = {
     sensorGeloescht: "Czujnik skasowany, wraz z szeregiem czasowym.",
     zahlEingeben: "Podaj liczbę.",
     taktTitel: "Interwał odpytywania",
-    intervall: "Interwał odpytywania (sekundy)",
+    intervall: "Interwał odpytywania (sekundy, 0 = wył.)",
     intervallHinweis:
-      "Dotyczy wszystkich czujników. Zakres 5–86400; poniżej 60 sekund odpytywanie następuje w praktyce co minutę.",
-    intervallFehler: "Interwał musi być liczbą całkowitą od 5 do 86400.",
+      "Dotyczy wszystkich czujników. Zakres 0–86400; 0 wyłącza automatyczne odpytywanie. Poniżej 60 sekund odpytywanie następuje w praktyce co minutę.",
+    intervallFehler: "Interwał musi być liczbą całkowitą od 0 do 86400 (0 = wył.).",
     grenzenTitel: "Globalne wartości graniczne",
     grenzenHinweis: "Dotyczą wszystkich czujników. Puste pole oznacza: brak granicy.",
     temperaturMin: "Temperatura min (°C)",

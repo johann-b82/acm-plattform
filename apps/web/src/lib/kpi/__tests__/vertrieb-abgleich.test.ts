@@ -110,9 +110,9 @@ describe("Kundenfarben", () => {
 });
 
 describe("Vergleichsreihe im Umsatzverlauf", () => {
-  it("wählt die Vergleichsreihe wie das Altsystem, beim freien Zeitraum das Vorjahr", () => {
-    expect(vergleichsart("monat")).toBe("vorperiode");
-    expect(vergleichsart("quartal")).toBe("vorperiode");
+  it("vergleicht Monat, Quartal, Jahr und freien Zeitraum mit dem Vorjahr; „Alles“ ohne", () => {
+    expect(vergleichsart("monat")).toBe("vorjahr");
+    expect(vergleichsart("quartal")).toBe("vorjahr");
     expect(vergleichsart("jahr")).toBe("vorjahr");
     expect(vergleichsart("frei")).toBe("vorjahr");
     expect(vergleichsart("alles")).toBeNull();

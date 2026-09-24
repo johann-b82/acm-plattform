@@ -1,8 +1,8 @@
 """Onboarding gegen eine echte Datenbank.
 
-Der Schulungsplan ist hier kein Programm, sondern ein Verbund: Matrix,
-Rollenzuordnung und Bestand. Geprüft wird, dass beide Ebenen greifen — und
-dass die feine Ebene sich meldet, wenn sie es nicht tut.
+Der Schulungsplan ist hier kein Programm, sondern ein Verbund aus Matrix und
+Bestand. Geprüft wird, dass jede der vier Geltungen greift — alle, Abteilung,
+Position und die Kombination beider — und dass die übersteuerte Abteilung zählt.
 """
 from __future__ import annotations
 
@@ -30,7 +30,6 @@ async def db(datenbank_da):
                 await s.execute(sa.text("delete from public.schulung_teilnahmen"))
                 await s.execute(sa.text("delete from public.schulung_pflicht"))
                 await s.execute(sa.text("delete from public.schulung_katalog"))
-                await s.execute(sa.text("delete from public.schulung_rollen"))
                 await s.execute(sa.text("delete from public.onboarding_abteilung"))
                 await s.execute(sa.text("delete from public.onboarding_paket"))
                 await s.execute(sa.text("delete from public.externe_personen"))
@@ -85,13 +84,19 @@ async def als(claims: str, text: str, **params):
             await trans.rollback()
 
 
-async def pflicht(name: str, ebene: str, abteilung: str):
+async def pflicht(
+    name: str,
+    geltung: str,
+    abteilung: str | None = None,
+    position: str | None = None,
+):
     await sql(
-        "insert into public.schulung_pflicht (schulung_id, ebene, abteilung)"
-        " select id, :e, :a from public.schulung_katalog where name = :n",
+        "insert into public.schulung_pflicht (schulung_id, geltung, abteilung, \"position\")"
+        " select id, :g, :a, :p from public.schulung_katalog where name = :n",
         n=name,
-        e=ebene,
+        g=geltung,
         a=abteilung,
+        p=position,
     )
 
 
@@ -121,36 +126,46 @@ class TestPositionNorm:
 
 class TestPlan:
     @pytest.mark.asyncio
-    async def test_die_grobe_ebene_greift_ueber_die_abteilung(self, db):
-        await pflicht("Brandschutz", "personio", "Production")
+    async def test_alle_gilt_fuer_jeden(self, db):
+        await pflicht("Brandschutz", "alle")
         assert [(z["quelle"], z["name"]) for z in await plan()] == [
-            ("personio", "Brandschutz")
+            ("alle", "Brandschutz")
         ]
 
     @pytest.mark.asyncio
-    async def test_ohne_rollenzuordnung_meldet_sich_die_feine_ebene(self, db):
-        """Sonst entstünden unbemerkt zu wenige Pflichtschulungen."""
-        await pflicht("Gabelstapler", "kuerzel", "CNC")
+    async def test_die_abteilung_greift(self, db):
+        await pflicht("Brandschutz", "abteilung", abteilung="Production")
+        assert [(z["quelle"], z["name"]) for z in await plan()] == [
+            ("abteilung", "Brandschutz")
+        ]
+
+    @pytest.mark.asyncio
+    async def test_die_position_greift_normiert(self, db):
+        """Die Person steht als „CNC  Fräser" (Doppelleerzeichen) in Personio;
+        die Pflicht auf „CNC Fräser" trifft sie über die normierte Fassung."""
+        await pflicht("Gabelstapler", "position", position="CNC Fräser")
         zeilen = await plan()
-        assert [z["quelle"] for z in zeilen] == ["kuerzel_fehlt"]
-        assert zeilen[0]["abteilung"] == "cnc fräser"
+        assert [(z["quelle"], z["name"]) for z in zeilen] == [("position", "Gabelstapler")]
+        assert zeilen[0]["abteilung"] == "CNC Fräser"
 
     @pytest.mark.asyncio
-    async def test_mit_rollenzuordnung_greift_sie(self, db):
-        await pflicht("Gabelstapler", "kuerzel", "CNC")
-        await sql(
-            "insert into public.schulung_rollen (position, position_norm, abteilung_kuerzel)"
-            " values ('CNC Fräser', public.position_norm('CNC Fräser'), 'CNC')"
+    async def test_die_kombination_verlangt_beides(self, db):
+        """Abteilung + Position greift nur, wenn beides zusammenpasst."""
+        await pflicht(
+            "Gabelstapler", "abteilung_position", abteilung="Montage", position="CNC Fräser"
         )
-        assert [(z["quelle"], z["name"]) for z in await plan()] == [
-            ("kuerzel", "Gabelstapler")
-        ]
+        assert await plan() == []
+        await sql("delete from public.schulung_pflicht")
+        await pflicht(
+            "Gabelstapler", "abteilung_position", abteilung="Production", position="CNC Fräser"
+        )
+        assert [z["name"] for z in await plan()] == ["Gabelstapler"]
 
     @pytest.mark.asyncio
     async def test_die_uebersteuerte_abteilung_zaehlt(self, db):
         """Personio ist lesend; wer dort keine Abteilung hat, bekäme sonst
         keine Pflichtschulungen."""
-        await pflicht("Brandschutz", "personio", "Montage")
+        await pflicht("Brandschutz", "abteilung", abteilung="Montage")
         assert await plan() == []
         await sql(
             "insert into public.onboarding_abteilung (employee_id, abteilung)"
@@ -161,13 +176,13 @@ class TestPlan:
 
     @pytest.mark.asyncio
     async def test_eine_stillgelegte_schulung_zaehlt_nicht(self, db):
-        await pflicht("Brandschutz", "personio", "Production")
+        await pflicht("Brandschutz", "abteilung", abteilung="Production")
         await sql("update public.schulung_katalog set aktiv = false where name = 'Brandschutz'")
         assert await plan() == []
 
     @pytest.mark.asyncio
     async def test_vorhandenes_wird_als_vorhanden_gezeigt(self, db):
-        await pflicht("Brandschutz", "personio", "Production")
+        await pflicht("Brandschutz", "abteilung", abteilung="Production")
         await sql(
             "insert into public.schulung_teilnahmen (schulung_id, employee_id)"
             " select id, :i from public.schulung_katalog where name = 'Brandschutz'",
@@ -179,8 +194,8 @@ class TestPlan:
 class TestPlanAnlegen:
     @pytest.mark.asyncio
     async def test_legt_die_fehlenden_an(self, db):
-        await pflicht("Brandschutz", "personio", "Production")
-        await pflicht("Gabelstapler", "personio", "Production")
+        await pflicht("Brandschutz", "abteilung", abteilung="Production")
+        await pflicht("Gabelstapler", "abteilung", abteilung="Production")
         anzahl = (
             await als(PFLEGER, "select public.schulungsplan_anlegen(:i) as n", i=MITARBEITER)
         )[0]["n"]
@@ -188,7 +203,7 @@ class TestPlanAnlegen:
 
     @pytest.mark.asyncio
     async def test_ein_zweiter_lauf_legt_nichts_doppelt_an(self, db):
-        await pflicht("Brandschutz", "personio", "Production")
+        await pflicht("Brandschutz", "abteilung", abteilung="Production")
         async with SessionLocal() as s:
             async with s.begin():
                 await s.execute(sa.text("set local role authenticated"))
@@ -212,7 +227,7 @@ class TestPlanAnlegen:
 
     @pytest.mark.asyncio
     async def test_ein_leser_darf_das_nicht(self, db):
-        await pflicht("Brandschutz", "personio", "Production")
+        await pflicht("Brandschutz", "abteilung", abteilung="Production")
         with pytest.raises(Exception, match="fehlt das Recht"):
             await als(LESER, "select public.schulungsplan_anlegen(:i)", i=MITARBEITER)
 

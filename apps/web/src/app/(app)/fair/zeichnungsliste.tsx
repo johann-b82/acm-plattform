@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileUp } from "lucide-react";
@@ -15,6 +16,7 @@ import {
 import { gruppiereNachKunde, kundenAuswahl, nachKunde, OHNE_KUNDE } from "@/lib/fair/kunden";
 import { EmptyState, Input, Label, Select } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
+import { Klappbar } from "../hr/klappbar";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Seitenwerkzeuge, useInSchale, Werkzeug } from "@/components/sidebar/werkzeugplatz";
@@ -29,6 +31,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
   const inSchale = useInSchale();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [name, setName] = useState("");
 
   const zeichnungen = useQuery({
@@ -46,10 +49,13 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
 
   const hochladen = useMutation({
     mutationFn: (datei: File) => fairApi.hochladen(datei, name),
-    onSuccess: () => {
+    onSuccess: (neu) => {
       setName("");
       toast.success("Zeichnung hochgeladen.");
-      return neuLaden();
+      void neuLaden();
+      // Direkt in die Vorschau öffnen — wie im Altsystem, statt in der Liste zu
+      // bleiben. Der erste Schritt der Prüfung ist so gleich sichtbar.
+      router.push(`/fair/${neu.id}`);
     },
     onError: (fehler: Error) => toast.error(fehler.message),
   });
@@ -144,16 +150,18 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
       )}
 
       {liste.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Jeder Kundenblock ist einzeln auf- und zuklappbar, wie im Altsystem.
+              Die Klappkomponente trägt Rahmen, Überschrift und Anzahl und hält
+              den Inhalt versteckt statt abgebaut. */}
           {gruppen.map((gruppe) => (
-            <section key={gruppe.kunde ?? "__ohne"} aria-label={gruppe.kunde ?? worte.fair.ohneKunde}>
-              <h3 className="mb-2 flex items-baseline gap-2 text-sm font-semibold">
-                <span>{gruppe.kunde ?? worte.fair.ohneKunde}</span>
-                <span className="rounded-full bg-[var(--muted)] px-2 py-0.5 text-xs font-normal tabular-nums text-[var(--fg-muted)]">
-                  {gruppe.zeichnungen.length}
-                </span>
-              </h3>
-              <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+            <Klappbar
+              key={gruppe.kunde ?? "__ohne"}
+              titel={gruppe.kunde ?? worte.fair.ohneKunde}
+              anzahl={gruppe.zeichnungen.length}
+              ebene="h3"
+            >
+              <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr>
@@ -177,7 +185,20 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                             {z.name}
                           </Link>
                         </td>
-                        <td className="px-3 py-2">{z.teilenummer?.trim() || "—"}</td>
+                        <td className="px-3 py-2">
+                          {z.teilenummer?.trim() || (
+                            // Fachliche Validierung: eine FAIR-Zeichnung braucht eine
+                            // Teilenummer. Fehlt sie, fällt der Eintrag auf — zu prüfen
+                            // oder als Nicht-Zeichnung auszusortieren.
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs text-[var(--warn)]"
+                              style={{ background: "color-mix(in oklab, var(--warn) 18%, transparent)" }}
+                              title={worte.fair.zuPruefenHinweis}
+                            >
+                              {worte.fair.zuPruefen}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 text-[var(--fg-muted)]">
                           {DATUM.format(new Date(z.erstellt_am))}
                         </td>
@@ -194,7 +215,7 @@ export function Zeichnungsliste({ darfSchreiben }: { darfSchreiben: boolean }) {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </Klappbar>
           ))}
         </div>
       )}

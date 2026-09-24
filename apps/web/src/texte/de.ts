@@ -127,6 +127,7 @@ export const de = {
     gespeichert: "Seitengröße gespeichert.",
   },
   datenstand: {
+    teilweise: "teilweise eingespielt",
     stand: (datum: string, alter: string) => `Datenstand ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Datenstand unvollständig — ${fehlend} ${anzahl === 1 ? "fehlt" : "fehlen"}`,
@@ -325,7 +326,7 @@ export const de = {
     ladeVor: "Lade den 8D-Export unter ",
     ladeNach: " hoch.",
     behoerde: "Behörde",
-    extern: "Extern",
+    extern: "Unterlieferant",
     intern: "Intern",
     kunde: "Kunde",
     level1: "Audit-Findings Level 1",
@@ -435,6 +436,7 @@ export const de = {
     umsatzJeKopf: "Umsatz / Produktions-MA",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} Aufträge ÷ ${koepfe} Köpfe`,
     produktionFehlt: "Produktionsabteilungen nicht hinterlegt",
+    letzterErfolg: (datum: string, alter: string) => `Letzter Erfolg: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Personio-Abgleich ${datum} (${alter})`,
     abgleichFehler: "mit Fehler",
     reiheUmsatzJeKopf: "Umsatz je Produktionskopf",
@@ -457,11 +459,15 @@ export const de = {
     dankeOhneBild: "Danke — das Feedback ist angekommen, ohne Bild der Seite.",
   },
   belegschaft: {
+    zeitpunkt: "Stichtag",
+    aktuell: "Aktuell",
+    quartal: "Quartal",
     titel: "Belegschaft",
     ladeFehler: (meldung: string) => `Belegschaft konnte nicht geladen werden: ${meldung}`,
     beschaeftigte: "Beschäftigte",
     beschaeftigteHinweis: "nach Personio-Status „aktiv“",
-    stichtagHinweis: "Heutiger Stand — Personio führt keine Historie, deshalb kein Jahresvergleich.",
+    stichtagHinweis:
+      "Kopfzahl und Neu/Bestand sind stichtagsgenau; die Verteilungen nutzen die heutigen Personio-Stammdaten (keine volle Historie).",
     neuImQuartal: "Neu im Quartal",
     bestand: "Bestand",
     kompetenzen: "Kompetenzen gepflegt",
@@ -650,6 +656,8 @@ export const de = {
     imTurnus: "im Turnus",
   },
   schulungsmatrix: {
+    legende: "Legende",
+    nichtZugewiesenKurz: "nicht zugewiesen",
     einleitung:
       "Alle Personen gegen alle Schulungen — die Übersicht für den Aushang und fürs Audit. " +
       "Wer noch gar keine Teilnahme hat, steht mit leerer Zeile darin; genau das ist die Lücke, " +
@@ -708,6 +716,24 @@ export const de = {
     aktivSchalter: (name: string) => `${name} aktiv`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} heißt: für diese Person steht kein Termin in der Historie. ${bald} heißt: innerhalb der nächsten zwei Monate. Stand vom ${datum}.`,
+  },
+  geltung: {
+    titel: "Geltung",
+    alle: "Alle",
+    abteilung: "Abteilung",
+    position: "Position",
+    abteilung_position: "Abt. + Position",
+    alleHinweis: "Pflicht für die gesamte Belegschaft.",
+    abteilungHinweis: "Pflicht für alle einer Abteilung — wie Personio sie führt.",
+    positionHinweis: "Pflicht für alle mit dieser Position aus Personio.",
+    kombiHinweis: "Pflicht nur, wo Abteilung und Position zusammentreffen — je Zeile als Regel.",
+    alleSpalte: "gilt für alle",
+    matrixLeer: "Noch keine Abteilungen oder Positionen aus Personio.",
+    regelHinzufuegen: "Hinzufügen",
+    abteilungWaehlen: "Abteilung wählen",
+    positionWaehlen: "Position wählen",
+    keineRegeln: "Noch keine Kombination.",
+    regelEntfernen: "Entfernen",
   },
   schulungenReg: {
     tabBearbeiten: "Schulungen bearbeiten",
@@ -1432,6 +1458,11 @@ export const de = {
     seriennummernFeld: (pos: string) => `Seriennummern Position ${pos}`,
   },
   fair: {
+    mass: "Maß",
+    alsText: "Text",
+    liest: "Wird gelesen …",
+    zuPruefen: "zu prüfen",
+    zuPruefenHinweis: "Ohne Teilenummer — als FAIR-Zeichnung prüfen oder aussortieren.",
     dateiFehlt: (meldung: string) =>
       `Die Zeichnung selbst lässt sich nicht laden (${meldung}). Die Maße stehen ` +
       "trotzdem darunter.",
@@ -2034,10 +2065,10 @@ export const de = {
     sensorGeloescht: "Sensor gelöscht, samt Zeitreihe.",
     zahlEingeben: "Bitte eine Zahl eingeben.",
     taktTitel: "Abfrage-Takt",
-    intervall: "Abfrage-Intervall (Sekunden)",
+    intervall: "Abfrage-Intervall (Sekunden, 0 = aus)",
     intervallHinweis:
-      "Gilt für alle Sensoren. Bereich 5–86400; unter 60 Sekunden wird effektiv jede Minute abgefragt.",
-    intervallFehler: "Das Intervall muss eine ganze Zahl zwischen 5 und 86400 sein.",
+      "Gilt für alle Sensoren. Bereich 0–86400; 0 schaltet die selbsttätige Abfrage ab. Unter 60 Sekunden wird effektiv jede Minute abgefragt.",
+    intervallFehler: "Das Intervall muss eine ganze Zahl zwischen 0 und 86400 sein (0 = aus).",
     grenzenTitel: "Globale Grenzwerte",
     grenzenHinweis: "Gelten für alle Sensoren. Ein leeres Feld heißt: keine Grenze.",
     temperaturMin: "Temperatur min (°C)",

@@ -48,11 +48,12 @@ Diese Regeln gelten für alle Dashboards, sofern die KPI-Notiz nichts anderes sa
 
 Übersteuerbar per `granularity=daily|weekly|monthly|quarterly|yearly`. Bucket-Ränder werden auf das Fenster geklemmt. Pro Bucket wird exakt dieselbe Formel wie für die Kachel gerechnet.
 
-**Ausnahme Umsatzverlauf: immer monatlich** (`UMSATZ_TAKT` in
-`apps/web/src/lib/kpi/vertrieb.ts`). So macht es auch das Altprojekt
-(`RevenueChart.tsx`: `const GRANULARITY = "monthly"`). Umsatz wird nicht
-täglich gebucht — im Tagestakt stand in der Monatsansicht für jeden Tag ein
-Punkt und die Fläche riss an jedem Tag ohne Buchung auf, obwohl keine Zahl
+**Ausnahme Umsatzverlauf: im Monat nach Kalenderwochen, sonst monatlich**
+(`umsatzTakt` in `apps/web/src/lib/kpi/vertrieb.ts`). Wie die Referenz zeigt der
+gewählte Monat vier bis fünf Wochenpunkte, größere Fenster rechnen monatsweise.
+Umsatz wird nicht täglich gebucht — im Tagestakt stand in der Monatsansicht für
+jeden Tag ein Punkt und die Fläche riss an jedem Tag ohne Buchung auf, obwohl
+keine Zahl
 fehlte. Die Monatsansicht zeigt damit einen Punkt, daneben den Vormonat als
 Vergleich.
 
@@ -117,7 +118,7 @@ Deutsches Zahlenformat wird beim Parsen umgewandelt (`.` Tausender weg, `,` → 
 - **Rechenweg**:
   1. Bucket = `date_trunc(month, datum)` (das Frontend schickt immer `monthly`).
   2. `SUM(wert_eur)` je Bucket, sortiert.
-  3. Vergleichsserie nur bei `comparison != none` und gesetzter Vorperiode. Vergleichsmodus je Preset: Monat/Quartal → Vorperiode, Jahr → Vorjahr, sonst keiner (`frontend/src/lib/chartComparisonMode.ts`).
+  3. Vergleichsserie im Verlauf: die **Vorjahresperiode** für Monat, Quartal, Jahr und freien Zeitraum; „Alles" ohne (`vergleichsart` in `apps/web/src/lib/kpi/vertrieb.ts`). Der unmittelbar vorherige Monat/Quartal wäre der falsche Vergleich; die Kacheln oben zeigen davon unabhängig Vorperiode und Vorjahr.
   4. Vergleichsbuckets werden **positional** auf die aktuellen Buckets gelegt (i-tes auf i-tes); fehlende Buckets werden als Lücke (`null`) geführt, überzählige verworfen.
   5. Frontend füllt fehlende Monate mit einer dichten Monatsachse auf (`RevenueChart.tsx`).
 - **Sonderfälle**: `null`-Werte bleiben Lücken, werden nicht zu 0. Die KW-Beschriftung beim Monats-Preset ist eine eigene Formel, keine ISO-KW.

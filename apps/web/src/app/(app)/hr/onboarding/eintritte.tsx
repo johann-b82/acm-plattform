@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, FileDown, Plus } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 
 import {
   istNeu,
@@ -12,12 +12,13 @@ import {
   personenwahl,
   type Eintritt,
   type Personenwahl,
-  type Planzeile,
 } from "@/lib/onboarding";
+import { dokumentApi, type Art } from "@/lib/dokumente";
 import { Badge, Button, Input, Label } from "@/components/ui/primitives";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-button";
 import { Datentabelle, type Tabellenspalte } from "@/components/ui/datentabelle";
 import { useSprache, useTexte } from "@/components/sprache/anbieter";
+import { useDokumentworte } from "@/lib/tafeln";
 import { ZAHL_TAG } from "@/lib/sprache";
 import { Segmentwahl } from "../segmentwahl";
 
@@ -36,11 +37,17 @@ const LEER = { name: "", abteilung: "", position: "", eintritt: "" };
  */
 export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
+  const dokumentworte = useDokumentworte();
   const DATUM = new Intl.DateTimeFormat(ZAHL_TAG[useSprache()], { dateStyle: "medium" });
   const queryClient = useQueryClient();
-  const [offen, setOffen] = useState<number | null>(null);
   const [neu, setNeu] = useState({ ...LEER });
   const [wahl, setWahl] = useState<Personenwahl>("neu");
+
+  // Die Blatt-Arten für den Zeilen-Button (Einarbeitungsplan, Schulungsnachweis).
+  const arten = (Object.keys(dokumentworte.art) as Art[]).map((art) => ({
+    art,
+    titel: dokumentworte.art[art],
+  }));
 
   const eintritte = useQuery({ queryKey: onboardingKeys.eintritte(), queryFn: onboardingApi.eintritte });
 
@@ -63,16 +70,17 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
     onError: melde,
   });
 
-  // Das Paket zu erzeugen **ist** die Übergabe: die Route vermerkt sie selbst.
-  // Deshalb danach neu laden — die „neu"-Markierung verschwindet dabei.
-  const paketDrucken = useMutation({
-    mutationFn: (e: Eintritt) => onboardingApi.paket(e),
-    onSuccess: neuLaden,
-    onError: melde,
-  });
-
-  const uebersichtDrucken = useMutation({
-    mutationFn: (e: Eintritt) => onboardingApi.uebersicht(e),
+  // „+ Blatt erzeugen" je Mitarbeiter: erzeugt ein Einarbeitungs- oder
+  // Schulungsblatt direkt für diese Person (früher das Formular im eigenen
+  // Panel „Einarbeitungs- & Schulungsvorgänge"). Das Blatt erscheint danach im
+  // Abschnitt „Vorgänge" zur weiteren Bearbeitung.
+  const blattErzeugen = useMutation({
+    mutationFn: ({ e, art }: { e: Eintritt; art: Art }) =>
+      dokumentApi.anlegen({ art, employee_id: e.employee_id, extern_id: e.extern_id }),
+    onSuccess: (v) => {
+      toast.success(`Blatt ${v.doc_uid} erzeugt.`);
+      return queryClient.invalidateQueries({ queryKey: ["dokumente"] });
+    },
     onError: melde,
   });
 
@@ -180,41 +188,18 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
       ausrichtung: "end",
       zelle: (e) => (
         <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            title={worte.onboarding.paketTitel}
-            disabled={paketDrucken.isPending}
-            onClick={() => paketDrucken.mutate(e)}
-          >
-            <FileDown className="me-1.5 h-3.5 w-3.5" aria-hidden />
-            {worte.onboarding.paket}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            title={worte.onboarding.uebersichtTitel}
-            disabled={uebersichtDrucken.isPending}
-            onClick={() => uebersichtDrucken.mutate(e)}
-          >
-            {worte.onboarding.uebersicht}
-          </Button>
-          {e.employee_id !== null ? (
-            <Button
-              size="sm"
-              variant="outline"
-              aria-expanded={offen === e.employee_id}
-              onClick={() => setOffen(offen === e.employee_id ? null : e.employee_id)}
-            >
-              {offen === e.employee_id ? worte.onboarding.planZu : worte.onboarding.plan}
-            </Button>
-          ) : (
-            darfSchreiben && (
-              <ConfirmDeleteButton
-                itemLabel={e.name}
-                onConfirm={() => externWeg.mutateAsync(e.extern_id!).then(() => undefined)}
-              />
-            )
+          {darfSchreiben && (
+            <BlattErzeugen
+              arten={arten}
+              laeuft={blattErzeugen.isPending}
+              onErzeugen={(art) => blattErzeugen.mutate({ e, art })}
+            />
+          )}
+          {e.employee_id === null && darfSchreiben && (
+            <ConfirmDeleteButton
+              itemLabel={e.name}
+              onConfirm={() => externWeg.mutateAsync(e.extern_id!).then(() => undefined)}
+            />
           )}
         </div>
       ),
@@ -241,11 +226,6 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
               { wert: "alle", titel: worte.onboarding.alle, anzahl: anzahl("alle") },
             ]}
           />
-        }
-        unterZeile={(e) =>
-          e.employee_id !== null && offen === e.employee_id ? (
-            <Plan employeeId={e.employee_id} darfSchreiben={darfSchreiben} />
-          ) : null
         }
       />
 
@@ -300,87 +280,56 @@ export function Eintritte({ darfSchreiben }: { darfSchreiben: boolean }) {
   );
 }
 
-/** Der Schulungsplan einer Person — Soll und Ist nebeneinander. */
-function Plan({ employeeId, darfSchreiben }: { employeeId: number; darfSchreiben: boolean }) {
+/**
+ * „+ Blatt erzeugen" je Mitarbeiter: erst der Button, nach dem Klick die Wahl
+ * des Formblatts (Einarbeitungsplan oder Schulungsnachweis). Inline statt als
+ * schwebendes Menü, damit die Auswahl nicht von der Tabelle abgeschnitten wird.
+ */
+function BlattErzeugen({
+  arten,
+  laeuft,
+  onErzeugen,
+}: {
+  arten: { art: Art; titel: string }[];
+  laeuft: boolean;
+  onErzeugen: (art: Art) => void;
+}) {
   const worte = useTexte();
-  const queryClient = useQueryClient();
-  const plan = useQuery({
-    queryKey: onboardingKeys.plan(employeeId),
-    queryFn: () => onboardingApi.plan(employeeId),
-  });
+  const [offen, setOffen] = useState(false);
 
-  const planAnlegen = useMutation({
-    mutationFn: () => onboardingApi.planAnlegen(employeeId),
-    onSuccess: (anzahl) => {
-      toast.success(anzahl === 0 ? worte.onboarding.nichtsGefehlt : worte.onboarding.angelegt(anzahl));
-      queryClient.invalidateQueries({ queryKey: ["schulungen"] });
-      return queryClient.invalidateQueries({ queryKey: ["onboarding"] });
-    },
-    onError: (fehler: Error) => toast.error(fehler.message),
-  });
-
-  const zeilen = plan.data ?? [];
-  const hinweis = zeilen.find((z) => z.quelle === "kuerzel_fehlt");
-  const echte = useMemo(() => (plan.data ?? []).filter((z) => z.quelle !== "kuerzel_fehlt"), [plan.data]);
-
-  const spalten: Tabellenspalte<Planzeile>[] = [
-    { schluessel: "name", titel: worte.onboarding.schulung, typ: "text", wert: (z) => z.name },
-    { schluessel: "bereich", titel: worte.onboarding.bereich, typ: "text", wert: (z) => z.bereich },
-    { schluessel: "turnus", titel: worte.onboarding.turnus, typ: "text", wert: (z) => z.turnus },
-    {
-      schluessel: "quelle",
-      titel: worte.onboarding.pflichtUeber,
-      typ: "text",
-      wert: (z) => `${z.quelle} ${z.abteilung ?? ""}`,
-      zelle: (z) => (
-        <Badge variant="outline">
-          {z.quelle === "personio" ? worte.onboarding.ueberAbteilung : worte.onboarding.ueberKuerzel} {z.abteilung}
-        </Badge>
-      ),
-    },
-    {
-      schluessel: "stand",
-      titel: worte.onboarding.stand,
-      typ: "zahl",
-      wert: (z) => Number(z.vorhanden),
-      suchtext: (z) => (z.vorhanden ? worte.onboarding.vorhanden : worte.onboarding.fehlt),
-      zelle: (z) =>
-        z.vorhanden ? (
-          <Badge variant="secondary">{worte.onboarding.vorhanden}</Badge>
-        ) : (
-          <Badge>{worte.onboarding.fehlt}</Badge>
-        ),
-    },
-  ];
-
+  if (!offen) {
+    return (
+      <Button size="sm" disabled={laeuft} onClick={() => setOffen(true)}>
+        <Plus className="me-1.5 h-3.5 w-3.5" aria-hidden />
+        {worte.dokumentenlauf.blattErzeugen}
+      </Button>
+    );
+  }
   return (
-    <div className="space-y-3 text-start">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-medium">{worte.onboarding.schulungsplan}</h3>
-        {darfSchreiben && (
-          <Button disabled={planAnlegen.isPending} onClick={() => planAnlegen.mutate()}>
-            {worte.onboarding.fehlendeAnlegen}
-          </Button>
-        )}
-      </div>
-      {plan.isPending ? (
-        <p className="text-sm text-[var(--fg-muted)]">{worte.onboarding.wirdGerechnet}</p>
-      ) : (
-        <>
-          {hinweis && (
-            <p className="rounded-md bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] p-3 text-sm">
-              {worte.onboarding.kuerzelFehlt(hinweis.abteilung ? `„${hinweis.abteilung}“ ` : "")}
-            </p>
-          )}
-          <Datentabelle
-            zeilen={echte}
-            spalten={spalten}
-            zeilenSchluessel={(z) => `${z.schulung_id}-${z.quelle}`}
-            leer={worte.onboarding.matrixVerlangtNichts}
-            beschriftung={worte.onboarding.schulungsplan}
-          />
-        </>
-      )}
+    <div className="flex flex-wrap items-center justify-end gap-1">
+      {arten.map((a) => (
+        <Button
+          key={a.art}
+          size="sm"
+          variant="outline"
+          disabled={laeuft}
+          onClick={() => {
+            setOffen(false);
+            onErzeugen(a.art);
+          }}
+        >
+          {a.titel}
+        </Button>
+      ))}
+      <Button
+        size="sm"
+        variant="ghost"
+        aria-label={worte.allgemein.abbrechen}
+        title={worte.allgemein.abbrechen}
+        onClick={() => setOffen(false)}
+      >
+        <X className="h-3.5 w-3.5" aria-hidden />
+      </Button>
     </div>
   );
 }

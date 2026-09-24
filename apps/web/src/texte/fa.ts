@@ -160,6 +160,7 @@ export const fa: Texte = {
     gespeichert: "اندازه صفحه ذخیره شد.",
   },
   datenstand: {
+    teilweise: "به‌طور جزئی وارد شده",
     stand: (datum: string, alter: string) => `داده‌ها تا ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `داده‌ها ناقص است — ${anzahl} مورد موجود نیست: ${fehlend}`,
@@ -358,7 +359,7 @@ export const fa: Texte = {
     ladeVor: "خروجی 8D را در ",
     ladeNach: " بارگذاری کنید.",
     behoerde: "نهاد نظارتی",
-    extern: "بیرونی",
+    extern: "تأمین‌کننده فرعی",
     intern: "درونی",
     kunde: "مشتری",
     level1: "یافته‌های ممیزی سطح 1",
@@ -467,6 +468,7 @@ export const fa: Texte = {
     umsatzJeKopf: "درآمد / کارمند تولید",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} سفارش ÷ ${koepfe} نفر`,
     produktionFehlt: "بخش‌های تولید تعیین نشده‌اند",
+    letzterErfolg: (datum: string, alter: string) => `آخرین موفقیت: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `همگام‌سازی Personio ${datum} (${alter})`,
     abgleichFehler: "با خطا",
     reiheUmsatzJeKopf: "درآمد برای هر کارمند تولید",
@@ -489,11 +491,15 @@ export const fa: Texte = {
     dankeOhneBild: "سپاسگزاریم — بازخورد رسید، بدون تصویر صفحه.",
   },
   belegschaft: {
+    zeitpunkt: "تاریخ مرجع",
+    aktuell: "کنونی",
+    quartal: "سه‌ماهه",
     titel: "نیروی انسانی",
     ladeFehler: (meldung: string) => `نیروی انسانی بارگذاری نشد: ${meldung}`,
     beschaeftigte: "شاغلان",
     beschaeftigteHinweis: "بر پایهٔ وضعیت «فعال» در Personio",
-    stichtagHinweis: "وضعیت امروز — Personio تاریخچه‌ای نگه نمی‌دارد؛ پس مقایسهٔ سالانه وجود ندارد.",
+    stichtagHinweis:
+      "شمار کارکنان و جدید/موجود تا تاریخ مرجع دقیق است؛ توزیع‌ها از داده‌های امروز Personio استفاده می‌کنند (بدون تاریخچهٔ کامل).",
     neuImQuartal: "تازه‌واردان این فصل",
     bestand: "تعداد کل",
     kompetenzen: "صلاحیت‌های ثبت‌شده",
@@ -681,6 +687,8 @@ export const fa: Texte = {
     imTurnus: "در دوره",
   },
   schulungsmatrix: {
+    legende: "راهنما",
+    nichtZugewiesenKurz: "تخصیص‌نیافته",
     einleitung:
       "همهٔ افراد در برابر همهٔ آموزش‌ها — نمای کلی برای تابلوی اعلانات و برای ممیزی. " +
       "هرکس هیچ شرکتی نداشته باشد با سطر خالی در آن می‌آید؛ همین همان خلأیی است که " +
@@ -739,6 +747,24 @@ export const fa: Texte = {
     aktivSchalter: (name: string) => `${name} فعال`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} یعنی: برای این نفر تاریخی در سابقه نیست. ${bald} یعنی: در دو ماه آینده. به تاریخ ${datum}.`,
+  },
+  geltung: {
+    titel: "شامل",
+    alle: "همه",
+    abteilung: "بخش",
+    position: "سمت",
+    abteilung_position: "بخش + سمت",
+    alleHinweis: "برای همهٔ کارکنان الزامی است.",
+    abteilungHinweis: "برای همهٔ افراد یک بخش الزامی است — همان‌گونه که Personio نگه می‌دارد.",
+    positionHinweis: "برای همهٔ افراد با این سمت از Personio الزامی است.",
+    kombiHinweis: "فقط جایی که بخش و سمت با هم می‌آیند الزامی است — هر ردیف یک قاعده.",
+    alleSpalte: "برای همه",
+    matrixLeer: "هنوز بخش یا سمتی از Personio نیست.",
+    regelHinzufuegen: "افزودن",
+    abteilungWaehlen: "انتخاب بخش",
+    positionWaehlen: "انتخاب سمت",
+    keineRegeln: "هنوز ترکیبی نیست.",
+    regelEntfernen: "حذف",
   },
   schulungenReg: {
     tabBearbeiten: "ویرایش آموزش",
@@ -1454,6 +1480,11 @@ export const fa: Texte = {
     seriennummernFeld: (pos: string) => `شماره‌های سریال ردیف ${pos}`,
   },
   fair: {
+    mass: "اندازه",
+    alsText: "متن",
+    liest: "در حال خواندن …",
+    zuPruefen: "بررسی شود",
+    zuPruefenHinweis: "بدون شماره قطعه — به‌عنوان نقشهٔ FAIR بررسی یا کنار گذاشته شود.",
     dateiFehlt: (meldung: string) =>
       `خود نقشه بارگذاری نمی‌شود (${meldung}). اندازه‌ها با این حال در پایین آمده‌اند.`,
     bezeichnungFrei: "شرح (خالی = نام فایل)",
@@ -2051,10 +2082,10 @@ export const fa: Texte = {
     sensorGeloescht: "حسگر همراه با سری زمانی‌اش حذف شد.",
     zahlEingeben: "لطفاً عددی وارد کنید.",
     taktTitel: "فاصله پرس‌وجو",
-    intervall: "فاصله پرس‌وجو (ثانیه)",
+    intervall: "فاصله پرس‌وجو (ثانیه، 0 = خاموش)",
     intervallHinweis:
-      "برای همه حسگرها. بازه ۵ تا ۸۶۴۰۰؛ کمتر از ۶۰ ثانیه در عمل یعنی پرس‌وجو در هر دقیقه.",
-    intervallFehler: "فاصله باید عددی صحیح بین ۵ و ۸۶۴۰۰ باشد.",
+      "برای همه حسگرها. بازه ۰ تا ۸۶۴۰۰؛ ۰ پرس‌وجوی خودکار را خاموش می‌کند. کمتر از ۶۰ ثانیه در عمل یعنی پرس‌وجو در هر دقیقه.",
+    intervallFehler: "فاصله باید عددی صحیح بین ۰ و ۸۶۴۰۰ باشد (۰ = خاموش).",
     grenzenTitel: "حدود کلی",
     grenzenHinweis: "برای همه حسگرها. فیلد خالی یعنی: بدون حد.",
     temperaturMin: "دمای کمینه (°C)",

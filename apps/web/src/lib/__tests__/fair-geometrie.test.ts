@@ -4,6 +4,7 @@ import {
   alsCsv,
   alsTsv,
   ausDrehung,
+  bevorzugteDrehung,
   inDrehung,
   ballonPixel,
   begrenze01,
@@ -88,6 +89,18 @@ describe("Drehung", () => {
     // Bei 90° wird die linke obere Ecke der Seite zur rechten oberen des Kastens.
     expect(ausDrehung(200, 0, 400, 200, 90)).toEqual({ x: 0, y: 0 });
     expect(ausDrehung(0, 0, 400, 200, 180)).toEqual({ x: 400, y: 200 });
+  });
+});
+
+describe("Bevorzugte Leselage aus der Ziehrichtung", () => {
+  const von = { x: 0.5, y: 0.5 };
+  it("liest von oben-links nach unten-rechts aufrecht (0°)", () => {
+    expect(bevorzugteDrehung(von, { x: 0.7, y: 0.7 })).toBe(0);
+  });
+  it("erkennt die drei übrigen Ziehrichtungen", () => {
+    expect(bevorzugteDrehung(von, { x: 0.3, y: 0.3 })).toBe(180);
+    expect(bevorzugteDrehung(von, { x: 0.7, y: 0.3 })).toBe(270);
+    expect(bevorzugteDrehung(von, { x: 0.3, y: 0.7 })).toBe(90);
   });
 });
 

@@ -52,13 +52,14 @@ from app.parsing.atr_lieferschein import (
     TextNichtLesbar,
     lies_pdf,
 )
-from app.atr import dateiserver, nummer as nummer_modul, scan as scan_modul, ziele as ziele_modul
+from app.atr import dateiserver, nummer as nummer_modul, pdf_logo, scan as scan_modul, ziele as ziele_modul
 from app.atr.dateiserver import DateiserverFehler
 from app.atr.excel import VorlageUnbrauchbar, baue_atr
 from app.atr.format import dateiname_basis, programmfamilie
 from app.atr.etikett import baue_container_etikett, baue_etikett
 from app.dokumente.pdf import PdfFehlgeschlagen, nach_pdf
 from app.atr.speicher import SpeicherFehler, ablegen
+from app.dokumente.logo import lade_logo
 from app.parsing.atr_referenz import MappeUnbrauchbar, lies_referenzmappe
 
 log = logging.getLogger(__name__)
@@ -580,8 +581,14 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
     # Lieferung jetzt die nächste laufende Nummer. Eine von Hand eingetragene
     # gewinnt immer. Auch der unbeaufsichtigte Scan geht hier durch — er hat
     # keine Maske, in der jemand eine Nummer setzen könnte.
+    #
+    # Transaktionssicher: `reservieren` nimmt einen Riegel je Familie, schreibt
+    # höchste + 1 sofort in die Zeile und gibt sie zurück — noch vor Gerüst,
+    # Excel und PDF. Zwei gleichzeitige Läufe lesen so nie dasselbe Maximum.
     if not (daten.get("atr_nummer") or "").strip():
-        daten["atr_nummer"] = await nummer_modul.naechste(daten.get("programm"))
+        daten["atr_nummer"] = await nummer_modul.reservieren(
+            lieferung_id, daten.get("programm")
+        )
     try:
         mappe = await run_in_threadpool(baue_atr, gerüst, daten, positionen)
     except VorlageUnbrauchbar as fehler:
@@ -604,6 +611,14 @@ async def _erzeuge(lieferung_id: str) -> tuple[ErzeugtErgebnis, list[tuple[str, 
     hinweis: str | None = None
     try:
         pdf = await nach_pdf(mappe, name="atr")
+        # Das Logo, das LibreOffice aus dem Druckkopf fallen lässt, oben links
+        # auf jede Seite stempeln. Vorrang hat das konfigurierte Plattform-Logo
+        # (wie bei allen anderen Formblättern); ist keines hinterlegt, dient die
+        # Kopfgrafik der Vorlage als Rückfall.
+        logo_obj = await lade_logo()
+        logo = logo_obj.daten if logo_obj else pdf_logo.logo_aus_geruest(gerüst)
+        if logo:
+            pdf = await run_in_threadpool(pdf_logo.kopf_logo, pdf, logo)
         pdf_pfad = await ablegen(f"{stamm}/atr.pdf", pdf, "application/pdf")
     except (PdfFehlgeschlagen, SpeicherFehler) as fehler:
         hinweis = f"Das PDF ist nicht entstanden: {fehler}"

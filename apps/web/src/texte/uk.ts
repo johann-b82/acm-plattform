@@ -161,6 +161,7 @@ export const uk: Texte = {
     gespeichert: "Розмір сторінки збережено.",
   },
   datenstand: {
+    teilweise: "частково імпортовано",
     stand: (datum: string, alter: string) => `Дані станом на ${datum} (${alter})`,
     unvollstaendig: (fehlend: string, anzahl: number) =>
       `Дані неповні — ${fehlend} ${anzahl === 1 ? "відсутній" : "відсутні"}`,
@@ -358,7 +359,7 @@ export const uk: Texte = {
     ladeVor: "Завантажте експорт 8D у розділі ",
     ladeNach: ".",
     behoerde: "Орган влади",
-    extern: "Зовнішній",
+    extern: "Субпостачальник",
     intern: "Внутрішній",
     kunde: "Клієнт",
     level1: "Невідповідності аудиту рівня 1",
@@ -468,6 +469,7 @@ export const uk: Texte = {
     umsatzJeKopf: "Виручка / працівник виробництва",
     umsatzJeKopfHinweis: (auftraege: string, koepfe: string) => `${auftraege} замовлень ÷ ${koepfe} осіб`,
     produktionFehlt: "виробничі відділи не задано",
+    letzterErfolg: (datum: string, alter: string) => `Останній успіх: ${datum} (${alter})`,
     abgleichStand: (datum: string, alter: string) => `Синхронізація Personio ${datum} (${alter})`,
     abgleichFehler: "з помилками",
     reiheUmsatzJeKopf: "Виручка на працівника виробництва",
@@ -490,11 +492,15 @@ export const uk: Texte = {
     dankeOhneBild: "Дякуємо — відгук надійшов, без зображення сторінки.",
   },
   belegschaft: {
+    zeitpunkt: "Станом на",
+    aktuell: "Поточний",
+    quartal: "Квартал",
     titel: "Штат",
     ladeFehler: (meldung: string) => `Не вдалося завантажити дані про штат: ${meldung}`,
     beschaeftigte: "Працівники",
     beschaeftigteHinweis: "за статусом Personio «активний»",
-    stichtagHinweis: "Стан на сьогодні — Personio не веде історію, тому річного порівняння немає.",
+    stichtagHinweis:
+      "Кількість та нові/наявні точні станом на дату; розподіли використовують сьогоднішні дані Personio (без повної історії).",
     neuImQuartal: "Нових у кварталі",
     bestand: "Чисельність",
     kompetenzen: "Компетенції заповнено",
@@ -686,6 +692,8 @@ export const uk: Texte = {
     imTurnus: "у межах періодичності",
   },
   schulungsmatrix: {
+    legende: "Легенда",
+    nichtZugewiesenKurz: "не призначено",
     einleitung:
       "Усі особи проти всіх навчань — огляд для стенда і для аудиту. Хто ще не має жодної " +
       "участі, стоїть у ній із порожнім рядком; саме це та прогалина, яку шукають.",
@@ -742,6 +750,24 @@ export const uk: Texte = {
     aktivSchalter: (name: string) => `${name} активне`,
     fussnote: (nie: string, bald: string, datum: string) =>
       `${nie} означає: для цієї особи в історії немає жодної дати. ${bald} означає: протягом наступних двох місяців. Станом на ${datum}.`,
+  },
+  geltung: {
+    titel: "Стосується",
+    alle: "Усі",
+    abteilung: "Відділ",
+    position: "Посада",
+    abteilung_position: "Відділ + посада",
+    alleHinweis: "Обовʼязково для всього персоналу.",
+    abteilungHinweis: "Обовʼязково для всіх у відділі — як його веде Personio.",
+    positionHinweis: "Обовʼязково для всіх із цією посадою з Personio.",
+    kombiHinweis: "Обовʼязково лише там, де збігаються відділ і посада — по одному правилу на рядок.",
+    alleSpalte: "стосується всіх",
+    matrixLeer: "Ще немає відділів або посад із Personio.",
+    regelHinzufuegen: "Додати",
+    abteilungWaehlen: "Виберіть відділ",
+    positionWaehlen: "Виберіть посаду",
+    keineRegeln: "Ще немає комбінації.",
+    regelEntfernen: "Вилучити",
   },
   schulungenReg: {
     tabBearbeiten: "Редагувати навчання",
@@ -1457,6 +1483,11 @@ export const uk: Texte = {
     seriennummernFeld: (pos: string) => `Серійні номери позиції ${pos}`,
   },
   fair: {
+    mass: "Розмір",
+    alsText: "Текст",
+    liest: "Зчитування …",
+    zuPruefen: "перевірити",
+    zuPruefenHinweis: "Без номера деталі — перевірте як креслення FAIR або вилучіть.",
     dateiFehlt: (meldung: string) =>
       `Саме креслення не завантажується (${meldung}). Розміри все одно наведені нижче.`,
     bezeichnungFrei: "Назва (порожньо = ім’я файлу)",
@@ -2053,10 +2084,10 @@ export const uk: Texte = {
     sensorGeloescht: "Датчик видалено разом із часовим рядом.",
     zahlEingeben: "Введіть, будь ласка, число.",
     taktTitel: "Інтервал опитування",
-    intervall: "Інтервал опитування (секунди)",
+    intervall: "Інтервал опитування (секунди, 0 = вимк.)",
     intervallHinweis:
-      "Діє для всіх датчиків. Діапазон 5–86400; менше 60 секунд фактично означає опитування щохвилини.",
-    intervallFehler: "Інтервал має бути цілим числом від 5 до 86400.",
+      "Діє для всіх датчиків. Діапазон 0–86400; 0 вимикає автоматичне опитування. Менше 60 секунд фактично означає опитування щохвилини.",
+    intervallFehler: "Інтервал має бути цілим числом від 0 до 86400 (0 = вимк.).",
     grenzenTitel: "Глобальні граничні значення",
     grenzenHinweis: "Діють для всіх датчиків. Порожнє поле означає: без межі.",
     temperaturMin: "Температура мін (°C)",

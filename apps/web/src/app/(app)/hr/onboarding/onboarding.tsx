@@ -4,27 +4,24 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import { einarbeitungApi, einarbeitungKeys } from "@/lib/einarbeitung";
-import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { Klappbar } from "../klappbar";
 import { Einarbeitungsinhalte, Einarbeitungsmatrix } from "./einarbeitung";
-import { Rollen } from "./rollen";
 import { Vorgaenge } from "./vorgaenge";
 import { Eintritte } from "./eintritte";
 
 /**
  * Onboarding — der gemeinsame Einstieg für Eintritte und Einarbeitung (NAV-01).
  *
- * Aufbau und Reihenfolge wie im Altsystem: Einarbeitungsinhalte, ihre Matrix,
- * die Rollenbrücke, darunter die Einarbeitungs- und Schulungsvorgänge und
- * zuletzt die Eintritte. Die früheren eigenen Seiten Einarbeitung und
- * Dokumentenlauf leiten hierher weiter und springen auf ihren Abschnitt.
+ * Aufbau und Reihenfolge: Einarbeitungsinhalte, ihre Anforderungsmatrix,
+ * darunter die Einarbeitungs- und Schulungsvorgänge und zuletzt die Eintritte.
+ * Die früheren eigenen Seiten Einarbeitung und Dokumentenlauf leiten hierher
+ * weiter und springen auf ihren Abschnitt.
  */
 export function Onboarding({ darfSchreiben }: { darfSchreiben: boolean }) {
   const worte = useTexte();
   const katalog = useQuery({ queryKey: einarbeitungKeys.katalog(), queryFn: einarbeitungApi.katalog });
-  const rollen = useQuery({ queryKey: onboardingKeys.rollen(), queryFn: onboardingApi.rollen });
 
   return (
     <div className="space-y-6">
@@ -44,10 +41,6 @@ export function Onboarding({ darfSchreiben }: { darfSchreiben: boolean }) {
 
       <Klappbar id="einarbeitungsmatrix" titel={worte.onboarding.matrixTitel} offenStart={false}>
         <Einarbeitungsmatrix darfSchreiben={darfSchreiben} />
-      </Klappbar>
-
-      <Klappbar id="rollen" titel={worte.onboarding.bruecke} anzahl={rollen.data?.length} offenStart={false}>
-        <Rollen darfSchreiben={darfSchreiben} />
       </Klappbar>
 
       <section id="vorgaenge" className="scroll-mt-4 space-y-3">

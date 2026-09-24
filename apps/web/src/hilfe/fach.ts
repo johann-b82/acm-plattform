@@ -68,6 +68,15 @@ Eine Zeichnung wird hochgeladen, und auf ihr werden die zu prüfenden Maße mit
 nummerierten Ballons markiert. Aus den Ballons entsteht die Prüfliste — die
 Nummerierung auf der Zeichnung und in der Liste ist dieselbe.
 
+## Die Zeichnungsliste
+
+Die Zeichnungen sind nach Kunde gruppiert; jeder Block lässt sich einzeln auf-
+und zuklappen. Eine Zeichnung ohne Teilenummer trägt den Hinweis **„zu prüfen"**
+— so fällt eine versehentlich abgelegte Nicht-Zeichnung auf, statt unbemerkt als
+Zeichnung zu laufen.
+
+![Die FAIR-Zeichnungsliste: nach Kunde gruppiert und klappbar, mit „zu prüfen" bei fehlender Teilenummer.](/hilfe/fair-kundengruppen.png)
+
 ## Arbeiten mit Ballons
 
 Ein Ballon wird gesetzt, verschoben und nummeriert. Die Nummern bleiben stabil:
@@ -107,7 +116,7 @@ wird nicht gesetzt — ein Newsletter ist ein Text, kein Baukasten.
     {
       slug: "sensoren",
       titel: "Sensoren",
-      kurz: "Temperatur und Luftfeuchtigkeit aus dem Netz, alle fünf Minuten.",
+      kurz: "Temperatur und Luftfeuchtigkeit aus dem Netz, in einem einstellbaren Takt.",
       text: `
 # Sensoren
 
@@ -115,8 +124,14 @@ Ansicht unter **Sensoren**, eingerichtet unter **Einstellungen → Sensoren**.
 
 ## Was passiert
 
-Alle fünf Minuten werden die eingetragenen Geräte gefragt. Was sie liefern,
-wird zur Zeitreihe und zur Kachel.
+In einem **globalen Takt** werden alle eingetragenen Geräte gefragt. Was sie
+liefern, wird zur Zeitreihe und zur Kachel. Der Takt gilt für alle Geräte
+gemeinsam und steht unter **Einstellungen → Sensoren** (Vorgabe: stündlich). Er
+ist frei in ganzen Sekunden wählbar; **0 schaltet die selbsttätige Abfrage ab**
+— von Hand messen bleibt möglich. Feiner als eine Minute wird der Takt nicht,
+weil die Datenbank nur zur vollen Minute anstößt.
+
+![Die Sensor-Einstellungen: globales Abfrage-Intervall (0 = aus) und globale Grenzwerte für alle Geräte.](/hilfe/sensoren-einstellungen.png)
 
 ## Messung und Versuch sind zweierlei
 
@@ -129,8 +144,9 @@ Die Kachel zeigt deshalb beides: den letzten **Messwert** und den letzten
 
 ## Grenzwerte
 
-Je Gerät lässt sich festlegen, ab wann ein Wert als zu hoch oder zu niedrig
-gilt. Die Kachel färbt sich entsprechend.
+Die Grenzwerte gelten **global für alle Geräte** (unter **Einstellungen →
+Sensoren**): ab wann Temperatur oder Luftfeuchte als zu hoch oder zu niedrig
+gelten. Die Kachel färbt sich entsprechend.
 
 ## Einrichten
 

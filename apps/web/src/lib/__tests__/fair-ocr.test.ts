@@ -6,6 +6,7 @@ import {
   besteLesung,
   bewerteLesung,
   bereinigeLesung,
+  normalisiereMass,
   OCR_PFADE,
   OCR_SPRACHEN,
   ocrEntscheidung,
@@ -39,6 +40,14 @@ describe("OCR je Zeile (FAI-05)", () => {
 
   it("liefert leer, wenn keine Lage etwas Brauchbares hergibt", async () => {
     expect(await besteLesung(async () => ({ text: "", konfidenz: 0 }))).toBe("");
+  });
+
+  it("vereinheitlicht Durchmesser- und Toleranzzeichen behutsam", () => {
+    expect(normalisiereMass("⌀ 12,0")).toBe("Ø 12,0");
+    expect(normalisiereMass("∅12")).toBe("Ø12");
+    expect(normalisiereMass("25 +/- 0,1")).toBe("25 ± 0,1");
+    // Lässt einen sauberen Wert unangetastet.
+    expect(normalisiereMass("40 ±0,1")).toBe("40 ±0,1");
   });
 
   it("überschreibt einen vorhandenen, anderen Wert nicht ungefragt", () => {

@@ -33,7 +33,7 @@ from app.config import settings
 from app.personio import nachweise, zugang
 from app.personio.client import PersonioFehler
 from app.personio.listen import sammeln
-from app.personio.sync import Ergebnis, NichtEingerichtet, abgleichen
+from app.personio.sync import BereitsInArbeit, Ergebnis, NichtEingerichtet, abgleichen
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +81,9 @@ def _antwort(e: Ergebnis) -> AbgleichErgebnis:
 async def _laufen_lassen() -> AbgleichErgebnis:
     try:
         return _antwort(await abgleichen())
+    except BereitsInArbeit as exc:
+        # Ein zweiter gleichzeitiger Lauf startet nicht.
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except NichtEingerichtet as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except PersonioFehler as exc:

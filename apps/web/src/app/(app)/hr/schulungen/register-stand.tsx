@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Check, Circle, X } from "lucide-react";
 
 import {
   abteilungenMitVorgesetzten,
@@ -14,6 +15,7 @@ import {
   standBelegschaft,
   standorte,
   tagesdatum,
+  type Dringlichkeit,
   type FaelligeZeile,
   type Mitarbeiterstand,
   type Person,
@@ -228,7 +230,7 @@ function MitarbeiterUebersicht({
 }
 
 /** Die Kreuztabelle: alle Personen gegen alle aktiven Schulungen. */
-function Gesamtmatrix({
+export function Gesamtmatrix({
   stand,
   personen,
   katalog,
@@ -270,6 +272,23 @@ function Gesamtmatrix({
           <p className="text-sm text-[var(--fg-muted)]">{worte.schulungenReg.matrixLeer}</p>
         ) : (
           <>
+            {/* Vollständige Legende bei der Matrix: jedes Symbol mit Bedeutung. */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--fg-muted)]">
+              <span className="font-medium text-[var(--fg)]">{worte.schulungsmatrix.legende}:</span>
+              {(["offen", "faellig_bald", "ueberfaellig", "nie"] as Dringlichkeit[]).map((w) => {
+                const { Icon, farbe } = STATUS_SYMBOL[w];
+                return (
+                  <span key={w} className="inline-flex items-center gap-1">
+                    <Icon className={cn("h-4 w-4", farbe)} aria-hidden />
+                    {dringlichkeitLabel[w]}
+                  </span>
+                );
+              })}
+              <span className="inline-flex items-center gap-1">
+                <span aria-hidden className="inline-flex h-4 w-4 items-center justify-center">·</span>
+                {worte.schulungsmatrix.nichtZugewiesenKurz}
+              </span>
+            </div>
             <div className="max-h-[70vh] overflow-auto rounded-md border border-[var(--border)]">
               <table className="border-collapse text-sm" aria-label={worte.schulungenReg.matrixTitel}>
                 <thead>
@@ -321,13 +340,24 @@ function Gesamtmatrix({
                           );
                         }
                         const wie = dringlichkeit(zelle, heuteDate);
+                        const { Icon, farbe } = STATUS_SYMBOL[wie];
+                        const datum = zelle.aktuell_datum
+                          ? DATUM.format(new Date(zelle.aktuell_datum))
+                          : null;
+                        // Symbol in der Zelle; Datum und Detail bleiben als
+                        // Tooltip und für Screenreader erhalten.
+                        const beschriftung =
+                          worte.schulungsmatrix.zelle(p.name ?? "?", s.name, dringlichkeitLabel[wie]) +
+                          (datum ? `, ${datum}` : "");
                         return (
                           <td key={s.id} className="border-b border-[var(--border)] px-1 py-1 text-center">
                             <span
-                              className={cn("inline-block w-full rounded px-1 py-1 text-[11px] tabular-nums", ZELLE[wie])}
-                              title={worte.schulungsmatrix.zelle(p.name ?? "?", s.name, dringlichkeitLabel[wie])}
+                              role="img"
+                              aria-label={beschriftung}
+                              title={beschriftung}
+                              className="inline-flex items-center justify-center"
                             >
-                              {zelle.aktuell_datum ? DATUM.format(new Date(zelle.aktuell_datum)) : worte.schulungsmatrix.offen}
+                              <Icon className={cn("h-4 w-4", farbe)} aria-hidden />
                             </span>
                           </td>
                         );
@@ -344,11 +374,16 @@ function Gesamtmatrix({
   );
 }
 
-const ZELLE: Record<ReturnType<typeof dringlichkeit>, string> = {
-  nie: "status-bad",
-  ueberfaellig: "status-bad",
-  faellig_bald: "status-warn",
-  offen: "status-ok",
+/**
+ * Statuszellen wie in der Referenz: ein Symbol je Zustand. „Nie absolviert" und
+ * „überfällig" sind durch die Form getrennt (Hohlkreis gegen Kreuz), nicht nur
+ * durch die Farbe — so bleiben sie auch bei Farbenblindheit unterscheidbar.
+ */
+const STATUS_SYMBOL: Record<Dringlichkeit, { Icon: typeof Check; farbe: string }> = {
+  offen: { Icon: Check, farbe: "text-[var(--ok)]" }, // aktuell / im Turnus
+  faellig_bald: { Icon: AlertTriangle, farbe: "text-[var(--warn)]" }, // bald fällig
+  ueberfaellig: { Icon: X, farbe: "text-[var(--danger)]" }, // überfällig
+  nie: { Icon: Circle, farbe: "text-[var(--danger)]" }, // offen/zugewiesen, nie absolviert
 };
 
 /** Abteilungen & Vorgesetzte (SCH-06) — aus dem Organigramm abgeleitet. */

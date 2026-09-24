@@ -131,13 +131,12 @@ async def _soll_schulungen(person: Person) -> list[uebersicht_bogen.Zeile]:
             await sitzung.execute(
                 sa.text(
                     "select bereich, name, quelle from public.schulungsplan(:i)"
-                    " where quelle <> 'kuerzel_fehlt'"
                     " order by bereich, name"
                 ),
                 {"i": person.employee_id},
             )
         ).mappings().all()
-    # Dieselbe Schulung kann über beide Ebenen verlangt sein — einmal reicht.
+    # Dieselbe Schulung kann über mehrere Geltungen verlangt sein — einmal reicht.
     gesehen: set[str] = set()
     ergebnis: list[uebersicht_bogen.Zeile] = []
     for zeile in zeilen:
