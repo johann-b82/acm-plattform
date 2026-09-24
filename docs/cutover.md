@@ -717,7 +717,7 @@ bash scripts/cutover/cutover.sh schritt port80     # hält vorher an
 bash scripts/cutover/cutover.sh zurueck port80     # nimmt alles zurück
 ```
 
-Der Schritt fasst das Altprojekt nicht hart an: Es wird **nicht abgeschaltet**, sondern auf `8082` verschoben (`ALT_PORT`). Es bleibt damit erreichbar, und der Rückweg braucht es. Wer es endgültig abschalten will, tut das später und bewusst — nicht im selben Moment wie den Umzug.
+Der Schritt fasst das Altprojekt nicht hart an: Es wird **nicht abgeschaltet**, sondern auf `8082` verschoben (`ALT_PORT`) — mit `ports: !override`, nicht `!reset`: Letzteres *löscht* die Bindung, statt sie zu ersetzen, und das Altprojekt liefe dann zwar weiter, wäre aber von außen unsichtbar und als Rückfall wertlos. Es bleibt damit erreichbar, und der Rückweg braucht es. Wer es endgültig abschalten will, tut das später und bewusst — nicht im selben Moment wie den Umzug.
 
 Gesichert wird vor dem ersten Handgriff, jeweils als `*.vor-port80`: die `.env` beider Stacks, die `docker-compose.cutover.yml` des Altprojekts und die Medien-Adressen als Textdatei. Ein zweiter Lauf überschreibt diese Sicherungen nicht — sonst wäre nach dem zweiten Anlauf der Rückweg verloren.
 

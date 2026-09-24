@@ -519,6 +519,46 @@ t_port80_pruefung_meldet_echten_fehlschlag() {
 }
 pruefe "port80: bleibt es bei 502, meldet die Prüfung den Fehlschlag" t_port80_pruefung_meldet_echten_fehlschlag
 
+t_port80_bindung_wird_von_compose_wirklich_gesetzt() {
+  # Der Test, der gefehlt hat: Am 2026-09-24 stand `"8082:80"` korrekt in der
+  # Datei, aber `ports: !reset` mit Liste LÖSCHT die Bindung, statt sie zu
+  # ersetzen (dafür gibt es `!override`). Das Altprojekt lief danach ohne jeden
+  # Host-Port — als Rückfall wertlos. Ein Test gegen den Dateitext erkennt nur
+  # die eigene Ausgabe wieder; geprüft wird deshalb die aufgelöste Konfiguration.
+  # Ohne die Attrappen der Test-Sandbox: hier ist das echte docker gefragt.
+  echtes_docker="$(PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin command -v docker || true)"
+  [ -n "${echtes_docker}" ] || { echo "docker nicht gefunden"; return 1; }
+  sandbox_aus="$(mktemp -d)"
+  cat > "${sandbox_aus}/docker-compose.yml" <<'YAML'
+services:
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "127.0.0.1:5432:5432"
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+YAML
+  # dieselbe Datei, die h_port80 schreibt
+  cat > "${sandbox_aus}/docker-compose.cutover.yml" <<'YAML'
+services:
+  db:
+    ports: !reset []
+  caddy:
+    ports: !override
+      - "8082:80"
+YAML
+  aufgeloest="$(cd "${sandbox_aus}" && "${echtes_docker}" compose -f docker-compose.yml -f docker-compose.cutover.yml config 2>/dev/null)"
+  [ -n "${aufgeloest}" ] || { echo "compose config lieferte nichts"; return 1; }
+  # caddy muss auf 8082 veröffentlicht sein …
+  echo "${aufgeloest}" | grep -q 'published: "8082"' || { echo "keine Bindung auf 8082:"; echo "${aufgeloest}"; return 1; }
+  # … und die Datenbank gar nicht.
+  ! echo "${aufgeloest}" | grep -q 'published: "5432"' || { echo "die alte Datenbank hat noch einen Host-Port"; return 1; }
+  rm -rf "${sandbox_aus}"
+}
+pruefe "port80: compose löst die Bindung des Altprojekts wirklich auf 8082 auf" t_port80_bindung_wird_von_compose_wirklich_gesetzt
+
 # --- Ablauf auf dem Mac ------------------------------------------------------
 
 CUTOVER_NICHT_STARTEN=1 . "${CUTOVER}/cutover.sh"
