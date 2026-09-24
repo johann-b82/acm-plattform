@@ -485,6 +485,40 @@ t_port80_zurueck_ohne_sicherung_bricht_ab() {
 }
 pruefe "port80 zurück: ohne Sicherung kein Rückweg" t_port80_zurueck_ohne_sicherung_bricht_ab
 
+t_port80_pruefung_haelt_den_anlauf_aus() {
+  port80_lage
+  . "${CUTOVER}/host.sh"   # die echte Prüfung zurückholen (port80_lage stubbt sie)
+  # Der Signage-Stack lief am 2026-09-24 beim ersten Versuch noch an: /player/
+  # antwortete mit 502, die Prüfung urteilte über den Anlauf statt über das
+  # Ergebnis. Die Attrappe stellt genau das nach.
+  zaehler="${SANDBOX}/player-versuche"; echo 0 > "$zaehler"
+  export PORT80_WARTEN=20
+  export ATTRAPPE_CURL='
+    case "$*" in
+      */player/*)
+        n=$(( $(cat '"$zaehler"') + 1 )); echo $n > '"$zaehler"'
+        if [ $n -le 2 ]; then printf 502; else printf 200; fi ;;
+      *:8080/health*) echo "{\"status\": \"ok\"}" ;;
+      */login*|*/api/health*) printf 200 ;;
+      *) printf 307 ;;
+    esac'
+  signage_psql() { echo 0; }
+  h_port80_pruefen
+  # Erst der dritte Versuch war erfolgreich — die Prüfung muss durchgehalten haben.
+  [ "$(cat "$zaehler")" -ge 3 ] || { echo "nur $(cat "$zaehler") Versuche"; return 1; }
+}
+pruefe "port80: die Prüfung wartet den Anlauf des Signage-Stacks ab" t_port80_pruefung_haelt_den_anlauf_aus
+
+t_port80_pruefung_meldet_echten_fehlschlag() {
+  port80_lage
+  . "${CUTOVER}/host.sh"
+  export PORT80_WARTEN=3
+  export ATTRAPPE_CURL='case "$*" in */player/*) printf 502 ;; */login*|*/api/health*) printf 200 ;; *) printf 307 ;; esac'
+  signage_psql() { echo 0; }
+  ! h_port80_pruefen >/dev/null 2>&1
+}
+pruefe "port80: bleibt es bei 502, meldet die Prüfung den Fehlschlag" t_port80_pruefung_meldet_echten_fehlschlag
+
 # --- Ablauf auf dem Mac ------------------------------------------------------
 
 CUTOVER_NICHT_STARTEN=1 . "${CUTOVER}/cutover.sh"
