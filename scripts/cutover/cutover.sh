@@ -110,9 +110,9 @@ pi_einstufen() {  # url → api | caddy | neu | unbekannt
 
 reihenfolge() {  # api | caddy
   if [ "$1" = api ]; then
-    printf '%s\n' vorab 0 0b 3 4d 5 1a 1b 1c 2 4a 4b 6 pruefen
+    printf '%s\n' vorab 0 0b 3 4d 5 1a 1b 1c 2 4a 4b port80 6 pruefen
   else
-    printf '%s\n' vorab 0 0b 1a 1b 1c 2 3 4a 4b 4d 5 6 pruefen
+    printf '%s\n' vorab 0 0b 1a 1b 1c 2 3 4a 4b 4d 5 port80 6 pruefen
   fi
 }
 
@@ -287,6 +287,14 @@ pi_umstellen() {  # pi adresse
   return 1
 }
 
+schritt_port80() {
+  haltepunkt "Die Plattform übernimmt Port 80, das Altprojekt geht auf 8082.
+  Ausfall: die Neustartzeit der Plattform, etwa eine Minute. Bildschirme und App sind kurz weg.
+  Danach gilt ${HOST_IP} ohne Port — Gerätetoken und Anmeldungen bleiben damit gültig.
+  Rückweg: cutover.sh zurueck port80" || return 1
+  fern h_port80
+}
+
 schritt_6() {
   haltepunkt "Host-Vorlagen brauchen sudo mit Passwort — von Hand, und der Docker-Daemon startet neu (beide Stacks kurz weg):
   sudo cp ${BASIS}/acm-plattform/infra/host/daemon.json /etc/docker/daemon.json
@@ -362,7 +370,8 @@ main() {
       case "${2:-}" in
         1c) haltepunkt "Altprojekt zurück nach ${BASIS}/lumeapps (Ausfall)." && fern h_1c_zurueck;;
         5) local pi; for pi in ${3:-${PIS}}; do pi_fern "${pi}" p_zurueck || return 1; done;;
-        *) echo "zurueck 1c | zurueck 5 [PI]" >&2; return 2;;
+        port80) haltepunkt "Zurück: Altprojekt wieder auf Port 80, Plattform auf ${PLATTFORM_PORT}, Medien-Adressen zurück (Ausfall)." && fern h_port80_zurueck;;
+        *) echo "zurueck 1c | zurueck 5 [PI] | zurueck port80" >&2; return 2;;
       esac;;
     *) sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; return 2;;
   esac
