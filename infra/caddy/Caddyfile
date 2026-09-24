@@ -4,6 +4,20 @@
 	admin off
 }
 
+# Der Weg zum Signage-Stack, den Player und Pis nehmen. Siehe die handle-Blöcke
+# unten: direkt weiter, nicht über `web`, und mit den Einstellungen, die der
+# SSE-Kanal braucht.
+(signage_direkt) {
+	reverse_proxy {$SIGNAGE_UPSTREAM:host.docker.internal:8080} {
+		flush_interval -1
+		transport http {
+			read_timeout 24h
+			write_timeout 24h
+			dial_timeout 10s
+		}
+	}
+}
+
 :80 {
 	# Nur Fehler loggen — der Access-Log war die Ursache des Platte-voll-Vorfalls.
 	log {
@@ -43,10 +57,46 @@
 		-Server
 	}
 
+	# --- Der Player-Weg → Signage-Stack, ohne Umweg über die Plattform.
+	#
+	# Warum das hier steht, obwohl der Signage-Stack einen eigenen Port hat:
+	# Der Player hält sein Gerätetoken im localStorage, und der hängt am
+	# Origin. Zeigte ein Pi auf `<host>:8080`, wäre das ein anderer Origin als
+	# der, unter dem er gekoppelt wurde — der Speicher wäre leer und jeder
+	# Bildschirm zeigte wieder einen Kopplungscode. Unter demselben Origin
+	# bleibt die Kopplung erhalten, und die Pis müssen nie angefasst werden.
+	#
+	# Weitergereicht wird direkt an den Signage-Stack, NICHT über `web`: fällt
+	# die Plattform-Anwendung aus, laufen die Tafeln weiter. Nur Caddy selbst
+	# liegt dann noch im Weg.
+	#
+	# `/api/signage/player/stream` ist ein SSE-Kanal, den Player und Sidecar
+	# unbegrenzt offenhalten. Ohne `flush_interval -1` puffert Caddy die
+	# Ereignisse, ohne die langen Zeitgrenzen kappt es die Verbindung. Das
+	# Snippet dazu steht oben, außerhalb des Site-Blocks — dort verlangt Caddy
+	# es.
+	#
+	# Die Oberfläche des Players samt Bündel (`/player/assets/*`).
+	handle /player/* {
+		import signage_direkt
+	}
+
+	# Die Geräte-API: playlist, calibration, heartbeat, stream, asset. Muss VOR
+	# /api/signage/* stehen — Caddy wertet handle-Blöcke in Reihenfolge aus.
+	handle /api/signage/player/* {
+		import signage_direkt
+	}
+
+	# Die Kopplung eines neuen Geräts läuft ebenfalls ohne angemeldete Person.
+	handle /api/signage/pair/* {
+		import signage_direkt
+	}
+
 	# --- /api/signage/* → web. Der Route Handler dort hängt das Access-Token an
 	# und reicht an den Signage-Stack weiter (eigenes Compose-Projekt, eigener
-	# Port). Muss VOR der allgemeinen /api/*-Regel stehen: Caddy wertet
-	# handle-Blöcke in Reihenfolge aus.
+	# Port). Das ist der Weg der *Verwaltung*, mit Benutzer-Token — die Geräte
+	# gehen oben direkt. Muss VOR der allgemeinen /api/*-Regel stehen: Caddy
+	# wertet handle-Blöcke in Reihenfolge aus.
 	handle /api/signage/* {
 		reverse_proxy web:3000
 	}
