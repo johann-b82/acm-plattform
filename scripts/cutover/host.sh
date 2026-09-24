@@ -545,6 +545,9 @@ YAML
   env_setzen "$se" PLATFORM_JWT_ISSUER "${aussteller_neu}"
   (cd "${BASIS}/acm-signage" && docker compose up -d signage-api) \
     || { abbruch "signage-api kam nicht hoch"; return 1; }
+  # Der Neustart dauert; ohne das Warten prüft der Schritt gegen einen Stack,
+  # der noch anläuft, und meldet einen Fehlschlag, der keiner ist.
+  warte_auf_stack "${BASIS}/acm-signage" 180 || return 1
   gut "Aussteller im Signage-Stack nachgezogen"
 
   # 5. Die eingebetteten Seiten zeigen sonst auf einen Port, den es nicht
@@ -556,16 +559,27 @@ YAML
   h_port80_pruefen
 }
 
-h_port80_pruefen() {
-  local rc=0 basis code
-  basis="$(neue_basis)"
-  for pfad in / /login /api/health /player/; do
+# Wiederholt, bis die Antwort passt — hinter den Diensten liegen Stacks, die
+# nach einem Neustart Sekunden brauchen. Ein einzelner Versuch urteilt über den
+# Anlauf statt über das Ergebnis.
+antwortet_mit() {  # pfad muster [sekunden]
+  local pfad="$1" muster="$2" frist=$(( $(date +%s) + ${3:-${PORT80_WARTEN:-60}} )) code
+  while :; do
     code="$(curl -s -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1${pfad}" || echo 000)"
-    case "${pfad}:${code}" in
-      /:30[12378]|/login:200|/api/health:200|/player/:200) gut "${pfad} → ${code}" ;;
-      *) schlecht "${pfad} → ${code}"; rc=1 ;;
+    case "${code}" in
+      ${muster}) gut "${pfad} → ${code}"; return 0 ;;
     esac
+    [ "$(date +%s)" -ge "${frist}" ] && { schlecht "${pfad} → ${code} (erwartet ${muster})"; return 1; }
+    sleep 3
   done
+}
+
+h_port80_pruefen() {
+  local rc=0
+  antwortet_mit /            '30[12378]' || rc=1
+  antwortet_mit /login       200         || rc=1
+  antwortet_mit /api/health  200         || rc=1
+  antwortet_mit /player/     200         || rc=1
   # Kein :8081 darf in den Medien übrig sein.
   local rest; rest="$(signage_psql "select count(*) from signage_media where uri like '%:${PLATTFORM_PORT}/%'" | tr -d '\r ')"
   [ "${rest}" = 0 ] && gut "keine Medien-Adresse zeigt mehr auf :${PLATTFORM_PORT}" \
