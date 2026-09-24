@@ -598,6 +598,26 @@ t_schritt3_vor_port80_setzt_die_adressen_wie_bisher() {
 }
 pruefe "Schritt 3 ohne Portwechsel: Adressen werden wie bisher gesetzt" t_schritt3_vor_port80_setzt_die_adressen_wie_bisher
 
+t_schritt3_prueft_den_port_aus_der_env() {
+  # Am 2026-09-24 nach dem Portwechsel: Schritt 3 lieferte korrekt aus, prüfte
+  # danach aber gegen PLATTFORM_PORT (8081) — dort hört nach dem Wechsel
+  # niemand mehr. Ergebnis: «Plattform antwortet mit 000», obwohl auf Port 80
+  # alles lief, und der Schritt blieb unmarkiert.
+  port80_lage
+  h_port80 >/dev/null
+  . "${CUTOVER}/host.sh"   # echtes h_3_start (port80_lage stubbt warte_auf_stack)
+  warte_auf_stack() { return 0; }
+  gefragter_port=""
+  export ATTRAPPE_CURL='printf 200'
+  # curl mitschreiben, um den geprüften Port zu sehen
+  curl() { echo "curl $*" >> "${AUFRUFE}"; printf 200; }
+  mkdir -p "${BASIS}/acm-plattform/infra/supabase/upstream"
+  h_3_start >/dev/null 2>&1
+  enthaelt "$(cat "${AUFRUFE}")" "http://127.0.0.1:80/"
+  enthaelt_nicht "$(cat "${AUFRUFE}")" "http://127.0.0.1:8081/"
+}
+pruefe "Schritt 3 prüft den Port aus der .env, nicht den aus der Konfiguration" t_schritt3_prueft_den_port_aus_der_env
+
 # --- Ablauf auf dem Mac ------------------------------------------------------
 
 CUTOVER_NICHT_STARTEN=1 . "${CUTOVER}/cutover.sh"
