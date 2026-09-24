@@ -240,10 +240,17 @@ UMZUEGE: list[Umzug] = [
         id_aus="uuid5",
         spalten={
             "einarbeitung_id": "einarbeitung_id",
+            # Alt kennt nur die Abteilungspflicht; seit 0065 braucht die Zeile
+            # eine Geltung, und der CHECK verlangt zu „abteilung" eine gesetzte
+            # Abteilung (im Abzug hat keine der 116 Zeilen sie leer).
+            "geltung": "abteilung",
             "abteilung": "abteilung",
         },
         verweise={"einarbeitung_id": "einarbeitung_katalog"},
-        schluessel=("einarbeitung_id", "abteilung"),
+        wandler={"geltung": lambda _abteilung: "abteilung"},
+        # Kein natürlicher Schlüssel: der Unique-Index aus 0065 geht über
+        # Ausdrücke (`coalesce(...)`), die `on conflict` nicht trifft. Die
+        # uuid5 aus der alten Zeile ist stabil, `id` genügt also.
     ),
     # --- Onboarding ----------------------------------------------------------
     # Der Sonderfall: neu gibt es keine Spalte `id`. Der Personio-Schlüssel
