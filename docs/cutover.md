@@ -1,5 +1,9 @@
 # Ablauf vor Ort
 
+> **Gefahren am 24. September 2026.** Die Plattform läuft seit 18:00 Uhr produktiv auf Port 80, das Altprojekt als Rückfall auf 8082. Der laufende Stand steht in `docs/status.md`; dieses Dokument bleibt als Ablauf erhalten — für den nächsten Host, für einen Rückweg und weil sieben Fehler hier erst im echten Lauf sichtbar wurden.
+>
+> **Was am Stichtag anders lief als geplant:** Schritt 5 (Pis umstellen) **entfällt** — er hätte jede Tafel entkoppelt (§ 5). Der Portwechsel wurde vom Fließtext zu einem eigenen Schritt mit Rückweg (§ port80). Schritt 2 (Zertifikat) wurde nicht gefahren. Die AD-Anmeldung (§ 3a) scheiterte zunächst an der DNS-Auflösung im Container — die Abhilfe steht dort.
+
 Stand 10. September 2026. Reihenfolge ist Absicht: jeder Schritt lässt sich einzeln abbrechen, ohne den nächsten zu blockieren.
 
 Was hier steht, ist entweder lokal nachgestellt oder ausdrücklich als ungeprüft markiert. Die Marke sagt, worauf Verlass ist.
@@ -415,6 +419,31 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST http://<host>/api/anmeldung/ad 
 Die zweite Zeile muss **401** liefern, nicht 503. 503 (`AdNichtErreichbar`) hieße, der
 DC ist nicht erreichbar; 401 beweist, dass der LDAPS-Handschlag steht und nur die
 erfundenen Angaben abgelehnt wurden.
+
+**Kommt 503, prüfe zuerst die Namensauflösung — nicht den DC.** Am 2026-09-24 war
+genau das der Fall: Die Konfiguration stimmte, `{"aktiv":true}` kam, beide DCs
+antworteten auf 636 — aber `compute` konnte `acm.local` nicht auflösen
+(`Temporary failure in name resolution`). Der Host löst über `127.0.0.53` auf,
+und das kann ein Container nicht benutzen. Nachsehen:
+
+```bash
+docker compose exec -T compute python -c "import socket; print(socket.getaddrinfo('acm.local', 636))"
+```
+
+Abhilfe ist dieselbe wie im Altprojekt für `api.personio.de`: eine
+`docker-compose.override.yml` **auf dem Host** (nicht im Repo, sie ist
+umgebungsspezifisch), die `compute` echte DNS-Server gibt:
+
+```yaml
+services:
+  compute:
+    dns:
+      - 192.9.200.1   # acm_dc01
+      - 192.9.200.2   # acm_dc02
+```
+
+Danach `docker compose up -d compute`. Die Datei überlebt das Ausliefern von
+Code, weil `git archive`/`tar -x` nichts löscht.
 
 #### Rechte: zwei Läufe, in dieser Reihenfolge
 

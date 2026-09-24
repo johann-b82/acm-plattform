@@ -2,7 +2,9 @@
 
 **ACM-Plattform** — Nachfolger von `lumeapps`. Next.js 16 (App Router) + Supabase self-hosted (Auth, PostgREST, Storage) + FastAPI-Dienst `compute` (Parsing, Dokumente, SNMP, Personio, SMB). Digital Signage ist ein eigener Stack im Repo `acm-signage`.
 
-Status: Vorbereitung. Plan in `docs/plan.md`, Entscheidungen in `docs/adr/`. Vor Architekturarbeit beides lesen.
+**Status: produktiv seit 24.09.2026** auf `acm@192.9.201.9`, Port 80. Vor jeder Arbeit am laufenden System `docs/status.md` lesen — dort stehen die Adressen, die offenen Punkte und die Fallstricke des Betriebs. Plan in `docs/plan.md`, Entscheidungen in `docs/adr/`, der Stichtag in `docs/cutover.md`.
+
+Zwei Dinge, die im Betrieb teuer sind: **Die Adresse `http://192.9.201.9` ist ein Vertrag** — Schema, Host und Port ändern entkoppelt jede Signage-Tafel, weil deren Gerätetoken am Origin hängt. Und **`API_EXTERNAL_URL` ist der Aussteller im Token**; er muss mit `PLATFORM_JWT_ISSUER` im Signage-Stack übereinstimmen. Beides zieht `cutover.sh schritt port80` gemeinsam.
 
 ## Prinzipien
 
