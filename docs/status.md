@@ -1,6 +1,64 @@
 # Stand des neuen Stacks
 
-Stand 10. September 2026. Was läuft, was bewiesen ist, und wie das nächste Modul dazukommt.
+**Produktiv seit 24. September 2026.** Der Stichtag ist gefahren, die Plattform trägt den Betrieb. Was hier steht, gilt für den laufenden Stand; der Ablauf des Stichtags selbst und seine Fallstricke stehen in `docs/cutover.md`.
+
+## Wo was läuft
+
+Host `acm@192.9.201.9`, drei Compose-Projekte nebeneinander:
+
+| | Adresse | Verzeichnis | Rolle |
+|---|---|---|---|
+| **Plattform** | `http://192.9.201.9` (Port 80) | `/home/acm/acm-plattform` | produktiv |
+| **Signage** | Port 8080 | `/home/acm/acm-signage` | fünf Bildschirme |
+| **Altprojekt** | Port 8082 | `/home/acm/lumeapps-neu` | Rückfall, **nicht abgeschaltet** |
+
+Das Altprojekt läuft bewusst weiter. Es kostet wenig und ist der Rückweg, solange niemand bestätigt hat, dass nichts fehlt. Abschalten ist eine eigene, spätere Entscheidung.
+
+### Was man wissen muss, bevor man etwas anfasst
+
+- **Die Adresse ist der Vertrag.** Die Bildschirme halten ihr Gerätetoken im `localStorage`, und der hängt am Origin. Ändert sich Schema, Host oder Port von `http://192.9.201.9`, zeigt jede Tafel einen Kopplungscode. Aus demselben Grund reicht Caddy den Player-Weg (`/player/*`, `/api/signage/player/*`, `/api/signage/pair/*`) direkt an den Signage-Stack durch, statt ihn über `web` zu führen — siehe `infra/caddy/Caddyfile`, Snippet `signage_direkt`.
+- **`API_EXTERNAL_URL` ist der Aussteller im Token.** Er muss Zeichen für Zeichen mit `PLATFORM_JWT_ISSUER` in `acm-signage/.env` übereinstimmen, sonst antwortet die Signage-Verwaltung mit 401. `cutover.sh schritt port80` zieht beides gemeinsam.
+- **`docker-compose.override.yml` liegt nur auf dem Host**, nicht im Repo. Sie gibt `compute` echte DNS-Server (`192.9.200.1`, `.2`) — ohne sie löst `acm.local` im Container nicht auf und die AD-Anmeldung scheitert mit 503. `git archive`/`tar -x` löscht sie nicht, sie überlebt also das Ausliefern von Code.
+- **Nach jedem Neustart der Plattform** brechen die Verbindungen der Bildschirme ab. Sie verbinden sich neu, aber ein hängender Anzeigebrowser braucht gelegentlich `systemctl --user restart signage-player` auf dem Pi.
+- **Neuen Code ausliefern** geht weiter über `cutover.sh schritt 3`; der Schritt erkennt den erledigten Portwechsel und lässt die Adressen stehen (seit #142/#143).
+
+## Was am Stichtag gefunden wurde
+
+Sieben Fehler fielen erst im echten Lauf auf. Alle sind behoben und als PR im Baum — die Liste steht hier, weil jeder davon beim nächsten Mal wieder zuschlagen könnte:
+
+| PR | Was es war |
+|---|---|
+| [#136](https://github.com/johann-b82/acm-plattform/pull/136) | Die Datenübernahme brach bei `einarbeitung_pflicht` ab: Migration 0065 hatte das Schema geändert, der Umzug nicht |
+| [#137](https://github.com/johann-b82/acm-plattform/pull/137) | **Schritt 5 hätte jede Tafel entkoppelt.** Der Origin-Wechsel auf `:8080` leert den `localStorage` — der Schritt entfällt seither |
+| [#138](https://github.com/johann-b82/acm-plattform/pull/138) | Digital Signage stand nicht in `public.apps`: keine Kachel, und die Stufe ließ sich gar nicht vergeben |
+| [#139](https://github.com/johann-b82/acm-plattform/pull/139) | Der Portwechsel hatte kein Werkzeug — jetzt `schritt port80` mit Rückweg |
+| [#140](https://github.com/johann-b82/acm-plattform/pull/140) | Dessen Prüfung urteilte über den Anlauf des Signage-Stacks statt über das Ergebnis |
+| [#141](https://github.com/johann-b82/acm-plattform/pull/141) | `ports: !reset` **löscht** die Bindung, statt sie zu ersetzen — der Rückfall war eine halbe Stunde unerreichbar, ohne dass es auffiel |
+| [#142](https://github.com/johann-b82/acm-plattform/pull/142), [#143](https://github.com/johann-b82/acm-plattform/pull/143) | `schritt 3` drehte den Portwechsel zurück und schaltete damit alle Tafeln ab |
+
+Dazu im Signage-Repo [acm-signage#3](https://github.com/johann-b82/acm-signage/pull/3): Ein PDF, das nicht lädt, hielt die ganze Wiedergabeliste an — `<Document>` hatte kein `onLoadError`.
+
+## Was offen ist
+
+**Bei ms4it (Dienstleister), am 24.09. per PDF übergeben:**
+
+1. **LDAPS-Zertifikate erneuern — das einzige verbliebene Sicherheitsrisiko.** `acm_dc01` und `acm_dc02` präsentieren Zertifikate vom 08.11.2016 mit einem Jahr Laufzeit, **abgelaufen am 08.11.2017**. Deshalb steht `ad_konfiguration.tls_pruefen` auf `false`: Der Verkehr ist verschlüsselt, aber nicht überprüfbar, und wer im LAN mitschneidet, liest die Windows-Kennwörter aller Anmeldenden. Nach der Erneuerung ist das Scharfschalten ein Einzeiler (`update public.ad_konfiguration set tls_pruefen = true`), danach gehört der 401-Test aus `docs/cutover.md` § 3a gefahren.
+2. **`mail`-Attribute im AD**: 101 von 249 Konten ohne (Stand 17.09., bitte gegenzählen). Fehlt es, bekommt die Person ein Konto auf `name@acm.local` statt der Firmenadresse — und zwar bei der **ersten** Anmeldung, danach hilft nur noch Bereinigen von Hand.
+
+**Im Haus:**
+
+3. **Bildschirme an den Pis.** `Entrance` (192.9.201.12) und `Production Sewing` (192.9.201.36) hatten zeitweise beide HDMI-Ausgänge auf `disconnected`; ohne Display startet der Anzeigebrowser nur unvollständig (vier statt zehn Prozesse) und meldet sich nie. Erkennbar an `cat /sys/class/drm/card*/status`.
+4. **Die CI in `acm-signage` ist kaputt.** Seit dem 16.09. scheitert jeder PR-Lauf nach zwei Sekunden, ohne einen einzigen Schritt auszuführen — ein Einstellungsproblem der GitHub Actions, kein Code. Der Player-Fix wurde deshalb mit lokal grünen Tests gemerged.
+5. **`PptxPlayer` ungeprüft.** Er dürfte dieselbe Lücke haben wie `PdfPlayer` vor acm-signage#3 — ein Ladefehler könnte die Liste anhalten. Nicht nachgestellt.
+6. **Fotos in der Neuzugänge-Tafel**: `/api/anzeige/foto/<id>` antwortet mit 404. Die Tafel selbst läuft, nur die Bilder fehlen. Kosmetisch.
+7. **Schritt 2 des Stichtags — Zertifikat rotieren — wurde nie gefahren.** Der private Schlüssel aus `certs/internal.key` steht weiter in der Historie des Altprojekts und gilt als kompromittiert, falls er je ausgeliefert wurde. Betrifft das Altprojekt, nicht die Plattform.
+
+## Zugänge und Sicherungen
+
+- **Break-Glass-Admin** der Plattform: `bechtold@acm-aerospace.com`, Passwort in `/home/acm/zugang-admin.csv` (0600). Die AD-Anmeldung nutzt dasselbe Konto, weil das `mail`-Attribut darauf zeigt.
+- **AD-Rechte** kommen aus `scripts/ad-rechte-mapping.sql` (25 Zuweisungen über 19 Gruppen, `grp_IT` → `platform: admin`). Das Skript ist wiederholbar und überspringt noch nicht gespiegelte Gruppen — es gehört mehrfach gefahren, während sich die Belegschaft nach und nach erstmals anmeldet. **Signage fehlt darin noch**, weil die App erst mit #138 entstand.
+- **Sicherungen** unter `/home/acm/acm-plattform/backups/`, erzeugt von `scripts/backup.sh` (Datenbank als `.dump`, Dateien als `.tar.gz`). Am 24.09. zuletzt gelaufen und mit `pg_restore --list` lesbar.
+- **Nach der Datenübernahme** liegt eine Sicherung der gelöschten WM-Medien in `/home/acm/wm-medien-geloescht-2026-09-24.txt`.
 
 ## Was steht
 
@@ -81,9 +139,9 @@ Tests: 757 in `compute`, 97 in `apps/web`. CI prüft Guards, Compute und Web.
 ## Was bewusst fehlt
 
 - **World Cup und Tippspiel kommen nicht mit** (Entscheidung 2026-09-10). Ein Upstream-Proxy mit Cache und sieben Embed-Seiten für ein einmaliges Turnier — das Turnier ist vorbei, der Code bleibt im Altrepo lesbar.
-- **Datenübernahme aus `lumeapps` — vorbereitet, nicht ausgeführt.** Die Läufe stehen und sind gegen eine echte Alt-Datenbank geprüft: `uebernahme-vertrieb` und `uebernahme-nutzer` hier (siehe `docs/setup.md`), `python -m app.uebernahme` im Signage-Repo. Alle drei sind wiederholbar und zuerst trocken fahrbar. Ausgeführt wird auf dem Host, mit den echten Daten.
-- **AD-Anbindung — gebaut und live** (#94): Anmeldung gegen das lokale AD über LDAPS. Der Browser schickt Benutzer+Passwort an `compute`, das gegen AD bindet und dem Web-Server ein Einmalpasswort zurückgibt; „Lokal anmelden“ bleibt als Rückfall für lokale Konten. Gruppen-Abbildung über `groups.source`/`groups.external_id`, bewertet in ADR-0004.
-- **TLS — wartet auf eine Subdomain.** Lokal läuft alles über HTTP; scharf geschaltet wird erst, wenn ein fester Hostname steht. Der Header-Block und `request_body max_size` liegen schon im Caddyfile; dann noch `SITE_URL`/`API_EXTERNAL_URL` auf `https://…`.
+- **Datenübernahme aus `lumeapps` — am 24.09.2026 ausgeführt.** Alle 83 Tabellenpaare stimmen überein; der Abgleich lief mit Rückgabewert 0. Übernommen wurden unter anderem 192.874 Materialbewegungen, 31.922 Prüfsätze, 14.245 Sensormessungen, 18 FAIR-Zeichnungen mit 439 Ballons, dazu 416 Dateien und die neun `signage_*`-Tabellen. Die Läufe bleiben wiederholbar.
+- **AD-Anbindung — seit dem 24.09.2026 im Produktivbetrieb** (#94): Anmeldung gegen das lokale AD über LDAPS. Der Browser schickt Benutzer+Passwort an `compute`, das gegen AD bindet und dem Web-Server ein Einmalpasswort zurückgibt; „Lokal anmelden“ bleibt als Rückfall für lokale Konten. Gruppen-Abbildung über `groups.source`/`groups.external_id`, bewertet in ADR-0004.
+- **TLS — wartet auf eine Subdomain.** Auch im Produktivbetrieb läuft alles über HTTP im LAN; scharf geschaltet wird erst, wenn ein fester Hostname steht. **Achtung:** Ein Wechsel auf `https://` ändert den Origin und entkoppelt damit jede Tafel (siehe oben) — er gehört mit demselben Werkzeug gefahren wie der Portwechsel, nicht von Hand. Der Header-Block und `request_body max_size` liegen schon im Caddyfile; dann noch `SITE_URL`/`API_EXTERNAL_URL` auf `https://…`.
 
 ## Rezept für das nächste Modul
 
