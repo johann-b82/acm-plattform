@@ -26,7 +26,7 @@ bash scripts/cutover/cutover.sh lauf            # alles Offene, hält vor jedem 
 - **Reihenfolge:** 0b liest die Adresse jedes Pis. Zeigt einer auf `:8000`, zieht Signage vor der Härtung um (3, 4d, 5, dann 1).
 - **Code** kommt per `git archive` aus den lokalen Klonen, der Host braucht kein GitHub-Konto. Die Oberfläche des Altprojekts baut der Mac (1b).
 - **Secrets** liest das Skript auf dem Host aus den `.env`-Dateien; sie erscheinen in keiner Ausgabe. Die Passwortliste neuer Zugänge liegt nur auf dem Host (`acm-plattform/zugaenge-*.csv`, 0600).
-- **Pis:** Das Skript tauscht nur die Adresse in den zwei Units und sichert die alten als `*.vor-cutover`, statt `provision-pi.sh` neu zu fahren — kein apt, kein git, Rückweg exakt.
+- **Pis:** Schritt 5 wird am Stichtag **nicht gebraucht** — der Player-Weg liegt unter demselben Origin, die Geräte bleiben unangetastet (§ 5). Wird er doch einmal für ein einzelnes Gerät gefahren, tauscht das Skript nur die Adresse in den zwei Units und sichert die alten als `*.vor-cutover`, statt `provision-pi.sh` neu zu fahren — kein apt, kein git, Rückweg exakt. **Die Kopplung überlebt den Adresswechsel nicht.**
 - **Bleibt von Hand**, das Skript hält dort an und zeigt die Befehle: Zertifikat (2), Firmenlogo und ATR-Eingangsordner (4b), signierte Adressen der HR-Tafeln (4d), Host-Vorlagen mit `sudo` (6), Umzug der Plattform auf Port 80.
 - **Medienverzeichnis:** `signage-api` läuft als uid 10001. Das Skript gibt `acm-signage/data/media` diesem Nutzer (per `docker run`, ohne `sudo`); von Hand angelegt gehört es `acm`, und Uploads wie Übernahme scheitern.
 
@@ -646,11 +646,31 @@ docker compose -f /home/acm/acm-plattform/docker-compose.yml exec web \
 
 ---
 
-## 5. Pis umstellen
+## 5. Pis umstellen — **entfällt**
 
-**ungeprüft** — braucht die Geräte.
+**an echter Hardware geprüft** (2026-09-24), und zwar mit negativem Ausgang: Die Umstellung entkoppelt jede Tafel. Der Schritt ist deshalb ersatzlos gestrichen.
 
-Das Pairing bleibt erhalten, wenn Schritt 4d gelaufen ist und das Geräte-Secret übernommen wurde. Sonst zeigt der Bildschirm einen Kopplungscode — dann unter `/signage/pair` neu koppeln.
+Was hier vorher stand — „das Pairing bleibt erhalten, wenn das Geräte-Secret übernommen wurde" — ist falsch. Das Secret war nachweislich übernommen (gleiche Prüfsumme auf beiden Seiten), und trotzdem zeigten die Bildschirme einen Kopplungscode. Der Grund liegt woanders:
+
+| | |
+|---|---|
+| **Wo das Gerätetoken steckt** | im `localStorage` des Players, unter dem Schlüssel `signage_device_token` — **nicht** in einer Datei auf dem Pi |
+| **Woran `localStorage` hängt** | am **Origin**. `http://192.9.201.9` und `http://192.9.201.9:8080` sind verschiedene Origins |
+| **Was die Unit aufruft** | `--app=http://192.9.201.9/player/` — **ohne Token in der URL**. Der Player holt es aus dem Speicher |
+| **Folge des Portwechsels** | neuer Origin ⇒ leerer Speicher ⇒ kein Token ⇒ Kopplungscode auf jedem Bildschirm |
+
+Nachgestellt im Browser: Mit Token in der URL liefert derselbe Stack die Playlist aus; nach `localStorage.clear()` erscheint auf `/player/` der Kopplungscode.
+
+**Stattdessen** liegt der Player-Weg seit diesem Stand unter demselben Origin wie die Plattform: Caddy reicht `/player/*`, `/api/signage/player/*` und `/api/signage/pair/*` direkt an den Signage-Stack durch (`infra/caddy/Caddyfile`, Snippet `signage_direkt`) — nicht über `web`, damit die Tafeln weiterlaufen, wenn die Anwendung ausfällt. Die Pis behalten ihre Adresse `http://192.9.201.9`, ihre Kopplung und werden **nie angefasst**.
+
+Zu tun ist damit nur noch eines, und es fällt ohnehin in Schritt 6 an: Die Plattform muss den Port des Altprojekts übernehmen, damit dieselbe Adresse weiter trägt. Solange sie auf `:8081` läuft, bedienen die Tafeln sich unverändert am Altprojekt.
+
+`scripts/cutover/pi.sh` und `cutover.sh schritt 5` bleiben im Baum — für den Fall, dass ein Gerät doch einmal auf eine andere Adresse gezeigt werden muss (etwa ein Pi, der laut 0b direkt auf `:8000` steht). Für den regulären Stichtag werden sie nicht gebraucht.
+
+<details>
+<summary>Der alte Ablauf, falls ein einzelnes Gerät doch umgestellt werden muss</summary>
+
+Das Pairing bleibt dabei **nicht** erhalten — nach dem Wechsel ist das Gerät unter `/signage/pair` neu zu koppeln.
 
 Ein Gerät zuerst, dann den Rest. Auf dem Pi (Runbook `acm-signage/docs/operator-runbook-lumeapps.md` § 9.5):
 
@@ -673,7 +693,9 @@ curl -s http://localhost:8080/health                                            
 
 Der Port 8080 im zweiten Befehl ist der Sidecar **auf dem Pi**, nicht der Signage-Stack. In der Verwaltung muss das Gerät nach spätestens 30 Sekunden als online erscheinen.
 
-Zurück: dasselbe mit der alten Adresse aus 0b. Das Geräte-Secret ist auf beiden Seiten dasselbe, die Kopplung hält also auch rückwärts.
+Zurück: dasselbe mit der alten Adresse aus 0b, oder `cutover.sh zurueck 5`. Das Skript sichert beide Units vorher als `*.vor-cutover`, der Rückweg ist also exakt — am 2026-09-24 so gefahren, die drei Tafeln waren binnen einer Minute wieder am Altprojekt.
+
+</details>
 
 ---
 

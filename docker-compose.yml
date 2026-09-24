@@ -31,6 +31,12 @@ services:
       # läuft auf einem eigenen Port, also einem anderen Origin — leer bliebe
       # der Rahmen im Player leer. Siehe Caddyfile.
       EMBED_FRAME_ANCESTORS: ${EMBED_FRAME_ANCESTORS:-*}
+      # Wohin der Player-Weg (/player/*, /api/signage/player/*) geht. Signage
+      # ist ein eigenes Compose-Projekt mit eigenem Netz und wird deshalb über
+      # den Host-Port angesprochen — wie bei `web` (SIGNAGE_API_URL).
+      SIGNAGE_UPSTREAM: ${SIGNAGE_UPSTREAM:-host.docker.internal:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

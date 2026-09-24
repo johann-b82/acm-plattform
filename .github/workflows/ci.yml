@@ -16,6 +16,12 @@ jobs:
         run: bash scripts/ci/check_log_hygiene.sh
       - name: service_role-Guard (Quellcode)
         run: bash scripts/ci/check_service_role.sh
+      - name: Player-Weg in Caddy (Origin und Reihenfolge)
+        run: bash scripts/ci/check_caddy_signage.sh
+      - name: Caddyfile gültig
+        run: |
+          docker run --rm -v "$PWD/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
       - name: Stichtag-Skript (Unit-Tests)
         run: bash scripts/cutover/tests/unit.sh
       - name: Compose-Modell validieren
