@@ -292,10 +292,19 @@ h_3_env() {
   fi
   [ -f "$e" ] || (cd "$p" && bash scripts/init-env.sh) >/dev/null
   local url="http://${HOST_IP}:${PLATTFORM_PORT}"
-  env_setzen "$e" CADDY_HTTP_PORT "${PLATTFORM_PORT}"
-  env_setzen "$e" SITE_URL "$url"
-  env_setzen "$e" SUPABASE_PUBLIC_URL "$url/supabase"
-  env_setzen "$e" API_EXTERNAL_URL "$url/supabase/auth/v1"
+  # Nach dem Portwechsel gehören die Adressen der neuen Lage, nicht mehr der
+  # Konfiguration. Sie hier zu überschreiben risse die Plattform von Port 80 —
+  # und mit ihr jede Tafel, deren Gerätetoken an diesem Origin hängt. Schritt 3
+  # ist aber der normale Weg, neuen Code auszuliefern, und muss das überleben.
+  if [ -e "$e.${PORT80_MARKE}" ]; then
+    url="$(env_lesen "$e" SITE_URL)"
+    sag "Portwechsel erledigt — Adressen bleiben, wie sie sind: ${url}"
+  else
+    env_setzen "$e" CADDY_HTTP_PORT "${PLATTFORM_PORT}"
+    env_setzen "$e" SITE_URL "$url"
+    env_setzen "$e" SUPABASE_PUBLIC_URL "$url/supabase"
+    env_setzen "$e" API_EXTERNAL_URL "$url/supabase/auth/v1"
+  fi
   env_setzen "$e" SIGNAGE_API_URL "http://host.docker.internal:${SIGNAGE_PORT}"
   # Kong bindet 127.0.0.1:KONG_HTTP_PORT (nur bootstrap-admin nutzt ihn). Die
   # Vorgabe 8000 ist der Port der alten Dev-API: nach Schritt 3 ließe sich 1c
