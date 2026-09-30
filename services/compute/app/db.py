@@ -611,6 +611,43 @@ kompetenz_interview = sa.Table(
     sa.Column("notiz", sa.Text),
 )
 
+# Wo eine Person heute arbeitet: (Abteilung + Team) → Bereich, mit einer
+# Abweichung je Person. Die Sicht person_bereich rechnet den wirksamen Bereich.
+bereich_zuordnung = sa.Table(
+    "bereich_zuordnung",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("abteilung", sa.Text, nullable=False),
+    sa.Column("team", sa.Text),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+)
+
+bereich_zuordnung_person = sa.Table(
+    "bereich_zuordnung_person",
+    metadata,
+    sa.Column("employee_id", sa.Integer, primary_key=True),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+)
+
+# Das Soll: Profil je Familie (optional je Position) und die Einsatzplanung.
+kompetenz_profil = sa.Table(
+    "kompetenz_profil",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("familie_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("position_norm", sa.String(200)),
+    sa.Column("soll_stufe", sa.Integer, nullable=False),
+)
+
+kompetenz_einsatz = sa.Table(
+    "kompetenz_einsatz",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("art", sa.String(12), nullable=False),
+)
+
 externe_personen = sa.Table(
     "externe_personen",
     metadata,
@@ -973,6 +1010,10 @@ TABLES = {
     "kompetenz_familien": kompetenz_familien,
     "kompetenz_bewertungen": kompetenz_bewertungen,
     "kompetenz_interview": kompetenz_interview,
+    "bereich_zuordnung": bereich_zuordnung,
+    "bereich_zuordnung_person": bereich_zuordnung_person,
+    "kompetenz_profil": kompetenz_profil,
+    "kompetenz_einsatz": kompetenz_einsatz,
     "externe_personen": externe_personen,
     "schulung_katalog": schulung_katalog,
     "schulung_pflicht": schulung_pflicht,
