@@ -568,7 +568,12 @@ wartungsdateien = sa.Table(
 kompetenz_bereiche = sa.Table(
     "kompetenz_bereiche",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("name", sa.Text, nullable=False),
     sa.Column("abteilung", sa.Text),
     sa.Column("reihenfolge", sa.Integer, nullable=False),
@@ -577,7 +582,12 @@ kompetenz_bereiche = sa.Table(
 kompetenz_familien = sa.Table(
     "kompetenz_familien",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
     sa.Column("name", sa.Text, nullable=False),
     sa.Column("beschreibung", sa.Text),
@@ -589,7 +599,12 @@ kompetenz_familien = sa.Table(
 kompetenz_bewertungen = sa.Table(
     "kompetenz_bewertungen",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("familie_id", UUID(as_uuid=False), nullable=False),
     sa.Column("employee_id", sa.Integer, nullable=False),
     sa.Column("ist_stufe", sa.Integer),
@@ -600,7 +615,12 @@ kompetenz_bewertungen = sa.Table(
 kompetenz_interview = sa.Table(
     "kompetenz_interview",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("employee_id", sa.Integer, nullable=False),
     sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
     sa.Column("produkte", sa.Text),
@@ -646,6 +666,16 @@ kompetenz_einsatz = sa.Table(
     sa.Column("employee_id", sa.Integer, nullable=False),
     sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
     sa.Column("art", sa.String(12), nullable=False),
+)
+
+# Sicht (nicht in TABLES — nur lesbar): der wirksame Bereich je aktiver Person.
+person_bereich = sa.Table(
+    "person_bereich",
+    metadata,
+    sa.Column("employee_id", sa.Integer, primary_key=True),
+    sa.Column("abteilung", sa.Text),
+    sa.Column("team", sa.Text),
+    sa.Column("bereich_id", UUID(as_uuid=False)),
 )
 
 externe_personen = sa.Table(

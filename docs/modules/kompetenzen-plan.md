@@ -178,6 +178,34 @@ Rechte für Team Leads, Stunden und Maschinenkapazität, die automatische
 Rückmeldung „Einarbeitung erledigt → Ist steigt", die Maschinen-Unterweisungen
 als Schulung.
 
+## Erweiterung (Auftrag 30.09.2026): Serien-Bögen mit Kennung und zentraler Upload
+
+Zusätzlich zur Einarbeitung aus den Lücken (Stufe F) kommt ein
+Massen-Workflow — er baut auf dem bestehenden Dokumentenlauf auf.
+
+**H1 — Serien-Erzeugung.** Für jede Person der Produktion ein
+Einarbeitungsbogen als PDF, jede Person mit einer **zufälligen Kennung**
+(kurzer Code, zusätzlich als QR auf dem Blatt). Die Bögen werden ausgedruckt,
+in der Produktion unterschrieben. Grundlage: die Personen und ihre
+Aufgabenfamilien aus der Interview-Matrix bzw. `person_bereich`.
+
+**H2 — Zentraler Upload.** Eine Sammel-Upload-Fläche im Modul: viele
+unterschriebene Bögen auf einmal hochladen. Das System ordnet automatisch über
+die **Kennung** (QR/Text) der Person zu; ohne Kennung (Altbestände) über die
+Mitarbeiterdaten nach kurzer Bestätigung. Je Zuordnung:
+
+- ein Einarbeitungs-**Vorgang** wird angelegt bzw. abgeschlossen,
+- der unterschriebene Bogen wird als **Nachweis** beim Mitarbeiter / Vorgang
+  gespeichert und ist jederzeit wieder abrufbar,
+- Altbestände werden als **bereits abgeschlossen** übernommen (mit dem Datum
+  vom Blatt, nach manueller Bestätigung der Person).
+
+Offene Punkte (mit dem Fachbereich zu klären): Umfang „gesamte Produktion"
+(welche Bereiche), Kennungsformat, und ob der Bogeninhalt aus den
+Aufgabenfamilien des Bereichs (heutiges Ist) statt aus einem noch fehlenden
+Soll-Profil gebildet wird. Die eigentliche PDF-Erzeugung läuft dort, wo
+LibreOffice und die Personendaten liegen (der `compute`-Dienst).
+
 ## Betrieb
 
 - Vor dem Einspielen von A eine **Datenbank-Sicherung** ziehen; das Löschen des
