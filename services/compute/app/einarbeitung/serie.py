@@ -23,8 +23,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
+from io import BytesIO
 
 import sqlalchemy as sa
+from pypdf import PdfReader, PdfWriter
 
 from app.db import (
     SessionLocal,
@@ -191,14 +193,36 @@ class Erzeugt:
     name: str
 
 
-async def erzeuge_bereich(bereich_id: str) -> list[Erzeugt]:
-    """Je Person des Bereichs einen Vorgang mit QR-Bogen anlegen und ablegen.
+@dataclass
+class SerieErgebnis:
+    erzeugt: list[Erzeugt]
+    #: Alle Blätter des Laufs zu einem Druck-PDF zusammengeführt.
+    pdf: bytes
+
+
+def _zusammenfuegen(pdfs: list[bytes]) -> bytes:
+    """Mehrere Einzel-PDFs seitenweise zu einem Druck-PDF fügen."""
+    if not pdfs:
+        return b""
+    schreiber = PdfWriter()
+    for roh in pdfs:
+        for seite in PdfReader(BytesIO(roh)).pages:
+            schreiber.add_page(seite)
+    puffer = BytesIO()
+    schreiber.write(puffer)
+    return puffer.getvalue()
+
+
+async def erzeuge_bereich(bereich_id: str) -> SerieErgebnis:
+    """Je Person des Bereichs einen Vorgang mit QR-Bogen anlegen und ablegen;
+    alle Blätter zusätzlich als ein Druck-PDF zurückgeben.
 
     Braucht LibreOffice (PDF) und den Storage — läuft auf der Plattform, nicht im
     Testlauf.
     """
     logo = await lade_logo()
     ergebnis: list[Erzeugt] = []
+    pdfs: list[bytes] = []
     async with SessionLocal() as sitzung:
         bereich = await _bereich(sitzung, bereich_id)
         if bereich is None:
@@ -221,6 +245,7 @@ async def erzeuge_bereich(bereich_id: str) -> list[Erzeugt]:
             plan.name, plan.stelle, plan.beginn, inhalte, logo,
             doc_uid=doc_uid, layout_raus=layout, vorgesetzter=plan.vorgesetzter,
         )
+        pdfs.append(pdf)
         pfad = await speicher.ablegen(vorgang.pfad_blatt(doc_uid), pdf, "application/pdf")
         async with SessionLocal() as sitzung:
             async with sitzung.begin():
@@ -242,4 +267,4 @@ async def erzeuge_bereich(bereich_id: str) -> list[Erzeugt]:
                     )
                 ).one()
         ergebnis.append(Erzeugt(vorgang_id=str(zeile[0]), doc_uid=zeile[1], name=plan.name))
-    return ergebnis
+    return SerieErgebnis(erzeugt=ergebnis, pdf=_zusammenfuegen(pdfs))

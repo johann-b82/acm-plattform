@@ -12,11 +12,34 @@ import pytest_asyncio
 import sqlalchemy as sa
 
 from app.db import SessionLocal, kompetenz_bereiche
-from app.einarbeitung.serie import OBERSTER_LEITER, effektiver_leiter, plan_person
+from app.einarbeitung.serie import (
+    OBERSTER_LEITER,
+    _zusammenfuegen,
+    effektiver_leiter,
+    plan_person,
+)
 
 pytestmark = pytest.mark.asyncio
 
 E = 971001
+
+
+def test_zusammenfuegen_zaehlt_die_seiten():
+    from io import BytesIO
+
+    from pypdf import PdfReader, PdfWriter
+
+    def pdf(n: int) -> bytes:
+        w = PdfWriter()
+        for _ in range(n):
+            w.add_blank_page(width=200, height=200)
+        b = BytesIO()
+        w.write(b)
+        return b.getvalue()
+
+    merged = _zusammenfuegen([pdf(1), pdf(2)])
+    assert len(PdfReader(BytesIO(merged)).pages) == 3
+    assert _zusammenfuegen([]) == b""
 
 
 def test_effektiver_leiter_normalfall():

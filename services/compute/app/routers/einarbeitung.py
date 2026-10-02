@@ -183,20 +183,29 @@ async def bogen(
 
 
 @router.post("/serie", dependencies=[Depends(require_app("hr", "editor"))])
-async def serie(bereich_id: str = Query(...)) -> dict:
+async def serie(bereich_id: str = Query(...)) -> Response:
     """Für alle Personen eines Bereichs je einen Einarbeitungsvorgang mit QR
     anlegen (Vorgesetzter/Stelle/Eintritt aus Personio, Ansprechpartner =
-    Bereichsleiter). Gibt die angelegten Vorgänge zurück."""
+    Bereichsleiter) und alle Blätter als **ein Druck-PDF** zurückgeben. Die
+    Anzahl der angelegten Vorgänge steht im Header `X-Serie-Anzahl`."""
     try:
-        erzeugt = await serie_mod.erzeuge_bereich(bereich_id)
+        erg = await serie_mod.erzeuge_bereich(bereich_id)
     except PdfFehlgeschlagen as fehler:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(fehler)) from fehler
-    return {
-        "erzeugt": [
-            {"vorgang_id": e.vorgang_id, "doc_uid": e.doc_uid, "name": e.name}
-            for e in erzeugt
-        ]
-    }
+    if not erg.erzeugt:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Diesen Bereich gibt es nicht, oder er hat keine zugeordneten Personen.",
+        )
+    return Response(
+        content=erg.pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'inline; filename="Einarbeitungsboegen.pdf"',
+            "X-Serie-Anzahl": str(len(erg.erzeugt)),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 def _scan_daten(datei: UploadFile) -> tuple[bytes, str, str]:
