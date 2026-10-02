@@ -76,21 +76,29 @@ class TestInhalte:
         assert finde(b, "Feedbackgespräch") is not None
         assert finde(b, "Ziel der Einarbeitung") is not None
 
-    def test_die_freigabezeile_steht_am_ende(self):
+    def test_die_freigabe_steht_in_der_seitenfusszeile(self):
+        """Erstellt/Geprüft/Freigegeben stehen als echte Fußzeile auf jeder
+        Seite — samt Seitenzahl (&P von &N)."""
         b = blatt(baue_xlsx("Dana Neu", None, None, INHALTE))
-        assert finde(b, "Freigegeben durch:") is not None
+        fuss = "".join(filter(None, [
+            b.oddFooter.left.text, b.oddFooter.center.text, b.oddFooter.right.text
+        ]))
+        assert "Erstellt durch:" in fuss
+        assert "Freigegeben durch:" in fuss
+        assert "Seite" in fuss and "&P" in fuss
 
-    def test_der_schulungsbedarf_steht_vor_der_freigabe(self):
-        """Der Abschlussblock der Vorlage: weiterer Schulungsbedarf ja/nein mit
-        Erläuterungslinie, vor der Freigabezeile."""
+    def test_der_schulungsbedarf_und_die_regeln_stehen_am_ende(self):
+        """Der Abschlussblock: Schulungsbedarf ja/nein, dann das
+        Feedbackgespräch, zuletzt die Einarbeitungsregeln."""
         b = blatt(baue_xlsx("Dana Neu", None, None, INHALTE))
         frage = finde(b, "Weiterer Schulungsbedarf notwendig?")
-        freigabe = finde(b, "Freigegeben durch:")
         assert frage is not None
         assert finde(b, "Falls ja, bitte Schulungsbedarf erläutern:") is not None
-        # Ankreuzfeld daneben, Freigabe danach.
         assert "ja" in (b.cell(frage, 6).value or "")
-        assert freigabe is not None and freigabe > frage
+        feedback = finde(b, "Feedbackgespräch")
+        regeln = finde(b, "Wichtige Einarbeitungsregeln")
+        assert feedback is not None and feedback > frage
+        assert regeln is not None and regeln > feedback
 
     def test_ein_langer_inhalt_bekommt_mehr_hoehe(self):
         """Sonst schneidet der Druck ihn ab."""

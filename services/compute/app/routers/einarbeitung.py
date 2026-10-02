@@ -23,6 +23,7 @@ from app.db import (
 )
 from app.dokumente.logo import lade_logo
 from app.dokumente.pdf import PdfFehlgeschlagen
+from app.einarbeitung import serie as serie_mod
 from app.einarbeitung.bogen import Inhalt, baue_pdf
 
 router = APIRouter(
@@ -164,3 +165,20 @@ async def bogen(
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+@router.post("/serie", dependencies=[Depends(require_app("hr", "editor"))])
+async def serie(bereich_id: str = Query(...)) -> dict:
+    """Für alle Personen eines Bereichs je einen Einarbeitungsvorgang mit QR
+    anlegen (Vorgesetzter/Stelle/Eintritt aus Personio, Ansprechpartner =
+    Bereichsleiter). Gibt die angelegten Vorgänge zurück."""
+    try:
+        erzeugt = await serie_mod.erzeuge_bereich(bereich_id)
+    except PdfFehlgeschlagen as fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(fehler)) from fehler
+    return {
+        "erzeugt": [
+            {"vorgang_id": e.vorgang_id, "doc_uid": e.doc_uid, "name": e.name}
+            for e in erzeugt
+        ]
+    }

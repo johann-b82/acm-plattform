@@ -576,6 +576,7 @@ kompetenz_bereiche = sa.Table(
     ),
     sa.Column("name", sa.Text, nullable=False),
     sa.Column("abteilung", sa.Text),
+    sa.Column("leiter", sa.Text),
     sa.Column("reihenfolge", sa.Integer, nullable=False),
 )
 
@@ -847,6 +848,23 @@ einarbeitung_katalog = sa.Table(
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+# Die allgemeinen Onboarding-Punkte, die auf jedem Produktionsbogen oben stehen.
+einarbeitung_allgemein = sa.Table(
+    "einarbeitung_allgemein",
+    metadata,
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("thema", sa.Text, nullable=False),
+    sa.Column("ansprechpartner", sa.Text),
+    sa.Column("beschreibung", sa.Text),
+    sa.Column("reihenfolge", sa.Integer, nullable=False),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
+)
+
 einarbeitung_pflicht = sa.Table(
     "einarbeitung_pflicht",
     metadata,
@@ -1051,6 +1069,7 @@ TABLES = {
     "schulung_importe": schulung_importe,
     "schulung_teilnahmen": schulung_teilnahmen,
     "einarbeitung_katalog": einarbeitung_katalog,
+    "einarbeitung_allgemein": einarbeitung_allgemein,
     "einarbeitung_pflicht": einarbeitung_pflicht,
     "plattform_logo": plattform_logo,
     "onboarding_abteilung": onboarding_abteilung,
