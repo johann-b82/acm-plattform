@@ -44,14 +44,16 @@ ZIEL = (
     "Aufbau der notwendigen Kenntnisse und Fähigkeiten in den relevanten Prozessen."
 )
 FREIGABE = [
-    ("Erstellt durch:", "[Name] (QM/CMM)"),
-    ("Geprüft durch:", "[Name] (TBL)"),
-    ("Freigegeben durch:", "[Name] (QM/CMM)"),
+    ("Erstellt durch:", "M. Brose (QM/CMM)"),
+    ("Geprüft durch:", "F. Gomes (TBL)"),
+    ("Freigegeben durch:", "M. Brose (QM/CMM)"),
 ]
 
 #: Spalten wie in der Vorlage: A ist eine schmale Randspalte.
 SP_ABTEILUNG, SP_PARTNER, SP_INHALT, SP_WANN, SP_ERLEDIGT = 2, 3, 4, 7, 8
-SPALTENBREITEN = (3, 13, 17, 13, 13, 13, 8, 14)
+# Summe wie in der Vorlage (94), damit die Prüf-Rechtecke innerhalb der Seite
+# bleiben; „Thema" (B) ist zulasten der übrigen Spalten breiter.
+SPALTENBREITEN = (3, 20, 15, 11, 11, 12, 8, 14)
 
 #: Wo QR und Passermarken sitzen, wenn der Bogen Teil eines Vorgangs ist.
 #: Zeile 4 ist frei — die Kopfzeilentabelle endet bei 3, die Angaben beginnen
@@ -66,7 +68,7 @@ _LINKS = Alignment(horizontal="left", vertical="center")
 _MITTE = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
 #: Zeichen je Zeile für den Umbruch (9-pt-Text in der jeweiligen Spaltenbreite).
-_ZEICHEN_ABTEILUNG, _ZEICHEN_PARTNER, _ZEICHEN_INHALT = 14, 19, 46
+_ZEICHEN_ABTEILUNG, _ZEICHEN_PARTNER, _ZEICHEN_INHALT = 22, 16, 40
 _ZEILE_PT, _POLSTER = 12.0, 5.0
 
 
@@ -161,18 +163,8 @@ def _kopf(blatt, zeile: int, name: str, stelle: str | None, beginn: date | None)
 
 
 def _einleitung(blatt, zeile: int) -> int:
-    ueberschrift = blatt.cell(zeile, SP_ABTEILUNG, "Regeln")
-    ueberschrift.font = Font(bold=True, size=10)
-    zeile += 1
-    for regel in REGELN:
-        blatt.merge_cells(start_row=zeile, start_column=2, end_row=zeile, end_column=8)
-        zelle = blatt.cell(zeile, 2, f"• {regel}")
-        zelle.font = Font(size=9)
-        zelle.alignment = _LINKS
-        blatt.row_dimensions[zeile].height = 14
-        zeile += 1
-
-    zeile += 1
+    """Nur das Ziel oben — die Regeln stehen als „Wichtige Einarbeitungsregeln"
+    am Blattfuß (siehe `_feedback_und_regeln`)."""
     blatt.merge_cells(start_row=zeile, start_column=2, end_row=zeile + 1, end_column=8)
     ziel = blatt.cell(zeile, 2, ZIEL)
     ziel.font = Font(size=9, italic=True)
@@ -182,7 +174,7 @@ def _einleitung(blatt, zeile: int) -> int:
 
 def _tabelle(blatt, zeile: int, inhalte: list[Inhalt], felder: list | None = None) -> int:
     kopf = [
-        (SP_ABTEILUNG, "Abteilung"),
+        (SP_ABTEILUNG, "Thema"),
         (SP_PARTNER, "Ansprechpartner"),
         (SP_INHALT, "Inhalt"),
         (SP_WANN, "Wann?"),
@@ -262,16 +254,63 @@ def _schulungsbedarf(blatt, zeile: int, felder: list | None = None) -> int:
     return zeile + 1
 
 
-def _freigabe(blatt, zeile: int) -> int:
-    spalten = [(2, 3), (4, 5), (6, 8)]
-    for (von, bis), (rolle, wer) in zip(spalten, FREIGABE):
-        blatt.merge_cells(start_row=zeile, start_column=von, end_row=zeile, end_column=bis)
-        zelle = blatt.cell(zeile, von, f"{rolle} {wer}")
-        zelle.font = Font(size=8)
+def _seitenfusszeile(blatt) -> None:
+    """Die Freigabe (Erstellt · Geprüft · Freigegeben) als echte Seitenfußzeile
+    auf **jeder** Seite, mit Seitenzahl „Seite X von Y".
+
+    Als Excel-Fußzeile statt als Inhaltszeile: LibreOffice wiederholt sie so auf
+    jeder Seite und rechnet die Seitenzahl (`&P` von `&N`). `&8` setzt 8-pt-Text.
+    """
+    links, mitte, rechts = FREIGABE
+    fuss = blatt.oddFooter
+    fuss.left.text = f"&8{links[0]} {links[1]}"
+    fuss.center.text = f"&8{mitte[0]} {mitte[1]}\n&8Seite &P von &N"
+    fuss.right.text = f"&8{rechts[0]} {rechts[1]}"
+
+
+def _feedback_und_regeln(blatt, zeile: int, vorgesetzter: str | None) -> int:
+    """Die Feedbackgespräch-Bestätigung (Datum · Unterschrift Vorgesetzter) und
+    die Einarbeitungsregeln am Blattfuß. Der Name des Vorgesetzten steht klein
+    unter der Unterschriftslinie."""
+    kopf = blatt.cell(zeile, SP_ABTEILUNG, "Feedbackgespräch nach spätestens 4 Wochen:")
+    kopf.font = Font(bold=True, size=10)
+    kopf.alignment = _LINKS
+    zeile += 2
+
+    blatt.merge_cells(start_row=zeile, start_column=2, end_row=zeile, end_column=4)
+    datum = blatt.cell(zeile, 2, "Datum")
+    datum.font = Font(bold=True, size=9)
+    datum.alignment = _LINKS
+    blatt.merge_cells(start_row=zeile, start_column=5, end_row=zeile, end_column=8)
+    unter = blatt.cell(zeile, 5, "Unterschrift Vorgesetzter")
+    unter.font = Font(bold=True, size=9)
+    unter.alignment = _LINKS
+    _rahmen(blatt, zeile, 2, 8)
+    blatt.row_dimensions[zeile].height = 18
+    zeile += 1
+
+    blatt.merge_cells(start_row=zeile, start_column=2, end_row=zeile, end_column=4)
+    blatt.merge_cells(start_row=zeile, start_column=5, end_row=zeile, end_column=8)
+    if vorgesetzter:
+        wer = blatt.cell(zeile, 5, vorgesetzter)
+        wer.font = Font(size=8, color="595959")
+        wer.alignment = Alignment(horizontal="left", vertical="bottom")
+    _rahmen(blatt, zeile, 2, 8)
+    blatt.row_dimensions[zeile].height = 34
+    zeile += 2
+
+    regeln_kopf = blatt.cell(zeile, SP_ABTEILUNG, "Wichtige Einarbeitungsregeln:")
+    regeln_kopf.font = Font(bold=True, size=10)
+    regeln_kopf.alignment = _LINKS
+    zeile += 1
+    for regel in REGELN:
+        blatt.merge_cells(start_row=zeile, start_column=2, end_row=zeile, end_column=8)
+        zelle = blatt.cell(zeile, 2, f"• {regel}")
+        zelle.font = Font(size=9)
         zelle.alignment = _LINKS
-        zelle.border = Border(top=_DUENN)
-    blatt.row_dimensions[zeile].height = 16
-    return zeile + 1
+        blatt.row_dimensions[zeile].height = 14
+        zeile += 1
+    return zeile
 
 
 def fuelle_blatt(
@@ -284,6 +323,7 @@ def fuelle_blatt(
     *,
     doc_uid: str | None = None,
     layout_raus: dict | None = None,
+    vorgesetzter: str | None = None,
 ) -> None:
     """Das Formblatt in ein vorhandenes Arbeitsblatt schreiben.
 
@@ -303,7 +343,7 @@ def fuelle_blatt(
     zeile = _einleitung(blatt, zeile)
     zeile = _tabelle(blatt, zeile, inhalte, felder)
     zeile = _schulungsbedarf(blatt, zeile, felder)
-    zeile = _freigabe(blatt, zeile + 1)
+    zeile = _feedback_und_regeln(blatt, zeile + 1, vorgesetzter)
     letzte = zeile - 1
 
     # Vor dem QR: erst wenn jede Zeile eine Höhe hat, stimmt die Feldliste.
@@ -319,7 +359,10 @@ def fuelle_blatt(
 
     blatt.print_area = f"A1:H{zeile}"
     auf_a4(blatt)
-    blatt.page_margins = PageMargins(left=0.5, right=0.4, top=0.5, bottom=0.4)
+    # Etwas mehr Fuß, damit die Seitenfußzeile (Freigabe + Seitenzahl) nicht in
+    # den Inhalt läuft.
+    blatt.page_margins = PageMargins(left=0.5, right=0.4, top=0.5, bottom=0.8, footer=0.3)
+    _seitenfusszeile(blatt)
     # Auf **eine** Seite Breite, so viele Seiten hoch wie nötig.
     #
     # Vorher stand hier feste Skalierung ohne Anpassung, weil eine Skalierung
@@ -362,11 +405,12 @@ def baue_xlsx(
     *,
     doc_uid: str | None = None,
     layout_raus: dict | None = None,
+    vorgesetzter: str | None = None,
 ) -> bytes:
     mappe = Workbook()
     fuelle_blatt(
         mappe.active, name, stelle, beginn, inhalte, logo,
-        doc_uid=doc_uid, layout_raus=layout_raus,
+        doc_uid=doc_uid, layout_raus=layout_raus, vorgesetzter=vorgesetzter,
     )
     puffer = BytesIO()
     mappe.save(puffer)
@@ -382,11 +426,12 @@ async def baue_pdf(
     *,
     doc_uid: str | None = None,
     layout_raus: dict | None = None,
+    vorgesetzter: str | None = None,
 ) -> bytes:
     return await nach_pdf(
         baue_xlsx(
             name, stelle, beginn, inhalte, logo,
-            doc_uid=doc_uid, layout_raus=layout_raus,
+            doc_uid=doc_uid, layout_raus=layout_raus, vorgesetzter=vorgesetzter,
         ),
         name="einarbeitung",
     )

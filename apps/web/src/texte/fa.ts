@@ -921,6 +921,22 @@ export const fa: Texte = {
     entfernen: (was: string) => `حذف ${was}`,
     abteilungHinzu: "+ بخش",
     abteilungFuer: (inhalt: string) => `بخش برای ${inhalt}`,
+    serieTitel: "ایجاد سری و بارگذاری متمرکز",
+    serieHinweis:
+      "برای همهٔ افراد یک بخش یک‌جا برگه ایجاد کنید (به‌صورت PDF چاپی)، چاپ کنید و به امضا " +
+      "برسانید — سپس برگه‌های امضاشده را این‌جا به‌صورت دسته‌ای بارگذاری کنید.",
+    serieErzeugen: "ایجاد سری",
+    serieFertig: (anzahl: number) => `${anzahl} برگه ایجاد شد — PDF چاپ باز شد.`,
+    uploadTitel: "بارگذاری برگه‌های امضاشده",
+    uploadHinweis:
+      "چند اسکن به‌صورت هم‌زمان — تطبیق به‌طور خودکار از طریق کد QR روی برگه انجام می‌شود.",
+    wirdHochgeladen: "در حال بارگذاری …",
+    uploadStatus: {
+      zugeordnet: "تطبیق و تکمیل شد",
+      nicht_zugeordnet: "تطبیق نشد",
+      schon_geprueft: "قبلاً بررسی شده",
+      fehler: "خطا",
+    },
   },
   matrix: {
     bearbeiten: "ویرایش",

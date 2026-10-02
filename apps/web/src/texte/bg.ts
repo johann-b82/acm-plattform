@@ -928,6 +928,22 @@ export const bg: Texte = {
     entfernen: (was: string) => `Премахни ${was}`,
     abteilungHinzu: "+ отдел",
     abteilungFuer: (inhalt: string) => `Отдел за ${inhalt}`,
+    serieTitel: "Създаване на серия и централно качване",
+    serieHinweis:
+      "Създайте бланки за всички лица в даден участък наведнъж (като PDF за печат), разпечатайте " +
+      "ги и ги подпишете — подписаните бланки качете тук наведнъж.",
+    serieErzeugen: "Създай серия",
+    serieFertig: (anzahl: number) => `Създадени бланки: ${anzahl} — PDF за печат беше отворен.`,
+    uploadTitel: "Качване на подписани бланки",
+    uploadHinweis:
+      "Много сканове наведнъж — свързването става автоматично чрез QR кода върху бланката.",
+    wirdHochgeladen: "Качване …",
+    uploadStatus: {
+      zugeordnet: "свързано и завършено",
+      nicht_zugeordnet: "несвързано",
+      schon_geprueft: "вече проверено",
+      fehler: "грешка",
+    },
   },
   matrix: {
     bearbeiten: "Редактиране",

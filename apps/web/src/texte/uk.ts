@@ -923,6 +923,22 @@ export const uk: Texte = {
     entfernen: (was: string) => `Видалити ${was}`,
     abteilungHinzu: "+ відділ",
     abteilungFuer: (inhalt: string) => `Відділ для ${inhalt}`,
+    serieTitel: "Створити серію та централізоване завантаження",
+    serieHinweis:
+      "Створіть бланки для всіх осіб підрозділу одразу (як PDF для друку), роздрукуйте й " +
+      "підпишіть — підписані бланки завантажте тут разом.",
+    serieErzeugen: "Створити серію",
+    serieFertig: (anzahl: number) => `Створено бланків: ${anzahl} — PDF для друку відкрито.`,
+    uploadTitel: "Завантажити підписані бланки",
+    uploadHinweis:
+      "Багато сканів одразу — зіставлення відбувається автоматично за QR-кодом на бланку.",
+    wirdHochgeladen: "Завантаження …",
+    uploadStatus: {
+      zugeordnet: "зіставлено та завершено",
+      nicht_zugeordnet: "не зіставлено",
+      schon_geprueft: "уже перевірено",
+      fehler: "помилка",
+    },
   },
   matrix: {
     bearbeiten: "Редагувати",

@@ -1,17 +1,18 @@
-"""Qualifizierung aus lumeapps übernehmen: Kompetenzen, Einarbeitung, Onboarding, Zeugnisse.
+"""Qualifizierung aus lumeapps übernehmen: Einarbeitung, Onboarding, Zeugnisse.
 
-Vier Module, ein Abhängigkeitsstrang. Die Matrix trägt Kategorien,
-Qualifikationen und Personen; erst an einer Qualifikation **und** einer Person
-hängt eine Bewertung. Der Katalog trägt die Einarbeitungspflicht, das Zeugnis
+Ein Abhängigkeitsstrang. Der Katalog trägt die Einarbeitungspflicht, das Zeugnis
 seine Noten. Die Reihenfolge unten ist genau diese Kette — wer sie umstellt,
 schreibt Kindzeilen vor ihre Eltern und der Fremdschlüssel bricht.
 
+**Die Kompetenzen sind hier bewusst nicht dabei.** Das alte Modell
+(Anforderungslevel 0–4 plus Erfüllungsgrad) ist auf die neue Stufe 0–3 nicht
+sauber abbildbar; die Matrix wird neu aus den Interviews erfasst statt aus
+lumeapps übernommen (Migration 0067_kompetenz_stufen).
+
 **Der Schlüssel wechselt fast überall von `integer` auf `uuid`.** Deshalb
 durchweg `id_aus="uuid5"`: aus Tabellenname und alter Zahl wird eine feste UUID
-gerechnet. Das ist hier nicht nur bequem, sondern nötig — `kompetenz_bewertung`
-verweist auf zwei Eltern gleichzeitig, und beide Verweise müssen dieselbe UUID
-treffen, die die Elterntabelle bekommen hat. Gerechnet statt nachgeschlagen
-heißt außerdem: ein zweiter Lauf trifft dieselben Zeilen.
+gerechnet. Gerechnet statt nachgeschlagen heißt: ein zweiter Lauf trifft
+dieselben Zeilen.
 
 Zwei Tabellen können das nicht:
 
@@ -25,11 +26,6 @@ Zwei Tabellen können das nicht:
 neuen Prüfbedingungen sind schärfer als die alten Spalten, aber kein einziger
 Wert des Produktivabzugs verletzt sie:
 
-* `kompetenz_matrizen.bereich` lässt vier Werte zu — dieselben vier, die das
-  Altprojekt in `KOMPETENZ_BEREICHE` führt; die sechs Blätter tragen sie alle.
-* `kompetenz_bewertungen` verlangt Anforderungslevel 0–4, Erfüllungsgrad 0–100
-  und mindestens eine der beiden Zahlen. Gezählt: 1.179 Zeilen, keine außerhalb
-  der Spannen, keine mit zwei leeren Feldern.
 * `zeugnis_bausteine.note` verlangt 1–4; die 28 Bausteine sind sieben
   Dimensionen mal vier Noten.
 * `zeugnisse` und `zeugnis_bewertungen` sind in der Produktion leer. Ihre neuen
@@ -126,99 +122,12 @@ _VORGANG_SPALTEN = {
 
 UMZUEGE: list[Umzug] = [
     # --- Kompetenzen ---------------------------------------------------------
-    # Die Matrix zuerst: an ihr hängen Kategorien, Qualifikationen und Personen.
-    # Natürlicher Schlüssel ist (bereich, blatt) — auf beiden Seiten eindeutig,
-    # und damit findet ein zweiter Lauf ein schon übernommenes Blatt auch dann
-    # wieder, wenn es zwischendurch von Hand angelegt wurde.
-    Umzug(
-        alt="kompetenz_matrix",
-        neu="kompetenz_matrizen",
-        id_aus="uuid5",
-        spalten={
-            "bereich": "bereich",
-            "blatt": "blatt",
-            "titel": "titel",
-            "stand": "stand",
-            "dateiname": "dateiname",
-            "importiert_am": "importiert_am",
-        },
-        schluessel=("bereich", "blatt"),
-    ),
-    # In der Produktion leer: die Kategorie steht faktisch als Text an der
-    # Qualifikation (`kompetenz_qualifikation.kategorie`), die eigene Tabelle
-    # ist nie gefüllt worden. Sie wird trotzdem beschrieben, damit ein Abzug mit
-    # Inhalt nicht stillschweigend danebenfällt.
-    Umzug(
-        alt="kompetenz_kategorie",
-        neu="kompetenz_kategorien",
-        id_aus="uuid5",
-        spalten={
-            "matrix_id": "matrix_id",
-            "name": "name",
-            "reihenfolge": "reihenfolge",
-        },
-        verweise={"matrix_id": "kompetenz_matrix"},
-        schluessel=("matrix_id", "name"),
-    ),
-    # Die Qualifikation trägt ihre Kategorie als Text weiter — das ist im neuen
-    # Stack genauso gelöst, also eine gerade Übernahme ohne Auflösung.
-    # Eindeutig ist neu nur der Schlüssel; über die gerechnete UUID bleibt der
-    # Lauf trotzdem wiederholbar.
-    Umzug(
-        alt="kompetenz_qualifikation",
-        neu="kompetenz_qualifikationen",
-        id_aus="uuid5",
-        spalten={
-            "matrix_id": "matrix_id",
-            "nr": "nr",
-            "kategorie": "kategorie",
-            "bezeichnung": "bezeichnung",
-            "reihenfolge": "reihenfolge",
-        },
-        verweise={"matrix_id": "kompetenz_matrix"},
-    ),
-    # `employee_id` bleibt die Personio-Zahl — die wandert unverändert und wird
-    # deshalb *nicht* übersetzt. Die Zeilen in `personio_employees` legt der
-    # Fachbereich `personal` an, der vor diesem läuft.
-    #
-    # `extern_id` fällt weg: die neue Tabelle kennt die Spalte nicht. Eine
-    # Matrixspalte ist im neuen Modell eine Beschriftung mit optionaler
-    # Personio-Zuordnung, mehr nicht; für alles Weitere gibt es `externe_personen`
-    # als eigene Tabelle. Der Name der Person steht ohnehin in `name` (nicht
-    # nullbar), es geht also keine Beschriftung verloren — in der Produktion
-    # trägt zudem keine der 59 Zeilen ein `extern_id`.
-    Umzug(
-        alt="kompetenz_person",
-        neu="kompetenz_personen",
-        id_aus="uuid5",
-        spalten={
-            "matrix_id": "matrix_id",
-            "name": "name",
-            "employee_id": "employee_id",
-            "reihenfolge": "reihenfolge",
-        },
-        verweise={"matrix_id": "kompetenz_matrix"},
-    ),
-    # Der Grund für die gerechneten Schlüssel: zwei Verweise auf zwei
-    # verschiedene Eltern, beide müssen deren neue UUID treffen.
-    # `geaendert_am` hat alt kein Gegenstück und bleibt auf der Vorgabe `now()`
-    # — der Zeitpunkt der Übernahme ist die ehrlichste Angabe, die es gibt.
-    Umzug(
-        alt="kompetenz_bewertung",
-        neu="kompetenz_bewertungen",
-        id_aus="uuid5",
-        spalten={
-            "qualifikation_id": "qualifikation_id",
-            "person_id": "person_id",
-            "anforderungslevel": "anforderungslevel",
-            "erfuellungsgrad": "erfuellungsgrad",
-        },
-        verweise={
-            "qualifikation_id": "kompetenz_qualifikation",
-            "person_id": "kompetenz_person",
-        },
-        schluessel=("qualifikation_id", "person_id"),
-    ),
+    # Kompetenzen werden **nicht** aus lumeapps übernommen. Das alte Modell
+    # (Anforderungslevel 0–4 plus Erfüllungsgrad) ist auf die neue Stufe 0–3
+    # nicht sauber abbildbar; erfasst wird neu aus den Interviews
+    # (siehe Migration 0067_kompetenz_stufen). Die fünf früheren Umzüge
+    # (Matrix, Kategorie, Qualifikation, Person, Bewertung) sind deshalb
+    # entfallen.
     # --- Einarbeitung --------------------------------------------------------
     # Gleicher Tabellenname auf beiden Seiten, gleiche Spalten — nur der
     # Schlüssel wird zur UUID, und die Pflicht muss ihm folgen.

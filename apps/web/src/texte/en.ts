@@ -925,6 +925,22 @@ export const en: Texte = {
     entfernen: (was: string) => `Remove ${was}`,
     abteilungHinzu: "+ department",
     abteilungFuer: (inhalt: string) => `Department for ${inhalt}`,
+    serieTitel: "Generate series & central upload",
+    serieHinweis:
+      "Generate induction sheets for everyone in an area at once (as a print PDF), print them " +
+      "and have them signed — then upload the signed sheets here in bulk.",
+    serieErzeugen: "Generate series",
+    serieFertig: (anzahl: number) => `${anzahl} sheets generated — the print PDF has been opened.`,
+    uploadTitel: "Upload signed sheets",
+    uploadHinweis:
+      "Many scans at once — matching happens automatically via the QR code on the sheet.",
+    wirdHochgeladen: "Uploading …",
+    uploadStatus: {
+      zugeordnet: "assigned and completed",
+      nicht_zugeordnet: "not assigned",
+      schon_geprueft: "already checked",
+      fehler: "error",
+    },
   },
   matrix: {
     bearbeiten: "Edit",

@@ -82,11 +82,14 @@ PAARE: list[Paar] = [
     Paar("Personal", "schulung_zertifikat", "dokument_nachweise"),
     Paar("Personal", "onboarding_dokument", None,
          "der Einarbeitungsplan wird jetzt gerechnet statt abgelegt"),
-    Paar("Personal", "kompetenz_matrix", "kompetenz_matrizen"),
-    Paar("Personal", "kompetenz_kategorie", "kompetenz_kategorien"),
-    Paar("Personal", "kompetenz_qualifikation", "kompetenz_qualifikationen"),
-    Paar("Personal", "kompetenz_person", "kompetenz_personen"),
-    Paar("Personal", "kompetenz_bewertung", "kompetenz_bewertungen"),
+    # Die Kompetenzmatrix wird neu aus den Interviews erfasst (Stufe 0–3), nicht
+    # aus lumeapps übernommen — das alte Modell (Level 0–4 plus Erfüllungsgrad)
+    # ist darauf nicht abbildbar. Deshalb neu=None, kein Zahlenvergleich.
+    Paar("Personal", "kompetenz_matrix", None, "Kompetenzen neu aus Interviews (Stufe 0–3)"),
+    Paar("Personal", "kompetenz_kategorie", None, "Kompetenzen neu aus Interviews (Stufe 0–3)"),
+    Paar("Personal", "kompetenz_qualifikation", None, "Kompetenzen neu aus Interviews (Stufe 0–3)"),
+    Paar("Personal", "kompetenz_person", None, "Kompetenzen neu aus Interviews (Stufe 0–3)"),
+    Paar("Personal", "kompetenz_bewertung", None, "Kompetenzen neu aus Interviews (Stufe 0–3)"),
     Paar("Personal", "einarbeitung_katalog", "einarbeitung_katalog"),
     Paar("Personal", "einarbeitung_pflicht", "einarbeitung_pflicht"),
     Paar("Personal", "einarbeitung_dokument", "dokumentvorgaenge",

@@ -928,6 +928,22 @@ export const vi: Texte = {
     entfernen: (was: string) => `Xóa ${was}`,
     abteilungHinzu: "+ bộ phận",
     abteilungFuer: (inhalt: string) => `Bộ phận cho ${inhalt}`,
+    serieTitel: "Tạo hàng loạt & tải lên tập trung",
+    serieHinweis:
+      "Tạo phiếu cho tất cả nhân viên của một khu vực cùng lúc (dưới dạng PDF để in), in ra " +
+      "và cho ký — rồi tải các phiếu đã ký lên đây theo lô.",
+    serieErzeugen: "Tạo hàng loạt",
+    serieFertig: (anzahl: number) => `Đã tạo ${anzahl} phiếu — đã mở PDF để in.`,
+    uploadTitel: "Tải lên phiếu đã ký",
+    uploadHinweis:
+      "Nhiều bản quét cùng lúc — việc khớp diễn ra tự động qua mã QR trên phiếu.",
+    wirdHochgeladen: "Đang tải lên …",
+    uploadStatus: {
+      zugeordnet: "đã khớp và hoàn tất",
+      nicht_zugeordnet: "chưa khớp",
+      schon_geprueft: "đã kiểm tra trước đó",
+      fehler: "lỗi",
+    },
   },
   matrix: {
     bearbeiten: "Chỉnh sửa",

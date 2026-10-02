@@ -563,57 +563,120 @@ wartungsdateien = sa.Table(
     sa.Column("hochgeladen_am", sa.DateTime(timezone=True), nullable=False),
 )
 
-kompetenz_matrizen = sa.Table(
-    "kompetenz_matrizen",
+# Bereich → Aufgabenfamilie → Bewertung (Ist/Soll 0–3). Die Interviewfelder
+# stehen je Person und Bereich daneben. Bewertet wird über die Personio-ID.
+kompetenz_bereiche = sa.Table(
+    "kompetenz_bereiche",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
-    sa.Column("bereich", sa.String(30), nullable=False),
-    sa.Column("blatt", sa.String(120), nullable=False),
-    sa.Column("titel", sa.Text),
-    sa.Column("stand", sa.Date),
-    sa.Column("dateiname", sa.Text, nullable=False),
-    sa.Column("importiert_am", sa.DateTime(timezone=True), nullable=False),
-)
-
-kompetenz_kategorien = sa.Table(
-    "kompetenz_kategorien",
-    metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
-    sa.Column("matrix_id", UUID(as_uuid=False), nullable=False),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
     sa.Column("name", sa.Text, nullable=False),
+    sa.Column("abteilung", sa.Text),
+    sa.Column("leiter", sa.Text),
     sa.Column("reihenfolge", sa.Integer, nullable=False),
 )
 
-kompetenz_qualifikationen = sa.Table(
-    "kompetenz_qualifikationen",
+kompetenz_familien = sa.Table(
+    "kompetenz_familien",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
-    sa.Column("matrix_id", UUID(as_uuid=False), nullable=False),
-    sa.Column("nr", sa.Integer),
-    sa.Column("kategorie", sa.Text),
-    sa.Column("bezeichnung", sa.Text, nullable=False),
-    sa.Column("reihenfolge", sa.Integer, nullable=False),
-)
-
-kompetenz_personen = sa.Table(
-    "kompetenz_personen",
-    metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
-    sa.Column("matrix_id", UUID(as_uuid=False), nullable=False),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
     sa.Column("name", sa.Text, nullable=False),
-    sa.Column("employee_id", sa.Integer),
+    sa.Column("beschreibung", sa.Text),
     sa.Column("reihenfolge", sa.Integer, nullable=False),
+    sa.Column("mindest_l2", sa.Integer, nullable=False),
+    sa.Column("mindest_l3", sa.Integer, nullable=False),
 )
 
 kompetenz_bewertungen = sa.Table(
     "kompetenz_bewertungen",
     metadata,
-    sa.Column("id", UUID(as_uuid=False), primary_key=True),
-    sa.Column("qualifikation_id", UUID(as_uuid=False), nullable=False),
-    sa.Column("person_id", UUID(as_uuid=False), nullable=False),
-    sa.Column("anforderungslevel", sa.Integer),
-    sa.Column("erfuellungsgrad", sa.Integer),
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("familie_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("ist_stufe", sa.Integer),
+    sa.Column("soll_stufe", sa.Integer),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+kompetenz_interview = sa.Table(
+    "kompetenz_interview",
+    metadata,
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("produkte", sa.Text),
+    sa.Column("weitere_bereiche", sa.Text),
+    sa.Column("engpass", sa.Text),
+    sa.Column("validiert_durch", sa.Text),
+    sa.Column("validiert_am", sa.Date),
+    sa.Column("notiz", sa.Text),
+)
+
+# Wo eine Person heute arbeitet: (Abteilung + Team) → Bereich, mit einer
+# Abweichung je Person. Die Sicht person_bereich rechnet den wirksamen Bereich.
+bereich_zuordnung = sa.Table(
+    "bereich_zuordnung",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("abteilung", sa.Text, nullable=False),
+    sa.Column("team", sa.Text),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+)
+
+bereich_zuordnung_person = sa.Table(
+    "bereich_zuordnung_person",
+    metadata,
+    sa.Column("employee_id", sa.Integer, primary_key=True),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+)
+
+# Das Soll: Profil je Familie (optional je Position) und die Einsatzplanung.
+kompetenz_profil = sa.Table(
+    "kompetenz_profil",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("familie_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("position_norm", sa.String(200)),
+    sa.Column("soll_stufe", sa.Integer, nullable=False),
+)
+
+kompetenz_einsatz = sa.Table(
+    "kompetenz_einsatz",
+    metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True),
+    sa.Column("employee_id", sa.Integer, nullable=False),
+    sa.Column("bereich_id", UUID(as_uuid=False), nullable=False),
+    sa.Column("art", sa.String(12), nullable=False),
+)
+
+# Sicht (nicht in TABLES — nur lesbar): der wirksame Bereich je aktiver Person.
+person_bereich = sa.Table(
+    "person_bereich",
+    metadata,
+    sa.Column("employee_id", sa.Integer, primary_key=True),
+    sa.Column("abteilung", sa.Text),
+    sa.Column("team", sa.Text),
+    sa.Column("bereich_id", UUID(as_uuid=False)),
 )
 
 externe_personen = sa.Table(
@@ -783,6 +846,23 @@ einarbeitung_katalog = sa.Table(
     sa.Column("bereich", sa.Text),
     sa.Column("reihenfolge", sa.Integer, nullable=False),
     sa.Column("erstellt_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+# Die allgemeinen Onboarding-Punkte, die auf jedem Produktionsbogen oben stehen.
+einarbeitung_allgemein = sa.Table(
+    "einarbeitung_allgemein",
+    metadata,
+    sa.Column(
+        "id",
+        UUID(as_uuid=False),
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()"),
+    ),
+    sa.Column("thema", sa.Text, nullable=False),
+    sa.Column("ansprechpartner", sa.Text),
+    sa.Column("beschreibung", sa.Text),
+    sa.Column("reihenfolge", sa.Integer, nullable=False),
+    sa.Column("aktiv", sa.Boolean, nullable=False),
 )
 
 einarbeitung_pflicht = sa.Table(
@@ -974,11 +1054,14 @@ TABLES = {
     "maschinen": maschinen,
     "wartungsaufgaben": wartungsaufgaben,
     "wartungsdateien": wartungsdateien,
-    "kompetenz_matrizen": kompetenz_matrizen,
-    "kompetenz_kategorien": kompetenz_kategorien,
-    "kompetenz_qualifikationen": kompetenz_qualifikationen,
-    "kompetenz_personen": kompetenz_personen,
+    "kompetenz_bereiche": kompetenz_bereiche,
+    "kompetenz_familien": kompetenz_familien,
     "kompetenz_bewertungen": kompetenz_bewertungen,
+    "kompetenz_interview": kompetenz_interview,
+    "bereich_zuordnung": bereich_zuordnung,
+    "bereich_zuordnung_person": bereich_zuordnung_person,
+    "kompetenz_profil": kompetenz_profil,
+    "kompetenz_einsatz": kompetenz_einsatz,
     "externe_personen": externe_personen,
     "schulung_katalog": schulung_katalog,
     "schulung_pflicht": schulung_pflicht,
@@ -986,6 +1069,7 @@ TABLES = {
     "schulung_importe": schulung_importe,
     "schulung_teilnahmen": schulung_teilnahmen,
     "einarbeitung_katalog": einarbeitung_katalog,
+    "einarbeitung_allgemein": einarbeitung_allgemein,
     "einarbeitung_pflicht": einarbeitung_pflicht,
     "plattform_logo": plattform_logo,
     "onboarding_abteilung": onboarding_abteilung,
