@@ -919,6 +919,22 @@ export const ar: Texte = {
     entfernen: (was: string) => `أزل ${was}`,
     abteilungHinzu: "+ قسم",
     abteilungFuer: (inhalt: string) => `قسم لـ ${inhalt}`,
+    serieTitel: "إنشاء مجموعة ورفع مركزي",
+    serieHinweis:
+      "أنشئ استمارات لجميع الأشخاص في قسم دفعة واحدة (كملف PDF للطباعة)، اطبعها ووقّعها — " +
+      "ثم ارفع الاستمارات الموقّعة هنا دفعة واحدة.",
+    serieErzeugen: "إنشاء مجموعة",
+    serieFertig: (anzahl: number) => `تم إنشاء ${anzahl} استمارة — تم فتح ملف الطباعة.`,
+    uploadTitel: "رفع الاستمارات الموقّعة",
+    uploadHinweis:
+      "عدة مسوحات دفعة واحدة — تتم المطابقة تلقائيًا عبر رمز QR على الاستمارة.",
+    wirdHochgeladen: "جارٍ الرفع …",
+    uploadStatus: {
+      zugeordnet: "تمت المطابقة والإكمال",
+      nicht_zugeordnet: "لم تتم المطابقة",
+      schon_geprueft: "سبق التحقق منها",
+      fehler: "خطأ",
+    },
   },
   matrix: {
     bearbeiten: "تحرير",

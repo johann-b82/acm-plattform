@@ -891,6 +891,22 @@ export const de = {
     entfernen: (was: string) => `${was} entfernen`,
     abteilungHinzu: "+ Abteilung",
     abteilungFuer: (inhalt: string) => `Abteilung für ${inhalt}`,
+    serieTitel: "Serie erzeugen & zentraler Upload",
+    serieHinweis:
+      "Für alle Personen eines Bereichs auf einmal Bögen erzeugen (als Druck-PDF), ausdrucken " +
+      "und unterschreiben lassen — die unterschriebenen Bögen hier gesammelt wieder einlesen.",
+    serieErzeugen: "Serie erzeugen",
+    serieFertig: (anzahl: number) => `${anzahl} Bögen erzeugt — das Druck-PDF wurde geöffnet.`,
+    uploadTitel: "Unterschriebene Bögen hochladen",
+    uploadHinweis:
+      "Viele Scans auf einmal — die Zuordnung läuft automatisch über den QR-Code auf dem Blatt.",
+    wirdHochgeladen: "Wird hochgeladen …",
+    uploadStatus: {
+      zugeordnet: "zugeordnet und abgeschlossen",
+      nicht_zugeordnet: "nicht zugeordnet",
+      schon_geprueft: "war schon geprüft",
+      fehler: "Fehler",
+    },
   },
   matrix: {
     bearbeiten: "Bearbeiten",

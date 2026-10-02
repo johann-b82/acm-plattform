@@ -930,6 +930,22 @@ export const pl: Texte = {
     entfernen: (was: string) => `Usuń ${was}`,
     abteilungHinzu: "+ Dział",
     abteilungFuer: (inhalt: string) => `Dział dla ${inhalt}`,
+    serieTitel: "Generowanie serii i centralne przesyłanie",
+    serieHinweis:
+      "Wygeneruj arkusze dla wszystkich osób w danym obszarze naraz (jako PDF do druku), " +
+      "wydrukuj i podpisz — podpisane arkusze prześlij tutaj zbiorczo.",
+    serieErzeugen: "Generuj serię",
+    serieFertig: (anzahl: number) => `Wygenerowano arkuszy: ${anzahl} — otwarto PDF do druku.`,
+    uploadTitel: "Prześlij podpisane arkusze",
+    uploadHinweis:
+      "Wiele skanów naraz — przypisanie odbywa się automatycznie dzięki kodowi QR na arkuszu.",
+    wirdHochgeladen: "Przesyłanie …",
+    uploadStatus: {
+      zugeordnet: "przypisano i zakończono",
+      nicht_zugeordnet: "nieprzypisane",
+      schon_geprueft: "już sprawdzone",
+      fehler: "błąd",
+    },
   },
   matrix: {
     bearbeiten: "Edytuj",

@@ -7,7 +7,7 @@ import { einarbeitungApi, einarbeitungKeys } from "@/lib/einarbeitung";
 import { useTexte } from "@/components/sprache/anbieter";
 import { Seitenkopf } from "@/components/seitenkopf";
 import { Klappbar } from "../klappbar";
-import { Einarbeitungsinhalte, Einarbeitungsmatrix } from "./einarbeitung";
+import { Einarbeitungsinhalte, Einarbeitungsmatrix, Serienbogen } from "./einarbeitung";
 import { Vorgaenge } from "./vorgaenge";
 import { Eintritte } from "./eintritte";
 
@@ -41,6 +41,10 @@ export function Onboarding({ darfSchreiben }: { darfSchreiben: boolean }) {
 
       <Klappbar id="einarbeitungsmatrix" titel={worte.onboarding.matrixTitel} offenStart={false}>
         <Einarbeitungsmatrix darfSchreiben={darfSchreiben} />
+      </Klappbar>
+
+      <Klappbar id="serie" titel={worte.einarbeitung.serieTitel} offenStart={false}>
+        <Serienbogen darfSchreiben={darfSchreiben} />
       </Klappbar>
 
       <section id="vorgaenge" className="scroll-mt-4 space-y-3">
