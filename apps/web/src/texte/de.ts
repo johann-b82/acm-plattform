@@ -552,6 +552,7 @@ export const de = {
     anmelden: "Anmelden",
   },
   uploads: {
+    importGesperrt: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt. In den Einstellungen umschalten.",
     dateiWaehlen: "Datei auswählen",
     verarbeitet: "wird verarbeitet …",
     uebersprungen: (datei: string) => `Übersprungene Zeilen aus „${datei}“`,
@@ -1714,6 +1715,10 @@ export const de = {
     titel: "Einstellungen",
     bereiche: "Bereiche",
     gruppen: {
+      datenquelle: "Datenquelle",
+      datenquelleText:
+        "Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der ODBC-Worker, der " +
+        "Apollo live liest. Bei „ODBC“ sind die manuellen Importe gesperrt.",
       kennzahlen: "Kennzahlen",
       kennzahlenText:
         "Zielwerte der Dashboards. Sie erscheinen als Ziellinie im Verlauf und entscheiden, ab " +
@@ -1757,6 +1762,17 @@ export const de = {
     },
   },
   einstellungenText: {
+    datenquelle: {
+      titel: "Datenquelle der Kennzahlen",
+      text:
+        "„Extrakte“: die Kennzahlen kommen aus den manuellen Monats-Uploads. „ODBC“: ein " +
+        "Windows-Worker liest Apollo live und füllt dieselben Tabellen — die manuellen Importe " +
+        "sind dann gesperrt.",
+      extrakte: "Extrakte",
+      odbc: "ODBC",
+      hinweisOdbc: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt.",
+      gespeichert: "Datenquelle gespeichert.",
+    },
     appName: "App-Name",
     appNameHinweis:
       "Steht in der Kopfzeile ohne Logo, im Seitentitel und auf der Anmeldeseite.",

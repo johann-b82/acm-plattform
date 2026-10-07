@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # heisst: nur angemeldete HR-Admins duerfen den Abgleich ausloesen.
     HR_SYNC_TOKEN: str = ""
 
+    # Gemeinsames Geheimnis fuer den ODBC-Sync aus dem Windows-Worker (Apollo).
+    # Leer heisst: der ODBC-Sync ist zu (503); nur der Extrakt-Upload fuellt die
+    # Tabellen.
+    ODBC_SYNC_TOKEN: str = ""
+
     # ATR-Eingangsordner auf dem Dateiserver. Das Passwort steht hier und
     # nicht in der Datenbank: sonst braeuchte es zusaetzlich einen Schluessel
     # zum Entschluesseln, und der Geheimtext laege in jedem Abzug.

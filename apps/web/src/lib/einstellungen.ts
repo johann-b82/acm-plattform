@@ -19,6 +19,7 @@ export interface Gruppe {
 
 export const GRUPPEN: Gruppe[] = [
   { id: "kennzahlen" },
+  { id: "datenquelle" },
   { id: "personal" },
   { id: "atr" },
   { id: "qualitaet" },

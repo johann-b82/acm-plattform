@@ -45,6 +45,8 @@ upload_batches = sa.Table(
     sa.Column("error_count", sa.Integer, nullable=False),
     sa.Column("status", sa.String(16), nullable=False),
     sa.Column("uploaded_by", sa.dialects.postgresql.UUID(as_uuid=True), nullable=True),
+    # Woher die Zeilen kamen: 'upload' (manueller Extrakt) oder 'odbc' (Worker).
+    sa.Column("quelle", sa.String(16), nullable=False),
 )
 
 # revenues und auftraege stammen aus zwei ERP-Exporten mit gleicher Form
@@ -819,6 +821,9 @@ plattform_einstellungen = sa.Table(
     sa.Column("personio_sync_intervall_h", sa.Integer, nullable=False),
     sa.Column("personio_nachweis_aktiv", sa.Boolean, nullable=False),
     sa.Column("personio_nachweis_kategorie", sa.String(64)),
+    # Woher die KPI-Daten kommen: 'extrakte' (manueller Upload) oder 'odbc'
+    # (Windows-Worker). Steht er auf 'odbc', sind die manuellen Importe gesperrt.
+    sa.Column("datenquelle", sa.String(16), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 

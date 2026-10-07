@@ -582,6 +582,8 @@ export const fa: Texte = {
     anmelden: "ورود",
   },
   uploads: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    importGesperrt: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt. In den Einstellungen umschalten.",
     dateiWaehlen: "انتخاب فایل",
     verarbeitet: "در حال پردازش …",
     uebersprungen: (datei: string) => `سطرهای ردشده از «${datei}»`,
@@ -1733,6 +1735,11 @@ export const fa: Texte = {
     titel: "تنظیمات",
     bereiche: "بخش‌ها",
     gruppen: {
+      // TODO Übersetzung (vorerst deutscher Platzhalter)
+      datenquelle: "Datenquelle",
+      datenquelleText:
+        "Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der ODBC-Worker, der " +
+        "Apollo live liest. Bei „ODBC“ sind die manuellen Importe gesperrt.",
       kennzahlen: "شاخص‌ها",
       kennzahlenText:
         "مقدارهای هدف داشبوردها. در نمودار روند به شکل خط هدف دیده می‌شوند و تعیین " +
@@ -1776,6 +1783,18 @@ export const fa: Texte = {
     },
   },
   einstellungenText: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    datenquelle: {
+      titel: "Datenquelle der Kennzahlen",
+      text:
+        "„Extrakte“: die Kennzahlen kommen aus den manuellen Monats-Uploads. „ODBC“: ein " +
+        "Windows-Worker liest Apollo live und füllt dieselben Tabellen — die manuellen Importe " +
+        "sind dann gesperrt.",
+      extrakte: "Extrakte",
+      odbc: "ODBC",
+      hinweisOdbc: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt.",
+      gespeichert: "Datenquelle gespeichert.",
+    },
     appName: "نام برنامه",
     appNameHinweis:
       "در سربرگ بدون لوگو، در عنوان صفحه و در صفحهٔ ورود نمایش داده می‌شود.",

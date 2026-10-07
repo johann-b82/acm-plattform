@@ -589,6 +589,8 @@ export const pl: Texte = {
     anmelden: "Logowanie",
   },
   uploads: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    importGesperrt: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt. In den Einstellungen umschalten.",
     dateiWaehlen: "Wybierz plik",
     verarbeitet: "przetwarzanie …",
     uebersprungen: (datei: string) => `Pominięte wiersze z „${datei}”`,
@@ -1748,6 +1750,11 @@ export const pl: Texte = {
     titel: "Ustawienia",
     bereiche: "Obszary",
     gruppen: {
+      // TODO Übersetzung (vorerst deutscher Platzhalter)
+      datenquelle: "Datenquelle",
+      datenquelleText:
+        "Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der ODBC-Worker, der " +
+        "Apollo live liest. Bei „ODBC“ sind die manuellen Importe gesperrt.",
       kennzahlen: "Wskaźniki",
       kennzahlenText:
         "Wartości docelowe pulpitów. Pojawiają się jako linia celu w przebiegu i decydują, " +
@@ -1791,6 +1798,18 @@ export const pl: Texte = {
     },
   },
   einstellungenText: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    datenquelle: {
+      titel: "Datenquelle der Kennzahlen",
+      text:
+        "„Extrakte“: die Kennzahlen kommen aus den manuellen Monats-Uploads. „ODBC“: ein " +
+        "Windows-Worker liest Apollo live und füllt dieselben Tabellen — die manuellen Importe " +
+        "sind dann gesperrt.",
+      extrakte: "Extrakte",
+      odbc: "ODBC",
+      hinweisOdbc: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt.",
+      gespeichert: "Datenquelle gespeichert.",
+    },
     appName: "Nazwa aplikacji",
     appNameHinweis:
       "Pokazywana w nagłówku bez logo, w tytule strony i na stronie logowania.",

@@ -584,6 +584,8 @@ export const uk: Texte = {
     anmelden: "Вхід",
   },
   uploads: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    importGesperrt: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt. In den Einstellungen umschalten.",
     dateiWaehlen: "Вибрати файл",
     verarbeitet: "обробляється …",
     uebersprungen: (datei: string) => `Пропущені рядки з «${datei}»`,
@@ -1734,6 +1736,11 @@ export const uk: Texte = {
     titel: "Налаштування",
     bereiche: "Розділи",
     gruppen: {
+      // TODO Übersetzung (vorerst deutscher Platzhalter)
+      datenquelle: "Datenquelle",
+      datenquelleText:
+        "Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der ODBC-Worker, der " +
+        "Apollo live liest. Bei „ODBC“ sind die manuellen Importe gesperrt.",
       kennzahlen: "Показники",
       kennzahlenText:
         "Цільові значення дашбордів. Вони з’являються як лінія цілі в динаміці й вирішують, " +
@@ -1777,6 +1784,18 @@ export const uk: Texte = {
     },
   },
   einstellungenText: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    datenquelle: {
+      titel: "Datenquelle der Kennzahlen",
+      text:
+        "„Extrakte“: die Kennzahlen kommen aus den manuellen Monats-Uploads. „ODBC“: ein " +
+        "Windows-Worker liest Apollo live und füllt dieselben Tabellen — die manuellen Importe " +
+        "sind dann gesperrt.",
+      extrakte: "Extrakte",
+      odbc: "ODBC",
+      hinweisOdbc: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt.",
+      gespeichert: "Datenquelle gespeichert.",
+    },
     appName: "Назва застосунку",
     appNameHinweis:
       "Показується в шапці без логотипа, у заголовку сторінки та на сторінці входу.",

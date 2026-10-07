@@ -587,6 +587,7 @@ export const en: Texte = {
     anmelden: "Sign in",
   },
   uploads: {
+    importGesperrt: "Data source is set to ODBC — manual imports are disabled. Switch it in the settings.",
     dateiWaehlen: "Choose file",
     verarbeitet: "processing …",
     uebersprungen: (datei: string) => `Rows skipped from “${datei}”`,
@@ -1744,6 +1745,10 @@ export const en: Texte = {
     titel: "Settings",
     bereiche: "Areas",
     gruppen: {
+      datenquelle: "Data source",
+      datenquelleText:
+        "Where the key figures come from: the monthly extract uploads or the ODBC worker reading " +
+        "Apollo live. With “ODBC”, manual imports are disabled.",
       kennzahlen: "Metrics",
       kennzahlenText:
         "Targets for the dashboards. They appear as a target line in the chart and decide when a " +
@@ -1788,6 +1793,17 @@ export const en: Texte = {
     },
   },
   einstellungenText: {
+    datenquelle: {
+      titel: "Data source of the key figures",
+      text:
+        "“Extracts”: the key figures come from the manual monthly uploads. “ODBC”: a " +
+        "Windows worker reads Apollo live and fills the same tables — manual imports are then " +
+        "disabled.",
+      extrakte: "Extracts",
+      odbc: "ODBC",
+      hinweisOdbc: "Data source is set to ODBC — manual imports are disabled.",
+      gespeichert: "Data source saved.",
+    },
     appName: "App name",
     appNameHinweis:
       "Shown in the header without a logo, in the page title and on the sign-in page.",

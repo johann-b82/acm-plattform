@@ -589,6 +589,8 @@ export const vi: Texte = {
     anmelden: "Đăng nhập",
   },
   uploads: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    importGesperrt: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt. In den Einstellungen umschalten.",
     dateiWaehlen: "Chọn tệp",
     verarbeitet: "đang xử lý …",
     uebersprungen: (datei: string) => `Các dòng bị bỏ qua từ “${datei}”`,
@@ -1745,6 +1747,11 @@ export const vi: Texte = {
     titel: "Cài đặt",
     bereiche: "Các mục",
     gruppen: {
+      // TODO Übersetzung (vorerst deutscher Platzhalter)
+      datenquelle: "Datenquelle",
+      datenquelleText:
+        "Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der ODBC-Worker, der " +
+        "Apollo live liest. Bei „ODBC“ sind die manuellen Importe gesperrt.",
       kennzahlen: "Chỉ số",
       kennzahlenText:
         "Giá trị mục tiêu của các bảng chỉ số. Chúng xuất hiện thành đường mục tiêu trong " +
@@ -1789,6 +1796,18 @@ export const vi: Texte = {
     },
   },
   einstellungenText: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    datenquelle: {
+      titel: "Datenquelle der Kennzahlen",
+      text:
+        "„Extrakte“: die Kennzahlen kommen aus den manuellen Monats-Uploads. „ODBC“: ein " +
+        "Windows-Worker liest Apollo live und füllt dieselben Tabellen — die manuellen Importe " +
+        "sind dann gesperrt.",
+      extrakte: "Extrakte",
+      odbc: "ODBC",
+      hinweisOdbc: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt.",
+      gespeichert: "Datenquelle gespeichert.",
+    },
     appName: "Tên ứng dụng",
     appNameHinweis:
       "Hiển thị ở đầu trang khi không có logo, trong tiêu đề trang và trên trang đăng nhập.",

@@ -14,6 +14,11 @@ import { STANDARD_ERSCHEINUNG, erscheinungAus, type Erscheinung } from "@/lib/ko
  * Datei. Neben der Seitengröße stehen hier App-Name und Farbrollen (SET-06)
  * sowie der Personio-Takt und die Nachweisübertragung (SET-08/09).
  */
+/** Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der
+ *  ODBC-Worker, der Apollo live liest. Bei „odbc" sind die manuellen Importe
+ *  gesperrt (die compute-Seite weist sie mit 409 ab). */
+export type Datenquelle = "extrakte" | "odbc";
+
 export interface PlattformEinstellungen {
   tabellen_seitengroesse: Seitengroesse;
   app_name: string;
@@ -21,6 +26,7 @@ export interface PlattformEinstellungen {
   personio_sync_intervall_h: number;
   personio_nachweis_aktiv: boolean;
   personio_nachweis_kategorie: string;
+  datenquelle: Datenquelle;
 }
 
 interface Roh {
@@ -30,13 +36,14 @@ interface Roh {
   personio_sync_intervall_h: number | null;
   personio_nachweis_aktiv: boolean | null;
   personio_nachweis_kategorie: string | null;
+  datenquelle: string | null;
 }
 
 export const plattformKeys = { alle: () => ["plattform-einstellungen"] as const };
 
 const SPALTEN =
   "tabellen_seitengroesse,app_name,farben,personio_sync_intervall_h," +
-  "personio_nachweis_aktiv,personio_nachweis_kategorie";
+  "personio_nachweis_aktiv,personio_nachweis_kategorie,datenquelle";
 
 function ausRoh(roh: Roh | null): PlattformEinstellungen {
   const groesse = roh?.tabellen_seitengroesse;
@@ -48,6 +55,7 @@ function ausRoh(roh: Roh | null): PlattformEinstellungen {
     personio_sync_intervall_h: roh?.personio_sync_intervall_h ?? 24,
     personio_nachweis_aktiv: roh?.personio_nachweis_aktiv ?? false,
     personio_nachweis_kategorie: roh?.personio_nachweis_kategorie ?? "",
+    datenquelle: roh?.datenquelle === "odbc" ? "odbc" : "extrakte",
   };
 }
 
@@ -81,6 +89,8 @@ export const plattformApi = {
 
   nachweisSetzen: (aktiv: boolean, kategorie: string) =>
     schreiben({ personio_nachweis_aktiv: aktiv, personio_nachweis_kategorie: kategorie.trim() || null }),
+
+  datenquelleSetzen: (quelle: Datenquelle) => schreiben({ datenquelle: quelle }),
 };
 
 /** Die zentrale Seitengröße. Bis sie geladen ist, gilt die Vorgabe 25. */
@@ -91,4 +101,14 @@ export function useSeitengroesse(): Seitengroesse {
     staleTime: 5 * 60_000,
   });
   return data?.tabellen_seitengroesse ?? 25;
+}
+
+/** Die aktive KPI-Datenquelle. Bis sie geladen ist, gilt „extrakte". */
+export function useDatenquelle(): Datenquelle {
+  const { data } = useQuery({
+    queryKey: plattformKeys.alle(),
+    queryFn: plattformApi.lesen,
+    staleTime: 5 * 60_000,
+  });
+  return data?.datenquelle ?? "extrakte";
 }

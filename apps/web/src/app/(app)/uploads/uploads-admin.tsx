@@ -7,6 +7,7 @@ import { FileUp, Loader2 } from "lucide-react";
 
 import { computeJson } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { useDatenquelle } from "@/lib/plattform-einstellungen";
 
 import { Badge, Button, Card } from "@/components/ui/primitives";
 import { Datentabelle } from "@/components/ui/datentabelle";
@@ -127,10 +128,12 @@ function Ablage({
   art,
   onDatei,
   laeuft,
+  gesperrt,
 }: {
   art: (typeof ARTEN)[number];
   onDatei: (file: File) => void;
   laeuft: boolean;
+  gesperrt: boolean;
 }) {
   const worte = useTexte();
   const arten = worte.uploads.arten as Record<string, string>;
@@ -144,19 +147,20 @@ function Ablage({
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          setUeber(true);
+          if (!gesperrt) setUeber(true);
         }}
         onDragLeave={() => setUeber(false)}
         onDrop={(e) => {
           e.preventDefault();
           setUeber(false);
+          if (gesperrt) return;
           const f = e.dataTransfer.files?.[0];
           if (f) onDatei(f);
         }}
         className={cn(
           "mt-4 flex min-h-28 flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-5 text-center transition-colors",
           ueber ? "border-[var(--ring)] bg-[var(--muted)]" : "border-[var(--border)]",
-          laeuft && "opacity-60",
+          (laeuft || gesperrt) && "opacity-60",
         )}
       >
         <input
@@ -164,6 +168,7 @@ function Ablage({
           type="file"
           accept={art.endungen ?? ".txt,.csv"}
           className="sr-only"
+          disabled={gesperrt}
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) onDatei(f);
@@ -179,7 +184,9 @@ function Ablage({
           <>
             <FileUp className="h-5 w-5 text-[var(--fg-muted)]" aria-hidden />
             <p className="font-mono text-sm">{art.datei}</p>
-            <Button onClick={() => input.current?.click()}>{worte.uploads.dateiWaehlen}</Button>
+            <Button disabled={gesperrt} onClick={() => input.current?.click()}>
+              {worte.uploads.dateiWaehlen}
+            </Button>
           </>
         )}
       </div>
@@ -190,6 +197,7 @@ function Ablage({
 export function UploadsAdmin() {
   const worte = useTexte();
   const fmt = useFormate();
+  const gesperrt = useDatenquelle() === "odbc";
   const arten = worte.uploads.arten as Record<string, string>;
   const statusText: Record<string, string> = {
     success: worte.uploads.vollstaendig,
@@ -251,6 +259,11 @@ export function UploadsAdmin() {
 
   return (
     <div className="space-y-6">
+      {gesperrt && (
+        <Card role="status" className="border-[var(--warn-border,var(--border))] bg-[var(--muted)] p-4">
+          <p className="text-sm">{worte.uploads.importGesperrt}</p>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {ARTEN.map((art) => (
@@ -258,6 +271,7 @@ export function UploadsAdmin() {
             key={art.kind}
             art={art}
             laeuft={laufend === art.kind}
+            gesperrt={gesperrt}
             onDatei={(file) => upload.mutate({ kind: art.kind, file })}
           />
         ))}
