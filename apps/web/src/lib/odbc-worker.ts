@@ -31,6 +31,7 @@ export const WORKER_ARTEN = [
   "materialpreise",
   "lagerbewegungen",
   "pruefungen",
+  "liefertreue",
 ] as const;
 
 export type WorkerArt = (typeof WORKER_ARTEN)[number];

@@ -40,7 +40,7 @@ depends_on = None
 AKTIVE_ARTEN_VORGABE = (
     '["umsatz","auftraege","angebote","lagerpreise","acht_d",'
     '"auftragspositionen","lieferscheine","wareneingaenge","materialpreise",'
-    '"lagerbewegungen","pruefungen"]'
+    '"lagerbewegungen","pruefungen","liefertreue"]'
 )
 
 UPGRADE = f"""
