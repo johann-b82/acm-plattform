@@ -1,0 +1,7 @@
+# Lokale Konfiguration mit Geheimnissen — nie einchecken.
+worker.env
+
+# Dry-Run-Ausgaben und Python-Cache.
+_dryrun_*
+__pycache__/
+*.pyc
