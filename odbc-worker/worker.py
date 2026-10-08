@@ -78,9 +78,29 @@ def apollo():
     return _CN
 
 
+def _lit(v) -> str:
+    """Einen Wert als SQL-Literal. Der CONZEPT-Treiber bindet zwar Datums-, aber
+    KEINE Ganzzahl-`?`-Parameter (die liefern stumm 0 Zeilen). Darum setzen wir
+    alle Parameter inline — es sind ausschließlich interne Konstanten
+    (Mandant, Belegtyp, Fensterdatum), kein Injection-Risiko."""
+    if isinstance(v, dt.date):
+        return "{d '%s'}" % v.isoformat()
+    if isinstance(v, bool):
+        return "1" if v else "0"
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, float):
+        return repr(v)
+    return "'" + str(v).replace("'", "''") + "'"
+
+
 def q(sql: str, *params):
+    """Wie cursor.execute, aber `?` werden der Reihe nach durch Literale ersetzt
+    (siehe _lit) — nicht über die kaputte Parameterbindung des Treibers."""
+    for p in params:
+        sql = sql.replace("?", _lit(p), 1)
     cur = apollo().cursor()
-    cur.execute(sql, *params) if params else cur.execute(sql)
+    cur.execute(sql)
     return cur
 
 
