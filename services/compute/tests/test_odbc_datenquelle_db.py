@@ -99,3 +99,64 @@ class TestUmschalter:
         await datenquelle_setzen("extrakte")
         r = await client.post("/api/uploads/umsatz", headers=UPLOADS_ADMIN, files=DATEI)
         assert r.status_code != 409
+
+
+class TestSteuerung:
+    """Konfig (Pull) und Status (Push) — unabhängig vom Datenquelle-Tor."""
+
+    async def test_konfig_braucht_token(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "ODBC_SYNC_TOKEN", "")
+        r = await client.get("/api/odbc/konfig", headers={"X-ODBC-Token": "x"})
+        assert r.status_code == 503
+
+    async def test_status_braucht_token(self, client, token):
+        r = await client.post(
+            "/api/odbc/status", headers={"X-ODBC-Token": "falsch"}, json={}
+        )
+        assert r.status_code == 403
+
+    async def test_konfig_liefert_vorgabe_auch_bei_extrakte(self, client, token, db):
+        await datenquelle_setzen("extrakte")  # bewusst NICHT odbc
+        r = await client.get("/api/odbc/konfig", headers={"X-ODBC-Token": token})
+        assert r.status_code == 200
+        daten = r.json()
+        assert daten["intervall_min"] == 60
+        assert "umsatz" in daten["aktive_arten"]
+
+    async def test_status_schreibt_herzschlag_und_lauf(self, client, token, db):
+        await datenquelle_setzen("extrakte")  # Herzschlag muss auch so durchgehen
+        r = await client.post(
+            "/api/odbc/status",
+            headers={"X-ODBC-Token": token},
+            json={
+                "worker_version": "test-1",
+                "host": "vm-test",
+                "laeufe": [{"art": "umsatz", "status": "ok", "zeilen": 42, "dauer_ms": 7}],
+            },
+        )
+        assert r.status_code == 200
+        async with SessionLocal() as s:
+            status_row = (
+                await s.execute(
+                    sa.text("select worker_version, host, gesehen_am from public.odbc_worker_status")
+                )
+            ).one()
+            assert status_row.worker_version == "test-1"
+            assert status_row.gesehen_am is not None
+            lauf = (
+                await s.execute(
+                    sa.text(
+                        "select status, zeilen from public.odbc_sync_lauf where art = 'umsatz'"
+                    )
+                )
+            ).one()
+            assert lauf.status == "ok"
+            assert lauf.zeilen == 42
+
+    async def test_unbekannte_art_im_lauf_wird_ignoriert(self, client, token, db):
+        r = await client.post(
+            "/api/odbc/status",
+            headers={"X-ODBC-Token": token},
+            json={"laeufe": [{"art": "gibtsnicht", "status": "ok"}]},
+        )
+        assert r.status_code == 200  # Herzschlag zählt, Unbekanntes fällt weg

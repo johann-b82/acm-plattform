@@ -949,6 +949,39 @@ ad_konfiguration = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+odbc_worker_konfig = sa.Table(
+    "odbc_worker_konfig",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("intervall_min", sa.Integer, nullable=False),
+    sa.Column("aktive_arten", JSONB, nullable=False),
+    sa.Column("sync_angefordert_am", sa.DateTime(timezone=True)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+odbc_worker_status = sa.Table(
+    "odbc_worker_status",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("gesehen_am", sa.DateTime(timezone=True)),
+    sa.Column("worker_version", sa.Text),
+    sa.Column("host", sa.Text),
+    sa.Column("sync_bestaetigt_am", sa.DateTime(timezone=True)),
+    sa.Column("letzter_fehler", sa.Text),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+odbc_sync_lauf = sa.Table(
+    "odbc_sync_lauf",
+    metadata,
+    sa.Column("art", sa.String(32), primary_key=True),
+    sa.Column("gelaufen_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("status", sa.String(8), nullable=False),
+    sa.Column("zeilen", sa.Integer),
+    sa.Column("dauer_ms", sa.Integer),
+    sa.Column("fehler", sa.Text),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -1005,4 +1038,7 @@ TABLES = {
     "zeugnis_bausteine": zeugnis_bausteine,
     "geheimnisse": geheimnisse,
     "ad_konfiguration": ad_konfiguration,
+    "odbc_worker_konfig": odbc_worker_konfig,
+    "odbc_worker_status": odbc_worker_status,
+    "odbc_sync_lauf": odbc_sync_lauf,
 }
