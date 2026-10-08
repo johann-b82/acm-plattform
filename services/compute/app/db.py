@@ -45,6 +45,8 @@ upload_batches = sa.Table(
     sa.Column("error_count", sa.Integer, nullable=False),
     sa.Column("status", sa.String(16), nullable=False),
     sa.Column("uploaded_by", sa.dialects.postgresql.UUID(as_uuid=True), nullable=True),
+    # Woher die Zeilen kamen: 'upload' (manueller Extrakt) oder 'odbc' (Worker).
+    sa.Column("quelle", sa.String(16), nullable=False),
 )
 
 # revenues und auftraege stammen aus zwei ERP-Exporten mit gleicher Form
@@ -819,6 +821,9 @@ plattform_einstellungen = sa.Table(
     sa.Column("personio_sync_intervall_h", sa.Integer, nullable=False),
     sa.Column("personio_nachweis_aktiv", sa.Boolean, nullable=False),
     sa.Column("personio_nachweis_kategorie", sa.String(64)),
+    # Woher die KPI-Daten kommen: 'extrakte' (manueller Upload) oder 'odbc'
+    # (Windows-Worker). Steht er auf 'odbc', sind die manuellen Importe gesperrt.
+    sa.Column("datenquelle", sa.String(16), nullable=False),
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
@@ -944,6 +949,39 @@ ad_konfiguration = sa.Table(
     sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
 )
 
+odbc_worker_konfig = sa.Table(
+    "odbc_worker_konfig",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("intervall_min", sa.Integer, nullable=False),
+    sa.Column("aktive_arten", JSONB, nullable=False),
+    sa.Column("sync_angefordert_am", sa.DateTime(timezone=True)),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+odbc_worker_status = sa.Table(
+    "odbc_worker_status",
+    metadata,
+    sa.Column("id", sa.Boolean, primary_key=True),
+    sa.Column("gesehen_am", sa.DateTime(timezone=True)),
+    sa.Column("worker_version", sa.Text),
+    sa.Column("host", sa.Text),
+    sa.Column("sync_bestaetigt_am", sa.DateTime(timezone=True)),
+    sa.Column("letzter_fehler", sa.Text),
+    sa.Column("geaendert_am", sa.DateTime(timezone=True), nullable=False),
+)
+
+odbc_sync_lauf = sa.Table(
+    "odbc_sync_lauf",
+    metadata,
+    sa.Column("art", sa.String(32), primary_key=True),
+    sa.Column("gelaufen_am", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("status", sa.String(8), nullable=False),
+    sa.Column("zeilen", sa.Integer),
+    sa.Column("dauer_ms", sa.Integer),
+    sa.Column("fehler", sa.Text),
+)
+
 TABLES = {
     "upload_batches": upload_batches,
     "revenues": revenues,
@@ -1000,4 +1038,7 @@ TABLES = {
     "zeugnis_bausteine": zeugnis_bausteine,
     "geheimnisse": geheimnisse,
     "ad_konfiguration": ad_konfiguration,
+    "odbc_worker_konfig": odbc_worker_konfig,
+    "odbc_worker_status": odbc_worker_status,
+    "odbc_sync_lauf": odbc_sync_lauf,
 }

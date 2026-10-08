@@ -584,6 +584,8 @@ export const uk: Texte = {
     anmelden: "Вхід",
   },
   uploads: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    importGesperrt: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt. In den Einstellungen umschalten.",
     dateiWaehlen: "Вибрати файл",
     verarbeitet: "обробляється …",
     uebersprungen: (datei: string) => `Пропущені рядки з «${datei}»`,
@@ -1734,6 +1736,11 @@ export const uk: Texte = {
     titel: "Налаштування",
     bereiche: "Розділи",
     gruppen: {
+      // TODO Übersetzung (vorerst deutscher Platzhalter)
+      datenquelle: "Datenquelle",
+      datenquelleText:
+        "Woher die Kennzahlen kommen: die monatlichen Extrakt-Uploads oder der ODBC-Worker, der " +
+        "Apollo live liest. Bei „ODBC“ sind die manuellen Importe gesperrt.",
       kennzahlen: "Показники",
       kennzahlenText:
         "Цільові значення дашбордів. Вони з’являються як лінія цілі в динаміці й вирішують, " +
@@ -1777,6 +1784,49 @@ export const uk: Texte = {
     },
   },
   einstellungenText: {
+    // TODO Übersetzung (vorerst deutscher Platzhalter)
+    datenquelle: {
+      titel: "Datenquelle der Kennzahlen",
+      text:
+        "„Extrakte“: die Kennzahlen kommen aus den manuellen Monats-Uploads. „ODBC“: ein " +
+        "Windows-Worker liest Apollo live und füllt dieselben Tabellen — die manuellen Importe " +
+        "sind dann gesperrt.",
+      extrakte: "Extrakte",
+      odbc: "ODBC",
+      hinweisOdbc: "Datenquelle steht auf ODBC — manuelle Importe sind gesperrt.",
+      gespeichert: "Datenquelle gespeichert.",
+      // TODO Übersetzung
+      worker: {
+        titel: "Worker (Apollo-VM)",
+        hinweis:
+          "Die Windows-VM liest Apollo und meldet sich hier. Steuerung und Status laufen über " +
+          "die Plattform; die VM braucht nur ausgehende Verbindungen.",
+        online: "online",
+        offline: "offline",
+        nieGesehen: "noch nie gemeldet",
+        zuletzt: (zeit: string) => `zuletzt ${zeit}`,
+        version: "Version",
+        host: "Host",
+        letzterFehler: "Letzter Fehler",
+        intervall: "Sync-Intervall",
+        intervallEinheit: "Minuten (5–1440)",
+        speichern: "Speichern",
+        syncJetzt: "Jetzt synchronisieren",
+        syncAngefordert: "Sync angefordert — läuft beim nächsten Poll …",
+        arten: "Aktive Arten",
+        artenHinweis: "Welche Exporte der Worker zieht. Abgewählte bleiben unberührt.",
+        spalteArt: "Art",
+        spalteStand: "Letzter Lauf",
+        spalteZeilen: "Zeilen",
+        spalteDauer: "Dauer",
+        spalteStatus: "Status",
+        spalteFehler: "Fehler",
+        statusOk: "ok",
+        statusFehler: "Fehler",
+        keineLaeufe: "Noch keine Läufe gemeldet.",
+        gespeichert: "Gespeichert.",
+      },
+    },
     appName: "Назва застосунку",
     appNameHinweis:
       "Показується в шапці без логотипа, у заголовку сторінки та на сторінці входу.",

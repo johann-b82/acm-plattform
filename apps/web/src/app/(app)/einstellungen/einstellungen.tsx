@@ -7,6 +7,7 @@ import { Hinweis } from "@/components/ui/hinweis";
 import { Label, Select } from "@/components/ui/primitives";
 
 import { Kennzahlen } from "./abschnitte/kennzahlen";
+import { Datenquelle } from "./abschnitte/datenquelle";
 import { Personal } from "./abschnitte/personal";
 import { PersonioZugang } from "./abschnitte/personio-zugang";
 import { AtrVorlagen } from "./abschnitte/atr-vorlagen";
@@ -127,6 +128,8 @@ function Inhalt({ gruppe, eigeneId }: { gruppe: Gruppe; eigeneId: string }) {
   switch (gruppe.id) {
     case "kennzahlen":
       return <Kennzahlen />;
+    case "datenquelle":
+      return <Datenquelle />;
     case "personal":
       return (
         <div className="space-y-4">

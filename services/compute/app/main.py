@@ -19,6 +19,7 @@ from app.routers.embed import router as embed_router
 from app.routers.hr import nachweise_router
 from app.routers.hr import router as hr_router
 from app.routers.kompetenzen import router as kompetenzen_router
+from app.routers.odbc import router as odbc_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.schulungen import router as schulungen_router
 from app.routers.sensoren import geplant as sensoren_geplant
@@ -39,6 +40,7 @@ app = FastAPI(title="ACM compute", docs_url=None, redoc_url=None)
 app.include_router(anmeldung_router)
 app.include_router(ad_konfig_router)
 app.include_router(uploads_router)
+app.include_router(odbc_router)
 app.include_router(atr_router)
 app.include_router(atr_geplant)
 app.include_router(atr_verwaltung)

@@ -9,9 +9,20 @@ Zwei Dinge, die im Altprojekt fehlten und hier von Anfang an drin sind:
     abgebrochen, bevor sie im Speicher liegt.
   - Das Parsen läuft in einem Thread. pandas ist blockierend; im Altprojekt
     stand deshalb bei jedem großen Upload der ganze Prozess.
+
+Jede Art ist in `REGISTRY` einmal beschrieben (Tabelle, Parser, Modus,
+Schlüssel). Der manuelle Upload hier und der ODBC-Sync (`routers/odbc.py`)
+teilen sich diese eine Beschreibung und `importieren()` — so bleiben beide
+Wege deckungsgleich. Woher eine Zeile kam, hält `upload_batches.quelle` fest
+(`upload` oder `odbc`).
+
+Der Umschalter `plattform_einstellungen.datenquelle` entscheidet, welcher Weg
+offen ist: steht er auf `odbc`, sperrt `importe_erlaubt` die manuellen Uploads
+(409), und nur der ODBC-Sync füllt die Tabellen.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable
 
@@ -36,6 +47,7 @@ from app.db import (
     material_movements,
     material_prices,
     offers,
+    plattform_einstellungen,
     quality_records,
     sales_contacts,
     stock_article_prices,
@@ -56,30 +68,8 @@ from app.parsing.pruefungen import parse_pruefungen
 from app.parsing.qualitaet import parse_8d
 from app.parsing.vertrieb import parse_auftraege, parse_umsatz
 
-router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depends(require_app("uploads", "admin"))])
-
 # asyncpg erlaubt 32767 Parameter je Anweisung; danach wird gestückelt.
 _MAX_PARAMS = 32767
-
-# Die Art eines Uploads ist zugleich sein Pfad. Beides getrennt zu pflegen ging
-# einmal schief: die Route hiess `/auftrag-positionen`, die Oberfläche schickte
-# `auftrag_positionen`, und der Upload endete in einem 404.
-ARTEN = (
-    "umsatz",
-    "auftraege",
-    "liefertreue",
-    "auftragspositionen",
-    "lieferscheine",
-    "wareneingaenge",
-    "acht_d",
-    "pruefungen",
-    "lagerbewegungen",
-    "materialpreise",
-    "lagerpreise",
-    "kontakte",
-    "angebote",
-    "interessenten",
-)
 
 
 class Fehlerdetail(BaseModel):
@@ -146,7 +136,8 @@ async def _import(
     kind: str,
     tabelle: sa.Table,
     parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
-    claims: Claims,
+    hochgeladen_von: str | None,
+    quelle: str = "upload",
     schluessel: tuple[str, ...] = ("vorgang_nr",),
     endungen: tuple[str, ...] = (".txt", ".csv"),
 ) -> UploadErgebnis:
@@ -192,7 +183,8 @@ async def _import(
                         row_count=len(rows),
                         error_count=len(fehler),
                         status=status,
-                        uploaded_by=claims.sub,
+                        uploaded_by=hochgeladen_von,
+                        quelle=quelle,
                     )
                     .returning(upload_batches.c.id)
                 )
@@ -224,8 +216,9 @@ async def _import_ersetzend(
     kind: str,
     tabelle: sa.Table,
     parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
-    claims: Claims,
+    hochgeladen_von: str | None,
     datumsspalte: str,
+    quelle: str = "upload",
 ) -> UploadErgebnis:
     """Wie `_import`, aber ersetzend statt aktualisierend.
 
@@ -270,7 +263,8 @@ async def _import_ersetzend(
                         row_count=len(rows),
                         error_count=len(fehler),
                         status=status,
-                        uploaded_by=claims.sub,
+                        uploaded_by=hochgeladen_von,
+                        quelle=quelle,
                     )
                     .returning(upload_batches.c.id)
                 )
@@ -300,211 +294,24 @@ async def _import_ersetzend(
     )
 
 
-@router.post("/umsatz", response_model=UploadErgebnis)
-async def upload_umsatz(
+async def _import_ganz_ersetzen(
+    *,
     file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
+    kind: str,
+    tabelle: sa.Table,
+    parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
+    hochgeladen_von: str | None,
+    quelle: str = "upload",
 ) -> UploadErgebnis:
-    """AswKpf_RG.txt — Rechnungen und Gutschriften. Erneutes Hochladen derselben
-    Datei ändert nichts an den Daten (Upsert auf die Vorgangsnummer)."""
-    return await _import(file=file, kind="umsatz", tabelle=revenues, parser=parse_umsatz, claims=claims)
-
-
-@router.post("/auftraege", response_model=UploadErgebnis)
-async def upload_auftraege(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswKpf_AUF.txt — Auftragseingang."""
-    return await _import(file=file, kind="auftraege", tabelle=auftraege, parser=parse_auftraege, claims=claims)
-
-
-@router.post("/liefertreue", response_model=UploadErgebnis)
-async def upload_liefertreue(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """dev_excel_Liefertreue_Einkauf.txt — Lieferpositionen der Lieferanten.
-
-    Schlüssel ist die Position, nicht der Auftrag: ein Auftrag hat mehrere
-    Positionen mit eigenen Terminen.
-    """
-    return await _import(
-        file=file,
-        kind="liefertreue",
-        tabelle=delivery_reliability,
-        parser=parse_liefertreue,
-        claims=claims,
-        schluessel=("auftrag", "pos", "upos"),
-    )
-
-
-@router.post("/auftragspositionen", response_model=UploadErgebnis)
-async def upload_auftrag_positionen(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswKpf_AUF auf Positionsebene — trägt den Zieltermin je Position.
-
-    Dieselbe Quelldatei wie der Auftragseingang, aber die Positionszeilen
-    statt der Kopfzeilen. Der Zieltermin des Auftrags ist das späteste
-    Lieferdatum seiner Positionen.
-    """
-    return await _import(
-        file=file,
-        kind="auftragspositionen",
-        tabelle=auftrag_positionen,
-        parser=parse_auftrag_positionen,
-        claims=claims,
-        schluessel=("vorgang_nr", "pos", "upos"),
-    )
-
-
-@router.post("/lieferscheine", response_model=UploadErgebnis)
-async def upload_lieferscheine(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswKpf_LS — Lieferscheinpositionen mit dem Ist-Lieferdatum."""
-    return await _import(
-        file=file,
-        kind="lieferscheine",
-        tabelle=delivery_records,
-        parser=parse_lieferscheine,
-        claims=claims,
-        schluessel=("vorgang_nr", "pos", "upos"),
-        endungen=(".xlsx", ".xls"),
-    )
-
-
-@router.post("/acht_d", response_model=UploadErgebnis)
-async def upload_8d(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """8D.txt — Audit-Befunde und Reklamationen in einer Datei.
-
-    Beide Sorten kommen mit; welche eine Kennzahl zählt, entscheidet der Code
-    in `art` bei der Auswertung.
-    """
-    return await _import(
-        file=file,
-        kind="acht_d",
-        tabelle=quality_records,
-        parser=parse_8d,
-        claims=claims,
-        schluessel=("report_nr",),
-    )
-
-
-@router.post("/wareneingaenge", response_model=UploadErgebnis)
-async def upload_wareneingaenge(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswKpf_WE — Wareneingänge der Lieferanten.
-
-    Bezugsgröße der Fehlerquote auf der Einkaufsseite. Die Warengruppe
-    entscheidet, ob eine Zeile zu den Lieferanten oder zu den Werkbänken
-    zählt.
-    """
-    return await _import(
-        file=file,
-        kind="wareneingaenge",
-        tabelle=goods_receipt_records,
-        parser=parse_wareneingaenge,
-        claims=claims,
-        schluessel=("vorgang_nr", "pos", "upos"),
-    )
-
-
-@router.post("/pruefungen", response_model=UploadErgebnis)
-async def upload_pruefungen(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswQs2151.txt — Buchungen der Qualitätsprüfung.
-
-    Kein Upsert, sondern Ersetzen: die Quelle hat keinen Geschäftsschlüssel,
-    zwei gleiche Buchungszeilen sind erlaubt. Alle Zeilen im Datumsbereich der
-    Datei werden vorher gelöscht.
-
-    Von Hand gesetzte Ausschlüsse in diesem Bereich gehen dabei verloren. Ohne
-    Schlüssel lässt sich das nicht sauber vermeiden; die Oberfläche sagt es
-    vor dem Hochladen.
-    """
-    return await _import_ersetzend(
-        file=file,
-        kind="pruefungen",
-        tabelle=inspection_records,
-        parser=parse_pruefungen,
-        claims=claims,
-        datumsspalte="pruef_datum",
-    )
-
-
-@router.post("/lagerbewegungen", response_model=UploadErgebnis)
-async def upload_lagerbewegungen(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswLagBew.txt — Lagerbewegungen.
-
-    Ersetzend wie die Prüfbuchungen: eine Bewegung hat keinen
-    Geschäftsschlüssel, dieselbe Entnahme kann zweimal in derselben Minute
-    stehen.
-    """
-    return await _import_ersetzend(
-        file=file,
-        kind="lagerbewegungen",
-        tabelle=material_movements,
-        parser=parse_lagerbewegungen,
-        claims=claims,
-        datumsspalte="buch_datum",
-    )
-
-
-@router.post("/materialpreise", response_model=UploadErgebnis)
-async def upload_materialpreise(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """AswKpf_WE.txt — Materialpreise (Wareneingang), die Preisquelle der
-    Materialkostenquote.
-
-    Dieselbe Datei wie der Wareneingang, aber ein eigener Import wie im
-    Altsystem: welcher Preisstand gilt, entscheidet dieser Upload, nicht der
-    Wareneingang der Reklamationsquote. Upsert auf die Position — eine erneut
-    hochgeladene Zeile wird aktualisiert, eine neue ergänzt, und was in der
-    Datei fehlt, bleibt stehen.
-    """
-    return await _import(
-        file=file,
-        kind="materialpreise",
-        tabelle=material_prices,
-        parser=parse_materialpreise,
-        claims=claims,
-        schluessel=("vorgang_nr", "pos", "upos"),
-    )
-
-
-@router.post("/lagerpreise", response_model=UploadErgebnis)
-async def upload_lagerpreise(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
-) -> UploadErgebnis:
-    """Artikel-Preiskonditionen für die Lagerbewertung.
-
-    Stammdaten, kein Zeitraum: die Datei ist immer der ganze Bestand. Die
-    Tabelle wird deshalb komplett ersetzt, nicht ergänzt — sonst blieben
-    Preise für Artikel stehen, die es nicht mehr gibt.
-    """
+    """Stammdaten ohne Zeitraum: die Datei ist immer der ganze Bestand. Die
+    Tabelle wird komplett ersetzt, nicht ergänzt — sonst blieben Zeilen für
+    Schlüssel stehen, die es nicht mehr gibt. (Lagerpreise.)"""
     filename = file.filename or ""
     if not filename.lower().endswith((".txt", ".csv")):
         raise HTTPException(422, "Nur .txt- und .csv-Dateien werden angenommen.")
 
     contents = await _read_limited(file)
-    rows, fehler = await run_in_threadpool(parse_lagerpreise, contents)
+    rows, fehler = await run_in_threadpool(parser, contents)
 
     now = datetime.now(timezone.utc)
     status = "failed" if (fehler and not rows) else ("partial" if fehler else "success")
@@ -512,9 +319,7 @@ async def upload_lagerpreise(
     async with SessionLocal() as session:
         async with session.begin():
             vorher = (
-                await session.execute(
-                    sa.select(sa.func.count()).select_from(stock_article_prices)
-                )
+                await session.execute(sa.select(sa.func.count()).select_from(tabelle))
             ).scalar_one()
             batch_id = (
                 await session.execute(
@@ -522,28 +327,27 @@ async def upload_lagerpreise(
                     .values(
                         filename=filename,
                         uploaded_at=now,
-                        kind="lagerpreise",
+                        kind=kind,
                         row_count=len(rows),
                         error_count=len(fehler),
                         status=status,
-                        uploaded_by=claims.sub,
+                        uploaded_by=hochgeladen_von,
+                        quelle=quelle,
                     )
                     .returning(upload_batches.c.id)
                 )
             ).scalar_one()
             if rows:
-                await session.execute(sa.delete(stock_article_prices))
+                await session.execute(sa.delete(tabelle))
                 for r in rows:
                     r["updated_at"] = now
                 for start in range(0, len(rows), 1000):
-                    await session.execute(
-                        sa.insert(stock_article_prices), rows[start : start + 1000]
-                    )
+                    await session.execute(sa.insert(tabelle), rows[start : start + 1000])
 
     return UploadErgebnis(
         batch_id=batch_id,
         filename=filename,
-        kind="lagerpreise",
+        kind=kind,
         rows_total=len(rows),
         rows_inserted=len(rows),
         rows_updated=vorher,
@@ -555,10 +359,218 @@ async def upload_lagerpreise(
     )
 
 
+@dataclass(frozen=True)
+class ImportDef:
+    """Eine Import-Art, einmal beschrieben für Upload und ODBC-Sync."""
+
+    tabelle: sa.Table
+    parser: Callable[[bytes], tuple[list[dict[str, Any]], list[dict[str, Any]]]]
+    modus: str  # "upsert" | "ersetzend" | "ganz"
+    schluessel: tuple[str, ...] = ("vorgang_nr",)
+    datumsspalte: str | None = None
+    endungen: tuple[str, ...] = (".txt", ".csv")
+
+
+# Die Art eines Uploads ist zugleich sein Pfad. Beides getrennt zu pflegen ging
+# einmal schief: die Route hiess `/auftrag-positionen`, die Oberfläche schickte
+# `auftrag_positionen`, und der Upload endete in einem 404. Darum hier ein
+# Wahrheitsort, den Upload-Routen und ODBC-Sync gemeinsam nutzen.
+REGISTRY: dict[str, ImportDef] = {
+    "umsatz": ImportDef(revenues, parse_umsatz, "upsert", ("vorgang_nr",)),
+    "auftraege": ImportDef(auftraege, parse_auftraege, "upsert", ("vorgang_nr",)),
+    "liefertreue": ImportDef(delivery_reliability, parse_liefertreue, "upsert", ("auftrag", "pos", "upos")),
+    "auftragspositionen": ImportDef(auftrag_positionen, parse_auftrag_positionen, "upsert", ("vorgang_nr", "pos", "upos")),
+    "lieferscheine": ImportDef(delivery_records, parse_lieferscheine, "upsert", ("vorgang_nr", "pos", "upos"), endungen=(".xlsx", ".xls")),
+    "wareneingaenge": ImportDef(goods_receipt_records, parse_wareneingaenge, "upsert", ("vorgang_nr", "pos", "upos")),
+    "acht_d": ImportDef(quality_records, parse_8d, "upsert", ("report_nr",)),
+    "pruefungen": ImportDef(inspection_records, parse_pruefungen, "ersetzend", datumsspalte="pruef_datum"),
+    "lagerbewegungen": ImportDef(material_movements, parse_lagerbewegungen, "ersetzend", datumsspalte="buch_datum"),
+    "materialpreise": ImportDef(material_prices, parse_materialpreise, "upsert", ("vorgang_nr", "pos", "upos")),
+    "lagerpreise": ImportDef(stock_article_prices, parse_lagerpreise, "ganz"),
+    "kontakte": ImportDef(sales_contacts, parse_kontakte, "ersetzend", datumsspalte="contact_date"),
+    "angebote": ImportDef(offers, parse_angebote, "upsert", ("vorgang_nr",)),
+    "interessenten": ImportDef(interessenten, parse_interessenten, "upsert", ("adress_nr",)),
+}
+
+ARTEN = tuple(REGISTRY)
+
+
+async def importieren(
+    kind: str, file: UploadFile, hochgeladen_von: str | None, quelle: str
+) -> UploadErgebnis:
+    """Eine Datei nach den Regeln ihrer Art einlesen. Von Upload und ODBC-Sync genutzt."""
+    d = REGISTRY[kind]
+    if d.modus == "upsert":
+        return await _import(
+            file=file, kind=kind, tabelle=d.tabelle, parser=d.parser,
+            hochgeladen_von=hochgeladen_von, quelle=quelle,
+            schluessel=d.schluessel, endungen=d.endungen,
+        )
+    if d.modus == "ersetzend":
+        assert d.datumsspalte is not None
+        return await _import_ersetzend(
+            file=file, kind=kind, tabelle=d.tabelle, parser=d.parser,
+            hochgeladen_von=hochgeladen_von, quelle=quelle, datumsspalte=d.datumsspalte,
+        )
+    return await _import_ganz_ersetzen(
+        file=file, kind=kind, tabelle=d.tabelle, parser=d.parser,
+        hochgeladen_von=hochgeladen_von, quelle=quelle,
+    )
+
+
+async def datenquelle_lesen() -> str:
+    """Aktueller Wert des Umschalters `plattform_einstellungen.datenquelle`."""
+    async with SessionLocal() as session:
+        return (
+            await session.execute(sa.select(plattform_einstellungen.c.datenquelle))
+        ).scalar_one()
+
+
+async def importe_erlaubt() -> None:
+    """Sperrt die manuellen Uploads, wenn die Datenquelle auf ODBC steht."""
+    if (await datenquelle_lesen()) == "odbc":
+        raise HTTPException(
+            409, "Import deaktiviert: Datenquelle steht auf ODBC. Umschalten in den Einstellungen."
+        )
+
+
+router = APIRouter(
+    prefix="/api/uploads",
+    tags=["uploads"],
+    dependencies=[Depends(require_app("uploads", "admin")), Depends(importe_erlaubt)],
+)
+
+
+@router.post("/umsatz", response_model=UploadErgebnis)
+async def upload_umsatz(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswKpf_RG.txt — Rechnungen und Gutschriften. Erneutes Hochladen derselben
+    Datei ändert nichts an den Daten (Upsert auf die Vorgangsnummer)."""
+    return await importieren("umsatz", file, claims.sub, "upload")
+
+
+@router.post("/auftraege", response_model=UploadErgebnis)
+async def upload_auftraege(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswKpf_AUF.txt — Auftragseingang."""
+    return await importieren("auftraege", file, claims.sub, "upload")
+
+
+@router.post("/liefertreue", response_model=UploadErgebnis)
+async def upload_liefertreue(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """dev_excel_Liefertreue_Einkauf.txt — Lieferpositionen der Lieferanten.
+
+    Schlüssel ist die Position, nicht der Auftrag: ein Auftrag hat mehrere
+    Positionen mit eigenen Terminen.
+    """
+    return await importieren("liefertreue", file, claims.sub, "upload")
+
+
+@router.post("/auftragspositionen", response_model=UploadErgebnis)
+async def upload_auftrag_positionen(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswKpf_AUF auf Positionsebene — trägt den Zieltermin je Position.
+
+    Dieselbe Quelldatei wie der Auftragseingang, aber die Positionszeilen
+    statt der Kopfzeilen. Der Zieltermin des Auftrags ist das späteste
+    Lieferdatum seiner Positionen.
+    """
+    return await importieren("auftragspositionen", file, claims.sub, "upload")
+
+
+@router.post("/lieferscheine", response_model=UploadErgebnis)
+async def upload_lieferscheine(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswKpf_LS — Lieferscheinpositionen mit dem Ist-Lieferdatum."""
+    return await importieren("lieferscheine", file, claims.sub, "upload")
+
+
+@router.post("/wareneingaenge", response_model=UploadErgebnis)
+async def upload_wareneingaenge(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswKpf_WE — Wareneingänge der Lieferanten.
+
+    Bezugsgröße der Fehlerquote auf der Einkaufsseite. Die Warengruppe
+    entscheidet, ob eine Zeile zu den Lieferanten oder zu den Werkbänken zählt.
+    """
+    return await importieren("wareneingaenge", file, claims.sub, "upload")
+
+
+@router.post("/acht_d", response_model=UploadErgebnis)
+async def upload_8d(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """8D.txt — Audit-Befunde und Reklamationen in einer Datei.
+
+    Beide Sorten kommen mit; welche eine Kennzahl zählt, entscheidet der Code
+    in `art` bei der Auswertung.
+    """
+    return await importieren("acht_d", file, claims.sub, "upload")
+
+
+@router.post("/pruefungen", response_model=UploadErgebnis)
+async def upload_pruefungen(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswQs2151.txt — Buchungen der Qualitätsprüfung.
+
+    Kein Upsert, sondern Ersetzen: die Quelle hat keinen Geschäftsschlüssel,
+    zwei gleiche Buchungszeilen sind erlaubt. Alle Zeilen im Datumsbereich der
+    Datei werden vorher gelöscht. Von Hand gesetzte Ausschlüsse in diesem
+    Bereich gehen dabei verloren; die Oberfläche sagt es vor dem Hochladen.
+    """
+    return await importieren("pruefungen", file, claims.sub, "upload")
+
+
+@router.post("/lagerbewegungen", response_model=UploadErgebnis)
+async def upload_lagerbewegungen(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswLagBew.txt — Lagerbewegungen.
+
+    Ersetzend wie die Prüfbuchungen: eine Bewegung hat keinen
+    Geschäftsschlüssel, dieselbe Entnahme kann zweimal in derselben Minute
+    stehen.
+    """
+    return await importieren("lagerbewegungen", file, claims.sub, "upload")
+
+
+@router.post("/materialpreise", response_model=UploadErgebnis)
+async def upload_materialpreise(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """AswKpf_WE.txt — Materialpreise (Wareneingang), die Preisquelle der
+    Materialkostenquote.
+
+    Dieselbe Datei wie der Wareneingang, aber ein eigener Import wie im
+    Altsystem: welcher Preisstand gilt, entscheidet dieser Upload. Upsert auf
+    die Position — was in der Datei fehlt, bleibt stehen.
+    """
+    return await importieren("materialpreise", file, claims.sub, "upload")
+
+
+@router.post("/lagerpreise", response_model=UploadErgebnis)
+async def upload_lagerpreise(
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
+) -> UploadErgebnis:
+    """Artikel-Preiskonditionen für die Lagerbewertung.
+
+    Stammdaten, kein Zeitraum: die Datei ist immer der ganze Bestand. Die
+    Tabelle wird deshalb komplett ersetzt, nicht ergänzt.
+    """
+    return await importieren("lagerpreise", file, claims.sub, "upload")
+
+
 @router.post("/kontakte", response_model=UploadErgebnis)
 async def upload_kontakte(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
 ) -> UploadErgebnis:
     """Kontaktprotokoll des Vertriebs — Erstkontakte, Besuche vor Ort und online.
 
@@ -567,48 +579,23 @@ async def upload_kontakte(
     ersetzt, damit ein zweiter Upload desselben Zeitraums die Zahlen nicht
     verdoppelt.
     """
-    return await _import_ersetzend(
-        file=file,
-        kind="kontakte",
-        tabelle=sales_contacts,
-        parser=parse_kontakte,
-        claims=claims,
-        datumsspalte="contact_date",
-    )
+    return await importieren("kontakte", file, claims.sub, "upload")
 
 
 @router.post("/angebote", response_model=UploadErgebnis)
 async def upload_angebote(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
 ) -> UploadErgebnis:
     """AswKpf_ANG.txt — geschriebene Angebote mit Wert und Erfasser."""
-    return await _import(
-        file=file,
-        kind="angebote",
-        tabelle=offers,
-        parser=parse_angebote,
-        claims=claims,
-    )
+    return await importieren("angebote", file, claims.sub, "upload")
 
 
 @router.post("/interessenten", response_model=UploadErgebnis)
 async def upload_interessenten(
-    file: UploadFile,
-    claims: Claims = Depends(require_app("uploads", "admin")),
+    file: UploadFile, claims: Claims = Depends(require_app("uploads", "admin"))
 ) -> UploadErgebnis:
     """dev_excel_INT.txt — Stammdaten der Interessenten.
 
     Aktualisierend auf die Adressnummer: die Datei ist eine Momentaufnahme.
-    Wird ein Interessent erneut gespeichert, wandert er mit seinem neuen
-    `Datum Save` rückwirkend in eine andere Woche — so war es im Altprojekt
-    und so bleibt es.
     """
-    return await _import(
-        file=file,
-        kind="interessenten",
-        tabelle=interessenten,
-        parser=parse_interessenten,
-        claims=claims,
-        schluessel=("adress_nr",),
-    )
+    return await importieren("interessenten", file, claims.sub, "upload")
