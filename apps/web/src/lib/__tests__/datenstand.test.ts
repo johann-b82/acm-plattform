@@ -97,15 +97,16 @@ describe("Zuordnung", () => {
 });
 
 describe("Abgleich mit compute", () => {
-  // Die Namen der Dateiarten werden in `uploads.py` vergeben und landen als
-  // `kind` in der Datenbank. Wird dort einer umbenannt, stünde hier lautlos
-  // „Datenstand unvollständig" — die Art käme nie zurück.
+  // Die Namen der Dateiarten werden in `uploads.py` in `REGISTRY` vergeben und
+  // landen als `kind` in der Datenbank. Wird dort einer umbenannt, stünde hier
+  // lautlos „Datenstand unvollständig" — die Art käme nie zurück.
   const quelle = readFileSync(
     path.resolve(__dirname, "../../../../../services/compute/app/routers/uploads.py"),
     "utf8",
   );
-  const block = quelle.slice(quelle.indexOf("ARTEN = ("), quelle.indexOf(")", quelle.indexOf("ARTEN = (")));
-  const arten = [...block.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
+  const start = quelle.indexOf("REGISTRY: dict");
+  const block = quelle.slice(start, quelle.indexOf("ARTEN = tuple", start));
+  const arten = [...block.matchAll(/"([a-z_]+)":\s*ImportDef/g)].map((m) => m[1]);
 
   it("findet die Liste überhaupt", () => {
     expect(arten.length).toBeGreaterThan(10);
