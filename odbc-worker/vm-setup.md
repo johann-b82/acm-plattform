@@ -28,33 +28,46 @@ Datenbank-Zugangsdaten der Plattform.
 |------------------|---------|
 | Betriebssystem   | Windows 10/11 Pro oder Windows Server 2019/2022 (x64) |
 | CPU / RAM / Disk | 2 vCPU, 4 GB RAM, 40 GB — der Worker ist leichtgewichtig |
-| Software         | CONZEPT-16-Client **mit 32-bit-ODBC-Treiber** (`c16_odbc_driver.dll`); **Python 3.12 (32-bit!)**; die Pakete aus `requirements.txt` |
-| ODBC-DSN         | System-DSN **`Apollo 32 Bit`** im **32-bit**-ODBC-Datenquellen-Administrator (`C:\Windows\SysWOW64\odbcad32.exe`), Server `192.9.200.134`, DB `apollo` |
+| Software         | CONZEPT-16-Client mit ODBC-Treiber; **Python 3.12** + die Pakete aus `requirements.txt`. Treiber und Python **in derselben Architektur** — entweder beide 32-bit **oder** beide 64-bit (beide Treiber bringt der Client mit) |
+| ODBC-DSN         | System-DSN, Server `192.9.200.134`, DB `apollo`. Je nach Architektur im passenden ODBC-Administrator anlegen: 32-bit über `C:\Windows\SysWOW64\odbcad32.exe`, 64-bit über `C:\Windows\System32\odbcad32.exe`. Name frei, muss aber mit `APOLLO_DSN` in `worker.env` übereinstimmen |
 | Konto            | ein eigenes, **lesendes** Apollo-Konto; Windows-Dienstkonto nur mit „als Dienst/Batch anmelden" |
 | Netz (ausgehend) | TCP zu `192.9.200.134` (Apollo) und HTTPS/HTTP zur Plattform (`ACM_BASE_URL`) |
 | Netz (eingehend) | **keine** Freigabe nötig |
 
-> **Warum 32-bit-Python?** Ein 64-bit-Prozess kann die 32-bit-Treiber-DLL nicht
-> laden (`architecture mismatch`). Alles — Python, pyodbc, der DSN — muss 32-bit
-> sein. Der Worker warnt beim Start, wenn er unter 64-bit läuft.
+> **32-bit oder 64-bit?** Der CONZEPT-16-Client bringt **beide** ODBC-Treiber mit
+> (32- und 64-bit). Entscheidend ist nur: **Python-Architektur = Treiber-/DSN-
+> Architektur**, sonst scheitert das Laden der Treiber-DLL (`architecture
+> mismatch`). **64-bit ist das einfachere Setup** (normales Python, der
+> 64-bit-ODBC-Administrator liegt unter `System32`) und wird empfohlen; der
+> ursprüngliche Aufbau nutzte 32-bit (DSN `Apollo 32 Bit`), das funktioniert
+> weiterhin. Unten sind beide Wege aufgeführt — einen wählen und durchziehen.
 
 ---
 
 ## 2. Einrichtung Schritt für Schritt
 
-### 2.1 CONZEPT-Client + 32-bit-ODBC-Treiber
-1. CONZEPT-16-Client installieren (bringt den ODBC-Treiber mit).
-2. **32-bit**-ODBC-Administrator öffnen: `C:\Windows\SysWOW64\odbcad32.exe`
-   (nicht der 64-bit unter `System32`).
-3. Reiter **System-DSN → Hinzufügen** → CONZEPT-16-Treiber → DSN-Name exakt
-   **`Apollo 32 Bit`**, Server `192.9.200.134`, Datenbank `apollo`.
+### 2.1 CONZEPT-Client + ODBC-Treiber (DSN)
+1. CONZEPT-16-Client installieren (bringt beide ODBC-Treiber mit:
+   „CONZEPT 16 ODBC-Treiber (32 bit)" und „… (64 bit)").
+2. Den zur gewählten Architektur passenden ODBC-Administrator öffnen und unter
+   **System-DSN → Hinzufügen** den CONZEPT-16-Treiber wählen, Server
+   `192.9.200.134`, Datenbank `apollo`:
+   - **64-bit (empfohlen):** `C:\Windows\System32\odbcad32.exe`, DSN-Name z. B.
+     `Apollo 64 Bit`.
+   - **32-bit:** `C:\Windows\SysWOW64\odbcad32.exe`, DSN-Name z. B. `Apollo 32 Bit`.
+3. Den DSN-Namen in `worker.env` als `APOLLO_DSN` eintragen (Schritt 2.4).
 
-### 2.2 Python (32-bit) + Pakete
+### 2.2 Python + Pakete (gleiche Architektur wie der DSN)
 ```powershell
-# 32-bit-Python 3.12 installieren (python.org, „Windows installer (32-bit)").
+# 64-bit (empfohlen): normales Python 3.12 von python.org.
+py -3 -m pip install -r requirements.txt
+py -3 -c "import struct; print(struct.calcsize('P')*8, 'bit')"   # 64
+
+# 32-bit (nur wenn der 32-bit-DSN genutzt wird): „Windows installer (32-bit)".
 py -3-32 -m pip install -r requirements.txt
-py -3-32 -c "import struct; print(struct.calcsize('P')*8, 'bit')"   # muss 32 zeigen
+py -3-32 -c "import struct; print(struct.calcsize('P')*8, 'bit')"   # 32
 ```
+`pyodbc` muss in **derselben** Python-Architektur installiert sein wie der DSN.
 
 ### 2.3 Apollo-Zugang (verschlüsselt, nicht im Klartext)
 Die Zugangsdaten gehören **nicht** fest in eine Datei. Zwei Wege:
@@ -71,7 +84,7 @@ Die Zugangsdaten gehören **nicht** fest in eine Datei. Zwei Wege:
 ```ini
 ACM_BASE_URL=http://192.9.201.9
 ODBC_SYNC_TOKEN=<dasselbe Geheimnis wie in der compute-.env der Plattform>
-APOLLO_DSN=Apollo 32 Bit
+APOLLO_DSN=Apollo 64 Bit      # exakt der in 2.1 angelegte DSN-Name
 APOLLO_UID=<leer lassen bei Variante B>
 APOLLO_PWD=
 APOLLO_MANDANT=1
@@ -81,8 +94,9 @@ Das `ODBC_SYNC_TOKEN` muss **identisch** mit `ODBC_SYNC_TOKEN` in der
 
 ### 2.5 Probelauf (ohne zu senden)
 ```powershell
-py -3-32 worker.py --art umsatz --dry-run   # schreibt _dryrun_AswKpf_RG.txt, sendet nicht
-py -3-32 worker.py --art umsatz             # sendet an die Plattform
+py worker.py --art umsatz --dry-run   # schreibt _dryrun_AswKpf_RG.txt, sendet nicht
+py worker.py --art umsatz             # sendet an die Plattform
+# (bei 32-bit-Setup jeweils py -3-32 statt py)
 ```
 Erscheint der Worker danach in **Einstellungen → Datenquelle → Worker** als
 „online" mit einem Lauf für „umsatz", stimmt die Verbindung.
@@ -92,7 +106,8 @@ Der Dauerbetrieb (`--dienst`) holt sich Intervall und aktive Arten **von der
 Plattform** und synct zyklisch. Zwei Wege, ihn am Leben zu halten:
 
 **Aufgabenplanung (Task Scheduler), empfohlen fürs Erste**
-- Aktion: Programm `py`, Argumente `-3-32 C:\Pfad\odbc-worker\worker.py --dienst`,
+- Aktion: Programm `py`, Argumente `C:\Pfad\odbc-worker\worker.py --dienst`
+  (32-bit-Setup: `-3-32 C:\Pfad\odbc-worker\worker.py --dienst`),
   Start in `C:\Pfad\odbc-worker`.
 - Trigger: „Bei Systemstart", Option „Neu starten, wenn die Aufgabe fehlschlägt".
 - Konto: das lesende Dienstkonto, „Unabhängig von der Benutzeranmeldung
@@ -147,7 +162,7 @@ gegen einen am selben Zeitpunkt gezogenen echten Extrakt halten. Dafür gibt es
 `worker_abgleich.py` (vergleicht zeilengenau je Geschäftsschlüssel; liest nur
 Dateien, braucht kein ODBC):
 ```powershell
-py -3-32 worker.py --art wareneingaenge --dry-run    # erzeugt _dryrun_AswKpf_WE.txt
+py worker.py --art wareneingaenge --dry-run    # erzeugt _dryrun_AswKpf_WE.txt (32-bit: py -3-32)
 python worker_abgleich.py wareneingaenge ..\extrakte\AswKpf_WE.txt
 ```
 Zeigt Schlüssel nur-im-Worker / nur-im-Extrakt und je Mengen-/Wert-/Datumsspalte
