@@ -20,13 +20,15 @@ lagerbewegungen, pruefungen, liefertreue).
 
 ## Warum ein eigener Windows-Worker
 
-Der CONZEPT-16-ODBC-Treiber ist **32-bit-Windows-only**; der `compute`-Dienst
-der Plattform läuft unter Linux/Docker und kann ihn nicht nutzen. Der Worker
-läuft deshalb auf einer **minimalen Windows-VM** (nur ODBC-Treiber + 32-bit-
-Python + dieser Ordner) und braucht **nur ausgehende** Verbindungen:
+Der CONZEPT-16-ODBC-Treiber (inkl. Client) ist **Windows-only**; der
+`compute`-Dienst der Plattform läuft unter Linux/Docker und kann ihn nicht
+nutzen (einen Linux-Treiber gibt es nicht). Der Worker läuft deshalb auf einer
+**minimalen Windows-VM** (ODBC-Treiber + Python + dieser Ordner) und braucht
+**nur ausgehende** Verbindungen. Python-Architektur = DSN-Architektur, 32- oder
+64-bit (64-bit empfohlen, siehe `vm-setup.md`):
 
 ```
-Apollo ──(32-bit ODBC, read-only)──▶ worker.py ──POST /api/odbc/<art>──▶ Plattform (Caddy :80)
+Apollo ──(ODBC, read-only)──▶ worker.py ──POST /api/odbc/<art>──▶ Plattform (Caddy :80)
                                      Header X-ODBC-Token            compute: gleicher Parser
                                                                     wie beim Upload → Tabellen
                                                                     → KPI-SQL (unverändert)

@@ -1,7 +1,8 @@
 """ODBC-Worker: liest Apollo (CONZEPT 16) und füttert die ACM-Plattform.
 
-Läuft auf einer minimalen Windows-VM mit dem 32-bit-CONZEPT-ODBC-Treiber —
-deshalb **32-bit-Python** (pyodbc gegen den DSN `Apollo 32 Bit`). Für jede Art
+Läuft auf einer minimalen Windows-VM mit dem CONZEPT-ODBC-Treiber (pyodbc gegen
+den DSN aus `APOLLO_DSN`). Python-Architektur muss zur DSN-/Treiber-Architektur
+passen — beides 64-bit (empfohlen) oder beides 32-bit. Für jede Art
 wird die Apollo-Abfrage in genau das Dateiformat gebracht, das der
 Plattform-Parser erwartet (`services/compute/app/parsing/*.py`), und an
 `POST {BASE}/api/odbc/<art>` mit dem Header `X-ODBC-Token` geschickt. Dort läuft
@@ -20,8 +21,8 @@ Sicherheits-/Konfidenzstufen je Art (siehe README.md, Spalte „Status"):
      liefertreue). Erst die offene Quelle/Code-Liste klären (../MAPPING.md).
 
 Aufruf:
-    py -3-32 worker.py --art umsatz [--von 2025-01-01] [--dry-run]
-    py -3-32 worker.py --alle
+    py worker.py --art umsatz [--von 2025-01-01] [--dry-run]   # 64-bit; 32-bit: py -3-32
+    py worker.py --alle
 Konfig: Umgebungsvariablen oder odbc-worker\\worker.env (siehe config.example.env).
 
 Verweise auf ../MAPPING.md, ../ERKENNTNISSE.md, ../ABSCHLUSSBERICHT.md, ../compare.py
@@ -639,8 +640,9 @@ def main() -> None:
     ap.add_argument("--von", default=None, help="Datum von (YYYY-MM-DD), Vorgabe: 1.1. Vorjahr")
     ap.add_argument("--dry-run", action="store_true", help="nur Datei schreiben, nicht senden")
     a = ap.parse_args()
-    if sys.maxsize > 2**32:
-        print("WARNUNG: 64-bit-Python — der 32-bit-CONZEPT-Treiber lädt nur unter 32-bit-Python.")
+    bits = 64 if sys.maxsize > 2**32 else 32
+    print(f"{bits}-bit-Python — der DSN '{APOLLO_DSN}' muss ein {bits}-bit-DSN sein "
+          f"(sonst scheitert das Laden der Treiber-DLL mit 'architecture mismatch').")
 
     if a.dienst:
         dienst()
