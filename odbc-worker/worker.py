@@ -58,7 +58,7 @@ _env_laden()
 
 BASE_URL = os.environ.get("ACM_BASE_URL", "http://192.9.201.9").rstrip("/")
 ODBC_TOKEN = os.environ.get("ODBC_SYNC_TOKEN", "")
-APOLLO_DSN = os.environ.get("APOLLO_DSN", "Apollo 32 Bit")
+APOLLO_DSN = os.environ.get("APOLLO_DSN", "Apollo 64-bit")
 APOLLO_UID = os.environ.get("APOLLO_UID", "")
 APOLLO_PWD = os.environ.get("APOLLO_PWD", "")
 MANDANT = int(os.environ.get("APOLLO_MANDANT", "1"))
@@ -185,7 +185,7 @@ _ASWKPF = [
 ]
 
 
-def _beleg_kopf(typen: tuple[int, ...], dateiname: str, von: dt.date) -> tuple[str, bytes]:
+def _beleg_kopf(typen: tuple[int, ...], von: dt.date) -> list[dict]:
     platz = ",".join("?" * len(typen))
     sql = (
         "SELECT kpf_typ, kpf_nr, kpf_datum, kpf_adr_id, kpf_user_save, kpf_wert, kpf_wert_f "
@@ -193,21 +193,32 @@ def _beleg_kopf(typen: tuple[int, ...], dateiname: str, von: dt.date) -> tuple[s
     )
     zeilen = []
     for typ, nr, datum, adr, user, wert, wert_f in q(sql, *typen, MANDANT, von):
-        z = [""] * len(_ASWKPF)
-        z[0] = TYP_TEXT.get(int(typ), str(typ))
-        z[1] = ganz(nr)
-        z[2] = de_datum(datum)
-        z[3] = ganz(adr)
-        z[8] = user or ""
-        z[14] = de_zahl(wert)
-        z[16] = de_zahl(wert_f)
-        zeilen.append(z)
-    return dateiname, tab_datei(_ASWKPF, zeilen)
+        zeilen.append({
+            "Typ": TYP_TEXT.get(int(typ), str(typ)),
+            "Vorgang Nr.": ganz(nr),
+            "Datum": de_datum(datum),
+            "Adr Nr.": ganz(adr),
+            "Name 1": "",
+            "Name 2": "",
+            "Name 3": "",
+            "Ort": "",
+            "Erfasst durch": user or "",
+            "Geändert durch": "",
+            "Anz Pos": "",
+            "AA": "",
+            "Typ 2": "",
+            "Rab Aktion": "",
+            "Wert": de_zahl(wert),
+            "eigene Währung": "",
+            "Ges.Wert FW": de_zahl(wert_f),
+            "WAHR": "",
+        })
+    return zeilen
 
 
-def build_umsatz(von):      return _beleg_kopf((6, 7), "AswKpf_RG.txt", von)   # ✅
-def build_auftraege(von):   return _beleg_kopf((1,), "AswKpf_AUF.txt", von)    # ✅
-def build_angebote(von):    return _beleg_kopf((2,), "AswKpf_ANG.txt", von)    # ✅
+def build_umsatz(von):      return _beleg_kopf((6, 7), von)   # ✅
+def build_auftraege(von):   return _beleg_kopf((1,), von)    # ✅
+def build_angebote(von):    return _beleg_kopf((2,), von)    # ✅
 
 
 # ---- 8D: Reklamationen und Audit-Befunde (rek_std) ----
@@ -215,7 +226,7 @@ _8D = ["Nr.", "Datum", "Art", "Artikel", "Adressen", "Adress Nr.", "Bezeichnung"
        "Status", "Menge", "akzeptierte Menge", "gelöscht"]
 
 
-def build_acht_d(von) -> tuple[str, bytes]:  # ✅
+def build_acht_d(von) -> list[dict]:  # ✅
     """Das Audit-Level steckt im Feld „Artikel" = Artikelnummer des Dummy-Artikels
     (rek_stm_id 39777 'Audit Major Level 1' / 39778 'Audit Minor Level 2')."""
     artnr = stm_artnr()
@@ -226,22 +237,48 @@ def build_acht_d(von) -> tuple[str, bytes]:  # ✅
     )
     zeilen = []
     for nr, datum, art, stm, adr, status, menge, akz, gel in q(sql, MANDANT, von):
-        zeilen.append([
-            ganz(nr), de_datum(datum), art or "", artnr.get(str(stm), ""), "",
-            ganz(adr), "", ganz(status), de_zahl(menge), de_zahl(akz),
-            "J" if gel else "",
-        ])
-    return "8D.txt", tab_datei(_8D, zeilen)
+        zeilen.append({
+            "Nr.": ganz(nr),
+            "Datum": de_datum(datum),
+            "Art": art or "",
+            "Artikel": artnr.get(str(stm), ""),
+            "Adressen": "",
+            "Adress Nr.": ganz(adr),
+            "Bezeichnung": "",
+            "Status": ganz(status),
+            "Menge": de_zahl(menge),
+            "akzeptierte Menge": de_zahl(akz),
+            "gelöscht": "J" if gel else "",
+        })
+    return zeilen
 
 
 # ---- Lagerpreise (Preiskonditionen): Selbstkosten je Artikel aus stm_std ----
 _LAGERPREISE = ["Artikelnr3", "Wert", "Preismenge", "Preiseinheit", "Bezeichnung 1"]
 
 
-def build_lagerpreise(von) -> tuple[str, bytes]:  # ✅ (von wird nicht gebraucht, Stammdaten)
+def build_lagerpreise(von) -> list[dict]:  # ✅ (von wird nicht gebraucht, Stammdaten)
     sql = "SELECT stm_artnr, stm_sk_kalk, stm_bez1 FROM stm_std WHERE stm_sk_kalk <> 0"
-    zeilen = [[art or "", de_zahl(sk), "1", "", bez or ""] for art, sk, bez in q(sql)]
-    return "AswLagBew-Preiskonditionen.txt", tab_datei(_LAGERPREISE, zeilen)
+    return [
+        {"Artikelnr3": art or "", "Wert": de_zahl(sk), "Preismenge": "1",
+         "Preiseinheit": "", "Bezeichnung 1": bez or ""}
+        for art, sk, bez in q(sql)
+    ]
+
+
+# ---- Hilfsfunktionen ----
+
+
+def _batched(iterable, n: int):
+    """`iterable` in Partien der Größe `n` aufteilen."""
+    batch = []
+    for item in iterable:
+        batch.append(item)
+        if len(batch) == n:
+            yield batch
+            batch = []
+    if batch:
+        yield batch
 
 
 # ---- Positions-Exporte: Aufträge / Lieferscheine / Wareneingänge ----
@@ -255,15 +292,24 @@ _POS_HEADER = [
 
 
 def _positionen(typ_num: int, typ_text: str, von: dt.date):
-    """Positionszeilen eines Belegtyps mit Vorgangs-/Auftragsnummer (Join auf kpf)."""
+    """Positionszeilen eines Belegtyps mit Vorgangs-/Auftragsnummer (Join auf kpf).
+
+    Lieferscheine (typ 5): `pos_unterpos` als gespeicherte Spalte — keine
+    berechnete Rangfolge. Gesperrte Artikel (`stm_sperr_date` gesetzt und >=
+    `pos_datum`) werden von der Maske ausgefiltert.
+
+    Aufträge (typ 1): keine Sperre, UPos immer „0".
+    """
     sql = (
         "SELECT k.kpf_nr, p.pos_pos, p.pos_datum, p.pos_lief_datum, p.pos_artnr, "
         "p.pos_menge, p.pos_status, p.pos_preis, p.pos_wert, p.pos_typ2, "
-        "p.pos_vater_kpf_id "
+        "p.pos_vater_kpf_id, p.pos_id, p.pos_kpf_id, k.kpf_adr_id, "
+        "p.pos_stm_id, p.pos_unterpos "  # pos_unterpos direkt im Haupt-SELECT
         "FROM pos_std p JOIN kpf_std k ON p.pos_kpf_id = k.kpf_id "
         "WHERE p.pos_typ = ? AND k.kpf_mandant = ? AND p.pos_datum >= ?"
     )
     rows = list(q(sql, typ_num, MANDANT, von))
+
     # Auftragsnummer des Vaterbelegs (für Lieferscheine: Spalte „Auftrag").
     vater_ids = {str(r[10]) for r in rows if r[10]}
     vater_nr: dict[str, str] = {}
@@ -271,14 +317,47 @@ def _positionen(typ_num: int, typ_text: str, von: dt.date):
         for kid, knr in q("SELECT kpf_id, kpf_nr FROM kpf_std WHERE kpf_mandant = ?", MANDANT):
             if str(kid) in vater_ids:
                 vater_nr[str(kid)] = ganz(knr)
+
+    # Kopf-Adresse (Adr Nr. / Name 1 / Ort) wie in der Maske.
+    adr_ids = {str(r[13]) for r in rows if r[13]}
+    adr_data: dict[str, tuple[str, str, str]] = {}
+    if adr_ids:
+        for aid, anr, name, ort in q("SELECT adr_id, adr_nr, adr_name1, adr_ort FROM adr_std"):
+            if str(aid) in adr_ids:
+                adr_data[str(aid)] = (ganz(anr), name or "", ort or "")
+
+    # Lieferscheine: gesperrte Artikel filtern (STM-Sperre >= Zeilendatum).
+    # Die Maske schließt Zeilen aus, wo `stm_sperr_date` gesetzt und >=
+    # `pos_datum`. Artikel ohne Sperre oder mit Sperre nach Zeilendatum
+    # bleiben erhalten.
+    if typ_text == "LS":
+        stm_ids = {str(r[14]) for r in rows}  # pos_stm_id (Index 14)
+        sperr_map: dict[str, dt.date | None] = {}
+        if stm_ids:
+            for sid, sdate in q(
+                "SELECT stm_id, stm_sperr_date FROM stm_std WHERE stm_mandant = ?",
+                MANDANT
+            ):
+                sperr_map[str(sid)] = sdate  # ggf None
+
+        rows = [r for r in rows
+                if not _ist_gesperrt(r[14], r[3], sperr_map)]
+
+    # UPos: `pos_unterpos` ist eine gespeicherte Spalte in pos_std — die Maske
+    # gibt sie 1:1 aus (Hauptzeilen = 0/NULL → "0").
     zeilen = []
-    for nr, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater in rows:
+    for nr, pos, datum, lief, artnr, menge, status, preis, wert, typ2, \
+            vater, pid, kid, aid, stm_id, unterpos in rows:
         z = [""] * len(_POS_HEADER)
         z[0] = typ_text
         z[1] = ganz(nr)
         z[2] = ganz(pos)
-        z[3] = "0"
+        if typ_text == "LS":
+            z[3] = ganz(unterpos)  # gespeicherte Spalte aus Haupt-SELECT
+        else:
+            z[3] = "0"  # Aufträge haben keine UPos
         z[4] = de_datum(datum)
+        z[5], z[6], z[7] = adr_data.get(str(aid), ("", "", ""))
         z[8] = artnr or ""
         z[11] = de_zahl(menge)
         z[13] = ganz(status)
@@ -289,6 +368,17 @@ def _positionen(typ_num: int, typ_text: str, von: dt.date):
         z[19] = vater_nr.get(str(vater), "")
         zeilen.append(z)
     return zeilen
+
+
+def _ist_gesperrt(stm_id, pos_datum: dt.date | None,
+                   sperr_map: dict[str, dt.date | None]) -> bool:
+    """True, wenn der Artikel gesperrt ist und das Sperrdatum >= Zeilendatum."""
+    sdate = sperr_map.get(str(stm_id)) if stm_id else None
+    if sdate is None:
+        return False
+    if pos_datum is None:
+        return True  # kein Datum → sicher ausschließen
+    return sdate >= pos_datum
 
 
 def build_auftragspositionen(von):  # 🟡
@@ -343,15 +433,28 @@ _LAGBEW = ["Artikelnr", "Bezeichnung 1", "BuchDatum", "Zeit", "Bewegungsmenge",
 def build_lagerbewegungen(von) -> tuple[str, bytes]:  # 🟡
     """Aus bestand_std; Artikelnummer über stm_id. Buchtyp = bestand_vater_typ,
     Bewegungsmenge = bestand_delta. Gegen den echten AswLagBew-Export prüfen
-    (Umfang/Vorzeichen je Buchtyp, siehe ../ABSCHLUSSBERICHT.md)."""
+    (Umfang/Vorzeichen je Buchtyp, siehe ../ABSCHLUSSBERICHT.md).
+
+    Gesperrte Artikel (`stm_sperr_date` gesetzt und >= `bestand_datum`) werden
+    von der Maske ausgefiltert — 255 von 261 nur-Worker-Artikeln haben ein
+    Sperrdatum (Probe ls-filter2.py)."""
     artnr = stm_artnr()
     sql = (
         "SELECT bestand_stm_id, bestand_datum, bestand_zeit, bestand_delta, "
         "bestand_charge, bestand_vater_typ, bestand_grund FROM bestand_std "
         "WHERE bestand_mandant = ? AND bestand_datum >= ?"
     )
+    rows = list(q(sql, MANDANT, von))
+
+    # Sperr-Map: stm_id → stm_sperr_date (Vollscan, ~40k Zeilen).
+    sperr_map: dict[str, dt.date | None] = {}
+    for sid, sdate in q("SELECT stm_id, stm_sperr_date FROM stm_std"):
+        sperr_map[str(sid)] = sdate
+
     zeilen = []
-    for stm, datum, zeit, delta, charge, vtyp, grund in q(sql, MANDANT, von):
+    for stm, datum, zeit, delta, charge, vtyp, grund in rows:
+        if _ist_gesperrt(stm, datum, sperr_map):
+            continue  # Maske filtert gesperrte Zeilen aus
         zeilen.append([
             artnr.get(str(stm), ""), "", de_datum(datum), de_zeit(zeit),
             de_zahl(delta), charge or "", vtyp or "", "", "", grund or "", "",
@@ -365,23 +468,36 @@ _QS = ["Datum", "Zeit", "Benutzer", "FA", "Artikel", "Bezeichnung",
 
 
 def build_pruefungen(von) -> tuple[str, bytes]:  # 🟡
-    """BDE-Meldungen (meld_std). RSC = Artikelnummer der Ressource
-    (meld_rsc_id -> rsc_std.rsc_stm_id -> stm_artnr); die Plattform filtert
-    selbst auf RSC=70000. Die RSC-Auflösung ist der teure Teil (rsc_std groß) —
-    hier über eine einmalige rsc_id->artnr-Karte."""
-    artnr = stm_artnr()
-    # rsc_id -> stm_id (einmal; rsc_std ist groß → ggf. mehrere Minuten).
-    rsc_stm = {str(rid): str(sid) for rid, sid in q("SELECT rsc_id, rsc_stm_id FROM rsc_std")}
+    """BDE-Meldungen (meld_std) — Spalten gegen die echte Maske validiert
+    (AswQs2151, Test-DB, Zeile 1 = FA 3330 / TROMBATORE):
+    - Artikel + Bezeichnung = FA-Produkt (meld_fa → fa_std.fa_stm_id → stm_std)
+    - RSC = Artikel der Meldung (meld_stm_id) — NICHT über rsc_std auflösen:
+      in der Maske identisch, und der rsc_std-Vollscan wäre der 4,3-h-Treiber.
+    - Benutzer = meld_user, Buchungs-Menge = meld_menge.
+    Offen: Produktgruppe/Typ (Warengruppen-Hierarchie, Code-Liste in der
+    Test-DB nicht auffindbar — grp_std/krs_std leer, MAPPING.md) und die
+    Ausschuss-/Qualitäts-Felder.
+    KEIN SQL-JOIN meld_std ⋈ fa_std: ein nur einseitig belegter JOIN hängt
+    mit dem Treiber (Smoke-Test); wie in den übrigen Buildern erfolgt die
+    Zuordnung über Vollscan-Dicts in Python (fa_id → fa_stm_id)."""
+    # Artikelstamm einmal (Vollscan stm_std): Artikelnummer + Kurzbezeichnung.
+    stm = {str(sid): (art or "", bez or "")
+           for sid, art, bez in q("SELECT stm_id, stm_artnr, stm_bez1 FROM stm_std")}
+    # FA -> Produkt (Vollscan fa_std, 2 Spalten) für den Python-Join.
+    fa_prod = {str(fid): str(pid) for fid, pid in
+               q("SELECT fa_id, fa_stm_id FROM fa_std") if pid}
     sql = (
-        "SELECT meld_datum_buch, meld_zeit_buch, meld_fa, meld_stm_id, meld_menge, "
-        "meld_rsc_id FROM meld_std WHERE meld_mandant = ? AND meld_datum_buch >= ?"
+        "SELECT meld_datum_buch, meld_zeit_buch, meld_user, meld_fa, "
+        "meld_stm_id, meld_menge FROM meld_std "
+        "WHERE meld_mandant = ? AND meld_datum_buch >= ?"
     )
     zeilen = []
-    for datum, zeit, fa, stm, menge, rid in q(sql, MANDANT, von):
-        rsc_art = artnr.get(rsc_stm.get(str(rid), ""), "")
+    for datum, zeit, user, fa, stm_id, menge in q(sql, MANDANT, von):
+        p_art, p_bez = stm.get(fa_prod.get(str(fa), ""), ("", ""))
+        rsc_art, _ = stm.get(str(stm_id), ("", ""))
         zeilen.append([
-            de_datum(datum), de_zeit(zeit), "", ganz(fa), artnr.get(str(stm), ""),
-            "", de_zahl(menge), "", rsc_art, "", "",
+            de_datum(datum), de_zeit(zeit), user or "", ganz(fa), p_art,
+            p_bez, de_zahl(menge), "", rsc_art, "", "",
         ])
     return "AswQs2151.txt", tab_datei(_QS, zeilen)
 
@@ -490,6 +606,166 @@ def build_interessenten(von) -> tuple[str, bytes]:  # ✅ (Stammdaten, von unben
     return "dev_excel_INT.txt", tab_datei(_INTERESSENTEN, zeilen)
 
 
+# ---- Kunden → Bestellungen → Fertigungsaufträge (Status/Vervollständigung) ----
+_KUNDEN_HEADER = [
+    "Kundennummer", "Kunde", "Bestell-Nr.", "Typ", "Datum",
+    "Pos", "Artikel", "Typ", "Ursprung", "Vater-Artikel",
+    "Meldung-Status", "Erledigt", "RSC-ID"
+]
+
+# Top-N-Limit für kpf_std (Vollscan ~490s für adr_id=1 → TOP N in 0.1s).
+# Setzbar per Umgebungsvariable, Default=500 (für Tests klein halten).
+_KUNDEN_TOP_N = int(os.environ.get("KUNDEN_TOP_N", "500"))
+
+
+def build_kunden_bestellungen(
+    kunde_adr_id: int,
+    von: dt.date | None = None,
+    *,
+    top_n: int | None = None,
+) -> tuple[str, bytes]:
+    """Kunde → Bestellungen → Positionen → Artikel → Fertigungsstatus.
+
+    Performance-Anpassungen (Apollo-DB bleibt unverändert):
+    - TOP N für kpf_std (Vollscan ~490s → TOP 500 in Sekunden)
+    - Batch-Verarbeitung über IN-Clause (max 25.000 pro Batch)
+    - Python-Dict-Join statt SQL-JOIN (CONZEPT-Treiber-Quirk: einseitige JOINs
+      hängen)
+    - `meld_std` nur mit relevanten Daten laden (WHERE meld_fa IN (...))
+
+    Returns: (dateiname, bytes) – Excel mit Struktur:
+      Kunde | Bestellungen | Positionen | Artikel (Typ, Ursprung) | Status
+    """
+    top_n = top_n if top_n is not None else _KUNDEN_TOP_N
+
+    # === 1. Kunde → Bestellungen (kpf_std) mit TOP N ===
+    sql = (
+        f"SELECT TOP {_lit(top_n)} kpf_nr, kpf_typ, kpf_datum FROM kpf_std "
+        f"WHERE kpf_adr_id = {_lit(float(kunde_adr_id))} "
+        f"AND kpf_mandant = {_lit(MANDANT)}"
+    )
+    if von:
+        sql += f" AND kpf_datum >= {_lit(von)}"
+
+    bestellungen = []
+    for nr, typ, datum in q(sql):
+        bestellungen.append({
+            'kpf_nr': nr,
+            'kpf_typ': typ,
+            'kpf_datum': datum,
+        })
+
+    if not bestellungen:
+        return "KundenBestellungen.txt", tab_datei(_KUNDEN_HEADER, [])
+
+    # === 2. Positionen (pos_std) für alle Bestellungen ===
+    kpf_nrs = [b['kpf_nr'] for b in bestellungen]
+
+    positionen = []
+    for batch in _batched(kpf_nrs, 25000):
+        in_clause = ",".join(_lit(float(nr)) for nr in batch)
+        sql_pos = (
+            "SELECT pos_kpf_id, pos_pos, pos_artnr, pos_stm_id FROM pos_std "
+            f"WHERE pos_kpf_id IN ({in_clause}) "
+            f"AND pos_mandant = {_lit(MANDANT)}"
+        )
+        for kpf_id, pos_pos, artnr, stm_id in q(sql_pos):
+            positionen.append({
+                'pos_kpf_id': kpf_id,
+                'pos_pos': pos_pos,
+                'pos_artnr': artnr,
+                'pos_stm_id': stm_id,
+            })
+
+    # === 3. Artikel (stm_std) für alle Positionen ===
+    stm_ids = {p['pos_stm_id'] for p in positionen if p['pos_stm_id']}
+    stm_map: dict[str, tuple] = {}  # stm_id → (stm_artnr, stm_typ, stm_ursprung, stm_vater_artnr)
+    if stm_ids:
+        for batch in _batched(stm_ids, 25000):
+            in_clause = ",".join(_lit(float(sid)) for sid in batch)
+            sql_stm = (
+                "SELECT stm_id, stm_artnr, stm_typ, stm_ursprung, stm_vater_artnr "
+                f"FROM stm_std WHERE stm_id IN ({in_clause}) "
+                f"AND stm_mandant = {_lit(MANDANT)}"
+            )
+            for sid, artnr, typ, ursprung, vater in q(sql_stm):
+                stm_map[str(int(float(sid)))] = (artnr or "", typ, ursprung, vater)
+
+    # === 4. Fertigungsstatus (meld_std) – nur relevante Meldungen laden ===
+    # Da meld_std zu groß ist: WHERE meld_fa IN (kpf_nrs) statt Vollscan.
+    kpf_nr_floats = [float(nr) for nr in kpf_nrs]
+    meld_map: dict[tuple, tuple] = {}  # (meld_fa, meld_pos) → Status-Tupel
+    for batch in _batched(kpf_nr_floats, 25000):
+        in_clause = ",".join(_lit(float(nr)) for nr in batch)
+        sql_meld = (
+            "SELECT meld_fa, meld_pos, meld_stm_id, meld_fa_status, "
+            "meld_erledigt, meld_rsc_id FROM meld_std "
+            f"WHERE meld_fa IN ({in_clause}) "
+            f"AND meld_mandant = {_lit(MANDANT)}"
+        )
+        try:
+            for fa, pos, stm_id, status, erledigt, rsc_id in q(sql_meld):
+                meld_map[(str(int(float(fa))), str(int(float(pos))))] = (
+                    status, erledigt, rsc_id
+                )
+        except Exception:
+            # meld_std für diesen Batch zu groß → überspringen (leere Status)
+            pass
+
+    # === 5. Ergebnis zusammenbauen (Python-Dict-Join) ===
+    zeilen = []
+
+    # Kunde-Info (adr_std) – einmal pro Aufruf laden
+    adr_sql = (
+        f"SELECT adr_nr, adr_name1 FROM adr_std "
+        f"WHERE adr_id = {_lit(float(kunde_adr_id))} "
+        f"AND adr_mandant = {_lit(MANDANT)}"
+    )
+    adr_nr, adr_name = "", ""
+    for a_nr, a_name in q(adr_sql):
+        adr_nr, adr_name = ganz(a_nr), a_name or ""
+        break
+
+    # Positionen pro Bestellung gruppieren (Python-Dict-Join)
+    pos_by_kpf: dict[str, list] = {}
+    for p in positionen:
+        kpf_key = str(int(float(p['pos_kpf_id'])))
+        pos_by_kpf.setdefault(kpf_key, []).append(p)
+
+    for b in bestellungen:
+        kpf_nr = str(int(float(b['kpf_nr'])))
+        b_positionen = pos_by_kpf.get(kpf_nr, [])
+
+        for p in b_positionen:
+            pos_pos = str(int(float(p['pos_pos'])))
+            stm_id = str(int(float(p['pos_stm_id']))) if p['pos_stm_id'] else ""
+
+            # Artikel-Info aus stm_map (Python-Dict-Join)
+            artnr, typ, ursprung, vater = stm_map.get(stm_id, ("", "", "", ""))
+
+            # Fertigungsstatus aus meld_map (Python-Dict-Join)
+            status_info = meld_map.get((kpf_nr, pos_pos), (None, None, None))
+            meld_status, erledigt, rsc_id = status_info
+
+            zeilen.append([
+                adr_nr or "",
+                adr_name or "",
+                ganz(b['kpf_nr']),
+                TYP_TEXT.get(int(b['kpf_typ']), str(b['kpf_typ'])),
+                de_datum(b['kpf_datum']),
+                ganz(p['pos_pos']),
+                artnr or "",
+                str(typ) if typ else "",
+                str(ursprung) if ursprung else "",
+                vater or "",
+                str(meld_status) if meld_status else "",
+                "J" if erledigt else "N",
+                ganz(rsc_id) if rsc_id else "",
+            ])
+
+    return "KundenBestellungen.xlsx", xlsx_datei(_KUNDEN_HEADER, zeilen)
+
+
 # Dieselben 14 Arten wie REGISTRY in services/compute/app/routers/uploads.py.
 BUILDERS = {
     "umsatz": build_umsatz,
@@ -506,6 +782,7 @@ BUILDERS = {
     "liefertreue": build_liefertreue,
     "kontakte": build_kontakte,
     "interessenten": build_interessenten,
+    "kunden": build_kunden_bestellungen,
 }
 
 # Alle 14 Arten sind verdrahtet. Reihenfolge nach Konfidenz.
