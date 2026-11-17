@@ -1,3 +1,4 @@
+import { computeJson } from "@/lib/compute";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { achse, positionNorm, type Geltung, type PflichtBasis } from "@/lib/pflicht";
 
@@ -20,6 +21,23 @@ export interface Inhalt {
 
 export interface Pflicht extends PflichtBasis {
   einarbeitung_id: string;
+}
+
+/** Ein Bereich der Kompetenzmatrix — Auswahl für „Serie erzeugen". */
+export interface SerieBereich {
+  id: string;
+  name: string;
+}
+
+/** Ergebnis je hochgeladenem Blatt im Stapel-Upload. */
+export interface UploadErgebnis {
+  dateiname: string;
+  status: "zugeordnet" | "nicht_zugeordnet" | "schon_geprueft" | "fehler";
+  doc_uid: string | null;
+  name: string | null;
+  vollstaendig: boolean | null;
+  vorgang_id: string | null;
+  meldung: string | null;
 }
 
 export const einarbeitungKeys = {
@@ -124,4 +142,29 @@ export const einarbeitungApi = {
   /** Der Bogen kommt als PDF von `compute` und braucht das Bearer-Token. */
   bogenUrl: (frage: Record<string, string>): string =>
     `/api/einarbeitung/bogen.pdf?${new URLSearchParams(frage).toString()}`,
+
+  /** Die Bereiche für „Serie erzeugen". */
+  bereiche: async (): Promise<SerieBereich[]> => {
+    const { data, error } = await sb()
+      .from("kompetenz_bereiche")
+      .select("id,name")
+      .order("reihenfolge");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as SerieBereich[];
+  },
+
+  /** POST: legt die Vorgänge an und liefert das Druck-PDF (per computeFetch). */
+  serieUrl: (bereichId: string): string =>
+    `/api/einarbeitung/serie?bereich_id=${encodeURIComponent(bereichId)}`,
+
+  /** Viele unterschriebene Bögen auf einmal hochladen. */
+  stapelHochladen: async (dateien: File[]): Promise<UploadErgebnis[]> => {
+    const rumpf = new FormData();
+    for (const datei of dateien) rumpf.append("dateien", datei);
+    const antwort = await computeJson<{ ergebnisse: UploadErgebnis[] }>(
+      "/api/einarbeitung/upload",
+      { method: "POST", body: rumpf },
+    );
+    return antwort.ergebnisse;
+  },
 };

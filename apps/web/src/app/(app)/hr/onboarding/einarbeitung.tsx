@@ -10,6 +10,7 @@ import {
   einarbeitungKeys,
   type Inhalt,
   type Pflicht,
+  type UploadErgebnis,
 } from "@/lib/einarbeitung";
 import { positionNorm } from "@/lib/pflicht";
 import { onboardingApi, onboardingKeys } from "@/lib/onboarding";
@@ -279,5 +280,106 @@ export function Einarbeitungsmatrix({ darfSchreiben }: { darfSchreiben: boolean 
       beschriftung={worte.onboarding.matrixTitel}
       darfSchreiben={darfSchreiben}
     />
+  );
+}
+
+/**
+ * Serie erzeugen und zentraler Upload: für alle Personen eines Bereichs auf
+ * einmal Bögen erzeugen (Druck-PDF) und die unterschriebenen Bögen gesammelt
+ * wieder einlesen — die Zuordnung läuft über den QR.
+ */
+export function Serienbogen({ darfSchreiben }: { darfSchreiben: boolean }) {
+  const worte = useTexte();
+  const [bereich, setBereich] = useState("");
+  const [ergebnisse, setErgebnisse] = useState<UploadErgebnis[] | null>(null);
+  const melde = (fehler: Error) => toast.error(fehler.message);
+
+  const bereiche = useQuery({
+    queryKey: ["einarbeitung", "bereiche"],
+    queryFn: einarbeitungApi.bereiche,
+  });
+
+  const serie = useMutation({
+    mutationFn: async (bereichId: string) => {
+      const antwort = await computeFetch(einarbeitungApi.serieUrl(bereichId), { method: "POST" });
+      if (!antwort.ok) {
+        throw new Error((await antwort.text()).slice(0, 200) || `HTTP ${antwort.status}`);
+      }
+      const anzahl = Number(antwort.headers.get("X-Serie-Anzahl") ?? "0");
+      const url = URL.createObjectURL(await antwort.blob());
+      window.open(url, "_blank", "noopener");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      return anzahl;
+    },
+    onSuccess: (anzahl) => toast.success(worte.einarbeitung.serieFertig(anzahl)),
+    onError: melde,
+  });
+
+  const upload = useMutation({
+    mutationFn: (dateien: File[]) => einarbeitungApi.stapelHochladen(dateien),
+    onSuccess: setErgebnisse,
+    onError: melde,
+  });
+
+  return (
+    <div className="space-y-4 p-4">
+      <p className="text-sm text-[var(--fg-muted)]">{worte.einarbeitung.serieHinweis}</p>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-56 flex-col gap-1">
+          <Label htmlFor="serie-bereich">{worte.einarbeitung.bereich}</Label>
+          <Select id="serie-bereich" value={bereich} onChange={(e) => setBereich(e.target.value)}>
+            <option value="">{worte.einarbeitung.waehlen}</option>
+            {(bereiche.data ?? []).map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <Button
+          variant="outline"
+          disabled={!darfSchreiben || !bereich || serie.isPending}
+          onClick={() => serie.mutate(bereich)}
+        >
+          <FileDown className="me-1.5 h-4 w-4" aria-hidden />
+          {serie.isPending ? worte.einarbeitung.wirdGebaut : worte.einarbeitung.serieErzeugen}
+        </Button>
+      </div>
+
+      <div className="space-y-2 border-t border-[var(--border)] pt-4">
+        <Label htmlFor="serie-upload">{worte.einarbeitung.uploadTitel}</Label>
+        <p className="text-sm text-[var(--fg-muted)]">{worte.einarbeitung.uploadHinweis}</p>
+        <input
+          id="serie-upload"
+          type="file"
+          multiple
+          accept="application/pdf,image/png,image/jpeg"
+          disabled={!darfSchreiben || upload.isPending}
+          onChange={(e) => {
+            const dateien = Array.from(e.target.files ?? []);
+            if (dateien.length) upload.mutate(dateien);
+            e.target.value = "";
+          }}
+          className="block text-sm"
+        />
+        {upload.isPending && (
+          <p className="text-sm text-[var(--fg-muted)]">{worte.einarbeitung.wirdHochgeladen}</p>
+        )}
+        {ergebnisse && (
+          <ul className="space-y-1 text-sm">
+            {ergebnisse.map((z, i) => (
+              <li key={i} className="flex flex-wrap gap-2">
+                <span className="font-medium">{z.dateiname || z.name || "—"}</span>
+                <span className="text-[var(--fg-muted)]">
+                  {worte.einarbeitung.uploadStatus[z.status]}
+                  {z.name ? ` · ${z.name}` : ""}
+                  {z.meldung ? ` · ${z.meldung}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }

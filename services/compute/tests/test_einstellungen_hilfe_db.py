@@ -66,7 +66,7 @@ async def db(datenbank_da):
     async def aufraeumen():
         await ausfuehren("delete from public.personio_nachweise")
         await ausfuehren("delete from public.schulung_teilnahmen where employee_id = :m", m=MITARBEITER)
-        await ausfuehren("delete from public.kompetenz_matrizen where blatt = 'test-0051'")
+        await ausfuehren("delete from public.kompetenz_bereiche where name = 'Test 0051'")
         await ausfuehren("delete from public.schulung_katalog where name = 'Test 0051'")
         await ausfuehren("delete from public.personio_sync_meta")
         await ausfuehren("delete from public.personio_employees where id = :m", m=MITARBEITER)
@@ -295,20 +295,17 @@ async def test_externe_person_ohne_personio_profil(db):
 async def test_kompetenzaenderung_merkt_fuer_die_person_vor(db):
     await mitarbeiter_und_schulung()
     await schalter(True)
-    matrix = (await ausfuehren(
-        "insert into public.kompetenz_matrizen (bereich, blatt) values ('safety', 'test-0051') returning id::text"
+    bereich = (await ausfuehren(
+        "insert into public.kompetenz_bereiche (name, abteilung, reihenfolge)"
+        " values ('Test 0051', 'Safety', 0) returning id::text"
     ))[0]["id"]
-    quali = (await ausfuehren(
-        "insert into public.kompetenz_qualifikationen (matrix_id, bezeichnung, reihenfolge)"
-        " values (cast(:m as uuid), 'Löten', 1) returning id::text", m=matrix,
-    ))[0]["id"]
-    person = (await ausfuehren(
-        "insert into public.kompetenz_personen (matrix_id, name, employee_id, reihenfolge)"
-        " values (cast(:m as uuid), 'Test Person', :e, 1) returning id::text", m=matrix, e=MITARBEITER,
+    familie = (await ausfuehren(
+        "insert into public.kompetenz_familien (bereich_id, name, reihenfolge, mindest_l2, mindest_l3)"
+        " values (cast(:b as uuid), 'Löten', 1, 0, 0) returning id::text", b=bereich,
     ))[0]["id"]
     await ausfuehren(
-        "insert into public.kompetenz_bewertungen (qualifikation_id, person_id, erfuellungsgrad)"
-        " values (cast(:q as uuid), cast(:p as uuid), 80)", q=quali, p=person,
+        "insert into public.kompetenz_bewertungen (familie_id, employee_id, ist_stufe)"
+        " values (cast(:f as uuid), :e, 2)", f=familie, e=MITARBEITER,
     )
     assert [(n["employee_id"], n["art"]) for n in await nachweise()] == [(MITARBEITER, "kompetenz")]
 

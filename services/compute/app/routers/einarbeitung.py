@@ -8,12 +8,24 @@ Katalog und Abteilungsmatrix sind gewöhnliches Lesen und Schreiben und gehen
 from __future__ import annotations
 
 import re
+from dataclasses import asdict
 from datetime import date
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 
 from app.auth import require_app
+from app.config import settings
 from app.db import (
     SessionLocal,
     einarbeitung_katalog,
@@ -21,9 +33,13 @@ from app.db import (
     onboarding_abteilung,
     personio_employees,
 )
+from app.dokumente import speicher, vorgang
 from app.dokumente.logo import lade_logo
 from app.dokumente.pdf import PdfFehlgeschlagen
+from app.einarbeitung import serie as serie_mod
+from app.einarbeitung import upload as upload_mod
 from app.einarbeitung.bogen import Inhalt, baue_pdf
+from app.einarbeitung.upload import Zugeordnet
 
 router = APIRouter(
     prefix="/api/einarbeitung",
@@ -164,3 +180,78 @@ async def bogen(
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+@router.post("/serie", dependencies=[Depends(require_app("hr", "editor"))])
+async def serie(bereich_id: str = Query(...)) -> Response:
+    """Für alle Personen eines Bereichs je einen Einarbeitungsvorgang mit QR
+    anlegen (Vorgesetzter/Stelle/Eintritt aus Personio, Ansprechpartner =
+    Bereichsleiter) und alle Blätter als **ein Druck-PDF** zurückgeben. Die
+    Anzahl der angelegten Vorgänge steht im Header `X-Serie-Anzahl`."""
+    try:
+        erg = await serie_mod.erzeuge_bereich(bereich_id)
+    except PdfFehlgeschlagen as fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(fehler)) from fehler
+    if not erg.erzeugt:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Diesen Bereich gibt es nicht, oder er hat keine zugeordneten Personen.",
+        )
+    return Response(
+        content=erg.pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'inline; filename="Einarbeitungsboegen.pdf"',
+            "X-Serie-Anzahl": str(len(erg.erzeugt)),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+def _scan_daten(datei: UploadFile) -> tuple[bytes, str, str]:
+    """Bytes, Endung und MIME eines Scans — oder HTTPException."""
+    daten = datei.file.read(settings.MAX_UPLOAD_BYTES + 1)
+    if len(daten) > settings.MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Die Datei ist zu groß.")
+    if not daten:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Die Datei ist leer.")
+    endung = vorgang.endung_aus(datei.filename or "", datei.content_type)
+    typ = vorgang.mime_aus(datei.filename or "", datei.content_type)
+    if typ is None or endung not in {"pdf", "png", "jpg"}:
+        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                            "Ein Scan muss ein PDF, PNG oder JPEG sein.")
+    return daten, endung, typ
+
+
+@router.post("/upload", dependencies=[Depends(require_app("hr", "editor"))])
+async def upload(dateien: list[UploadFile] = File(...)) -> dict:
+    """Viele unterschriebene Bögen auf einmal — je Blatt QR lesen, Vorgang
+    finden, Scan ablegen und abschließen. Ohne Treffer: „nicht zugeordnet"."""
+    aus: list[Zugeordnet] = []
+    for datei in dateien:
+        try:
+            daten, endung, typ = _scan_daten(datei)
+        except HTTPException as fehler:
+            aus.append(Zugeordnet(datei.filename or "", "fehler", meldung=fehler.detail))
+            continue
+        try:
+            aus.append(await upload_mod.ein_blatt(datei.filename or "", daten, endung, typ))
+        except (PdfFehlgeschlagen, speicher.SpeicherFehler) as fehler:
+            aus.append(Zugeordnet(datei.filename or "", "fehler", meldung=str(fehler)))
+    return {"ergebnisse": [asdict(z) for z in aus]}
+
+
+@router.post("/upload/manuell", dependencies=[Depends(require_app("hr", "editor"))])
+async def upload_manuell(
+    employee_id: int = Form(...), datei: UploadFile = File(...)
+) -> dict:
+    """Einen Altbestand von Hand einer Person zuordnen und als abgeschlossen
+    übernehmen (der Scan wird als Nachweis abgelegt)."""
+    daten, endung, typ = _scan_daten(datei)
+    try:
+        z = await upload_mod.manuell_abschliessen(employee_id, daten, endung, typ)
+    except speicher.SpeicherFehler as fehler:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(fehler)) from fehler
+    if z.status == "fehler":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, z.meldung or "Zuordnung fehlgeschlagen.")
+    return asdict(z)

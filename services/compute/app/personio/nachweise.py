@@ -98,16 +98,16 @@ async def _zeilen(sitzung, employee_id: int, art: str) -> list[str]:
         ]
         return zeilen or ["(keine Schulungen hinterlegt)"]
     ergebnis = await sitzung.execute(sa.text(
-        "select m.bereich, q.bezeichnung, b.anforderungslevel, b.erfuellungsgrad"
+        "select ber.name as bereich, f.name as familie, b.ist_stufe, b.soll_stufe"
         " from public.kompetenz_bewertungen b"
-        " join public.kompetenz_personen p on p.id = b.person_id"
-        " join public.kompetenz_qualifikationen q on q.id = b.qualifikation_id"
-        " join public.kompetenz_matrizen m on m.id = q.matrix_id"
-        " where p.employee_id = :e order by m.bereich, lower(q.bezeichnung), q.id"
+        " join public.kompetenz_familien f on f.id = b.familie_id"
+        " join public.kompetenz_bereiche ber on ber.id = f.bereich_id"
+        " where b.employee_id = :e order by ber.name, lower(f.name), f.id"
     ), {"e": employee_id})
     zeilen = [
-        f"{bereich} · {bezeichnung}: AL {'-' if al is None else al} / Erfüllung {'-' if eg is None else eg}%"
-        for bereich, bezeichnung, al, eg in ergebnis.all()
+        f"{bereich} · {familie}: Stufe {'-' if ist is None else ist}"
+        f" / Ziel {'-' if soll is None else soll}"
+        for bereich, familie, ist, soll in ergebnis.all()
     ]
     return zeilen or ["(keine Bewertungen hinterlegt)"]
 
