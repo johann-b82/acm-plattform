@@ -65,7 +65,8 @@ ARTEN: dict[str, Cfg] = {
     "lagerbewegungen": Cfg("AswLagBew.txt", ("Artikelnr", "BuchDatum"), (),
                            ("Bewegungsmenge",), agg=("Artikelnr",)),
     "pruefungen": Cfg("AswQs2151.txt", ("Datum",), (),
-                      ("Buchungs-Menge", "Ausschuss-Menge"), agg=("Artikel",)),
+                      ("Buchungs-Menge", "Ausschuss-Menge"),
+                      agg=("Artikel", "RSC", "Benutzer")),
 }
 
 
@@ -116,11 +117,20 @@ def _zeilen(pfad: Path, cfg: Cfg) -> list[dict[str, str]]:
     if kopf_idx is None:
         raise SystemExit(f"Kopfzeile mit {cfg.kopf} in {pfad.name} nicht gefunden.")
     hdr = [_ohne_einfassung(z) for z in matrix[kopf_idx]]
+    # Pandas-ähnliches Suffix bei duplizierten Spaltennamen: der echte LS-Extrakt
+    # schließt mit einer zweiten „Pos“-Spalte, die im Dict die erste überschreiben
+    # und den Schlüsselraum kollabieren lassen würde (Pos.1 bleibt abgelegt).
+    seen: dict[str, int] = {}
+    uniq: list[str] = []
+    for h in hdr:
+        n = seen.get(h, 0)
+        seen[h] = n + 1
+        uniq.append(h if n == 0 else f"{h}.{n}")
     out = []
     for r in matrix[kopf_idx + 1:]:
         if not any(z.strip() for z in r):
             continue
-        out.append({hdr[i]: (r[i] if i < len(r) else "") for i in range(len(hdr))})
+        out.append({uniq[i]: (r[i] if i < len(r) else "") for i in range(len(uniq))})
     return out
 
 
