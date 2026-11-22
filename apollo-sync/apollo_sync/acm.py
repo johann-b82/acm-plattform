@@ -130,6 +130,8 @@ def run_once(arten: list[str], von: dt.date, dry_run: bool = False, outdir: str 
         return [{"art": art, "status": "fehler", "zeilen": None, "dauer_ms": ms,
                  "fehler": f"Apollo: {exc}"[:500]} for art in arten]
     read_ms = int((time.monotonic() - t0) * 1000)
+    if dry_run:
+        os.makedirs(outdir, exist_ok=True)      # the read took minutes — never lose it to a missing folder
     for art in arten:
         t1 = time.monotonic()
         res = built[art]
