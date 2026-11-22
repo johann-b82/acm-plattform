@@ -7,6 +7,9 @@ driver's Python types). The produced files are byte-for-byte the format the plat
 expects (`services/compute/app/parsing/*.py`).
 
 Status per feed as in the old worker README: ✅ confirmed, 🟡 format derived from the parser.
+
+`kunden` (worker `build_kunden_bestellungen`) is not ported: it is a per-customer targeted
+query, not a feed — the platform has no `kunden` import (REGISTRY in routers/uploads.py).
 """
 from __future__ import annotations
 
@@ -151,38 +154,64 @@ class Feeds:
                    "WGR", "EK Konto"]
 
     def _kpf_join(self) -> dict:
-        """kpf_id -> [kpf_nr, ...] for k.kpf_mandant = MANDANT (inner-join side)."""
+        """kpf_id -> [(kpf_nr, kpf_adr_id), ...] for k.kpf_mandant = MANDANT (inner-join side)."""
         out: dict = {}
-        for kid, knr, md in self.src.rows("kpf_std", ["kpf_id", "kpf_nr", "kpf_mandant"]):
+        for kid, knr, kadr, md in self.src.rows("kpf_std", ["kpf_id", "kpf_nr", "kpf_adr_id", "kpf_mandant"]):
             if md == self.mandant:
-                out.setdefault(kid, []).append(knr)
+                out.setdefault(kid, []).append((knr, kadr))
         return out
 
+    @staticmethod
+    def _ist_gesperrt(stm_id, datum, sperr_map: dict) -> bool:
+        """Article blocked and block date >= row date (as the ERP mask filters)."""
+        sdate = sperr_map.get(str(stm_id)) if stm_id else None
+        if sdate is None:
+            return False
+        if datum is None:
+            return True
+        return sdate >= datum
+
     def _positionen(self, typ_num: int, typ_text: str, von: dt.date):
+        """Lookups are read unconditionally (the worker skips them when no row needs them —
+        same result, and `needs()` sees every column the feed may read)."""
         kpf = self._kpf_join()
         rows = []
-        for kid, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater, ptyp in self.src.rows(
+        for (kid, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater, ptyp,
+             stm_id, unterpos) in self.src.rows(
                 "pos_std", ["pos_kpf_id", "pos_pos", "pos_datum", "pos_lief_datum", "pos_artnr",
                             "pos_menge", "pos_status", "pos_preis", "pos_wert", "pos_typ2",
-                            "pos_vater_kpf_id", "pos_typ"]):
+                            "pos_vater_kpf_id", "pos_typ", "pos_stm_id", "pos_unterpos"]):
             if ptyp != typ_num or not _ge(datum, von):
                 continue
-            for nr in kpf.get(kid, ()):
-                rows.append((nr, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater))
+            for nr, aid in kpf.get(kid, ()):
+                rows.append((nr, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater,
+                             aid, stm_id, unterpos))
         vater_ids = {str(r[10]) for r in rows if r[10]}
         vater_nr: dict[str, str] = {}
-        if vater_ids:
-            for kid, knr, md in self.src.rows("kpf_std", ["kpf_id", "kpf_nr", "kpf_mandant"]):
-                if md == self.mandant and str(kid) in vater_ids:
-                    vater_nr[str(kid)] = ganz(knr)
+        for kid, knr, md in self.src.rows("kpf_std", ["kpf_id", "kpf_nr", "kpf_mandant"]):
+            if md == self.mandant and str(kid) in vater_ids:
+                vater_nr[str(kid)] = ganz(knr)
+        adr_ids = {str(r[11]) for r in rows if r[11]}
+        adr_data: dict[str, tuple[str, str, str]] = {}
+        for aid, anr, name, ort in self.src.rows("adr_std", ["adr_id", "adr_nr", "adr_name1", "adr_ort"]):
+            if str(aid) in adr_ids:
+                adr_data[str(aid)] = (ganz(anr), name or "", ort or "")
+        if typ_text == "LS":
+            # Production worker compares the block date with r[3] = pos_lief_datum (its docstring
+            # says pos_datum) — reproduced as is, see PR notes.
+            sperr_map = {str(sid): sdate for sid, sdate, md in
+                         self.src.rows("stm_std", ["stm_id", "stm_sperr_date", "stm_mandant"])
+                         if md == self.mandant}
+            rows = [r for r in rows if not self._ist_gesperrt(r[12], r[3], sperr_map)]
         zeilen = []
-        for nr, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater in rows:
+        for nr, pos, datum, lief, artnr, menge, status, preis, wert, typ2, vater, aid, _stm, unterpos in rows:
             z = [""] * len(self._POS_HEADER)
             z[0] = typ_text
             z[1] = ganz(nr)
             z[2] = ganz(pos)
-            z[3] = "0"
+            z[3] = ganz(unterpos) if typ_text == "LS" else "0"
             z[4] = de_datum(datum)
+            z[5], z[6], z[7] = adr_data.get(str(aid), ("", "", ""))
             z[8] = artnr or ""
             z[11] = de_zahl(menge)
             z[13] = ganz(status)
@@ -209,7 +238,7 @@ class Feeds:
                             "pos_artnr", "pos_menge", "pos_preis", "pos_wert", "pos_wgr", "pos_typ"]):
             if ptyp != 8 or not _ge(datum, von):
                 continue
-            for nr in kpf.get(kid, ()):
+            for nr, _aid in kpf.get(kid, ()):
                 z = [""] * len(self._POS_HEADER)
                 z[0] = "WE"
                 z[1] = ganz(nr)
@@ -237,12 +266,15 @@ class Feeds:
 
     def lagerbewegungen(self, von):  # 🟡
         artnr = self.stm_artnr()
+        sperr_map = {str(sid): sdate for sid, sdate in self.src.rows("stm_std", ["stm_id", "stm_sperr_date"])}
         zeilen = []
         for stm, datum, zeit, delta, charge, vtyp, grund, md in self.src.rows(
                 "bestand_std", ["bestand_stm_id", "bestand_datum", "bestand_zeit", "bestand_delta",
                                 "bestand_charge", "bestand_vater_typ", "bestand_grund", "bestand_mandant"]):
             if md != self.mandant or not _ge(datum, von):
                 continue
+            if self._ist_gesperrt(stm, datum, sperr_map):
+                continue                        # the mask hides blocked articles
             zeilen.append([
                 artnr.get(str(stm), ""), "", de_datum(datum), de_zeit(zeit),
                 de_zahl(delta), charge or "", vtyp or "", "", "", grund or "", "",
@@ -254,18 +286,22 @@ class Feeds:
            "Buchungs-Menge", "Ausschuss-Menge", "RSC", "Produktgruppe", "Typ"]
 
     def pruefungen(self, von):  # 🟡
-        artnr = self.stm_artnr()
-        rsc_stm = {str(rid): str(sid) for rid, sid in self.src.rows("rsc_std", ["rsc_id", "rsc_stm_id"])}
+        """Artikel/Bezeichnung = FA product (meld_fa -> fa_std.fa_stm_id -> stm_std),
+        RSC = article of the message (meld_stm_id), Benutzer = meld_user."""
+        stm = {str(sid): (art or "", bez or "")
+               for sid, art, bez in self.src.rows("stm_std", ["stm_id", "stm_artnr", "stm_bez1"])}
+        fa_prod = {str(fid): str(pid) for fid, pid in self.src.rows("fa_std", ["fa_id", "fa_stm_id"]) if pid}
         zeilen = []
-        for datum, zeit, fa, stm, menge, rid, md in self.src.rows(
-                "meld_std", ["meld_datum_buch", "meld_zeit_buch", "meld_fa", "meld_stm_id",
-                             "meld_menge", "meld_rsc_id", "meld_mandant"]):
+        for datum, zeit, user, fa, stm_id, menge, md in self.src.rows(
+                "meld_std", ["meld_datum_buch", "meld_zeit_buch", "meld_user", "meld_fa",
+                             "meld_stm_id", "meld_menge", "meld_mandant"]):
             if md != self.mandant or not _ge(datum, von):
                 continue
-            rsc_art = artnr.get(rsc_stm.get(str(rid), ""), "")
+            p_art, p_bez = stm.get(fa_prod.get(str(fa), ""), ("", ""))
+            rsc_art, _ = stm.get(str(stm_id), ("", ""))
             zeilen.append([
-                de_datum(datum), de_zeit(zeit), "", ganz(fa), artnr.get(str(stm), ""),
-                "", de_zahl(menge), "", rsc_art, "", "",
+                de_datum(datum), de_zeit(zeit), user or "", ganz(fa), p_art,
+                p_bez, de_zahl(menge), "", rsc_art, "", "",
             ])
         return "AswQs2151.txt", tab_datei(self._QS, zeilen)
 

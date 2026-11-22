@@ -44,7 +44,7 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
     def text(n=12):
         if rnd.random() < 0.15:
             return ""
-        s = "".join(rnd.choice("ABCabc äöüßØµ²-./") for _ in range(rnd.randrange(1, n)))
+        s = "".join(rnd.choice("ABCabc Ã¤Ã¶Ã¼ÃŸÃ˜ÂµÂ²-./") for _ in range(rnd.randrange(1, n)))
         return s + ("  " if rnd.random() < 0.2 else "")
 
     def tm():
@@ -54,7 +54,8 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
     data: dict[str, list[dict]] = {}
     data["stm_std"] = [{"stm_id": float(i), "stm_artnr": f"A{i:04d}" if i % 9 else "",
                         "stm_sk_kalk": rnd.choice([0.0, 0.0, 1.25, 12.5, 999.9999, -3.0]),
-                        "stm_bez1": text()} for i in range(1, n_stm + 1)]
+                        "stm_bez1": text(), "stm_mandant": float(rnd.choice([1, 1, 2])),
+                        "stm_sperr_date": None if rnd.random() < 0.6 else date()} for i in range(1, n_stm + 1)]
     data["adr_std"] = [{"adr_id": float(i), "adr_nr": float(10000 + i), "adr_name1": text(),
                         "adr_ort": text(8), "adr_datum_save": date(), "adr_typ": rnd.choice([1, 8, 8, 3])}
                        for i in range(1, n_adr + 1)]
@@ -72,7 +73,8 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
                         "pos_typ": float(rnd.choice([1, 1, 5, 5, 8, 2])), "pos_stm_id": float(rnd.randrange(0, n_stm + 3)),
                         "pos_wgr": float(rnd.randrange(0, 5)), "pos_lief_wunsch": date(),
                         "pos_mandant": float(rnd.choice([1, 1, 2])),
-                        "pos_vater_pos_id": float(rnd.randrange(0, n_pos)), "pos_einh": float(rnd.randrange(0, 3))}
+                        "pos_vater_pos_id": float(rnd.randrange(0, n_pos)), "pos_einh": float(rnd.randrange(0, 3)),
+                        "pos_unterpos": float(rnd.choice([0, 0, 1, 2]))}
                        for i in range(1, n_pos + 1)]
     data["rek_std"] = [{"rek_nr": float(i), "rek_datum": date(), "rek_art": rnd.choice(["KUN RE", "IN AUD", ""]),
                         "rek_stm_id": float(rnd.choice([39777, 39778, 5, 0])), "rek_adr_id": float(rnd.randrange(50)),
@@ -85,10 +87,12 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
                             "bestand_grund": text(5), "bestand_mandant": float(rnd.choice([1, 2]))}
                            for _ in range(150)]
     data["rsc_std"] = [{"rsc_id": float(i), "rsc_stm_id": float(rnd.randrange(1, n_stm))} for i in range(1, 30)]
-    data["meld_std"] = [{"meld_datum_buch": date(), "meld_zeit_buch": tm(), "meld_fa": float(rnd.randrange(3000, 3100)),
+    data["meld_std"] = [{"meld_datum_buch": date(), "meld_zeit_buch": tm(), "meld_user": text(5), "meld_fa": float(rnd.randrange(3000, 3100)),
                          "meld_stm_id": float(rnd.randrange(0, n_stm)), "meld_menge": rnd.choice([1.0, 0.5, 7.0]),
                          "meld_rsc_id": float(rnd.randrange(0, 35)), "meld_mandant": float(rnd.choice([1, 2]))}
                         for _ in range(120)]
+    data["fa_std"] = [{"fa_id": float(i), "fa_stm_id": float(rnd.choice([0, rnd.randrange(1, n_stm + 3)]))}
+                      for i in range(3000, 3090)]
     data["vrg_std"] = [{"vrg_datum": date(), "vrg_zeit": tm(), "vrg_ansprech": text(6),
                         "vrg_typ": float(rnd.choice([340521, 335768, 338266, 0, 111])), "vrg_status": float(rnd.randrange(3)),
                         "vrg_mitarbeiter": text(4), "vrg_adr_id": float(rnd.randrange(0, n_adr + 4)),
@@ -142,7 +146,18 @@ def _run_old(data, arten):
     w.q = q
     w._STM = None
     w.MANDANT = 1
-    return {a: w.BUILDERS[a](VON) for a in arten}
+    out = {}
+    for a in arten:
+        r = w.BUILDERS[a](VON)
+        if isinstance(r, list):
+            # Builders already switched to list[dict] on main (PR #150) â€” the platform still
+            # imports files, so compare the rows in the file form (same header constants).
+            header = {"umsatz": w._ASWKPF, "auftraege": w._ASWKPF, "angebote": w._ASWKPF,
+                      "acht_d": w._8D, "lagerpreise": w._LAGERPREISE}[a]
+            assert all(list(z) == header for z in r), a
+            r = (None, w.tab_datei(header, [list(z.values()) for z in r]))
+        out[a] = r
+    return out
 
 
 # ------------------------------------------------------------------ new feeds via the mirror
@@ -188,8 +203,9 @@ def test_feed_equals_production_worker(art, tmp_path):
     new = _run_new(data, [art], tmp_path)[art]
     if isinstance(new, Exception):
         raise new
-    assert new[0] == old[0], "file name"
-    assert _content(*new) == _content(*old)
+    if old[0] is not None:                      # list[dict] builders carry no file name
+        assert new[0] == old[0], "file name"
+    assert _content(*new) == _content(new[0], old[1])
     if not new[0].endswith(".xlsx"):
         assert len(new[1]) == len(old[1])
 
@@ -200,7 +216,7 @@ def test_only_needed_columns_are_read():
     fraction of each table."""
     s = schema.load()
     plan = needs(ARTEN)
-    assert sum(len(c) for c in plan.values()) < 100                  # 78 of 2,350 columns
+    assert sum(len(c) for c in plan.values()) < 100                  # 81 of 2,350 columns
     for t, cols in plan.items():
         assert len(cols) <= 20 and set(cols) <= {c.name for c in s[t].columns}, t
     assert needs(["umsatz"]) == {"kpf_std": sorted(["kpf_typ", "kpf_nr", "kpf_datum", "kpf_adr_id",
@@ -213,5 +229,5 @@ def test_feeds_produce_rows():
     data = _gen()
     old = _run_old(data, list(ARTEN))
     for art, (name, content) in old.items():
-        n = len(_content(name, content)) - 1
+        n = len(_content(name or ".txt", content)) - 1
         assert n > 0, f"{art}: test data produces no rows"
