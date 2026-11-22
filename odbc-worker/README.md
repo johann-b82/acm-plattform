@@ -1,5 +1,9 @@
 # ODBC-Worker (Apollo → ACM-Plattform)
 
+> **Nachfolger: [`apollo-sync/`](../apollo-sync/README.md)** liest Apollo ohne Windows-Treiber als
+> Container im Plattform-Stack und liefert dieselben 14 Arten über denselben Vertrag (ADR-0007).
+> Dieser Worker bleibt als Rückfallweg, bis `apollo-sync` im Betrieb bestätigt ist.
+
 Liest Apollo (CONZEPT 16) per ODBC und füllt die Plattform-Tabellen über deren
 API — als Live-Ersatz für die monatlichen Extrakt-Uploads. Gesteuert und
 überwacht wird der Worker **von der Plattform** aus.

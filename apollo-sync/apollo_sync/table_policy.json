@@ -1,0 +1,7 @@
+{
+ "note": "Defaults. Decide table by table in a local file (APOLLO_SYNC_POLICY) with the same shape; it overrides these entries.",
+ "tables": {
+  "Statistiken": {"read": false, "reason": "Server bricht die Sitzung bei voller Projektion ab (2026-11-22); für die Lieferungen nicht benötigt"},
+  "Text": {"read": false, "reason": "Schema fehlt in wire_schema.json"}
+ }
+}

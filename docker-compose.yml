@@ -103,6 +103,35 @@ services:
       retries: 5
       start_period: 10s
 
+  # Apollo-Sync: liest Apollo (CONZEPT 16) nativ, ohne Windows-ODBC-Treiber, und füttert
+  # compute über denselben Vertrag wie der bisherige Windows-Worker (/api/odbc/*).
+  # Bewusst hinter einem Profil: läuft erst nach `docker compose --profile apollo-sync up -d`
+  # — und erst, wenn der Worker auf der Windows-VM gestoppt ist (sonst liefern zwei Quellen).
+  # Siehe docs/modules/apollo-sync.md und docs/adr/0007-apollo-sync-statt-windows-worker.md.
+  apollo-sync:
+    build: ./apollo-sync
+    logging: *default-logging
+    restart: unless-stopped
+    profiles: ["apollo-sync"]
+    # Nie eine laufende Apollo-Sitzung hart beenden: der Dienst beendet den Lauf und meldet
+    # sich ab (SIGTERM). Ein Lauf dauert wenige Minuten; danach erst SIGKILL.
+    stop_grace_period: 15m
+    environment:
+      APOLLO_HOST: ${APOLLO_HOST:-192.9.200.134}
+      APOLLO_PORT: ${APOLLO_PORT:-4722}
+      APOLLO_DB: ${APOLLO_DB:-apollo}
+      APOLLO_PWD: ${APOLLO_PWD:-}
+      APOLLO_MANDANT: ${APOLLO_MANDANT:-1}
+      ACM_BASE_URL: http://compute:8000
+      ODBC_SYNC_TOKEN: ${ODBC_SYNC_TOKEN:-}
+      APOLLO_SYNC_STATE: /state
+    volumes:
+      - apollo-sync-state:/state
+    depends_on:
+      compute:
+        condition: service_healthy
+
 volumes:
+  apollo-sync-state:
   caddy-data:
   caddy-config:

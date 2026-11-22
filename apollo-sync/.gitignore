@@ -1,0 +1,5 @@
+build/
+*.egg-info/
+*.sqlite
+*.sqlite-*
+_dryrun_*

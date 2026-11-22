@@ -39,6 +39,20 @@ jobs:
       - name: Tests (Migrationen, RLS und KPI-Funktionen gegen Wegwerf-Postgres)
         run: docker compose -f docker-compose.test.yml run --rm --build compute-test
 
+  apollo-sync:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apollo-sync
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ".[service,dev]"
+      - name: Tests (Frames byte-genau gegen den Treiber, Lieferungen gleich dem Worker)
+        run: python -m pytest -q
+
   web:
     runs-on: ubuntu-24.04
     defaults:
