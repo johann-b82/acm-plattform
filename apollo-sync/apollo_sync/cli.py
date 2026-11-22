@@ -38,7 +38,7 @@ def _where(arg: str | None):
             except ValueError:
                 v = float(val) if "." in val or "e" in val.lower() else int(val)
             return (col, op, v)
-    raise SystemExit("--where supports only 'col>value' or 'col>=value' (server-side, indexed columns)")
+    raise SystemExit("--where supports only 'col>value' or 'col>=value' (server-side)")
 
 
 def cmd_tables(a) -> None:
@@ -223,7 +223,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("table")
     p.add_argument("--columns", help="comma separated — only the columns you need")
     p.add_argument("--all-columns", action="store_true", help="explicitly read every column")
-    p.add_argument("--where", help="server filter 'col>=value' (indexed columns only)")
+    p.add_argument("--where", help="server filter 'col>=value' (pays off when it removes most rows)")
     p.add_argument("--format", choices=["tsv", "jsonl"], default="tsv")
     p.add_argument("-o", "--output")
     p.set_defaults(fn=cmd_export)

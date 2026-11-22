@@ -153,8 +153,9 @@ def _const(ty: int, value) -> bytes:
 
 
 def filter_frame(ctx: bytes, file: int, field: tuple[int, int, int], op: str, value) -> bytes:
-    """Single comparison evaluated by the server. Only worthwhile on indexed columns: on a
-    non-indexed column the server is about 3x slower than a projection filtered locally."""
+    """Single comparison evaluated by the server. Worthwhile when it removes most rows (date
+    floors: 2-10x faster); when it keeps almost everything it is ~3x slower than filtering a
+    projection locally. Results come back in another order than a full scan."""
     t, s, f = field
     ins = (_ins(0x01, _arg16(file)) + _ins(0x03, _fref(t, file, s, f)) + _ins(0x04, _const(t, value))
            + _ins(0x02, b"\x10" + bytes([_OPS[op]]) + Z * 5))

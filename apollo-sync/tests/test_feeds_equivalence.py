@@ -18,7 +18,7 @@ import pytest
 from apollo_sync import protocol as p
 from apollo_sync import schema
 from apollo_sync.acm import build
-from apollo_sync.feeds import ARTEN, needs
+from apollo_sync.feeds import ARTEN, Feeds, needs
 from apollo_sync.mirror import Mirror
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -172,12 +172,23 @@ class _FakeApollo:
         rows = self.data[table]
         out = []
         self.dropped = getattr(self, "dropped", {})
+        self.filters = getattr(self, "filters", {})
+        if server_filter:                         # like the server: `col >= value`, empty dates never match
+            self.filters[table] = server_filter
+            col, op, bound = server_filter
+            assert op == ">="
+            j = columns.index(col)
         for i, r in enumerate(rows, 1):
             vals = tuple(r.get(c, p.DEFAULTS[self.schema[table].column(c).type]) for c in columns)
+            if server_filter and (vals[j] is None or vals[j] < bound):
+                self.dropped[table] = self.dropped.get(table, 0) + 1
+                continue
             if keep is not None and not keep(vals):
                 self.dropped[table] = self.dropped.get(table, 0) + 1
                 continue
             out.append((i, *vals) if with_recno else vals)
+        if server_filter:                         # the real server answers a filtered query in index order
+            out.reverse()
         return out
 
 
@@ -232,6 +243,21 @@ def test_row_floor_drops_rows():
     build(list(ARTEN), VON, apollo=fake)
     assert set(fake.dropped) == {"pos_std", "meld_std", "bestand_std", "vrg_std", "rek_std"}
     assert all(n > 3 for n in fake.dropped.values()), fake.dropped
+    # the floor is sent to the server (rows never cross the wire), exactly for the floored tables
+    assert {t: f[0] for t, f in fake.filters.items()} == {t: c for t, (c, _) in Feeds.row_floor(VON).items()}
+
+
+def test_server_floor_keeps_record_order():
+    """A server-filtered read comes back in another order; the cache restores record order, so
+    the files are the same as with a full scan + local filter."""
+    from apollo_sync.client import CachedSource
+    data = _gen()
+    col, bound = Feeds.row_floor(VON)["pos_std"]
+    cols = ["pos_id", col, "pos_menge"]
+    src = CachedSource(_FakeApollo(data), row_floor={"pos_std": (col, bound)})
+    got = list(src.rows("pos_std", cols))
+    scan = [r for r in _FakeApollo(data).fetch("pos_std", cols) if r[1] is not None and r[1] >= bound]
+    assert got == scan and len(got) > 3
 
 
 def test_only_needed_columns_are_read():

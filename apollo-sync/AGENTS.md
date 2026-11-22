@@ -38,14 +38,16 @@ from apollo_sync.client import Apollo
 with Apollo.from_env() as a:                                   # eine Sitzung, Abmeldung am Ende
     rows = a.fetch("pos_std", ["pos_kpf_id", "pos_artnr", "pos_menge", "pos_datum"])
     neu = a.fetch("stm_std", ["stm_id", "stm_datum_save"],
-                  server_filter=("stm_datum_save", ">=", datetime.date(2026, 11, 1)))  # nur indizierte Spalten!
+                  server_filter=("stm_datum_save", ">=", datetime.date(2026, 11, 1)))  # lohnt, wenn er die meisten Zeilen wegnimmt
 ```
 
 - `fetch` liefert die Python-Typen des Treibers: double→float, int16/32/64→int, Datum→`date|None`,
   bool→bool, str→str, Zeit→`'HH:MM:SS.hh'`.
 - Große Tabellen (`proto_std` ≥ 3,9 Mio. Zeilen, `pkl_std` > 1 GB, `mail_std`): immer nur die nötigen
   Spalten ziehen.
-- Serverfilter: nur `>`/`>=`, Typen double/int64/date; nur auf indizierten Spalten schneller.
+- Serverfilter: nur `>`/`>=`, Typen double/int64/date. Schneller, wenn er die meisten Zeilen
+  wegnimmt (Datumsuntergrenzen: 2–10×); behält er fast alles, ist er langsamer als lokal filtern.
+  Gefilterte Abfragen liefern die Zeilen in anderer Reihenfolge — bei Bedarf nach Satznummer sortieren.
 
 ## Lieferungen weiterentwickeln
 

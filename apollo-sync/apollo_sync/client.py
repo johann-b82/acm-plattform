@@ -3,8 +3,10 @@
 Efficiency (measured on the production server, 2026-11-22):
   * The server is the bottleneck (~20–37k rows/s, varies with ERP load); decoding is small.
   * Requesting only the needed columns is the biggest lever (kpf_std 2.3x, stm_std up to 25x).
-  * A server filter pays off only on indexed columns; otherwise fetch the projection and
-    filter locally (kpf_datum: server filter 115 s vs. projection + local filter 37 s).
+  * A server filter pays off when it removes most rows: the feeds' date floors run on the server
+    (pos_std 238 s -> 21 s, meld_std 48 -> 7 s, bestand_std 48 -> 6 s, identical rows). When it
+    keeps almost everything it is slower than a local filter (kpf_datum: 115 s vs. 37 s).
+    A filtered query returns rows in another order; CachedSource restores record order.
   * A second session brings no throughput (the server works serially) — one session.
 """
 from __future__ import annotations
@@ -175,8 +177,8 @@ class Apollo:
         `limit` stops after that many rows (cleanly, like the driver closing a cursor early).
         `keep(values)` drops rows while streaming (local filter, keeps memory flat).
 
-        server_filter = (column, '>' | '>=', value): evaluated on the server — use it only on
-        indexed columns (see module doc). Values have the driver's Python types: double ->
+        server_filter = (column, '>' | '>=', value): evaluated on the server — worth it when it
+        removes most rows (see module doc); rows may come back in another order. Values have the driver's Python types: double ->
         float, int16/int32/int64 -> int, date -> datetime.date or None, bool -> bool,
         str -> str (trailing blanks kept), time -> 'HH:MM:SS.hh'."""
         policy.check(table)                      # excluded tables never reach the server
@@ -239,12 +241,23 @@ class CachedSource:
             if floor:
                 want.add(floor[0])
             order = [c.name for c in self.apollo.schema[table].columns if c.name in want]
-            keep = None
+            keep = flt = None
             if floor:
                 i, bound = order.index(floor[0]), floor[1]
-                keep = (lambda r: r[i] is not None and r[i] >= bound)
+                # floor on the server: the rows never cross the wire (Test 22.11.: pos_std 245 s ->
+                # 56 s, meld_std 54 -> 21 s, bestand_std 48 -> 24 s, identical rows). `keep` stays
+                # as a cheap safety net with the same condition.
+                flt = (floor[0], ">=", bound)
+                keep = (lambda r: r[i] is not None and r[i] >= bound)     # r = values, recno not yet added
             try:
-                self._cache[table] = (order, self.apollo.fetch(table, order, keep=keep))
+                if flt:
+                    # A filtered query returns the same rows in another order (index order, Test
+                    # 22.11.). Restore record order so the files stay identical to the full scan.
+                    rows = self.apollo.fetch(table, order, server_filter=flt, with_recno=True, keep=keep)
+                    rows.sort(key=lambda r: r[0])
+                    self._cache[table] = (["\0recno"] + order, rows)
+                else:
+                    self._cache[table] = (order, self.apollo.fetch(table, order))
             except (TableQuarantined, TableExcluded, protocol.DecodeFailure) as exc:
                 self._failed[table] = exc
                 raise

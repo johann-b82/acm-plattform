@@ -23,8 +23,11 @@ Gemessen (2026-11-22, Produktion): Der Server ist der Engpass (~20–37 Tsd. Zei
 der ERP-Last). Daraus folgen die Regeln, die der Code umsetzt:
 
 1. **Projektion** — nur benötigte Spalten anfordern (größter Hebel: `kpf_std` 2,3×, `stm_std` bis 25×).
-2. **Serverfilter nur auf indizierten Spalten** — auf nicht indizierten ist er ~3× langsamer als
-   Projektion + lokaler Filter (`kpf_datum`: 115 s gegen 37 s). Die Lieferungen filtern deshalb lokal.
+2. **Serverfilter, wenn er die meisten Zeilen wegnimmt** — dann muss der Server sie gar nicht erst
+   schicken: die Datumsuntergrenzen der Lieferungen (`Feeds.row_floor`) laufen deshalb auf dem
+   Server (Produktion 22.11.: `pos_std` 238 s → 21 s, `meld_std` 48 → 7 s, `bestand_std` 48 → 6 s;
+   Zeilen identisch, Satzreihenfolge wird wiederhergestellt). Behält der Filter fast alles, ist er
+   langsamer als Projektion + lokaler Filter (`kpf_datum`: 115 s gegen 37 s).
 3. **Eine Sitzung** — eine zweite bringt keinen Durchsatz (der Server arbeitet seriell), kostet aber
    Sitzungsplätze.
 4. **Jede Tabelle einmal je Lauf**, mit der Vereinigung aller benötigten Spalten (`CachedSource`).
