@@ -16,8 +16,8 @@ Je Lauf (Takt und aktive Arten aus `GET /api/odbc/konfig`):
 
 1. Eine Apollo-Sitzung öffnen (Sperre prüfen).
 2. Jede benötigte Tabelle **einmal** lesen, nur die Spalten, die eine aktive Art braucht
-   (`feeds.NEEDS`): `kpf_std`, `pos_std`, `stm_std`, `adr_std`, `rek_std`, `bestand_std`, `meld_std`,
-   `rsc_std`, `vrg_std`.
+   (`feeds.needs()`, aus dem Code der Arten abgeleitet, 81 von 2.350 Spalten): `kpf_std`, `pos_std`,
+   `stm_std`, `adr_std`, `rek_std`, `bestand_std`, `meld_std`, `fa_std`, `vrg_std`.
 3. Abmelden.
 4. Je Art die Datei bauen (Filter und Joins lokal, Semantik wie die frühere SQL) und an
    `POST /api/odbc/<art>` schicken; danach `POST /api/odbc/status`.

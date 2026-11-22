@@ -19,7 +19,8 @@ Ein neuer Dienst `apollo-sync` (Python, nur Standardbibliothek + `requests`/`ope
 direkt und ersetzt den Windows-Worker. Er läuft als Container im Plattform-Stack und spricht **denselben
 Vertrag** (`/api/odbc/konfig`, `/api/odbc/<art>`, `/api/odbc/status`, `X-ODBC-Token`). `compute`, die
 Parser und die KPI-SQL bleiben unverändert. Die 14 Lieferungen sind 1:1 aus `worker.py` (`main`)
-portiert; nur die Datenquelle wechselt. Kein Apollo-Spiegel in `public.*` — Alembic bleibt alleiniger
+portiert; nur die Datenquelle wechselt. `kunden` (`build_kunden_bestellungen`) ist eine gezielte
+Einzelkundenabfrage ohne Plattform-Import und wird nicht übernommen. Kein Apollo-Spiegel in `public.*` — Alembic bleibt alleiniger
 DDL-Eigentümer, RLS unberührt. Der SQLite-Spiegel des Werkzeugs dient nur Analysen außerhalb der Plattform.
 
 ## Konsequenzen
