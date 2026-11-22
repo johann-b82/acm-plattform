@@ -42,6 +42,15 @@ _SEQ_F2 = bytes.fromhex("0000000046003b050005083b0000000100000000040000000000000
 _SEQ_C = bytes.fromhex("0000000063001708000000011002000800000000040000000000000000000000"
                        "000000000000000000000000000000000000000000000000")
 _SEQ_D = bytes.fromhex("0000000064000000000000000000000000000000000000000000000000000000")
+# The reply to X carries the database handle at bytes 8..12 (apollo = 1, Test = 4, unknown name
+# = negative code, e.g. -803). L, F2 and C must carry that handle — the capture had 1 hard-coded,
+# so every session read `apollo`, whatever name was sent (found 22.11.2026: kpf_std on Test
+# 1,249,145 rows with the handle, 1,258,725 = production without it).
+_HANDLE_AT = ((_SEQ_L, 12), (_SEQ_F2, 12), (_SEQ_C, 8))
+
+
+def _with_handle(frame: bytes, offset: int, handle: bytes) -> bytes:
+    return frame[:offset] + handle + frame[offset + 4:]
 
 # server charset -> CP1252 (driver table at c16_odbc_driver.dll offset 0xcf0db0, the second of
 # its three variants; verified on every special character of stm_std). Undefined CP1252 bytes
@@ -83,6 +92,16 @@ class SessionRefused(RuntimeError):
     def __init__(self, code: int):
         super().__init__(f"server refused the session (code {code})")
         self.code = code
+
+
+class UnknownDatabase(RuntimeError):
+    """The server does not know the database name (negative handle in the X reply). Not a
+    login failure: the guard is not tripped. The session is closed before anything is read —
+    the server would otherwise silently fall back to its default database."""
+
+    def __init__(self, database: str, code: int):
+        super().__init__(f"server does not know database {database!r} (code {code})")
+        self.database, self.code = database, code
 
 
 class ServerAbort(ConnectionError):
@@ -282,6 +301,7 @@ class Session:
         self.host, self.port, self.database, self.timeout = host, port, database, timeout
         self.sock: socket.socket | None = None
         self.ctx = b""
+        self.handle: int | None = None
 
     # framing
     def _recv_exact(self, n: int) -> bytes:
@@ -322,10 +342,15 @@ class Session:
 
             step(_HDR_E + token)
             step(_HDR_F)
-            step(_HDR_X + self.database.encode("latin-1") + Z)
-            step(_SEQ_L)
-            step(_SEQ_F2)
-            c = step(_SEQ_C)
+            x = step(_HDR_X + self.database.encode("latin-1") + Z)
+            handle = x[8:12]
+            if int.from_bytes(handle, "big", signed=True) <= 0:
+                raise UnknownDatabase(self.database, int.from_bytes(handle, "big", signed=True))
+            self.handle = int.from_bytes(handle, "big")
+            (l, lo), (f2, fo), (cc, co) = _HANDLE_AT
+            step(_with_handle(l, lo, handle))
+            step(_with_handle(f2, fo, handle))
+            c = step(_with_handle(cc, co, handle))
             d = step(_SEQ_D)
             code = int.from_bytes(c[8:12], "big", signed=True)
             if d[:4] == b"\0\0\0\0":
