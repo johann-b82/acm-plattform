@@ -96,7 +96,7 @@ def build(arten: list[str], von: dt.date, apollo: Apollo | None = None, source=N
     only the needed columns), then build offline. With `source`: build from it (e.g. Mirror)."""
     timings: dict = {}
     if source is None:
-        src = CachedSource(apollo)
+        src = CachedSource(apollo, row_floor=Feeds.row_floor(von))
         plan = needs(arten)                  # exactly the columns the active feeds read
         src.prefetch(plan)
         for t, cols in plan.items():

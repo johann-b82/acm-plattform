@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from . import incidents, policy, protocol, schema as schema_mod
 from .guard import Guard, Quarantine
@@ -94,11 +94,16 @@ class Apollo:
     # ------------------------------------------------------------------ reading
     def _run(self, table: schema_mod.Table, cols: tuple[schema_mod.Column, ...],
              server_filter, limit: int | None = None) -> list[tuple[int | None, list]]:
+        return list(self._iter(table, cols, server_filter, limit))
+
+    def _iter(self, table: schema_mod.Table, cols: tuple[schema_mod.Column, ...],
+              server_filter, limit: int | None = None):
         try:
             if limit is None:      # keep the call shape simple for sessions without `limit`
-                return list(self._session.query(table.file, [c.address for c in cols], server_filter))
-            return list(self._session.query(table.file, [c.address for c in cols], server_filter,
-                                            limit=limit))
+                yield from self._session.query(table.file, [c.address for c in cols], server_filter)
+            else:
+                yield from self._session.query(table.file, [c.address for c in cols], server_filter,
+                                               limit=limit)
         except protocol.ServerAbort as exc:
             entry = self.quarantine.record_abort(table.name, len(cols))
             nxt = "skip" if entry["skip"] else "groups of %s" % entry["group"]
@@ -164,9 +169,11 @@ class Apollo:
 
     def fetch(self, table: str, columns: list[str] | None = None,
               server_filter: tuple[str, str, object] | None = None,
-              with_recno: bool = False, limit: int | None = None) -> list[tuple]:
+              with_recno: bool = False, limit: int | None = None,
+              keep: Callable[[tuple], bool] | None = None) -> list[tuple]:
         """All rows of `table` (only `columns`, default all) as tuples in column order;
         `limit` stops after that many rows (cleanly, like the driver closing a cursor early).
+        `keep(values)` drops rows while streaming (local filter, keeps memory flat).
 
         server_filter = (column, '>' | '>=', value): evaluated on the server — use it only on
         indexed columns (see module doc). Values have the driver's Python types: double ->
@@ -191,12 +198,15 @@ class Apollo:
             for res in results[1:]:
                 if [r for r, _ in res] != recnos:
                     raise protocol.ProtocolError(f"{table}: column groups returned different rows")
-            rows = [(recnos[i], [v for res in results for v in res[i][1]]) for i in range(len(recnos))]
+            rows = ((recnos[i], [v for res in results for v in res[i][1]]) for i in range(len(recnos)))
         else:
-            rows = self._run(t, cols, flt, limit)
-        if with_recno:
-            return [(rec, *vals) for rec, vals in rows]
-        return [tuple(vals) for _, vals in rows]
+            rows = self._iter(t, cols, flt, limit)      # streamed: one copy of the kept rows only
+        out = []
+        for rec, vals in rows:
+            vals = tuple(vals)
+            if keep is None or keep(vals):
+                out.append((rec, *vals) if with_recno else vals)
+        return out
 
 
 class CachedSource:
@@ -204,8 +214,12 @@ class CachedSource:
     union of all requested columns. Feeds read through this interface; a SQLite mirror
     implements the same `rows(table, columns)` for offline use."""
 
-    def __init__(self, apollo: Apollo):
+    def __init__(self, apollo: Apollo, row_floor: dict[str, tuple[str, object]] | None = None):
+        """`row_floor` = {table: (column, bound)}: keep only rows with column >= bound (NULL
+        dropped). Only valid when EVERY reader of the table filters at least that strictly —
+        `Feeds.row_floor()` declares it, the equivalence tests prove it."""
         self.apollo = apollo
+        self.row_floor = row_floor or {}
         self._cache: dict[str, tuple[list[str], list[tuple]]] = {}
         self._wanted: dict[str, set[str]] = {}
         self._failed: dict[str, Exception] = {}
@@ -215,18 +229,41 @@ class CachedSource:
         for t, cols in needs.items():
             self._wanted.setdefault(t, set()).update(cols)
 
-    def rows(self, table: str, columns: list[str]) -> list[tuple]:
+    def rows(self, table: str, columns: list[str]) -> "_Projection":
         if table in self._failed:               # failed once this run: don't ask the server again
             raise self._failed[table]
         have = self._cache.get(table)
         if have is None or not set(columns) <= set(have[0]):
-            want = sorted(self._wanted.get(table, set()) | set(columns) | set(have[0] if have else []))
+            floor = self.row_floor.get(table)
+            want = set(self._wanted.get(table, set())) | set(columns) | set(have[0] if have else [])
+            if floor:
+                want.add(floor[0])
             order = [c.name for c in self.apollo.schema[table].columns if c.name in want]
+            keep = None
+            if floor:
+                i, bound = order.index(floor[0]), floor[1]
+                keep = (lambda r: r[i] is not None and r[i] >= bound)
             try:
-                self._cache[table] = (order, self.apollo.fetch(table, order))
+                self._cache[table] = (order, self.apollo.fetch(table, order, keep=keep))
             except (TableQuarantined, TableExcluded, protocol.DecodeFailure) as exc:
                 self._failed[table] = exc
                 raise
             have = self._cache[table]
-        idx = [have[0].index(c) for c in columns]
-        return [tuple(r[i] for i in idx) for r in have[1]]
+        return _Projection(have[1], [have[0].index(c) for c in columns])
+
+
+class _Projection:
+    """Re-iterable column view of cached rows — no copy of the table per call."""
+    __slots__ = ("_rows", "_idx")
+
+    def __init__(self, rows: list[tuple], idx: list[int]):
+        self._rows, self._idx = rows, idx
+
+    def __iter__(self):
+        idx = self._idx
+        if idx == list(range(len(idx))) and all(len(r) == len(idx) for r in self._rows[:1]):
+            return iter(self._rows)
+        return (tuple(r[i] for i in idx) for r in self._rows)
+
+    def __len__(self):
+        return len(self._rows)

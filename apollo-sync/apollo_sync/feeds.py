@@ -323,7 +323,7 @@ class Feeds:
         return tage
 
     def liefertreue(self, von):  # 🟡
-        auf_von = dt.date(von.year - 2, von.month, 1)
+        auf_von = self._auf_von(von)
         kpf = self.src.rows("kpf_std", ["kpf_id", "kpf_nr", "kpf_adr_id", "kpf_typ", "kpf_mandant", "kpf_datum"])
         auf = {str(kid): (ganz(nr), str(adr)) for kid, nr, adr, typ, md, d in kpf
                if typ == 1 and md == self.mandant and _ge(d, auf_von)}
@@ -391,6 +391,25 @@ class Feeds:
                   for nr, name, ds, typ in self.src.rows("adr_std", ["adr_nr", "adr_name1", "adr_datum_save", "adr_typ"])
                   if typ == 8]
         return "dev_excel_INT.txt", tab_datei(self._INTERESSENTEN, zeilen)
+
+    # ---- row floor (memory) ----------------------------------------------------------
+    @staticmethod
+    def _auf_von(von: dt.date) -> dt.date:
+        return dt.date(von.year - 2, von.month, 1)
+
+    @classmethod
+    def row_floor(cls, von: dt.date) -> dict[str, tuple[str, dt.date]]:
+        """Per table the weakest date filter of ALL its readers: rows below it are never used,
+        so the run does not keep them (pos_std/meld_std/bestand_std have millions of rows).
+        Tables read without a date filter (kpf_std, stm_std, adr_std, fa_std — join sides)
+        must not appear here. Proven by the equivalence test on the live path."""
+        return {
+            "pos_std": ("pos_datum", cls._auf_von(von)),   # liefertreue looks back 2 years; others >= von
+            "meld_std": ("meld_datum_buch", von),
+            "bestand_std": ("bestand_datum", von),
+            "vrg_std": ("vrg_datum", von),
+            "rek_std": ("rek_datum", von),
+        }
 
     # ---- registry --------------------------------------------------------------------
     def builders(self) -> dict[str, Callable]:

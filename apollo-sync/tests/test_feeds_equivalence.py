@@ -39,7 +39,7 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
     S = schema.load()
 
     def date():
-        return None if rnd.random() < 0.08 else dt.date(2023, 1, 1) + dt.timedelta(days=rnd.randrange(1600))
+        return None if rnd.random() < 0.08 else dt.date(2021, 6, 1) + dt.timedelta(days=rnd.randrange(2000))
 
     def text(n=12):
         if rnd.random() < 0.15:
@@ -168,11 +168,15 @@ class _FakeApollo:
         self.schema = schema.load()
         self.data = data
 
-    def fetch(self, table, columns, server_filter=None, with_recno=False):
+    def fetch(self, table, columns, server_filter=None, with_recno=False, keep=None):
         rows = self.data[table]
         out = []
+        self.dropped = getattr(self, "dropped", {})
         for i, r in enumerate(rows, 1):
             vals = tuple(r.get(c, p.DEFAULTS[self.schema[table].column(c).type]) for c in columns)
+            if keep is not None and not keep(vals):
+                self.dropped[table] = self.dropped.get(table, 0) + 1
+                continue
             out.append((i, *vals) if with_recno else vals)
         return out
 
@@ -208,6 +212,26 @@ def test_feed_equals_production_worker(art, tmp_path):
     assert _content(*new) == _content(new[0], old[1])
     if not new[0].endswith(".xlsx"):
         assert len(new[1]) == len(old[1])
+
+
+@pytest.mark.parametrize("art", ARTEN)
+def test_live_path_with_row_floor_equals_production_worker(art):
+    """The live path (CachedSource, rows below Feeds.row_floor dropped while streaming)
+    produces the same files as the production worker."""
+    data = _gen()
+    old = _run_old(data, [art])[art]
+    new = build([art], VON, apollo=_FakeApollo(data))[0][art]
+    if isinstance(new, Exception):
+        raise new
+    assert _content(*new) == _content(new[0], old[1])
+
+
+def test_row_floor_drops_rows():
+    """Guard against a vacuous floor test: the generated data has rows below every floor."""
+    fake = _FakeApollo(_gen())
+    build(list(ARTEN), VON, apollo=fake)
+    assert set(fake.dropped) == {"pos_std", "meld_std", "bestand_std", "vrg_std", "rek_std"}
+    assert all(n > 3 for n in fake.dropped.values()), fake.dropped
 
 
 def test_only_needed_columns_are_read():
