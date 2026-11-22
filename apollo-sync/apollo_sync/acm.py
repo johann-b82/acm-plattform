@@ -140,7 +140,8 @@ def run_once(arten: list[str], von: dt.date, dry_run: bool = False, outdir: str 
                 raise res
             filename, data = res
             if dry_run:
-                path = os.path.join(outdir, f"_dryrun_{filename}")
+                # art in the name: auftraege/auftragspositionen share AswKpf_AUF.txt
+                path = os.path.join(outdir, f"_dryrun_{art}_{filename}")
                 with open(path, "wb") as f:
                     f.write(data)
                 rows = None

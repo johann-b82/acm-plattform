@@ -19,5 +19,5 @@ def test_dry_run_creates_output_folder(tmp_path, monkeypatch):
         {"umsatz": ("AswKpf_RG.txt", b"Typ\r\n"), "acht_d": RuntimeError("boom")}, None))
     out = tmp_path / "neu" / "tief"
     runs = acm.run_once(["umsatz", "acht_d"], dt.date(2025, 1, 1), dry_run=True, outdir=str(out))
-    assert (out / "_dryrun_AswKpf_RG.txt").read_bytes() == b"Typ\r\n"
+    assert (out / "_dryrun_umsatz_AswKpf_RG.txt").read_bytes() == b"Typ\r\n"
     assert [r["status"] for r in runs] == ["ok", "fehler"]
