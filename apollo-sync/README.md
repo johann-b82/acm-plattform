@@ -4,8 +4,10 @@ Liest Apollo **ohne den Windows-ODBC-Treiber** direkt über das CONZEPT-16-Proto
 Läuft daher unter Linux, macOS und Windows — als Dienst der ACM-Plattform (ersetzt den
 Windows-Worker `odbc-worker/`) und als Werkzeug für Analysen und Entwicklung (Coding Agents).
 
-- **Plattform:** `apollo-sync service` erzeugt dieselben 14 Lieferungen wie `odbc-worker/worker.py`
-  (`main`) und spricht denselben Vertrag (`/api/odbc/konfig|status|<art>`). `compute` bleibt unverändert.
+- **Plattform:** `apollo-sync service` erzeugt die 14 Lieferungen im Format der Apollo-Listen, mit
+  denen die Plattform bisher von Hand befüllt wurde, und spricht den Vertrag des Workers
+  (`/api/odbc/konfig|status|<art>`). `compute` bleibt unverändert. Spaltenherkunft und Abgleich
+  Oktober 2026: [docs/FEEDS.md](docs/FEEDS.md).
 - **Analysen:** `apollo-sync pull` spiegelt Tabellen in eine lokale SQLite-Datei; danach lässt sich
   ohne Server mit SQL arbeiten (siehe [AGENTS.md](AGENTS.md)).
 
@@ -38,8 +40,12 @@ der ERP-Last). Daraus folgen die Regeln, die der Code umsetzt:
   `mwst_std` (0 Abweichungen). Strings behalten Leerzeichen am Ende — genau wie der Treiber.
 - Serverfilter: `kpf_datum >= 2025-01-01` liefert exakt dieselben 177.019 Datensätze wie Vollprojektion +
   lokaler Filter, 0 Wertabweichungen. Satznummern sind eindeutig (1.258.725 Zeilen).
-- Tests (`pytest`, offline): Abfrage-Frames **byte-genau** gegen die Frames des Treibers; alle 14
-  Lieferungen **identisch** mit dem Produktions-Worker auf erzeugten Daten mit Randfällen.
+- Lieferungen gegen die Apollo-Listen Oktober 2026 (Plattform-Parser, Feld für Feld): Angebote,
+  Wareneingänge, Materialpreise identisch, Liefertreue Einkauf 619 = 619; Abweichungen sonst nur in
+  Belegen, die nach dem Export geändert wurden ([docs/FEEDS.md](docs/FEEDS.md)).
+- Tests (`pytest`, offline): Abfrage-Frames **byte-genau** gegen die Frames des Treibers; je
+  Spaltenregel ein Test mit Beispieldaten; Spiegel- und Live-Weg (mit Datumsuntergrenzen) liefern
+  dieselben Dateien wie ein vollständiger Lesedurchgang.
 - Typen exakt aus `wire_schema.json` (u. a. int16 statt int32 bei 783 „INTEGER"-Spalten).
 
 **Offen (bewusst sichtbar):** TIME ist aus Daten abgeleitet (`[h][min][s][1/100]`, verlustfrei als Text

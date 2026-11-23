@@ -1,17 +1,17 @@
-"""The new feeds must produce exactly what the production worker (odbc-worker/worker.py on
-`main`) produced. The original worker runs its own, unchanged SQL against SQLite (standing in
-for the driver: dates as datetime.date, times as datetime.time with whole seconds, doubles
-as float); the new feeds read the same data through the SQLite mirror. Data is generated with
-edge cases: NULL dates, other client (Mandant), dangling joins, trailing blanks, umlauts."""
+"""The two ways of building the feeds produce the same files: live (CachedSource, rows below
+Feeds.row_floor filtered on the server and dropped while streaming) and offline from a SQLite
+mirror that holds only the columns `needs()` reports. Generated data with edge cases: NULL
+dates, other client (Mandant), dangling joins, trailing blanks, umlauts, tabs and quotes.
+
+Until 23.11.2026 these tests compared against odbc-worker/worker.py. That worker was never
+live and its files differ from the Apollo lists the platform reads (empty names, IDs instead
+of codes, lost sub-positions, sales instead of purchasing reliability); the feeds now follow
+the Apollo lists (test_feeds_mapping.py, docs/FEEDS.md)."""
 from __future__ import annotations
 
 import datetime as dt
-import importlib.util
 import io
 import random
-import re
-import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -21,16 +21,7 @@ from apollo_sync.acm import build
 from apollo_sync.feeds import ARTEN, Feeds, needs
 from apollo_sync.mirror import Mirror
 
-ROOT = Path(__file__).resolve().parents[2]
-WORKER = ROOT / "odbc-worker" / "worker.py"
 VON = dt.date(2025, 1, 1)
-
-
-def _load_worker():
-    spec = importlib.util.spec_from_file_location("old_worker", WORKER)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
 
 
 # ------------------------------------------------------------------ test data
@@ -44,7 +35,7 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
     def text(n=12):
         if rnd.random() < 0.15:
             return ""
-        s = "".join(rnd.choice("ABCabc Ã¤Ã¶Ã¼ÃŸÃ˜ÂµÂ²-./") for _ in range(rnd.randrange(1, n)))
+        s = "".join(rnd.choice('ABCabc äöüßØµ²-./"\t') for _ in range(rnd.randrange(1, n)))
         return s + ("  " if rnd.random() < 0.2 else "")
 
     def tm():
@@ -52,52 +43,83 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
 
     n_stm, n_kpf, n_pos, n_adr = 60, 120, 400, 50
     data: dict[str, list[dict]] = {}
+    data["nvs_std"] = [{"nvs_id": float(i), "nvs_typ": float(t), "nvs_sprache": float(s), "nvs_nr": float(nr),
+                        "nvs_kenn": f"K{t}-{nr}-{s}", "nvs_mandant": float(md)}
+                       for i, (t, nr, s, md) in enumerate(
+                           [(t, nr, s, md) for t in (7, 13, 14, 48, 69, 74, 250) for nr in range(4)
+                            for s in (1, 2) for md in (0, 1)], start=335000)]
     data["stm_std"] = [{"stm_id": float(i), "stm_artnr": f"A{i:04d}" if i % 9 else "",
                         "stm_sk_kalk": rnd.choice([0.0, 0.0, 1.25, 12.5, 999.9999, -3.0]),
-                        "stm_bez1": text(), "stm_mandant": float(rnd.choice([1, 1, 2])),
+                        "stm_bez1": text(), "stm_bez2": text(), "stm_konto_ek": float(rnd.choice([0, 5400, 5900])),
+                        "stm_mandant": float(rnd.choice([1, 1, 2])),
                         "stm_sperr_date": None if rnd.random() < 0.6 else date()} for i in range(1, n_stm + 1)]
-    data["adr_std"] = [{"adr_id": float(i), "adr_nr": float(10000 + i), "adr_name1": text(),
-                        "adr_ort": text(8), "adr_datum_save": date(), "adr_typ": rnd.choice([1, 8, 8, 3])}
+    data["adr_std"] = [{"adr_id": float(i), "adr_nr": float(10000 + i), "adr_name1": text(), "adr_name2": text(),
+                        "adr_name3": text(), "adr_ort": text(8), "adr_plz": text(5), "adr_datum_save": date(),
+                        "adr_typ": rnd.choice([1, 8, 8, 3]), "adr_geloescht": rnd.random() < 0.1,
+                        "adr_mandant": float(rnd.choice([1, 1, 2]))}
                        for i in range(1, n_adr + 1)]
     data["kpf_std"] = [{"kpf_id": float(i), "kpf_typ": float(rnd.choice([1, 2, 5, 6, 7, 8, 3])),
                         "kpf_nr": float(500000 + i), "kpf_datum": date(),
                         "kpf_adr_id": float(rnd.randrange(1, n_adr + 5)), "kpf_user_save": text(6),
+                        "kpf_user_edit": text(6), "kpf_art": float(rnd.randrange(0, 5)),
+                        "kpf_art2": float(rnd.choice([0, 0, 2])), "kpf_rabatt_aktion": float(rnd.choice([0, 1])),
+                        "kpf_waehrung": float(rnd.randrange(0, 4)), "kpf_sperre": rnd.random() < 0.1,
+                        "kpf_sperrkz": rnd.choice([0, 0, 2]),
                         "kpf_wert": round(rnd.uniform(-500, 90000), 2), "kpf_wert_f": round(rnd.uniform(0, 1000), 4),
                         "kpf_mandant": float(rnd.choice([1, 1, 1, 2]))} for i in range(1, n_kpf + 1)]
-    data["pos_std"] = [{"pos_id": float(i), "pos_kpf_id": float(rnd.randrange(1, n_kpf + 8)),
-                        "pos_pos": float(rnd.randrange(1, 30)), "pos_datum": date(), "pos_lief_datum": date(),
-                        "pos_artnr": text(8), "pos_menge": rnd.choice([0.0, 1.0, 2.5, 1000.125]),
-                        "pos_status": float(rnd.randrange(0, 4)), "pos_preis": round(rnd.uniform(0, 99), 3),
-                        "pos_wert": round(rnd.uniform(0, 9999), 2), "pos_typ2": float(rnd.choice([0, 337647, 337650])),
-                        "pos_vater_kpf_id": float(rnd.choice([0, rnd.randrange(1, n_kpf + 3)])),
-                        "pos_typ": float(rnd.choice([1, 1, 5, 5, 8, 2])), "pos_stm_id": float(rnd.randrange(0, n_stm + 3)),
-                        "pos_wgr": float(rnd.randrange(0, 5)), "pos_lief_wunsch": date(),
-                        "pos_mandant": float(rnd.choice([1, 1, 2])),
-                        "pos_vater_pos_id": float(rnd.randrange(0, n_pos)), "pos_einh": float(rnd.randrange(0, 3)),
-                        "pos_unterpos": float(rnd.choice([0, 0, 1, 2]))}
-                       for i in range(1, n_pos + 1)]
+    # Positions as in production: a position carries its document's date (4 of 2.68 M have
+    # none — the server filter drops those, so the generator gives every position a date),
+    # and a delivery/receipt line points to an order line at most a year older (receipts of
+    # 2026: oldest order line 566 days, inside the 2-year floor).
+    kpf_by_id = {int(k["kpf_id"]): k for k in data["kpf_std"]}
+    data["pos_std"] = []
+    for i in range(1, n_pos + 1):
+        kid = rnd.randrange(1, n_kpf + 8)
+        head = kpf_by_id.get(kid)
+        datum = (head["kpf_datum"] if head and head["kpf_datum"] else None) or (
+            dt.date(2021, 6, 1) + dt.timedelta(days=rnd.randrange(2000)))
+        older = [q for q in data["pos_std"] if 0 <= (datum - q["pos_datum"]).days <= 365]
+        parent = rnd.choice(older) if older and rnd.random() < 0.8 else None
+        data["pos_std"].append({
+            "pos_id": float(i), "pos_kpf_id": float(kid), "pos_pos": float(rnd.randrange(1, 30)),
+            "pos_datum": datum, "pos_lief_datum": date(), "pos_artnr": text(8), "pos_version": text(3),
+            "pos_bez1": text(), "pos_menge": rnd.choice([0.0, 1.0, 2.5, 1000.125, 15.642]),
+            "pos_status": float(rnd.randrange(0, 4)), "pos_preis": round(rnd.uniform(0, 99), 3),
+            "pos_wert": round(rnd.uniform(0, 9999), 2), "pos_typ2": float(rnd.choice([0, 337647, 337650, 1])),
+            "pos_vater_kpf_id": parent["pos_kpf_id"] if parent else float(rnd.choice([0, rnd.randrange(1, n_kpf + 3)])),
+            "pos_vater_pos_id": parent["pos_id"] if parent else 0.0,
+            "pos_typ": float(rnd.choice([1, 1, 5, 5, 8, 8, 2, 3])), "pos_stm_id": float(rnd.randrange(0, n_stm + 3)),
+            "pos_wgr": float(rnd.choice([0, 335001, 335009, 99])), "pos_lief_wunsch": date(),
+            "pos_artnr_kd": text(6), "pos_menge_rest": rnd.choice([0.0, 1.0, 7.5]),
+            "pos_mandant": float(rnd.choice([1, 1, 2])), "pos_einh": float(rnd.randrange(0, 5)),
+            "pos_unterpos": float(rnd.choice([0, 0, 1, 2]))})
     data["rek_std"] = [{"rek_nr": float(i), "rek_datum": date(), "rek_art": rnd.choice(["KUN RE", "IN AUD", ""]),
-                        "rek_stm_id": float(rnd.choice([39777, 39778, 5, 0])), "rek_adr_id": float(rnd.randrange(50)),
-                        "rek_status": float(rnd.randrange(3)), "rek_menge": rnd.choice([0.0, 3.0]),
+                        "rek_stm_id": float(rnd.choice([39, 38, 5, 0])), "rek_adr_id": float(rnd.randrange(50)),
+                        "rek_kpf_id": float(rnd.choice([0, rnd.randrange(1, n_kpf)])),
+                        "rek_status": float(rnd.randrange(5)), "rek_menge": rnd.choice([0.0, 3.0]),
                         "rek_menge_akz": rnd.choice([0.0, 1.5]), "rek_geloescht": rnd.random() < 0.2,
-                        "rek_mandant": float(rnd.choice([1, 2]))} for i in range(1, 40)]
+                        "rek_accept": rnd.random() < 0.5, "rek_abgelehnt": rnd.random() < 0.2,
+                        "rek_accept_date": date(), "rek_abschluss_d": date(), "rek_aussteller": text(6),
+                        "rek_Problembeschreib": text(40), "rek_fehlerursache": text(30),
+                        "rek_kz_a01": text(4), "rek_mandant": float(rnd.choice([1, 2]))} for i in range(1, 40)]
     data["bestand_std"] = [{"bestand_stm_id": float(rnd.randrange(0, n_stm + 2)), "bestand_datum": date(),
                             "bestand_zeit": tm(), "bestand_delta": rnd.choice([-2.0, 5.5, 0.0]),
                             "bestand_charge": text(5), "bestand_vater_typ": rnd.choice(["M", "SM", "WE", ""]),
-                            "bestand_grund": text(5), "bestand_mandant": float(rnd.choice([1, 2]))}
+                            "bestand_grund": text(5), "bestand_user": text(5),
+                            "bestand_mandant": float(rnd.choice([1, 2]))}
                            for _ in range(150)]
-    data["rsc_std"] = [{"rsc_id": float(i), "rsc_stm_id": float(rnd.randrange(1, n_stm))} for i in range(1, 30)]
     data["meld_std"] = [{"meld_datum_buch": date(), "meld_zeit_buch": tm(), "meld_user": text(5), "meld_fa": float(rnd.randrange(3000, 3100)),
                          "meld_stm_id": float(rnd.randrange(0, n_stm)), "meld_menge": rnd.choice([1.0, 0.5, 7.0]),
-                         "meld_rsc_id": float(rnd.randrange(0, 35)), "meld_mandant": float(rnd.choice([1, 2]))}
+                         "meld_mandant": float(rnd.choice([1, 2]))}
                         for _ in range(120)]
     data["fa_std"] = [{"fa_id": float(i), "fa_stm_id": float(rnd.choice([0, rnd.randrange(1, n_stm + 3)]))}
                       for i in range(3000, 3090)]
     data["vrg_std"] = [{"vrg_datum": date(), "vrg_zeit": tm(), "vrg_ansprech": text(6),
-                        "vrg_typ": float(rnd.choice([340521, 335768, 338266, 0, 111])), "vrg_status": float(rnd.randrange(3)),
+                        "vrg_typ": float(rnd.choice([335000, 335008, 335020, 0, 111])),
+                        "vrg_art": float(rnd.choice([0, 335001])), "vrg_status": float(rnd.randrange(3)),
                         "vrg_mitarbeiter": text(4), "vrg_adr_id": float(rnd.randrange(0, n_adr + 4)),
-                        "vrg_datum_save": date(), "vrg_user_save": text(5), "vrg_text1": text(20),
-                        "vrg_kpf_typ": float(rnd.choice([0, 2, 6])), "vrg_kpf_nr": float(rnd.randrange(0, 999)),
+                        "vrg_datum_save": date(), "vrg_user_save": text(5), "vrg_memo": text(30),
+                        "vrg_kpf_typ": float(rnd.choice([0, 2, 3, 6])), "vrg_kpf_nr": float(rnd.randrange(0, 999)),
                         "vrg_mandant": float(rnd.choice([1, 2]))} for _ in range(80)]
     # coerce to the exact wire types (int columns as int, like the driver)
     for t, rows in data.items():
@@ -114,53 +136,6 @@ def _gen(seed: int = 7) -> dict[str, list[dict]]:
     return data
 
 
-# ------------------------------------------------------------------ old worker on SQLite
-def _old_db(data) -> sqlite3.Connection:
-    S = schema.load()
-    sqlite3.register_converter("C16DATE", lambda b: dt.date.fromisoformat(b.decode()))
-    sqlite3.register_converter("C16TIME", lambda b: dt.time(*map(int, b.decode()[:8].split(":"))))
-    sqlite3.register_converter("C16BOOL", lambda b: bool(int(b)))
-    db = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
-    decl = {p.T_DATE: "C16DATE", p.T_TIME: "C16TIME", p.T_BOOL: "C16BOOL", p.T_DBL: "REAL",
-            p.T_STR: "TEXT", p.T_I16: "INTEGER", p.T_I32: "INTEGER", p.T_I64: "INTEGER"}
-    for t, rows in data.items():
-        cols = list(rows[0])
-        types = {c.name: c.type for c in S[t].columns}
-        db.execute(f"CREATE TABLE {t} (" + ", ".join(f"{c} {decl[types[c]]}" for c in cols) + ")")
-        db.executemany(f"INSERT INTO {t} VALUES ({','.join('?' * len(cols))})",
-                       [[(v.isoformat() if isinstance(v, dt.date) else int(v) if isinstance(v, bool) else v)
-                         for v in (r[c] for c in cols)] for r in rows])
-    return db
-
-
-def _run_old(data, arten):
-    w = _load_worker()
-    db = _old_db(data)
-
-    def q(sql, *params):
-        for prm in params:
-            sql = sql.replace("?", w._lit(prm), 1)
-        sql = re.sub(r"\{d '([0-9-]+)'\}", r"'\1'", sql)       # ODBC date literal -> ISO text
-        return db.execute(sql)
-
-    w.q = q
-    w._STM = None
-    w.MANDANT = 1
-    out = {}
-    for a in arten:
-        r = w.BUILDERS[a](VON)
-        if isinstance(r, list):
-            # Builders already switched to list[dict] on main (PR #150) â€” the platform still
-            # imports files, so compare the rows in the file form (same header constants).
-            header = {"umsatz": w._ASWKPF, "auftraege": w._ASWKPF, "angebote": w._ASWKPF,
-                      "acht_d": w._8D, "lagerpreise": w._LAGERPREISE}[a]
-            assert all(list(z) == header for z in r), a
-            r = (None, w.tab_datei(header, [list(z.values()) for z in r]))
-        out[a] = r
-    return out
-
-
-# ------------------------------------------------------------------ new feeds via the mirror
 class _FakeApollo:
     database = "fake"
 
@@ -192,7 +167,17 @@ class _FakeApollo:
         return out
 
 
-def _run_new(data, arten, tmp_path):
+class _FullScan:
+    """Reference source: every row, every needed column, no floor and no server filter."""
+
+    def __init__(self, data):
+        self.fake = _FakeApollo(data)
+
+    def rows(self, table, columns):
+        return self.fake.fetch(table, columns)
+
+
+def _run_mirror(data, arten, tmp_path):
     m = Mirror(str(tmp_path / "mirror.sqlite"))
     fake = _FakeApollo(data)
     for t, cols in needs(arten).items():        # mirror ONLY the columns the feed reads
@@ -211,30 +196,31 @@ def _content(name: str, data: bytes) -> list:
     return [lines[0]] + sorted(lines[1:])
 
 
+def _reference(data, art):
+    return Feeds(_FullScan(data)).builders()[art](VON)
+
+
 @pytest.mark.parametrize("art", ARTEN)
-def test_feed_equals_production_worker(art, tmp_path):
-    data = _gen()
-    old = _run_old(data, [art])[art]
-    new = _run_new(data, [art], tmp_path)[art]
+def test_mirror_equals_full_scan(art, tmp_path):
+    """Offline from a mirror with only the needed columns = full scan of every row."""
+    ref = _reference(_gen(), art)
+    new = _run_mirror(_gen(), [art], tmp_path)[art]
     if isinstance(new, Exception):
         raise new
-    if old[0] is not None:                      # list[dict] builders carry no file name
-        assert new[0] == old[0], "file name"
-    assert _content(*new) == _content(new[0], old[1])
-    if not new[0].endswith(".xlsx"):
-        assert len(new[1]) == len(old[1])
+    assert new[0] == ref[0]
+    assert _content(*new) == _content(*ref)
 
 
 @pytest.mark.parametrize("art", ARTEN)
-def test_live_path_with_row_floor_equals_production_worker(art):
-    """The live path (CachedSource, rows below Feeds.row_floor dropped while streaming)
-    produces the same files as the production worker."""
+def test_live_path_with_row_floor_equals_full_scan(art):
+    """Live (CachedSource, server-side floor, rows below Feeds.row_floor dropped while
+    streaming) = full scan: the floor never drops a row a feed uses."""
     data = _gen()
-    old = _run_old(data, [art])[art]
+    ref = _reference(data, art)
     new = build([art], VON, apollo=_FakeApollo(data))[0][art]
     if isinstance(new, Exception):
         raise new
-    assert _content(*new) == _content(new[0], old[1])
+    assert _content(*new) == _content(*ref)
 
 
 def test_row_floor_drops_rows():
@@ -262,22 +248,28 @@ def test_server_floor_keeps_record_order():
 
 def test_only_needed_columns_are_read():
     """The columns a run reads are exactly what the feeds use: per feed derived from the code
-    (a mirror with only those columns is enough, see test above), and for all feeds a small
+    (a mirror with only those columns is enough, see above), and for all feeds a small
     fraction of each table."""
     s = schema.load()
     plan = needs(ARTEN)
-    assert sum(len(c) for c in plan.values()) < 100                  # 81 of 2,350 columns
+    assert sum(len(c) for c in plan.values()) < 140                  # 129 of ~2,350 columns
     for t, cols in plan.items():
-        assert len(cols) <= 20 and set(cols) <= {c.name for c in s[t].columns}, t
-    assert needs(["umsatz"]) == {"kpf_std": sorted(["kpf_typ", "kpf_nr", "kpf_datum", "kpf_adr_id",
-                                                     "kpf_user_save", "kpf_wert", "kpf_wert_f",
-                                                     "kpf_mandant"])}
+        assert set(cols) <= {c.name for c in s[t].columns}, t
+        assert len(cols) <= 35 and len(cols) < len(s[t].columns) / 4, t
+    assert needs(["umsatz"]) == {
+        "adr_std": ["adr_id", "adr_name1", "adr_name2", "adr_name3", "adr_nr", "adr_ort", "adr_plz"],
+        "kpf_std": sorted(["kpf_id", "kpf_typ", "kpf_nr", "kpf_datum", "kpf_adr_id", "kpf_user_save",
+                           "kpf_user_edit", "kpf_art", "kpf_art2", "kpf_rabatt_aktion", "kpf_waehrung",
+                           "kpf_wert", "kpf_wert_f", "kpf_mandant"]),
+        "nvs_std": ["nvs_id", "nvs_kenn", "nvs_mandant", "nvs_nr", "nvs_sprache", "nvs_typ"],
+        "pos_std": sorted(Feeds._POS_SPALTEN),
+    }
 
 
 def test_feeds_produce_rows():
     """Guard against a vacuous equivalence: the generated data must hit every feed."""
     data = _gen()
-    old = _run_old(data, list(ARTEN))
-    for art, (name, content) in old.items():
-        n = len(_content(name or ".txt", content)) - 1
+    for art in ARTEN:
+        name, content = _reference(data, art)
+        n = len(_content(name, content)) - 1
         assert n > 0, f"{art}: test data produces no rows"
