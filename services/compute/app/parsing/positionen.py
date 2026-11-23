@@ -17,6 +17,10 @@ Was sich je Sorte unterscheidet, steht in einer `Sorte` beisammen:
 * zusätzliche Felder, die nur eine Sorte kennt.
 
 Die Lieferscheine kommen als Excel-Datei, die anderen beiden als Text.
+Die Excel-Datei aus dem ERP enthält echte Datums- und Zahlzellen; die werden
+mit ihrem Typ gelesen (`zelle_als_datum`, `zelle_als_zahl`). Nur Textzellen
+gehen durch das deutsche Format — sonst würde aus `552.12` die Zahl 55212 und
+aus einem Datum `2026-09-01 00:00:00` gar keins.
 """
 from __future__ import annotations
 
@@ -26,7 +30,7 @@ from typing import Any
 
 import pandas as pd
 
-from app.parsing.german import parse_date, parse_decimal, read_tabular
+from app.parsing.german import read_tabular, zelle_als_datum, zelle_als_text, zelle_als_zahl
 
 COL_TYP = "Typ"
 COL_VORGANG_NR = "Vorgang Nr."
@@ -120,7 +124,10 @@ def _parse_int(roh: str) -> int | None:
 
 
 def _lies_excel(contents: bytes) -> pd.DataFrame:
-    df = pd.read_excel(io.BytesIO(contents), dtype=str, keep_default_na=False)
+    # dtype=object statt str: Datumszellen bleiben datetime, Zahlzellen int/float.
+    # Mit str würde pandas sie in `2026-09-01 00:00:00` und `552.12` verwandeln,
+    # und das deutsche Format läse daraus kein Datum und den Punkt als Tausender.
+    df = pd.read_excel(io.BytesIO(contents), dtype=object, keep_default_na=False)
     df.columns = [str(c).strip() for c in df.columns]
     return df
 
@@ -143,7 +150,8 @@ def _parse(contents: bytes, sorte: Sorte) -> tuple[list[Row], list[Fehler]]:
 
     for idx, raw_row in df.iterrows():
         zeile = int(idx) + 2
-        row = {k: ("" if v is None else str(v)).strip() for k, v in raw_row.to_dict().items()}
+        zellen = raw_row.to_dict()
+        row = {k: zelle_als_text(v) for k, v in zellen.items()}
 
         if not any(row.values()):
             continue
@@ -179,23 +187,23 @@ def _parse(contents: bytes, sorte: Sorte) -> tuple[list[Row], list[Fehler]]:
             "pos": pos,
             "upos": upos,
             "typ": typ or None,
-            "entry_date": parse_date(row.get(COL_DATUM, "")),
-            sorte.datumsspalte: parse_date(row.get(COL_LIEFERDATUM, "")),
+            "entry_date": zelle_als_datum(zellen.get(COL_DATUM)),
+            sorte.datumsspalte: zelle_als_datum(zellen.get(COL_LIEFERDATUM)),
             f"{p}_id": row.get(COL_ADR_NR) or None,
             f"{p}_name": row.get(COL_NAME) or None,
             f"{p}_city": row.get(COL_ORT) or None,
             "article_number": row.get(COL_ARTNR) or None,
             "article_version": row.get(COL_ARTVERSION) or None,
             "article_name": row.get(COL_BEZEICHNUNG) or None,
-            "quantity": parse_decimal(row.get(COL_MENGE, "")),
+            "quantity": zelle_als_zahl(zellen.get(COL_MENGE)),
             "unit": row.get(COL_EINHEIT) or None,
-            "price": parse_decimal(row.get(COL_PREIS, "")),
-            "position_value": parse_decimal(row.get(COL_POS_WERT, "")),
+            "price": zelle_als_zahl(zellen.get(COL_PREIS)),
+            "position_value": zelle_als_zahl(zellen.get(COL_POS_WERT)),
             "raw": {k: v for k, v in row.items() if v},
         }
         for ziel, quelle in sorte.zusatz.items():
             eintrag[ziel] = (
-                parse_date(row.get(quelle, "")) if ziel.endswith("_date") else (row.get(quelle) or None)
+                zelle_als_datum(zellen.get(quelle)) if ziel.endswith("_date") else (row.get(quelle) or None)
             )
 
         rows.append(eintrag)

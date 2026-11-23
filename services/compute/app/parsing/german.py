@@ -5,10 +5,25 @@ Im Altprojekt war dieser Code in jedem der 15 Parser dupliziert.
 from __future__ import annotations
 
 import io
+import math
+import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 import pandas as pd
+
+_EINFASSUNG = re.compile(r'^="?(.*?)"?$')
+
+
+def ohne_einfassung(wert: Any) -> str:
+    """`="4711"` → `4711`. Der Export fasst Zellen so ein, damit Excel
+    Vorgangsnummern nicht in Zahlen verwandelt."""
+    if wert is None:
+        return ""
+    s = str(wert).strip()
+    treffer = _EINFASSUNG.match(s)
+    return (treffer.group(1) if treffer else s).strip()
 
 
 def parse_date(raw: str) -> date | None:
@@ -34,6 +49,61 @@ def parse_decimal(raw: str) -> Decimal | None:
         return Decimal(s.replace(".", "").replace(",", "."))
     except InvalidOperation:
         return None
+
+
+def zelle_als_datum(wert: Any) -> date | None:
+    """Excel-Zelle → date.
+
+    Echte Datumszellen kommen aus `read_excel` als `datetime` und werden
+    direkt übernommen; Textzellen gehen durch `parse_date` (`DD.MM.YYYY`).
+    """
+    if isinstance(wert, datetime):
+        return wert.date()
+    if isinstance(wert, date):
+        return wert
+    return parse_date(zelle_als_text(wert))
+
+
+def zelle_als_zahl(wert: Any) -> Decimal | None:
+    """Excel-Zelle → Decimal.
+
+    Zahlzellen tragen ihren Wert schon richtig — `552.12` ist 552,12 und darf
+    nicht als deutscher Text mit Tausenderpunkt gelesen werden. Nur Textzellen
+    gehen durch `parse_decimal` (`1.234,5`).
+    """
+    if isinstance(wert, bool):
+        return None
+    if isinstance(wert, float):
+        return None if not math.isfinite(wert) else Decimal(repr(wert))
+    if isinstance(wert, (int, Decimal)):
+        return Decimal(wert)
+    return parse_decimal(zelle_als_text(wert))
+
+
+def zelle_als_text(wert: Any) -> str:
+    """Excel-Zelle → Text, wie ihn die Textexporte liefern würden.
+
+    Datum als `DD.MM.YYYY`, ganze Zahlen ohne `.0`, sonstige Zahlen mit
+    Punkt (sie werden für Mengen und Preise nicht als Text gelesen, siehe
+    `zelle_als_zahl`), Text ohne `="…"`-Einfassung.
+    """
+    if wert is None:
+        return ""
+    if isinstance(wert, datetime):
+        wert = wert.date()
+    if isinstance(wert, date):
+        return wert.strftime("%d.%m.%Y")
+    if isinstance(wert, bool):
+        return str(wert)
+    if isinstance(wert, float):
+        if not math.isfinite(wert):
+            return ""
+        if wert.is_integer():
+            return str(int(wert))
+        return repr(wert)
+    if isinstance(wert, (int, Decimal)):
+        return str(wert)
+    return ohne_einfassung(wert)
 
 
 def parse_date_weit(raw: str) -> date | None:

@@ -19,29 +19,17 @@ Rückgabe ist immer `(gültige Zeilen, Fehler)`. Der Aufrufer ergänzt
 """
 from __future__ import annotations
 
-import re
 from typing import Any
 
+from app.parsing.german import ohne_einfassung as _ohne_einfassung
 from app.parsing.german import parse_date, parse_decimal, read_tabular
 
 Row = dict[str, Any]
 Fehler = dict[str, Any]
 
-_EINFASSUNG = re.compile(r'^="?(.*?)"?$')
-
 
 def _fehler(row: int, feld: str, text: str) -> Fehler:
     return {"row": row, "field": feld, "message": text}
-
-
-def _ohne_einfassung(wert: Any) -> str:
-    """`="4711"` → `4711`. Der Export fasst Zellen so ein, damit Excel
-    Vorgangsnummern nicht in Zahlen verwandelt."""
-    if wert is None:
-        return ""
-    s = str(wert).strip()
-    treffer = _EINFASSUNG.match(s)
-    return (treffer.group(1) if treffer else s).strip()
 
 
 def _eindeutige_spalten(spalten: list[str]) -> list[str]:

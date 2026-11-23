@@ -1,8 +1,9 @@
 """Parser der beiden Positions-Exporte — reine Funktionen, keine Datenbank."""
 import io
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
+import openpyxl
 import pandas as pd
 
 from app.parsing.positionen import parse_auftrag_positionen, parse_lieferscheine
@@ -122,3 +123,93 @@ class TestLieferscheine:
         rows, fehler = parse_lieferscheine(b"das ist keine Excel-Datei")
         assert rows == []
         assert fehler[0]["field"] == "file"
+
+
+def xlsx_typisiert(*zeilen: dict) -> bytes:
+    """Excel-Datei wie aus dem ERP: echte Datums- und Zahlzellen, nicht nur Text.
+
+    Werte, die als `str` übergeben werden, landen als Textzelle in der Datei —
+    auch `="…"`, das openpyxl sonst als Formel speichern würde.
+    """
+    mappe = openpyxl.Workbook()
+    blatt = mappe.active
+    blatt.append(SPALTEN)
+    for nr, werte in enumerate(zeilen, start=2):
+        for sp, name in enumerate(SPALTEN, start=1):
+            wert = werte.get(name)
+            if wert is None:
+                continue
+            zelle = blatt.cell(row=nr, column=sp, value=wert)
+            if isinstance(wert, str):
+                zelle.data_type = "s"
+    puffer = io.BytesIO()
+    mappe.save(puffer)
+    return puffer.getvalue()
+
+
+class TestLieferscheineMitZelltypen:
+    """Regression: die ERP-Excel-Datei hat echte Datums- und Zahlzellen.
+
+    Früher wurde alles als Text gelesen — aus dem Datum wurde
+    `2026-09-01 00:00:00` (kein Lieferdatum), aus `552.12` die Zahl 55212.
+    """
+
+    def test_datums_und_zahlzellen_behalten_ihren_wert(self):
+        (row,), fehler = parse_lieferscheine(
+            xlsx_typisiert(
+                {
+                    "Typ": "LS", "Vorgang Nr.": "L-1", "Pos": 10, "UPos": 0,
+                    "Datum": datetime(2026, 9, 1), "Lieferdatum": datetime(2026, 9, 2, 14, 30),
+                    "Menge": 6.5, "Preis": 552.12, "Pos Wert": 3588.78, "Auftrag": "A-1",
+                }
+            )
+        )
+        assert fehler == []
+        assert row["pos"] == 10
+        assert row["upos"] == 0
+        assert row["entry_date"] == date(2026, 9, 1)
+        assert row["delivery_date"] == date(2026, 9, 2)
+        assert row["quantity"] == Decimal("6.5")
+        assert row["price"] == Decimal("552.12")
+        assert row["position_value"] == Decimal("3588.78")
+        assert row["raw"]["Lieferdatum"] == "02.09.2026"
+
+    def test_ganze_zahlen_und_datum_ohne_uhrzeit(self):
+        (row,), _ = parse_lieferscheine(
+            xlsx_typisiert(
+                {"Typ": "LS", "Vorgang Nr.": 4711, "Pos": 20, "Lieferdatum": date(2026, 9, 3), "Menge": 1250}
+            )
+        )
+        assert row["vorgang_nr"] == "4711"
+        assert row["delivery_date"] == date(2026, 9, 3)
+        assert row["quantity"] == Decimal("1250")
+
+    def test_textzellen_bleiben_deutsch(self):
+        (row,), fehler = parse_lieferscheine(
+            xlsx_typisiert(
+                {
+                    "Typ": "LS", "Vorgang Nr.": '="L-2"', "Pos": "10",
+                    "Datum": "01.09.2026", "Lieferdatum": "02.09.2026",
+                    "Menge": "1.234,5", "Preis": "6,50", "Pos Wert": '="8.024,25"',
+                }
+            )
+        )
+        assert fehler == []
+        assert row["vorgang_nr"] == "L-2"
+        assert row["entry_date"] == date(2026, 9, 1)
+        assert row["delivery_date"] == date(2026, 9, 2)
+        assert row["quantity"] == Decimal("1234.5")
+        assert row["price"] == Decimal("6.50")
+        assert row["position_value"] == Decimal("8024.25")
+
+    def test_gemischte_zeilen_in_einer_datei(self):
+        rows, fehler = parse_lieferscheine(
+            xlsx_typisiert(
+                {"Typ": "LS", "Vorgang Nr.": "L-1", "Pos": 10, "Lieferdatum": datetime(2026, 9, 2), "Menge": 6.5},
+                {"Typ": "LS", "Vorgang Nr.": "L-1", "Pos": "20", "Lieferdatum": "03.09.2026", "Menge": "6,5"},
+                {"Typ": "LS", "Vorgang Nr.": "L-1", "Pos": 30},
+            )
+        )
+        assert fehler == []
+        assert [r["delivery_date"] for r in rows] == [date(2026, 9, 2), date(2026, 9, 3), None]
+        assert [r["quantity"] for r in rows] == [Decimal("6.5"), Decimal("6.5"), None]
