@@ -410,7 +410,7 @@ class Feeds:
         sperr = self._sperr_map(nur_mandant=False)
         zeilen = []
         # Kommentar stays empty: the Apollo list composes it from the booking document
-        # ("LS 20190658  <text> <customer> RG 3033917  /0000"); bestand_kommentar holds
+        # ("LS <Nr>  <Text> <Kunde> RG <Nr>  /0000"); bestand_kommentar holds
         # internal markers instead ("$ProMldSave:…"). No KPI reads it.
         for stm, datum, zeit, delta, charge, vtyp, grund, user, md in self.src.rows(
                 "bestand_std", ["bestand_stm_id", "bestand_datum", "bestand_zeit", "bestand_delta",

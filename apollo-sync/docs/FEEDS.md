@@ -16,7 +16,7 @@ Dateien weichen von den Apollo-Listen ab:
 - `Adr Nr.` = interne Adress-ID statt Adressnummer; `Pos Typ 2`, `WGR` = interne IDs statt Codes.
 - Unterpositionen (`UPos`) fest `0` → doppelte Schlüssel, 1.355 Auftragspositionen verworfen.
 - Interessenten: Tabulator im Namen verschiebt die Spalten, die Datei ist nicht lesbar.
-- Liefertreue Einkauf aus **Verkaufs**aufträgen statt aus Bestellungen (OTD-Quote 34,6 % statt 2,1 %).
+- Liefertreue Einkauf aus **Verkaufs**aufträgen statt aus Bestellungen (OTD-Quote weit über dem Wert der Apollo-Liste).
 
 ## Schlüsseltabelle `nvs_std`
 
@@ -91,14 +91,14 @@ Beide Seiten mit den Plattform-Parsern gelesen, Feld für Feld je Schlüssel im 
 | Lagerbewegungen | 9.962 identisch; Mehrzeilen = nach dem 04.11. rückdatierte Buchungen |
 
 Kennzahlen Oktober 2026 (Plattform-Rechenwege): Angebote, Erstkontakte, Audit-Findings, OTD-Quote
-(2,1 %, 142 Positionen, Ø 41,2 Tage) und die Nenner von On Quality Lieferanten/Werkbänke stimmen
+(Positionen, Quote, Ø Verzug) und die Nenner von On Quality Lieferanten/Werkbänke stimmen
 exakt. Umsatz und Aufträge weichen nur um die später geänderten Belege ab.
 
 ## Hinweis an die Plattform (nicht apollo-sync)
 
 Die Lieferschein-Excel aus Apollo enthält echte Datums- und Zahlzellen. Der Parser liest sie als Text
 (`2026-09-01 00:00:00`, `552.12`) und deutet sie deutsch: kein Lieferdatum, Werte ×100. Folge in der
-Plattform für Oktober: gelieferte Menge 0, On Quality Kunde ohne Quote, Verzugsquote 98,7 %.
+Plattform für Oktober: gelieferte Menge 0, On Quality Kunde ohne Quote, fast alle Aufträge gelten als überfällig.
 apollo-sync schreibt Text im deutschen Format und ist davon nicht betroffen; die Korrektur gehört in
 `services/compute/app/parsing/positionen.py` bzw. `german.parse_date`.
 
